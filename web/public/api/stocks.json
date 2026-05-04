@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "kind": "stocks",
+    "schedule": "derived",
+    "updatedAt": null,
+    "lastSuccessfulRun": null,
+    "failedReason": "종목 캐시가 아직 실행되지 않았습니다."
+  },
+  "rows": []
+}

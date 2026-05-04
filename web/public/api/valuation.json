@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "kind": "valuation",
+    "schedule": "0 0 * * *",
+    "updatedAt": null,
+    "lastSuccessfulRun": null,
+    "failedReason": "가치분석 배치가 아직 실행되지 않았습니다."
+  },
+  "rows": {}
+}

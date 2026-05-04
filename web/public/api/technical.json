@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "kind": "technical",
+    "schedule": "0 */2 * * *",
+    "updatedAt": null,
+    "lastSuccessfulRun": null,
+    "failedReason": "기술분석 배치가 아직 실행되지 않았습니다."
+  },
+  "marketSnapshot": [
+    ["시장 주요 이벤트", "캐시 준비 전"],
+    ["기술분석 갱신 주기", "2시간"]
+  ],
+  "rows": {}
+}

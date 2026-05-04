@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "kind": "market-events",
+    "schedule": "manual",
+    "updatedAt": null,
+    "lastSuccessfulRun": null,
+    "failedReason": null
+  },
+  "groups": []
+}

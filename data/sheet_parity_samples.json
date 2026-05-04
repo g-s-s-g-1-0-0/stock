@@ -1,0 +1,41 @@
+[
+  {
+    "name": "A group golden cross sample",
+    "input": {
+      "ticker": "NVDA",
+      "currentPrice": 110,
+      "ma200": 100,
+      "macdHistD1": -0.1,
+      "macdHist": 0.2,
+      "pctB": 85,
+      "rsi": 72,
+      "vix": 20,
+      "ixicDist": 0,
+      "ixicFilterActive": false
+    },
+    "expected": {
+      "strategyType": "A",
+      "triggered": true
+    }
+  },
+  {
+    "name": "B group panic sample",
+    "input": {
+      "ticker": "AAPL",
+      "currentPrice": 90,
+      "ma200": 100,
+      "rsi": 30,
+      "cci": -100,
+      "lrSlope": 1,
+      "lrTrendline": 88,
+      "candleLow": 92,
+      "vix": 31,
+      "ixicDist": 5,
+      "ixicFilterActive": false
+    },
+    "expected": {
+      "strategyType": "B",
+      "triggered": true
+    }
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "kind": "market-trends",
+    "schedule": "0 0 * * 1",
+    "updatedAt": null,
+    "lastSuccessfulRun": null,
+    "failedReason": "시장 트렌드 배치가 아직 실행되지 않았습니다."
+  },
+  "rows": []
+}

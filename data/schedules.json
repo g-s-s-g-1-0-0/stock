@@ -1,0 +1,18 @@
+{
+  "valuation": {
+    "cron": "0 0 * * *",
+    "description": "가치분석은 매일 자정에 1회 업데이트"
+  },
+  "technical": {
+    "cron": "0 */2 * * *",
+    "description": "기술분석은 매일 2시간마다 업데이트"
+  },
+  "marketEvents": {
+    "cron": "manual",
+    "description": "시장 주요 이벤트는 어드민 계정이 해당 페이지에서 수동 수정"
+  },
+  "marketTrends": {
+    "cron": "0 0 * * 1",
+    "description": "시장 트렌드는 일요일에서 월요일로 넘어가는 자정에 주 1회 업데이트"
+  }
+}
