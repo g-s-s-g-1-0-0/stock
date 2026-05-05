@@ -24,6 +24,8 @@ export type ApiValuationPayload<TMetric> = {
 
 export type ApiMarketEventsPayload<TGroup> = {
   meta?: RuntimeMeta
+  yearLabel?: string
+  months?: string[]
   groups?: TGroup[]
 }
 
@@ -43,7 +45,7 @@ export type AppData<TStock, TMetric, TGroup, TTrendRow> = {
 async function fetchJson<T>(paths: string[]): Promise<T | null> {
   for (const path of paths) {
     try {
-      const response = await fetch(path)
+      const response = await fetch(path, { cache: 'no-store' })
       if (response.ok) return await response.json() as T
     } catch {
       // Try the next cache location.
@@ -54,17 +56,21 @@ async function fetchJson<T>(paths: string[]): Promise<T | null> {
 
 export async function fetchAppData<TStock, TMetric, TGroup, TTrendRow>() {
   const [stocks, valuation, technical, marketEvents, marketTrends] = await Promise.all([
-    fetchJson<ApiStocksPayload<TStock>>(['/api/stocks', '/api/stocks.json']),
-    fetchJson<ApiValuationPayload<TMetric>>(['/api/valuation', '/api/valuation.json']),
-    fetchJson<ApiTechnicalPayload>(['/api/technical', '/api/technical.json']),
-    fetchJson<ApiMarketEventsPayload<TGroup>>(['/api/market-events', '/api/market-events.json']),
-    fetchJson<ApiMarketTrendsPayload<TTrendRow>>(['/api/market-trends', '/api/market-trends.json']),
+    fetchJson<ApiStocksPayload<TStock>>(['/api/stocks', 'http://127.0.0.1:8787/api/stocks', '/api/stocks.json']),
+    fetchJson<ApiValuationPayload<TMetric>>(['/api/valuation', 'http://127.0.0.1:8787/api/valuation', '/api/valuation.json']),
+    fetchJson<ApiTechnicalPayload>(['/api/technical', 'http://127.0.0.1:8787/api/technical', '/api/technical.json']),
+    fetchJson<ApiMarketEventsPayload<TGroup>>(['/api/market-events', 'http://127.0.0.1:8787/api/market-events', '/api/market-events.json']),
+    fetchJson<ApiMarketTrendsPayload<TTrendRow>>(['/api/market-trends', 'http://127.0.0.1:8787/api/market-trends', '/api/market-trends.json']),
   ])
 
   return { stocks, valuation, technical, marketEvents, marketTrends }
 }
 
-export async function saveMarketEvents<TGroup>(groups: TGroup[], meta?: RuntimeMeta) {
+export async function saveMarketEvents<TGroup>(
+  groups: TGroup[],
+  meta?: RuntimeMeta,
+  options?: { yearLabel?: string; months?: string[] },
+) {
   const payload = {
     meta: {
       ...meta,
@@ -74,16 +80,52 @@ export async function saveMarketEvents<TGroup>(groups: TGroup[], meta?: RuntimeM
       lastSuccessfulRun: new Date().toISOString(),
       failedReason: null,
     },
+    yearLabel: options?.yearLabel,
+    months: options?.months,
     groups,
   }
 
-  const response = await fetch('/api/admin/market-events', {
-    method: 'PUT',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-  if (!response.ok) {
-    throw new Error('시장 주요 이벤트 저장에 실패했습니다.')
+  const endpoints = ['/api/admin/market-events', 'http://127.0.0.1:8787/api/admin/market-events']
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      if (response.ok) {
+        return await response.json() as { meta: RuntimeMeta; yearLabel?: string; months?: string[]; groups: TGroup[] }
+      }
+    } catch {
+      // Try the local API server fallback.
+    }
   }
-  return await response.json() as { meta: RuntimeMeta; groups: TGroup[] }
+
+  throw new Error('시장 주요 이벤트 저장에 실패했습니다.')
+}
+
+export async function refreshAppData(tickers: string[]) {
+  const endpoints = ['/api/admin/refresh-data', 'http://127.0.0.1:8787/api/admin/refresh-data']
+  let lastError = ''
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ tickers }),
+      })
+
+      if (response.ok) {
+        return await response.json() as { ok: boolean; refreshedTickers: string[] }
+      }
+
+      const payload = await response.json().catch(() => null) as { error?: string } | null
+      lastError = payload?.error ?? response.statusText
+    } catch {
+      // Try the local API server fallback.
+    }
+  }
+
+  throw new Error(lastError || '데이터 즉시 갱신에 실패했습니다.')
 }

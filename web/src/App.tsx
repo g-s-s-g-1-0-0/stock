@@ -1,6 +1,6 @@
 import './App.css'
-import { Fragment, type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
-import { fetchAppData, saveMarketEvents, type RuntimeMeta } from './api'
+import { Fragment, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { fetchAppData, refreshAppData, saveMarketEvents, type AppData, type RuntimeMeta } from './api'
 
 type Market = 'KR' | 'US'
 type Valuation = '저평가' | '보통' | '고평가'
@@ -16,6 +16,8 @@ type Stock = {
   valuation: Valuation
   opinion: Opinion
   strategies: string[]
+  category?: string
+  industry?: string
   updatedAt: string
 }
 
@@ -91,6 +93,7 @@ type BoardPost = {
   createdAt: string
   authorId: string
   authorName: string
+  hidden?: boolean
 }
 
 type ValuationMetric = {
@@ -119,7 +122,18 @@ type ValuationMetric = {
 const MAX_WATCHLIST_ITEMS = 50
 const AUTH_ACCOUNTS_STORAGE_KEY = 'gongsu-auth-accounts'
 const AUTH_SESSION_STORAGE_KEY = 'gongsu-user-session'
+const WATCHLIST_STORAGE_KEY = 'gongsu-watchlist'
+const OPERATOR_WATCHLIST_STORAGE_KEY = 'gongsu-operator-watchlist'
+const VIEW_MODE_STORAGE_KEY = 'gongsu-view-mode'
+const VIEW_MODE_HINT_STORAGE_KEY = 'gongsu-view-mode-hint-seen'
 const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
+const ADMIN_LOGIN_ID = import.meta.env.VITE_ADMIN_LOGIN_ID ?? 'admin'
+const ADMIN_LOGIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? ''
+const TEST_USER_SESSION: UserSession = {
+  email: 'test@gongsu.local',
+  name: '테스트',
+  loggedInAt: '',
+}
 
 function configuredAdminEmails() {
   return (import.meta.env.VITE_ADMIN_EMAILS ?? DEFAULT_ADMIN_EMAILS.join(','))
@@ -145,21 +159,52 @@ function saveStoredAccounts(accounts: AuthAccount[]) {
   localStorage.setItem(AUTH_ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts))
 }
 
-const demoLimitStocks: Stock[] = Array.from({ length: 38 }, (_, index) => {
-  const sequence = index + 1
+function readStoredSession() {
+  const storedSession = localStorage.getItem(AUTH_SESSION_STORAGE_KEY)
+  if (!storedSession) return null
 
-  return {
-    ticker: `DEMO${String(sequence).padStart(2, '0')}`,
-    name: `데모종목 ${sequence}`,
-    market: sequence % 3 === 0 ? 'KR' : 'US',
-    fairPrice: sequence % 3 === 0 ? `₩${(42_000 + sequence * 1_150).toLocaleString()}` : `$${(36 + sequence * 1.7).toFixed(2)}`,
-    currentPrice: sequence % 3 === 0 ? `₩${(39_500 + sequence * 1_030).toLocaleString()}` : `$${(34 + sequence * 1.45).toFixed(2)}`,
-    valuation: sequence % 4 === 0 ? '고평가' : sequence % 2 === 0 ? '보통' : '저평가',
-    opinion: sequence % 4 === 0 ? '매도' : sequence % 2 === 0 ? '관망' : '매수',
-    strategies: ['D. 200일선 상방 & 상승 흐름 강화'],
-    updatedAt: '데모',
+  try {
+    return JSON.parse(storedSession) as UserSession
+  } catch {
+    localStorage.removeItem(AUTH_SESSION_STORAGE_KEY)
+    return null
   }
-})
+}
+
+function personalWatchlistStorageKey(session: UserSession | null) {
+  return `${WATCHLIST_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
+}
+
+function readStoredWatchlist(session = readStoredSession()) {
+  const scopedKey = personalWatchlistStorageKey(session)
+  const storedWatchlist = localStorage.getItem(scopedKey) ?? localStorage.getItem(WATCHLIST_STORAGE_KEY)
+  if (!storedWatchlist) return initialWatchlist
+
+  try {
+    const parsed = JSON.parse(storedWatchlist)
+    return Array.isArray(parsed) ? parsed.filter((ticker): ticker is string => typeof ticker === 'string') : initialWatchlist
+  } catch {
+    localStorage.removeItem(scopedKey)
+    return initialWatchlist
+  }
+}
+
+function readStoredOperatorWatchlist() {
+  const storedWatchlist = localStorage.getItem(OPERATOR_WATCHLIST_STORAGE_KEY)
+  if (!storedWatchlist) return operatorTickers
+
+  try {
+    const parsed = JSON.parse(storedWatchlist)
+    return Array.isArray(parsed) ? parsed.filter((ticker): ticker is string => typeof ticker === 'string') : operatorTickers
+  } catch {
+    localStorage.removeItem(OPERATOR_WATCHLIST_STORAGE_KEY)
+    return operatorTickers
+  }
+}
+
+function readStoredViewMode() {
+  return localStorage.getItem(VIEW_MODE_STORAGE_KEY) === 'operator' ? 'operator' : 'personal'
+}
 
 const searchUniverse: Stock[] = [
   {
@@ -294,24 +339,23 @@ const searchUniverse: Stock[] = [
     strategies: ['C. 200일선 상방 & 스퀴즈 거래량 돌파'],
     updatedAt: '2시간 전',
   },
-  ...demoLimitStocks,
 ]
 
-const initialWatchlist = [
-  'AAPL',
-  '035420',
-  'NVDA',
-  '005930',
-  '042700',
-  '247540',
-  'ONON',
-  'BE',
-  'LRCX',
-  'SNDK',
-  'TSLA',
-  'MSFT',
-  ...demoLimitStocks.map((stock) => stock.ticker),
-]
+function stockSearchShell(stock: Stock): Stock {
+  return {
+    ...stock,
+    fairPrice: '-',
+    currentPrice: '-',
+    valuation: '보통',
+    opinion: '관망',
+    strategies: [],
+    category: stock.category,
+    industry: stock.industry ?? '-',
+    updatedAt: '-',
+  }
+}
+
+const initialWatchlist: string[] = []
 
 const trades: TradeLog[] = [
   {
@@ -514,11 +558,10 @@ const trades: TradeLog[] = [
   },
 ]
 
-const operatorTickers = ['005930', '042700', '247540', 'ONON', 'BE', 'LRCX', 'SNDK', 'AAPL', '035420', 'NVDA', 'TSLA', 'MSFT']
+const operatorTickers: string[] = []
 const strategyFilters = ['A', 'B', 'C', 'D', 'E', 'F']
-const personalTradeTickers = new Set(['AAPL', 'NVDA', '035420'])
-const personalTrades = trades.filter((trade) => personalTradeTickers.has(trade.ticker))
-const operatorTrades = trades
+const personalTrades: TradeLog[] = []
+const operatorTrades: TradeLog[] = []
 const valuationMetrics: Record<string, ValuationMetric> = {
   '005930': {
     marketCap: '106조 7,264억',
@@ -979,108 +1022,12 @@ function tradeKey(trade: TradeLog) {
   return `${trade.ticker}-${trade.buyDate}`
 }
 
-const gnbMenus = ['HOME', '가치 분석', '기술 분석', '시장 주요 이벤트', '시장 트렌드', '게시판']
+const gnbMenus = ['HOME', '가치 분석', '기술 분석', '시장 주요 이벤트', '시장 트렌드']
+const adminGnbMenus = [...gnbMenus, '게시판']
 const boardCategories: BoardCategory[] = ['칭찬', '버그', '건의', '기타']
 const boardFilters: BoardFilter[] = ['전체', ...boardCategories]
 
-const initialBoardPosts: BoardPost[] = [
-  {
-    id: 1,
-    category: '건의',
-    content: '관심 종목별로 알림 조건을 직접 켜고 끌 수 있으면 좋겠습니다.',
-    createdAt: '2026-05-03T10:20:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-  {
-    id: 2,
-    category: '칭찬',
-    content: '가치분석과 기술분석을 한 화면에서 비교할 수 있어서 흐름 파악이 편합니다.',
-    createdAt: '2026-05-03T12:05:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-  {
-    id: 3,
-    category: '버그',
-    content: '모바일에서 표를 가로 스크롤할 때 헤더가 살짝 늦게 따라오는 것 같습니다.',
-    createdAt: '2026-05-03T14:10:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-  {
-    id: 4,
-    category: '기타',
-    content: '시장 주요 이벤트에서 당일 일정이 더 잘 보이게 바뀐 점이 좋습니다.',
-    createdAt: '2026-05-03T15:40:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-  {
-    id: 5,
-    category: '건의',
-    content: '기술분석 공통지표를 접었을 때도 중요한 이벤트만 한 줄로 요약되면 좋겠습니다.',
-    createdAt: '2026-05-03T16:15:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-  {
-    id: 6,
-    category: '칭찬',
-    content: '게시판을 페이지 전환 없이 바로 작성할 수 있어서 피드백 남기기 편합니다.',
-    createdAt: '2026-05-03T17:02:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-  {
-    id: 7,
-    category: '버그',
-    content: '시장 트렌드 표에서 긴 텍스트가 있는 셀은 가로 스크롤 위치를 잃기 쉽습니다.',
-    createdAt: '2026-05-03T18:24:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-  {
-    id: 8,
-    category: '건의',
-    content: '관심 종목을 전략별로 묶어서 볼 수 있는 필터가 있으면 좋겠습니다.',
-    createdAt: '2026-05-03T19:11:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-  {
-    id: 9,
-    category: '기타',
-    content: '나중에 알림 설정 페이지가 생기면 게시판 건의와 연결해서 관리되면 좋겠습니다.',
-    createdAt: '2026-05-03T20:36:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-  {
-    id: 10,
-    category: '칭찬',
-    content: '색상이 이전보다 훨씬 차분해져서 오래 봐도 덜 피로합니다.',
-    createdAt: '2026-05-03T21:08:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-  {
-    id: 11,
-    category: '건의',
-    content: '시장 트렌드 요약에 관련 종목 예시도 같이 있으면 투자 아이디어를 잡기 쉬울 것 같습니다.',
-    createdAt: '2026-05-03T22:17:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-  {
-    id: 12,
-    category: '버그',
-    content: '로그인 모달에서 비밀번호 입력 후 엔터를 눌렀을 때 포커스 흐름을 한 번 확인해 주세요.',
-    createdAt: '2026-05-03T23:04:00',
-    authorId: 'sample-user',
-    authorName: '사용자',
-  },
-]
+const initialBoardPosts: BoardPost[] = []
 
 const marketTrendRows: MarketTrendRow[] = [
   {
@@ -1196,6 +1143,7 @@ const marketTrendRows: MarketTrendRow[] = [
     summary: '이번 주 전체 시장 분위기는 기술 주와 에너지 섹터의 상승세가 두드러졌으며, 금융과 헬스케어 섹터도 안정적인 모습을 보였습니다.',
   },
 ]
+void marketTrendRows
 
 const eventMonths = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
 
@@ -1367,6 +1315,13 @@ const technicalMarketSnapshot = [
   ['나스닥 (QQQ, 200일 이동평균선)', '604.08'],
 ]
 
+function isMeaningfulMarketSnapshot(snapshot: string[][]) {
+  return snapshot.length > 2 || !snapshot.some(([label, value]) => (
+    (label === '시장 주요 이벤트' && value === '캐시 기준')
+    || label === '기술분석 갱신 주기'
+  ))
+}
+
 function technicalSeed(stock: Stock, index: number, salt = 0) {
   const base = [...stock.ticker].reduce((sum, char) => sum + char.charCodeAt(0), 0)
   return (base * 17 + index * 31 + salt * 13) % 997
@@ -1387,6 +1342,28 @@ function formatSignedTechnical(value: number, decimals = 2) {
 
 function stockPriceNumber(stock: Stock) {
   return parsePriceValue(stock.currentPrice) ?? 100
+}
+
+function formatUpdateTime(date: Date) {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+function nextTwoHourUpdateLabel(date = new Date()) {
+  const nextUpdate = new Date(date)
+  nextUpdate.setMinutes(0, 0, 0)
+  nextUpdate.setHours(nextUpdate.getHours() + (nextUpdate.getHours() % 2 === 0 ? 2 : 1))
+  return `${formatUpdateTime(nextUpdate)} 에 업데이트 예정`
+}
+
+function nextMidnightUpdateLabel(date = new Date()) {
+  const nextUpdate = new Date(date)
+  nextUpdate.setDate(nextUpdate.getDate() + 1)
+  nextUpdate.setHours(0, 0, 0, 0)
+  return `${formatUpdateTime(nextUpdate)} 에 업데이트 예정`
+}
+
+function isPendingValue(value: string) {
+  return value.trim() === '-'
 }
 
 function formatTechnicalPrice(stock: Stock, value: number) {
@@ -1465,7 +1442,7 @@ const technicalMetricColumns: TechnicalColumn[] = [
   { label: '60일 이동평균선', tooltip: '중기 추세 기준선입니다. 60일선 위에서는 상승 구조, 아래에서는 중기 약세를 의심합니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 42, 0.84, 0.2, 4)) },
   { label: '144일 이동평균선', tooltip: '장기 추세 전환을 완만하게 확인하는 기준선입니다. 200일선보다 민감하게 구조 변화를 볼 때 사용합니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 43, 0.78, 0.24, 4)) },
   { label: '200일 이동평균선', tooltip: '장기 추세의 핵심 기준선입니다. 현재가가 200일선 위에 있으면 장기 상승 구조로 보는 경우가 많습니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 44, 0.72, 0.28, 4)) },
-  { label: '120일 저가 회귀 추세선', tooltip: '최근 120일 저점 흐름을 기준으로 만든 회귀 추세선입니다. 추세선 위에서는 저점이 높아지는 구조로 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 45, 0.68, 0.34, 4)) },
+  { label: '120일 저가 회귀 추세선', tooltip: '최근 120일 동안의 저점들을 이어 본 추세선입니다. 현재가가 이 선 위에 있으면 저점이 점점 높아지는 흐름으로 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 45, 0.68, 0.34, 4)) },
   { label: '실적발표일 (한국 시간 기준)', tooltip: '한국 시간 기준 실적 발표 예정일입니다. 실적 전후에는 변동성이 커질 수 있어 진입·청산 판단에 반영합니다.', value: (stock) => technicalEarningsDate(stock) },
   { label: '진입가', tooltip: '현재 보유 중인 시스템 포지션의 진입 가격입니다. 보유 전이면 비워두며, 추후 사용자가 설명할 전략 기준에 맞춰 채울 예정입니다.', value: (stock) => technicalEntryPrice(stock) },
   { label: '진입일', tooltip: '현재 보유 중인 시스템 포지션의 진입일입니다. 보유 전이면 비워둡니다.', value: (stock) => technicalEntryDate(stock) },
@@ -1517,6 +1494,7 @@ function ValueAnalysisPage({
   stocks,
   viewMode,
   valuationRows,
+  addStockControl,
   onAddStock,
   onTooltipOpen,
   onTooltipClose,
@@ -1524,11 +1502,14 @@ function ValueAnalysisPage({
   stocks: Stock[]
   viewMode: 'personal' | 'operator'
   valuationRows: Record<string, ValuationMetric>
+  addStockControl?: ReactNode
   onAddStock: () => void
   onTooltipOpen: (tooltip: TooltipState) => void
   onTooltipClose: () => void
 }) {
   const visibleStocks = stocks.slice(0, MAX_WATCHLIST_ITEMS)
+  const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleStocks.length, 0)
+  const isEmpty = stocks.length === 0
 
   return (
     <section className="panel value-analysis-panel">
@@ -1536,75 +1517,87 @@ function ValueAnalysisPage({
         <div>
           <h2>가치 분석</h2>
           <p>Home 관심 종목 기준으로 핵심 재무 지표를 확인해 적정가를 계산하고, 현재가를 기준으로 저평가/고평가 여부를 판단합니다.</p>
+          <p className="page-update-note">각 지표는 매일 자정에 1회 업데이트됩니다.</p>
         </div>
         <span>총 {visibleStocks.length}개</span>
       </div>
 
-      <div className="sheet-wrap value-analysis-sheet">
-        {stocks.length === 0 ? (
-          <div className="watchlist-empty-panel">
-            <div className="empty-watchlist">
-              <strong>관심 종목이 없습니다.</strong>
-              <span>Home에서 종목을 추가하면 가치 분석 표에 표시됩니다.</span>
-              {viewMode === 'personal' && (
-                <button type="button" onClick={onAddStock}>관심 종목 추가</button>
-              )}
-            </div>
+      {addStockControl}
+
+      {isEmpty ? (
+        <div className="watchlist-empty-panel analysis-empty-panel">
+          <div className="empty-watchlist">
+            <strong>관심 종목이 없습니다.</strong>
+            <span>종목을 추가하면 가치 분석 표에 표시됩니다.</span>
+            {viewMode === 'personal' && (
+              <button className="analysis-overlay-add-button" type="button" onClick={onAddStock}>
+                관심종목 추가
+              </button>
+            )}
           </div>
-        ) : (
+        </div>
+      ) : (
+        <div className="sheet-wrap value-analysis-sheet">
           <table className="sheet-table value-analysis-table">
-            <thead>
-              <tr>
-                <th>종목명</th>
-                <th>티커</th>
-                <th>구분</th>
-                <th>산업</th>
-                <th>적정 주가 범위</th>
-                <th>현재가</th>
-                <th>투자 의견</th>
-                {valueMetricColumns.map((column) => (
-                  <th key={column.label}>
-                    <MetricValue
-                      tooltip={column.tooltip}
-                      onTooltipClose={onTooltipClose}
-                      onTooltipOpen={onTooltipOpen}
-                    >
-                      {column.label}
-                    </MetricValue>
-                  </th>
+          <thead>
+            <tr>
+              <th>종목명</th>
+              <th>티커</th>
+              <th>구분</th>
+              <th>산업</th>
+              <th>적정 주가 범위</th>
+              <th>현재가</th>
+              <th>투자 의견</th>
+              {valueMetricColumns.map((column) => (
+                <th key={column.label}>
+                  <MetricValue
+                    tooltip={column.tooltip}
+                    onTooltipClose={onTooltipClose}
+                    onTooltipOpen={onTooltipOpen}
+                  >
+                    {column.label}
+                  </MetricValue>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {visibleStocks.map((stock) => {
+              const metric = valuationRows[stock.ticker]
+
+              return (
+                <tr key={stock.ticker}>
+                  <td className="name-data-cell">
+                    <div className="name-cell">
+                      <span className="market-flag" aria-hidden="true">{marketFlag(stock.market)}</span>
+                      <span>{stock.name}</span>
+                    </div>
+                  </td>
+                  <td className="ticker-cell">{stock.ticker}</td>
+                  <td>{stock.category ?? (stock.market === 'KR' ? '성장주' : '혼합주')}</td>
+                  <td className="industry-cell">{stock.industry ?? '-'}</td>
+                  <td className="number-cell">{stock.fairPrice}</td>
+                  <td className="number-cell">{stock.currentPrice}</td>
+                  <td><span className={`status-badge ${statusClass(stock.valuation)}`}>{stock.valuation}</span></td>
+                  {valueMetricColumns.map((column) => (
+                    <td className="number-cell" key={column.label}>
+                      {metric ? column.value(metric) : '-'}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
+            {Array.from({ length: blankRowCount }).map((_, index) => (
+              <tr className="blank-row" key={`value-analysis-blank-${index}`}>
+                {Array.from({ length: 7 + valueMetricColumns.length }).map((__, cellIndex) => (
+                  <td key={`value-analysis-blank-${index}-${cellIndex}`}>&nbsp;</td>
                 ))}
               </tr>
-            </thead>
-            <tbody>
-              {visibleStocks.map((stock) => {
-                const metric = valuationRows[stock.ticker]
-
-                return (
-                  <tr key={stock.ticker}>
-                    <td className="name-data-cell">
-                      <div className="name-cell">
-                        <span className="market-flag" aria-hidden="true">{marketFlag(stock.market)}</span>
-                        <span>{stock.name}</span>
-                      </div>
-                    </td>
-                    <td className="ticker-cell">{stock.ticker}</td>
-                    <td>{stock.market === 'KR' ? '성장주' : '가치주'}</td>
-                    <td className="industry-cell">{stock.strategies[0].includes('스퀴즈') ? '반도체, AI, 소프트웨어' : '반도체, 커머스, 클라우드'}</td>
-                    <td className="number-cell">{stock.fairPrice}</td>
-                    <td className="number-cell">{stock.currentPrice}</td>
-                    <td><span className={`status-badge ${statusClass(stock.valuation)}`}>{stock.valuation}</span></td>
-                    {valueMetricColumns.map((column) => (
-                      <td className="number-cell" key={column.label}>
-                        {metric ? column.value(metric) : '-'}
-                      </td>
-                    ))}
-                  </tr>
-                )
-              })}
-            </tbody>
+            ))}
+          </tbody>
           </table>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   )
 }
@@ -1614,6 +1607,7 @@ function TechnicalAnalysisPage({
   viewMode,
   technicalRows,
   marketSnapshot,
+  addStockControl,
   onAddStock,
   onTooltipOpen,
   onTooltipClose,
@@ -1622,11 +1616,14 @@ function TechnicalAnalysisPage({
   viewMode: 'personal' | 'operator'
   technicalRows: Record<string, Record<string, string>>
   marketSnapshot: string[][]
+  addStockControl?: ReactNode
   onAddStock: () => void
   onTooltipOpen: (tooltip: TooltipState) => void
   onTooltipClose: () => void
 }) {
   const visibleStocks = stocks.slice(0, MAX_WATCHLIST_ITEMS)
+  const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleStocks.length, 0)
+  const isEmpty = stocks.length === 0
 
   return (
     <section className="panel value-analysis-panel technical-analysis-panel">
@@ -1634,7 +1631,7 @@ function TechnicalAnalysisPage({
         <div>
           <h2>기술 분석</h2>
           <p>Home 관심 종목 기준으로 RSI, CCI, MACD, DMI, 캔들, 거래량, 볼린저밴드, 이동평균 데이터 등의 기술 지표들을 활용해 매매 타이밍을 판단합니다.</p>
-          <p className="page-warning">※ 기술 지표는 삼성증권 앱과 동일한 계산 방식을 적용해, 본인이 바라보는 지표와 일부 다를 수 있습니다.</p>
+          <p className="page-update-note">각 지표는 2시간마다 업데이트되며, 삼성증권 앱과 동일한 계산 방식을 적용하기 때문에 본인이 바라보는 지표와 일부 다를 수 있습니다.</p>
         </div>
         <span>총 {visibleStocks.length}개</span>
       </div>
@@ -1659,18 +1656,22 @@ function TechnicalAnalysisPage({
         </div>
       </details>
 
-      <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet">
-        {stocks.length === 0 ? (
-          <div className="watchlist-empty-panel">
-            <div className="empty-watchlist">
-              <strong>관심 종목이 없습니다.</strong>
-              <span>Home에서 종목을 추가하면 기술 분석 표에 표시됩니다.</span>
-              {viewMode === 'personal' && (
-                <button type="button" onClick={onAddStock}>관심 종목 추가</button>
-              )}
-            </div>
+      {addStockControl}
+
+      {isEmpty ? (
+        <div className="watchlist-empty-panel analysis-empty-panel">
+          <div className="empty-watchlist">
+            <strong>관심 종목이 없습니다.</strong>
+            <span>종목을 추가하면 기술 분석 표에 표시됩니다.</span>
+            {viewMode === 'personal' && (
+              <button className="analysis-overlay-add-button" type="button" onClick={onAddStock}>
+                관심종목 추가
+              </button>
+            )}
           </div>
-        ) : (
+        </div>
+      ) : (
+        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet">
           <table className="sheet-table value-analysis-table technical-analysis-table">
             <thead>
               <tr>
@@ -1691,7 +1692,7 @@ function TechnicalAnalysisPage({
               </tr>
             </thead>
             <tbody>
-              {visibleStocks.map((stock, index) => {
+              {visibleStocks.map((stock) => {
                 const apiRow = technicalRows[stock.ticker]
 
                 return (
@@ -1705,7 +1706,7 @@ function TechnicalAnalysisPage({
                   <td className="ticker-cell">{stock.ticker}</td>
                   <td><span className={`status-badge ${statusClass(stock.opinion)}`}>{stock.opinion}</span></td>
                   {technicalMetricColumns.map((column) => {
-                    const value = apiRow?.[column.label] ?? column.value(stock, index)
+                    const value = apiRow?.[column.label] ?? '-'
                     const isEntryStrategy = column.label === '진입 전략'
 
                     return (
@@ -1723,10 +1724,17 @@ function TechnicalAnalysisPage({
                 </tr>
                 )
               })}
+              {Array.from({ length: blankRowCount }).map((_, index) => (
+                <tr className="blank-row" key={`technical-analysis-blank-${index}`}>
+                  {Array.from({ length: 3 + technicalMetricColumns.length }).map((__, cellIndex) => (
+                    <td key={`technical-analysis-blank-${index}-${cellIndex}`}>&nbsp;</td>
+                  ))}
+                </tr>
+              ))}
             </tbody>
           </table>
-        )}
-      </div>
+        </div>
+      )}
     </section>
   )
 }
@@ -1740,8 +1748,6 @@ function parseMarketEventDate(date: string) {
 }
 
 function marketEventStatus(entry: MarketEventEntry) {
-  if (entry.status) return entry.status
-
   const eventDate = parseMarketEventDate(entry.date)
   if (!eventDate) return 'none'
 
@@ -1751,6 +1757,27 @@ function marketEventStatus(entry: MarketEventEntry) {
   if (eventDate.getTime() === todayDate.getTime()) return 'today'
   if (eventDate.getTime() < todayDate.getTime()) return 'past'
   return 'future'
+}
+
+function marketEventDday(entry: MarketEventEntry) {
+  const eventDate = parseMarketEventDate(entry.date)
+  if (!eventDate) return '-'
+
+  const today = new Date()
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  const msPerDay = 24 * 60 * 60 * 1000
+  return String(Math.round((todayDate.getTime() - eventDate.getTime()) / msPerDay))
+}
+
+function normalizeMarketEventDdays(groups: MarketEventGroup[]) {
+  return groups.map((group) => ({
+    ...group,
+    entries: group.entries.map((entry) => ({
+      ...entry,
+      dday: marketEventDday(entry),
+      status: undefined,
+    })),
+  }))
 }
 
 function marketEventDateClass(entry: MarketEventEntry, isGroupStart: boolean) {
@@ -1777,20 +1804,44 @@ function formatCurrentDateLabel(date = new Date()) {
   return `현재 날짜: ${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${weekdays[date.getDay()]})`
 }
 
+function marketEventDateToInputValue(date: string) {
+  const match = date.match(/^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})$/)
+  if (!match) return ''
+
+  const [, year, month, day] = match
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+}
+
+function formatMarketEventDateFromInput(value: string) {
+  if (!value) return '-'
+  const [year, month, day] = value.split('-')
+  return `${year}. ${Number(month)}. ${Number(day)}`
+}
+
 function MarketEventsPage({
   groups,
+  yearLabel,
+  months,
   isAdmin,
   isSaving,
+  isDirty,
   onTooltipOpen,
   onTooltipClose,
+  onYearLabelChange,
+  onMonthChange,
   onEventChange,
   onSave,
 }: {
   groups: MarketEventGroup[]
+  yearLabel: string
+  months: string[]
   isAdmin: boolean
   isSaving: boolean
+  isDirty: boolean
   onTooltipOpen: (tooltip: TooltipState) => void
   onTooltipClose: () => void
+  onYearLabelChange: (value: string) => void
+  onMonthChange: (monthIndex: number, value: string) => void
   onEventChange: (groupIndex: number, entryIndex: number, field: keyof MarketEventEntry, value: string) => void
   onSave: () => void
 }) {
@@ -1806,10 +1857,12 @@ function MarketEventsPage({
       </div>
       {isAdmin && (
         <div className="admin-event-toolbar">
-          <span>어드민 모드: 발표일, D-day, 발표 시간을 수정할 수 있습니다.</span>
-          <button disabled={isSaving} type="button" onClick={onSave}>
-            {isSaving ? '저장 중...' : '이벤트 저장'}
-          </button>
+          <span>어드민 모드: 연도, 월, 발표일, 발표 시간을 직접 수정할 수 있습니다. D-day는 현재 날짜 기준으로 자동 계산됩니다.</span>
+          {isDirty && (
+            <button disabled={isSaving} type="button" onClick={onSave}>
+              {isSaving ? '저장 중...' : '저장'}
+            </button>
+          )}
         </div>
       )}
 
@@ -1842,35 +1895,49 @@ function MarketEventsPage({
             </tr>
           </thead>
           <tbody>
-            {eventMonths.map((month, index) => (
-              <tr key={month}>
-                {index === 0 && <td className="event-year-cell" rowSpan={eventMonths.length}>2026년</td>}
-                <td className="event-month-cell">{month}</td>
+            {months.map((month, index) => (
+              <tr key={`market-event-month-${index}`}>
+                {index === 0 && (
+                  <td className="event-year-cell" rowSpan={months.length}>
+                    {isAdmin ? (
+                      <input
+                        aria-label="시장 이벤트 연도"
+                        className="event-edit-input event-edit-input-label"
+                        value={yearLabel}
+                        onChange={(event) => onYearLabelChange(event.target.value)}
+                      />
+                    ) : yearLabel}
+                  </td>
+                )}
+                <td className="event-month-cell">
+                  {isAdmin ? (
+                    <input
+                      aria-label={`${month} 표시`}
+                      className="event-edit-input event-edit-input-label event-edit-input-short"
+                      value={month}
+                      onChange={(event) => onMonthChange(index, event.target.value)}
+                    />
+                  ) : month}
+                </td>
                 {groups.map((group, groupIndex) => {
-                  const entry = group.entries[index]
+                  const entry = group.entries[index] ?? { month, date: '-', dday: '-', time: '-' }
                   const isGroupStart = groupIndex > 0
 
                   return (
-                    <Fragment key={`${group.title}-${month}`}>
+                    <Fragment key={`${group.title}-${index}`}>
                       <td className={marketEventDateClass(entry, isGroupStart)}>
                         {isAdmin ? (
                           <input
                             aria-label={`${group.title} ${month} 발표일`}
                             className="event-edit-input"
-                            value={entry.date}
-                            onChange={(event) => onEventChange(groupIndex, index, 'date', event.target.value)}
+                            type="date"
+                            value={marketEventDateToInputValue(entry.date)}
+                            onChange={(event) => onEventChange(groupIndex, index, 'date', formatMarketEventDateFromInput(event.target.value))}
                           />
                         ) : entry.date}
                       </td>
                       <td className={marketEventDdayClass(entry)}>
-                        {isAdmin ? (
-                          <input
-                            aria-label={`${group.title} ${month} D-day`}
-                            className="event-edit-input event-edit-input-short"
-                            value={entry.dday}
-                            onChange={(event) => onEventChange(groupIndex, index, 'dday', event.target.value)}
-                          />
-                        ) : marketEventStatus(entry) === 'today' ? '0' : entry.dday}
+                        {marketEventDday(entry)}
                       </td>
                       <td className={marketEventTimeClass(entry)}>
                         {isAdmin ? (
@@ -1895,7 +1962,14 @@ function MarketEventsPage({
 }
 
 function MarketTrendsPage({ rows }: { rows: MarketTrendRow[] }) {
+  const [page, setPage] = useState(1)
   const sortedMarketTrendRows = [...rows].sort((a, b) => new Date(b.date.replaceAll('.', '-')).getTime() - new Date(a.date.replaceAll('.', '-')).getTime())
+  const pageSize = 50
+  const totalPages = Math.max(1, Math.ceil(sortedMarketTrendRows.length / pageSize))
+  const safePage = Math.min(page, totalPages)
+  const pageStart = (safePage - 1) * pageSize
+  const visibleMarketTrendRows = sortedMarketTrendRows.slice(pageStart, pageStart + pageSize)
+  const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleMarketTrendRows.length, 0)
 
   return (
     <section className="panel value-analysis-panel market-trends-panel">
@@ -1919,18 +1993,49 @@ function MarketTrendsPage({ rows }: { rows: MarketTrendRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {sortedMarketTrendRows.map((row) => (
+            {visibleMarketTrendRows.map((row) => (
               <tr key={row.date}>
                 <td className="number-cell trend-date-cell">{row.date}</td>
-                {row.ranks.map((rank, index) => (
-                  <td className="trend-rank-cell" key={`${row.date}-${index + 1}`}>{rank}</td>
+                {Array.from({ length: 10 }).map((_, index) => (
+                  <td className="trend-rank-cell" key={`${row.date}-${index + 1}`}>{row.ranks[index] ?? '-'}</td>
                 ))}
                 <td className="trend-summary-cell">{row.summary}</td>
+              </tr>
+            ))}
+            {Array.from({ length: blankRowCount }).map((_, rowIndex) => (
+              <tr className="blank-row" key={`market-trend-blank-${rowIndex}`}>
+                {Array.from({ length: 12 }).map((__, cellIndex) => (
+                  <td key={`market-trend-blank-${rowIndex}-${cellIndex}`}>&nbsp;</td>
+                ))}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {totalPages > 1 && (
+        <div className="market-trends-pagination" aria-label="시장 트렌드 페이지">
+          <button disabled={safePage === 1} type="button" onClick={() => setPage((current) => Math.max(1, current - 1))}>
+            이전
+          </button>
+          {Array.from({ length: totalPages }).map((_, index) => {
+            const pageNumber = index + 1
+
+            return (
+              <button
+                className={safePage === pageNumber ? 'active' : ''}
+                key={`market-trends-page-${pageNumber}`}
+                type="button"
+                onClick={() => setPage(pageNumber)}
+              >
+                {pageNumber}
+              </button>
+            )
+          })}
+          <button disabled={safePage === totalPages} type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))}>
+            다음
+          </button>
+        </div>
+      )}
     </section>
   )
 }
@@ -1957,8 +2062,8 @@ function boardCurrentUserName(userSession: UserSession | null) {
 }
 
 function maskBoardAuthorName(value: string) {
-  if (!value) return '사용자'
-  return `${value.slice(0, 3)}***`
+  if (!value) return '**'
+  return `${value.slice(0, 2)}******`
 }
 
 function BoardPage({
@@ -1974,10 +2079,14 @@ function BoardPage({
   onContentChange,
   onDeletePost,
   onFilterChange,
+  onHideSelectedPosts,
   onPageChange,
+  onRemoveSelectedPosts,
+  onSelectedPostIdsChange,
   onShowMineOnlyChange,
   onSortDirectionChange,
   onSubmit,
+  selectedPostIds,
 }: {
   posts: BoardPost[]
   category: BoardCategory
@@ -1987,17 +2096,22 @@ function BoardPage({
   page: number
   showMineOnly: boolean
   sortDirection: BoardSortDirection
+  selectedPostIds: number[]
   onCategoryChange: (category: BoardCategory) => void
   onContentChange: (content: string) => void
   onDeletePost: (postId: number) => void
   onFilterChange: (filter: BoardFilter) => void
+  onHideSelectedPosts: () => void
   onPageChange: (page: number) => void
+  onRemoveSelectedPosts: () => void
+  onSelectedPostIdsChange: (postIds: number[]) => void
   onShowMineOnlyChange: (showMineOnly: boolean) => void
   onSortDirectionChange: (direction: BoardSortDirection) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
   const postsPerPage = 10
   const filteredPosts = posts
+    .filter((post) => !post.hidden)
     .filter((post) => filter === '전체' || post.category === filter)
     .filter((post) => !showMineOnly || post.authorId === currentUserId)
     .sort((a, b) => {
@@ -2008,6 +2122,15 @@ function BoardPage({
   const safePage = Math.min(page, totalPages)
   const pageStart = (safePage - 1) * postsPerPage
   const paginatedPosts = filteredPosts.slice(pageStart, pageStart + postsPerPage)
+  const selectedPostCount = selectedPostIds.length
+
+  const toggleSelectedPost = (postId: number) => {
+    onSelectedPostIdsChange(
+      selectedPostIds.includes(postId)
+        ? selectedPostIds.filter((selectedPostId) => selectedPostId !== postId)
+        : [...selectedPostIds, postId],
+    )
+  }
 
   return (
     <section className="panel board-panel">
@@ -2016,7 +2139,7 @@ function BoardPage({
           <h2>게시판</h2>
           <p>서비스에 대한 칭찬, 버그, 건의, 기타 의견을 간편하게 남길 수 있습니다.</p>
         </div>
-        <span>총 {posts.length}개</span>
+        <span>총 {filteredPosts.length}개</span>
       </div>
 
       <div className="board-layout">
@@ -2049,6 +2172,7 @@ function BoardPage({
                 type="button"
                 onClick={() => {
                   onFilterChange(option)
+                  onSelectedPostIdsChange([])
                   onPageChange(1)
                 }}
               >
@@ -2060,18 +2184,34 @@ function BoardPage({
               type="button"
               onClick={() => {
                 onShowMineOnlyChange(!showMineOnly)
+                onSelectedPostIdsChange([])
                 onPageChange(1)
               }}
             >
               내 글만 보기
             </button>
+            {selectedPostCount > 0 && (
+              <div className="board-admin-actions">
+                <span>{selectedPostCount}개 선택</span>
+                <button type="button" onClick={onHideSelectedPosts}>숨김</button>
+                <button className="danger" type="button" onClick={onRemoveSelectedPosts}>제거</button>
+              </div>
+            )}
           </div>
 
           <div className="board-post-list">
             {paginatedPosts.length > 0 ? paginatedPosts.map((post) => (
-              <article className={`board-post-card ${post.authorId === currentUserId ? 'my-board-post' : ''}`} key={post.id}>
+              <article className={`board-post-card ${post.authorId === currentUserId ? 'my-board-post' : ''} ${selectedPostIds.includes(post.id) ? 'selected-board-post' : ''}`} key={post.id}>
                 <div className="board-post-meta">
                   <div className="board-post-meta-left">
+                    <label className="board-post-select">
+                      <input
+                        aria-label={`${post.category} 게시글 선택`}
+                        checked={selectedPostIds.includes(post.id)}
+                        type="checkbox"
+                        onChange={() => toggleSelectedPost(post.id)}
+                      />
+                    </label>
                     <span className={`board-category-pill category-${post.category}`}>{post.category}</span>
                     {post.authorId === currentUserId && <span className="my-post-badge">내 글</span>}
                     <span>{maskBoardAuthorName(post.authorName)}</span>
@@ -2152,11 +2292,12 @@ function BoardPage({
 
 function App() {
   const [query, setQuery] = useState('')
-  const [watchlist, setWatchlist] = useState(initialWatchlist)
-  const [operatorWatchlist, setOperatorWatchlist] = useState(operatorTickers)
-  const [personalTradeLogs, setPersonalTradeLogs] = useState(personalTrades)
+  const [watchlist, setWatchlist] = useState<string[]>(() => readStoredWatchlist())
+  const [operatorWatchlist, setOperatorWatchlist] = useState<string[]>(() => readStoredOperatorWatchlist())
+  const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(personalTrades)
   const [isAddingStock, setIsAddingStock] = useState(false)
-  const [viewMode, setViewMode] = useState<'personal' | 'operator'>('personal')
+  const [viewMode, setViewMode] = useState<'personal' | 'operator'>(() => readStoredViewMode())
+  const [showViewModeHint, setShowViewModeHint] = useState(() => localStorage.getItem(VIEW_MODE_HINT_STORAGE_KEY) !== 'true')
   const [selectedStrategy, setSelectedStrategy] = useState('전체')
   const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc')
   const [activeTooltip, setActiveTooltip] = useState<TooltipState | null>(null)
@@ -2178,62 +2319,76 @@ function App() {
   const [boardPage, setBoardPage] = useState(1)
   const [showMineOnly, setShowMineOnly] = useState(false)
   const [boardSortDirection, setBoardSortDirection] = useState<BoardSortDirection>('desc')
-  const [userSession, setUserSession] = useState<UserSession | null>(() => {
-    const storedSession = localStorage.getItem(AUTH_SESSION_STORAGE_KEY)
-    if (!storedSession) return null
-
-    try {
-      return JSON.parse(storedSession) as UserSession
-    } catch {
-      localStorage.removeItem(AUTH_SESSION_STORAGE_KEY)
-      return null
-    }
-  })
-  const [apiStocks, setApiStocks] = useState<Stock[]>(searchUniverse)
-  const [apiValuationMetrics, setApiValuationMetrics] = useState<Record<string, ValuationMetric>>(valuationMetrics)
+  const [selectedBoardPostIds, setSelectedBoardPostIds] = useState<number[]>([])
+  const [pendingBoardDeleteIds, setPendingBoardDeleteIds] = useState<number[]>([])
+  const [userSession, setUserSession] = useState<UserSession | null>(() => readStoredSession())
+  const [apiStocks, setApiStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
+  const [apiValuationMetrics, setApiValuationMetrics] = useState<Record<string, ValuationMetric>>({})
   const [apiTechnicalRows, setApiTechnicalRows] = useState<Record<string, Record<string, string>>>({})
   const [apiMarketSnapshot, setApiMarketSnapshot] = useState<string[][]>(technicalMarketSnapshot)
   const [apiMarketEventGroups, setApiMarketEventGroups] = useState<MarketEventGroup[]>(marketEventGroups)
-  const [apiMarketTrendRows, setApiMarketTrendRows] = useState<MarketTrendRow[]>(marketTrendRows)
+  const [marketEventYearLabel, setMarketEventYearLabel] = useState('2026년')
+  const [marketEventMonths, setMarketEventMonths] = useState(eventMonths)
+  const [apiMarketTrendRows, setApiMarketTrendRows] = useState<MarketTrendRow[]>([])
   const [marketEventsMeta, setMarketEventsMeta] = useState<RuntimeMeta | undefined>()
   const [isSavingMarketEvents, setIsSavingMarketEvents] = useState(false)
+  const [isMarketEventsDirty, setIsMarketEventsDirty] = useState(false)
+  const [isRefreshingData, setIsRefreshingData] = useState(false)
+  const [refreshDataMessage, setRefreshDataMessage] = useState('')
   const [activePage, setActivePage] = useState<ActivePage>('home')
   const addStockButtonRef = useRef<HTMLButtonElement | null>(null)
   const inlineAddRef = useRef<HTMLDivElement | null>(null)
+
+  const applyLoadedData = (data: AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>) => {
+    if (data.stocks?.rows && data.stocks.rows.length > 0) {
+      setApiStocks(data.stocks.rows)
+    }
+    if (data.valuation?.rows) {
+      setApiValuationMetrics(data.valuation.rows)
+    }
+    if (data.technical?.rows) {
+      setApiTechnicalRows(data.technical.rows)
+    }
+    if (data.technical?.marketSnapshot && isMeaningfulMarketSnapshot(data.technical.marketSnapshot)) {
+      setApiMarketSnapshot(data.technical.marketSnapshot)
+    }
+    if (data.marketEvents?.groups && data.marketEvents.groups.length > 0) {
+      setApiMarketEventGroups(data.marketEvents.groups)
+    }
+    if (data.marketEvents?.yearLabel) {
+      setMarketEventYearLabel(data.marketEvents.yearLabel)
+    }
+    if (data.marketEvents?.months && data.marketEvents.months.length > 0) {
+      setMarketEventMonths(data.marketEvents.months)
+    }
+    if (data.marketEvents?.meta) {
+      setMarketEventsMeta(data.marketEvents.meta)
+    }
+    if (data.marketTrends?.rows) {
+      setApiMarketTrendRows(data.marketTrends.rows)
+    }
+  }
 
   useEffect(() => {
     let isMounted = true
 
     fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>().then((data) => {
       if (!isMounted) return
-      if (data.stocks?.rows && data.stocks.rows.length > 0) {
-        setApiStocks(data.stocks.rows)
-      }
-      if (data.valuation?.rows && Object.keys(data.valuation.rows).length > 0) {
-        const rows = data.valuation.rows
-        setApiValuationMetrics((current) => ({ ...current, ...rows }))
-      }
-      if (data.technical?.rows) {
-        setApiTechnicalRows(data.technical.rows)
-      }
-      if (data.technical?.marketSnapshot && data.technical.marketSnapshot.length > 0) {
-        setApiMarketSnapshot(data.technical.marketSnapshot)
-      }
-      if (data.marketEvents?.groups && data.marketEvents.groups.length > 0) {
-        setApiMarketEventGroups(data.marketEvents.groups)
-      }
-      if (data.marketEvents?.meta) {
-        setMarketEventsMeta(data.marketEvents.meta)
-      }
-      if (data.marketTrends?.rows && data.marketTrends.rows.length > 0) {
-        setApiMarketTrendRows(data.marketTrends.rows)
-      }
+      applyLoadedData(data)
     })
 
     return () => {
       isMounted = false
     }
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem(personalWatchlistStorageKey(userSession), JSON.stringify(watchlist))
+  }, [watchlist, userSession])
+
+  useEffect(() => {
+    localStorage.setItem(OPERATOR_WATCHLIST_STORAGE_KEY, JSON.stringify(operatorWatchlist))
+  }, [operatorWatchlist])
 
   useEffect(() => {
     if (!isAddingStock) return
@@ -2273,11 +2428,15 @@ function App() {
       const ticker = normalizeQuery(stock.ticker)
       const name = normalizeQuery(stock.name)
 
-      return ticker.startsWith(normalized) || name.startsWith(normalized)
+      return ticker.includes(normalized) || name.includes(normalized)
     })
   }, [apiStocks, query])
 
-  const scopedTrades = viewMode === 'personal' ? personalTradeLogs : operatorTrades
+  const trimmedLoginEmail = loginEmail.trim().toLowerCase()
+  const isAdminUser = userSession ? configuredAdminEmails().includes(userSession.email.toLowerCase()) : false
+  const effectiveViewMode = isAdminUser ? 'operator' : viewMode
+  const isOperatorDataMode = effectiveViewMode === 'operator'
+  const scopedTrades = isOperatorDataMode ? operatorTrades : personalTradeLogs
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const filteredTrades = scopedTrades
     .filter((trade) => selectedStrategy === '전체' || strategyCode(trade.strategy) === selectedStrategy)
@@ -2294,8 +2453,9 @@ function App() {
   ].join(', ')
   const strategyCriteriaLine = 'A/B/C(+20% 즉시, -30%), D(+12%, -25%, 최대 30일), E/F(+20% 후 MACD 둔화·5일 대기, -30%)'
   const investingDays = daysFromFirstTrade(scopedTrades)
-  const trimmedLoginEmail = loginEmail.trim().toLowerCase()
-  const isAdminUser = userSession ? configuredAdminEmails().includes(userSession.email.toLowerCase()) : false
+  const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
+  const currentActivePage = !isAdminUser && activePage === 'board' ? 'home' : activePage
+  const isAdminLoginId = authMode === 'login' && trimmedLoginEmail === ADMIN_LOGIN_ID
   const isLoginEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedLoginEmail)
   const shouldShowEmailValidation = loginEmail.trim().length > 0 && !isLoginEmailValid
   const shouldShowPasswordValidation = loginPassword.trim().length > 0 && loginPassword.trim().length < 8
@@ -2306,24 +2466,67 @@ function App() {
     ? !isLoginEmailValid || isRecoverySent
     : authMode === 'signup'
       ? !isLoginEmailValid || loginPassword.trim().length < 8 || loginPasswordConfirm.trim().length < 8 || loginPassword.trim() !== loginPasswordConfirm.trim()
-      : !isLoginEmailValid || loginPassword.trim().length < 8
+      : isAdminLoginId
+        ? loginPassword.trim().length === 0
+        : !isLoginEmailValid || loginPassword.trim().length < 8
+
+  const markViewModeHintSeen = () => {
+    localStorage.setItem(VIEW_MODE_HINT_STORAGE_KEY, 'true')
+    setShowViewModeHint(false)
+  }
+
+  const changeViewMode = (nextViewMode: 'personal' | 'operator') => {
+    if (isAdminUser && nextViewMode === 'personal') return
+    localStorage.setItem(VIEW_MODE_STORAGE_KEY, nextViewMode)
+    setViewMode(nextViewMode)
+    setSelectedTickers([])
+    setSelectedHoldingTradeKeys([])
+    markViewModeHintSeen()
+  }
+
+  const openLoginForAddStock = () => {
+    setIsAddingStock(false)
+    setAuthMode('login')
+    setIsRecoverySent(false)
+    setLoginError('')
+    setIsLoginOpen(true)
+  }
+
+  const requestAddStock = () => {
+    if (!userSession) {
+      openLoginForAddStock()
+      return
+    }
+
+    setIsAddingStock((value) => !value)
+  }
 
   const addToWatchlist = (ticker: string) => {
-    if (watchlist.length >= MAX_WATCHLIST_ITEMS) {
+    if (!userSession) {
+      openLoginForAddStock()
+      return
+    }
+
+    const targetWatchlist = isOperatorDataMode ? operatorWatchlist : watchlist
+    if (targetWatchlist.length >= MAX_WATCHLIST_ITEMS) {
       setIsAddingStock(true)
       return
     }
 
-    setWatchlist((current) => current.includes(ticker) ? current : [...current, ticker])
+    if (isOperatorDataMode) {
+      setOperatorWatchlist((current) => current.includes(ticker) ? current : [...current, ticker])
+    } else {
+      setWatchlist((current) => current.includes(ticker) ? current : [...current, ticker])
+    }
     setQuery('')
     setIsAddingStock(false)
   }
 
   const removeSelectedStocks = () => {
-    if (viewMode === 'personal') {
-      setWatchlist((current) => current.filter((ticker) => !selectedTickers.includes(ticker)))
-    } else {
+    if (isOperatorDataMode) {
       setOperatorWatchlist((current) => current.filter((ticker) => !selectedTickers.includes(ticker)))
+    } else {
+      setWatchlist((current) => current.filter((ticker) => !selectedTickers.includes(ticker)))
     }
     setSelectedTickers([])
   }
@@ -2351,8 +2554,12 @@ function App() {
   }
 
   const resetSystemRecords = () => {
-    setWatchlist([])
-    setPersonalTradeLogs([])
+    if (isAdminUser) {
+      setOperatorWatchlist([])
+    } else {
+      setWatchlist([])
+      setPersonalTradeLogs([])
+    }
     setSelectedTickers([])
     setSelectedHoldingTradeKeys([])
     setQuery('')
@@ -2381,6 +2588,31 @@ function App() {
     const email = trimmedLoginEmail
     const password = loginPassword.trim()
     const passwordConfirm = loginPasswordConfirm.trim()
+
+    if (authMode === 'login' && email === ADMIN_LOGIN_ID) {
+      if (password !== ADMIN_LOGIN_PASSWORD) {
+        setLoginError('이메일 또는 비밀번호가 일치하지 않습니다.\n입력한 계정 정보를 다시 확인해 주세요.')
+        return
+      }
+
+      const nextSession = {
+        email: DEFAULT_ADMIN_EMAILS[0],
+        name: ADMIN_LOGIN_ID,
+        loggedInAt: new Date().toISOString(),
+      }
+
+      localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(nextSession))
+      localStorage.setItem(VIEW_MODE_STORAGE_KEY, 'operator')
+      setUserSession(nextSession)
+      setViewMode('operator')
+      setWatchlist(readStoredWatchlist(nextSession))
+      setSelectedTickers([])
+      setSelectedHoldingTradeKeys([])
+      clearAuthForm()
+      setAuthMode('login')
+      setIsLoginOpen(false)
+      return
+    }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setLoginError('이메일 형식이 올바르지 않습니다.')
@@ -2433,6 +2665,9 @@ function App() {
 
     localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(nextSession))
     setUserSession(nextSession)
+    setWatchlist(readStoredWatchlist(nextSession))
+    setSelectedTickers([])
+    setSelectedHoldingTradeKeys([])
     clearAuthForm()
     setAuthMode('login')
     setIsLoginOpen(false)
@@ -2441,9 +2676,42 @@ function App() {
   const logout = () => {
     localStorage.removeItem(AUTH_SESSION_STORAGE_KEY)
     setUserSession(null)
+    setWatchlist(readStoredWatchlist(null))
+    setSelectedTickers([])
+    setSelectedHoldingTradeKeys([])
     clearAuthForm()
     setAuthMode('login')
     setIsLoginOpen(false)
+  }
+
+  const closeLoginModalAfterAccountSwitch = () => {
+    setIsLoginOpen(false)
+    window.setTimeout(() => setIsLoginOpen(false), 0)
+  }
+
+  const switchTestSession = (mode: 'admin' | 'user') => {
+    closeLoginModalAfterAccountSwitch()
+    const nextSession = mode === 'admin'
+      ? {
+          email: DEFAULT_ADMIN_EMAILS[0],
+          name: ADMIN_LOGIN_ID,
+          loggedInAt: new Date().toISOString(),
+        }
+      : {
+          ...TEST_USER_SESSION,
+          loggedInAt: new Date().toISOString(),
+        }
+
+    localStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(nextSession))
+    setUserSession(nextSession)
+    setWatchlist(readStoredWatchlist(nextSession))
+    setSelectedTickers([])
+    setSelectedHoldingTradeKeys([])
+    localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode === 'admin' ? 'operator' : 'personal')
+    setViewMode(mode === 'admin' ? 'operator' : 'personal')
+    clearAuthForm()
+    setAuthMode('login')
+    closeLoginModalAfterAccountSwitch()
   }
 
   const closeLoginModal = () => {
@@ -2458,26 +2726,77 @@ function App() {
     field: keyof MarketEventEntry,
     value: string,
   ) => {
+    setIsMarketEventsDirty(true)
     setApiMarketEventGroups((current) => current.map((group, currentGroupIndex) => {
       if (currentGroupIndex !== groupIndex) return group
       return {
         ...group,
         entries: group.entries.map((entry, currentEntryIndex) => (
-          currentEntryIndex === entryIndex ? { ...entry, [field]: value } : entry
+          currentEntryIndex === entryIndex
+            ? { ...entry, [field]: value, ...(field === 'date' ? { status: undefined } : {}) }
+            : entry
         )),
       }
     }))
   }
 
+  const updateMarketEventYearLabel = (value: string) => {
+    setMarketEventYearLabel(value)
+    setIsMarketEventsDirty(true)
+  }
+
+  const updateMarketEventMonth = (monthIndex: number, value: string) => {
+    setMarketEventMonths((current) => current.map((month, index) => (index === monthIndex ? value : month)))
+    setApiMarketEventGroups((current) => current.map((group) => ({
+      ...group,
+      entries: group.entries.map((entry, index) => (index === monthIndex ? { ...entry, month: value } : entry)),
+    })))
+    setIsMarketEventsDirty(true)
+  }
+
   const saveMarketEventEntries = async () => {
-    if (!isAdminUser) return
+    if (!isAdminUser || !isMarketEventsDirty) return
+    const normalizedGroups = normalizeMarketEventDdays(apiMarketEventGroups)
     setIsSavingMarketEvents(true)
     try {
-      const saved = await saveMarketEvents(apiMarketEventGroups, marketEventsMeta)
+      const saved = await saveMarketEvents(normalizedGroups, marketEventsMeta, {
+        yearLabel: marketEventYearLabel,
+        months: marketEventMonths,
+      })
       setApiMarketEventGroups(saved.groups)
       setMarketEventsMeta(saved.meta)
+      if (saved.yearLabel) {
+        setMarketEventYearLabel(saved.yearLabel)
+      }
+      if (saved.months) {
+        setMarketEventMonths(saved.months)
+      }
+      setIsMarketEventsDirty(false)
     } finally {
       setIsSavingMarketEvents(false)
+    }
+  }
+
+  const refreshCurrentData = async () => {
+    if (!isAdminUser) return
+
+    const tickers = Array.from(new Set(tableStocks.map((stock) => stock.ticker)))
+    if (tickers.length === 0) {
+      setRefreshDataMessage('먼저 관심종목을 추가해 주세요.')
+      return
+    }
+
+    setIsRefreshingData(true)
+    setRefreshDataMessage('현재 시점 기준으로 데이터를 불러오는 중입니다...')
+    try {
+      const result = await refreshAppData(tickers)
+      const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>()
+      applyLoadedData(data)
+      setRefreshDataMessage(`${result.refreshedTickers.length}개 종목을 현재 시점 기준으로 갱신했습니다.`)
+    } catch {
+      setRefreshDataMessage('즉시 갱신에 실패했습니다. 로컬 API 서버를 켠 뒤 다시 시도해 주세요.')
+    } finally {
+      setIsRefreshingData(false)
     }
   }
 
@@ -2505,30 +2824,98 @@ function App() {
   }
 
   const deleteBoardPost = (postId: number) => {
-    setBoardPosts((currentPosts) => currentPosts.filter((post) => post.id !== postId || post.authorId !== boardCurrentUserId(userSession)))
+    setPendingBoardDeleteIds([postId])
+  }
+
+  const hideSelectedBoardPosts = () => {
+    if (selectedBoardPostIds.length === 0) return
+    const selectedIds = new Set(selectedBoardPostIds)
+    setBoardPosts((currentPosts) => currentPosts.map((post) => (
+      selectedIds.has(post.id) ? { ...post, hidden: true } : post
+    )))
+    setSelectedBoardPostIds([])
     setBoardPage(1)
   }
 
-  const tableStocks = viewMode === 'personal' ? watchlistStocks : operatorStocks
-  const isPersonalWatchlistEmpty = viewMode === 'personal' && tableStocks.length === 0
-  const isPersonalWatchlistFull = viewMode === 'personal' && watchlist.length >= MAX_WATCHLIST_ITEMS
+  const removeSelectedBoardPosts = () => {
+    if (selectedBoardPostIds.length === 0) return
+    setPendingBoardDeleteIds(selectedBoardPostIds)
+  }
+
+  const confirmBoardPostDeletion = () => {
+    if (pendingBoardDeleteIds.length === 0) return
+    const deleteIds = new Set(pendingBoardDeleteIds)
+    setBoardPosts((currentPosts) => currentPosts.filter((post) => (
+      !deleteIds.has(post.id) || (!isAdminUser && post.authorId !== boardCurrentUserId(userSession))
+    )))
+    setSelectedBoardPostIds([])
+    setPendingBoardDeleteIds([])
+    setBoardPage(1)
+  }
+
+  const tableStocks = isOperatorDataMode ? operatorStocks : watchlistStocks
+  const canEditCurrentWatchlist = effectiveViewMode === 'personal' || isAdminUser
+  const currentWatchlistTickers = isOperatorDataMode ? operatorWatchlist : watchlist
+  const isCurrentWatchlistEmpty = tableStocks.length === 0
+  const isCurrentWatchlistFull = canEditCurrentWatchlist && currentWatchlistTickers.length >= MAX_WATCHLIST_ITEMS
   const exampleStock = tableStocks[0]
-  const showEmptyTradeExample = viewMode === 'personal' && tableStocks.length > 0 && scopedTrades.length === 0
-  const showEmptyHoldingExample = viewMode === 'personal' && tableStocks.length > 0 && scopedOpenTrades.length === 0
+  const fairPricePendingLabel = nextMidnightUpdateLabel()
+  const currentPricePendingLabel = nextTwoHourUpdateLabel()
+  const showEmptyTradeExample = tableStocks.length > 0 && scopedTrades.length === 0
+  const showEmptyHoldingExample = tableStocks.length > 0 && scopedOpenTrades.length === 0
   const tradeBlankRows = Math.max(3, 22 - filteredTrades.length - (showEmptyTradeExample ? 1 : 0))
   const watchlistBlankRows = Math.max(0, 10 - tableStocks.length)
   const holdingBlankRows = Math.max(0, 10 - scopedOpenTrades.length - (showEmptyHoldingExample ? 1 : 0))
+  const addStockInlineControl = isAddingStock && canEditCurrentWatchlist && !isCurrentWatchlistFull ? (
+    <div className="inline-add analysis-inline-add" ref={inlineAddRef}>
+      <input
+        autoFocus
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
+        placeholder="삼성전자, 005930, AAPL"
+      />
+      {query && (
+        <div className="inline-results">
+          {searchResults.length > 0 ? searchResults.slice(0, 50).map((stock) => {
+            const isAlreadyAdded = currentWatchlistTickers.includes(stock.ticker)
+
+            return (
+              <button
+                disabled={isAlreadyAdded}
+                key={stock.ticker}
+                type="button"
+                onClick={() => addToWatchlist(stock.ticker)}
+              >
+                <span>
+                  <strong>{stock.name}</strong>
+                  <small>{stock.ticker} · {stock.market}</small>
+                </span>
+                <span>{isAlreadyAdded ? '이미 추가됨' : '추가하기'}</span>
+              </button>
+            )
+          }) : (
+            <div className="empty-result">
+              검색 결과가 없습니다.<br />
+              다른 종목명이나 티커로 다시 검색해 주세요.<br />
+              현재는 한국, 미국 주식만 추가가 가능합니다.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  ) : null
 
   return (
-    <main className="app-shell">
-      <header className="app-header">
+    <main className={`app-shell ${showViewModeHint ? 'onboarding-active' : ''}`}>
+      {showViewModeHint && <button className="view-mode-scrim" type="button" aria-label="안내 닫기" onClick={markViewModeHintSeen} />}
+      <header className={`app-header ${showViewModeHint ? 'onboarding-header' : ''}`}>
         <div className="brand">
           <img alt="공수성가 로고" className="brand-logo" src="/gongsu-logo.png" />
           <span>공수성가</span>
         </div>
         <nav className="gnb-menu" aria-label="주요 메뉴">
-          {gnbMenus.map((menu) => {
-            const isActive = (menu === 'HOME' && activePage === 'home') || (menu === '가치 분석' && activePage === 'value-analysis') || (menu === '기술 분석' && activePage === 'technical-analysis') || (menu === '시장 주요 이벤트' && activePage === 'market-events') || (menu === '시장 트렌드' && activePage === 'market-trends') || (menu === '게시판' && activePage === 'board')
+          {visibleGnbMenus.map((menu) => {
+            const isActive = (menu === 'HOME' && currentActivePage === 'home') || (menu === '가치 분석' && currentActivePage === 'value-analysis') || (menu === '기술 분석' && currentActivePage === 'technical-analysis') || (menu === '시장 주요 이벤트' && currentActivePage === 'market-events') || (menu === '시장 트렌드' && currentActivePage === 'market-trends') || (menu === '게시판' && currentActivePage === 'board')
 
             return (
               <button
@@ -2550,21 +2937,42 @@ function App() {
           })}
         </nav>
         <div className="updated-text">
-          <span>지표와 판단 결과는 2시간 간격으로 정각에 업데이트됩니다.</span>
+          <span>데이터는 2시간 간격으로 정각에 업데이트됩니다.</span>
           <span>공수성가 또한 실제 데이터이며, 참고할 수 있게 제공됩니다.</span>
           <span>단, 모든 투자의 책임은 본인에게 있습니다.</span>
+          {isAdminUser && refreshDataMessage && <strong>{refreshDataMessage}</strong>}
         </div>
-        <div className="segmented-tabs global-tabs" aria-label="화면 기준">
-          <button className={viewMode === 'personal' ? 'active' : ''} type="button" onClick={() => { setViewMode('personal'); setSelectedTickers([]); setSelectedHoldingTradeKeys([]) }}>
+        <div className={`segmented-tabs global-tabs view-mode-tabs ${showViewModeHint ? 'view-mode-tabs-highlight' : ''}`} aria-label="화면 기준">
+          <button
+            className={effectiveViewMode === 'personal' ? 'active' : ''}
+            disabled={isAdminUser}
+            title={isAdminUser ? '어드민 계정은 공수성가 탭만 사용할 수 있습니다.' : undefined}
+            type="button"
+            onClick={() => changeViewMode('personal')}
+          >
             본인
           </button>
-          <button className={viewMode === 'operator' ? 'active' : ''} type="button" onClick={() => { setViewMode('operator'); setSelectedTickers([]); setSelectedHoldingTradeKeys([]) }}>
+          <button className={effectiveViewMode === 'operator' ? 'active' : ''} type="button" onClick={() => changeViewMode('operator')}>
             공수성가
           </button>
+          {showViewModeHint && (
+            <div className="view-mode-hint">
+              <div className="view-mode-hint-copy">
+                <span className="view-mode-hint-kicker">TIP</span>
+                <span>본인과 공수성가 데이터를 이 탭에서 바로 바꿔볼 수 있어요. 잘 모르겠다면 먼저 공수성가부터 구경하면 돼요.</span>
+              </div>
+              <button className="view-mode-hint-close" type="button" aria-label="안내 닫기" onClick={markViewModeHintSeen} />
+            </div>
+          )}
         </div>
         <button className="reset-button" type="button" onClick={() => setIsResetConfirmOpen(true)}>
           초기화
         </button>
+        {isAdminUser && (
+          <button className="refresh-data-button" disabled={isRefreshingData} type="button" onClick={refreshCurrentData}>
+            {isRefreshingData ? '갱신 중' : '즉시 갱신'}
+          </button>
+        )}
         <button
           className={`login-button ${userSession ? 'logged-in-button' : ''}`}
           type="button"
@@ -2574,13 +2982,14 @@ function App() {
         </button>
       </header>
 
-      {activePage === 'home' ? (
+      {currentActivePage === 'home' ? (
       <section className="dashboard-grid">
-        <section className={`panel trading-log-panel ${isPersonalWatchlistEmpty ? 'dimmed-panel' : ''}`}>
+        <section className={`panel trading-log-panel ${isCurrentWatchlistEmpty ? 'dimmed-panel' : ''}`}>
           <div className="log-header">
             <div className="log-title-row">
               <h2>트레이딩 로그</h2>
               <div className="strategy-filter" aria-label="전략 필터">
+                <span className="strategy-filter-label">전략</span>
                 {['전체', ...strategyFilters].map((code) => (
                   <button
                     className={selectedStrategy === code ? 'active' : ''}
@@ -2620,7 +3029,7 @@ function App() {
                   <th>매수 신호 가격</th>
                   <th>매도 신호일</th>
                   <th>매도 신호 가격</th>
-                  <th>기준</th>
+                  <th>전략</th>
                   <th>수익률</th>
                   <th>보유 기간</th>
                   <th>결과</th>
@@ -2713,9 +3122,9 @@ function App() {
                 <span>총 {tableStocks.length}개</span>
               </div>
               <div className="heading-actions">
-                {viewMode === 'personal' ? (
+                {canEditCurrentWatchlist ? (
                   <>
-                    {isPersonalWatchlistFull && (
+                    {isCurrentWatchlistFull && (
                       <span className="watchlist-limit-copy">
                         관심 종목은 최대 {MAX_WATCHLIST_ITEMS}개까지 등록할 수 있습니다.
                         <br />
@@ -2728,11 +3137,11 @@ function App() {
                       </button>
                     )}
                     <button
-                      className={`add-stock-button ${isPersonalWatchlistFull ? 'watchlist-limit-button' : ''}`}
-                      disabled={isPersonalWatchlistFull}
+                      className={`add-stock-button ${isCurrentWatchlistFull ? 'watchlist-limit-button' : ''}`}
+                      disabled={isCurrentWatchlistFull}
                       ref={addStockButtonRef}
                       type="button"
-                      onClick={() => setIsAddingStock((value) => !value)}
+                      onClick={requestAddStock}
                     >
                       + 추가
                     </button>
@@ -2750,49 +3159,20 @@ function App() {
               </div>
             </div>
 
-            {isAddingStock && viewMode === 'personal' && !isPersonalWatchlistFull && (
-              <div className="inline-add" ref={inlineAddRef}>
-                <input
-                  autoFocus
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="삼성전자, 005930, AAPL"
-                />
-                {query && (
-                  <div className="inline-results">
-                    {searchResults.length > 0 ? searchResults.map((stock) => {
-                      const isAlreadyAdded = watchlist.includes(stock.ticker)
-
-                      return (
-                        <button
-                          disabled={isAlreadyAdded}
-                          key={stock.ticker}
-                          type="button"
-                          onClick={() => addToWatchlist(stock.ticker)}
-                        >
-                          <span>
-                            <strong>{stock.name}</strong>
-                            <small>{stock.ticker} · {stock.market}</small>
-                          </span>
-                          <span>{isAlreadyAdded ? '이미 추가됨' : '추가하기'}</span>
-                        </button>
-                      )
-                    }) : (
-                      <div className="empty-result">검색 결과가 없습니다.<br />다른 종목명이나 티커로 다시 검색해 주세요.</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+            {addStockInlineControl}
 
             <div className="sheet-wrap watchlist-sheet">
               {tableStocks.length === 0 ? (
                 <div className="watchlist-empty-panel">
                   <div className="empty-watchlist">
                     <strong>관심 종목이 없습니다.</strong>
-                    <span>먼저 종목을 추가해 주세요.</span>
-                    {viewMode === 'personal' && (
-                      <button type="button" onClick={() => setIsAddingStock(true)}>관심 종목 추가</button>
+                    <span>
+                      {isOperatorDataMode ? (
+                        '포트폴리오 조정 중, 조금만 기다려 주세요.'
+                      ) : '먼저 종목을 추가해 주세요.'}
+                    </span>
+                    {canEditCurrentWatchlist && (
+                      <button type="button" onClick={requestAddStock}>관심 종목 추가</button>
                     )}
                   </div>
                 </div>
@@ -2800,7 +3180,7 @@ function App() {
                 <table className="sheet-table watchlist-table">
                   <thead>
                     <tr>
-                      {viewMode === 'personal' && <th>선택</th>}
+                      {canEditCurrentWatchlist && <th>선택</th>}
                       <th>No</th>
                       <th>종목명</th>
                       <th>티커</th>
@@ -2815,7 +3195,7 @@ function App() {
                   <tbody>
                     {tableStocks.map((stock, index) => (
                       <tr key={stock.ticker}>
-                        {viewMode === 'personal' && (
+                        {canEditCurrentWatchlist && (
                           <td className="checkbox-cell">
                             <input
                               aria-label={`${stock.name} 선택`}
@@ -2835,8 +3215,16 @@ function App() {
                           </div>
                         </td>
                         <td className="ticker-cell">{stock.ticker}</td>
-                        <td className="number-cell">{stock.fairPrice}</td>
-                        <td className="number-cell">{stock.currentPrice}</td>
+                        <td className="number-cell">
+                          {isPendingValue(stock.fairPrice) ? (
+                            <span className="pending-update-label">{fairPricePendingLabel}</span>
+                          ) : stock.fairPrice}
+                        </td>
+                        <td className="number-cell">
+                          {isPendingValue(stock.currentPrice) ? (
+                            <span className="pending-update-label">{currentPricePendingLabel}</span>
+                          ) : stock.currentPrice}
+                        </td>
                         <td><span className={`status-badge ${statusClass(stock.valuation)}`}>{stock.valuation}</span></td>
                         <td><span className={`status-badge ${statusClass(stock.opinion)}`}>{stock.opinion}</span></td>
                         <td>
@@ -2856,7 +3244,7 @@ function App() {
                     ))}
                     {Array.from({ length: watchlistBlankRows }).map((_, index) => (
                       <tr className="blank-row" key={`watchlist-blank-${index}`}>
-                        {viewMode === 'personal' && <td></td>}
+                        {canEditCurrentWatchlist && <td></td>}
                         <td className="numbering-cell">&nbsp;</td>
                         <td>&nbsp;</td>
                         <td></td>
@@ -2874,14 +3262,14 @@ function App() {
             </div>
           </section>
 
-          <section className={`panel ${isPersonalWatchlistEmpty ? 'dimmed-panel' : ''}`}>
+          <section className={`panel ${isCurrentWatchlistEmpty ? 'dimmed-panel' : ''}`}>
             <div className="section-heading">
               <div className="section-title-inline">
                 <h2>보유중인 종목</h2>
                 <span>총 {scopedOpenTrades.length}개</span>
               </div>
               <div className="heading-actions">
-                {viewMode === 'personal' && (
+                {effectiveViewMode === 'personal' && (
                   <button
                     aria-hidden={selectedHoldingTradeKeys.length === 0}
                     className={`remove-selected-button ${selectedHoldingTradeKeys.length === 0 ? 'reserved-action-button' : ''}`}
@@ -2901,7 +3289,7 @@ function App() {
               <table className="sheet-table holding-table">
                 <thead>
                   <tr>
-                    {viewMode === 'personal' && <th>선택</th>}
+                    {effectiveViewMode === 'personal' && <th>선택</th>}
                     <th>No</th>
                     <th>티커</th>
                     <th>종목명</th>
@@ -2914,7 +3302,7 @@ function App() {
                 <tbody>
                   {showEmptyHoldingExample && exampleStock && (
                     <tr className="example-row">
-                      {viewMode === 'personal' && <td></td>}
+                      {effectiveViewMode === 'personal' && <td></td>}
                       <td className="numbering-cell">예시</td>
                       <td className="ticker-cell">{exampleStock.ticker}</td>
                       <td>
@@ -2931,7 +3319,7 @@ function App() {
                   )}
                   {scopedOpenTrades.map((trade, index) => (
                     <tr key={`open-${tradeKey(trade)}`}>
-                      {viewMode === 'personal' && (
+                      {effectiveViewMode === 'personal' && (
                         <td className="checkbox-cell">
                           <input
                             aria-label={`${stockName(trade.ticker)} 보유 항목 선택`}
@@ -2969,7 +3357,7 @@ function App() {
                   ))}
                   {Array.from({ length: holdingBlankRows }).map((_, index) => (
                     <tr className="blank-row" key={`holding-blank-${index}`}>
-                      {viewMode === 'personal' && <td></td>}
+                      {effectiveViewMode === 'personal' && <td></td>}
                       <td className="numbering-cell">&nbsp;</td>
                       <td>&nbsp;</td>
                       <td></td>
@@ -2985,19 +3373,24 @@ function App() {
           </section>
         </div>
       </section>
-      ) : activePage === 'market-events' ? (
+      ) : currentActivePage === 'market-events' ? (
         <MarketEventsPage
           groups={apiMarketEventGroups}
+          yearLabel={marketEventYearLabel}
+          months={marketEventMonths}
           isAdmin={isAdminUser}
           isSaving={isSavingMarketEvents}
+          isDirty={isMarketEventsDirty}
           onTooltipClose={() => setActiveTooltip(null)}
           onTooltipOpen={setActiveTooltip}
+          onYearLabelChange={updateMarketEventYearLabel}
+          onMonthChange={updateMarketEventMonth}
           onEventChange={updateMarketEventEntry}
           onSave={saveMarketEventEntries}
         />
-      ) : activePage === 'market-trends' ? (
+      ) : currentActivePage === 'market-trends' ? (
         <MarketTrendsPage rows={apiMarketTrendRows} />
-      ) : activePage === 'board' ? (
+      ) : currentActivePage === 'board' && isAdminUser ? (
         <BoardPage
           category={boardCategory}
           content={boardContent}
@@ -3005,41 +3398,41 @@ function App() {
           filter={boardFilter}
           page={boardPage}
           posts={boardPosts}
+          selectedPostIds={selectedBoardPostIds}
           showMineOnly={showMineOnly}
           sortDirection={boardSortDirection}
           onCategoryChange={setBoardCategory}
           onContentChange={setBoardContent}
           onDeletePost={deleteBoardPost}
           onFilterChange={setBoardFilter}
+          onHideSelectedPosts={hideSelectedBoardPosts}
           onPageChange={setBoardPage}
+          onRemoveSelectedPosts={removeSelectedBoardPosts}
+          onSelectedPostIdsChange={setSelectedBoardPostIds}
           onShowMineOnlyChange={setShowMineOnly}
           onSortDirectionChange={setBoardSortDirection}
           onSubmit={submitBoardPost}
         />
-      ) : activePage === 'value-analysis' ? (
+      ) : currentActivePage === 'value-analysis' ? (
         <ValueAnalysisPage
           stocks={tableStocks}
-          viewMode={viewMode}
+          viewMode={effectiveViewMode}
           valuationRows={apiValuationMetrics}
+          addStockControl={addStockInlineControl}
           onTooltipClose={() => setActiveTooltip(null)}
           onTooltipOpen={setActiveTooltip}
-          onAddStock={() => {
-            setActivePage('home')
-            setIsAddingStock(true)
-          }}
+          onAddStock={requestAddStock}
         />
       ) : (
         <TechnicalAnalysisPage
           stocks={tableStocks}
-          viewMode={viewMode}
+          viewMode={effectiveViewMode}
           marketSnapshot={apiMarketSnapshot}
           technicalRows={apiTechnicalRows}
+          addStockControl={addStockInlineControl}
           onTooltipClose={() => setActiveTooltip(null)}
           onTooltipOpen={setActiveTooltip}
-          onAddStock={() => {
-            setActivePage('home')
-            setIsAddingStock(true)
-          }}
+          onAddStock={requestAddStock}
         />
       )}
       {activeTooltip && (
@@ -3066,6 +3459,33 @@ function App() {
                 <div className="login-account-card">
                   <span>로그인 계정</span>
                   <strong>{userSession.email}</strong>
+                </div>
+                <div className="account-bypass-card">
+                  <span>테스트 전환</span>
+                  <div className="account-bypass-actions">
+                    <button
+                      className={!isAdminUser ? 'active' : ''}
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        switchTestSession('user')
+                      }}
+                    >
+                      일반 계정
+                    </button>
+                    <button
+                      className={isAdminUser ? 'active' : ''}
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        switchTestSession('admin')
+                      }}
+                    >
+                      어드민 계정
+                    </button>
+                  </div>
                 </div>
                 <div className="modal-actions auth-modal-actions">
                   <button className="modal-confirm logout-confirm auth-submit-button" type="button" onClick={logout}>
@@ -3102,7 +3522,7 @@ function App() {
                       setIsRecoverySent(false)
                     }}
                     placeholder="name@example.com"
-                    type="email"
+                    type={authMode === 'login' ? 'text' : 'email'}
                   />
                 </label>
                 {shouldShowEmailValidation && <span className="login-error">이메일 형식이 올바르지 않습니다.</span>}
@@ -3165,14 +3585,36 @@ function App() {
       {isResetConfirmOpen && (
         <div className="modal-backdrop" role="presentation">
           <div aria-modal="true" className="confirm-modal" role="dialog">
-            <h3>본인 기록을 모두 초기화할까요?</h3>
-            <p>본인 관심 종목, 보유중인 종목, 트레이딩 로그 등 시스템에 기록된 본인 데이터를 모두 삭제합니다. 단, 공수성가 데이터는 유지됩니다.</p>
+            <h3>{isAdminUser ? '공수성가 기록을 모두 초기화할까요?' : '본인 기록을 모두 초기화할까요?'}</h3>
+            <p>
+              {isAdminUser
+                ? '어드민 계정에서는 본인 탭과 공수성가 탭이 같은 데이터를 사용합니다. 초기화하면 공수성가 관심 종목 데이터가 삭제됩니다.'
+                : '본인 관심 종목, 보유중인 종목, 트레이딩 로그 등 시스템에 기록된 본인 데이터를 모두 삭제합니다. 단, 공수성가 데이터는 유지됩니다.'}
+            </p>
             <div className="modal-actions">
               <button className="modal-cancel" type="button" onClick={() => setIsResetConfirmOpen(false)}>
                 취소
               </button>
               <button className="modal-confirm" type="button" onClick={resetSystemRecords}>
                 초기화
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {pendingBoardDeleteIds.length > 0 && (
+        <div className="modal-backdrop" role="presentation">
+          <div aria-modal="true" className="confirm-modal" role="dialog">
+            <h3>게시글을 삭제할까요?</h3>
+            <p>
+              선택한 게시글 {pendingBoardDeleteIds.length}개를 삭제합니다. 삭제한 게시글은 다시 되돌릴 수 없습니다.
+            </p>
+            <div className="modal-actions">
+              <button className="modal-cancel" type="button" onClick={() => setPendingBoardDeleteIds([])}>
+                취소
+              </button>
+              <button className="modal-confirm" type="button" onClick={confirmBoardPostDeletion}>
+                삭제
               </button>
             </div>
           </div>

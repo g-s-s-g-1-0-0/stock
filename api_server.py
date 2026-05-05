@@ -11,6 +11,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
+from calculator.pipeline import read_search_universe, run
+
 ROOT_DIR = Path(__file__).resolve().parent
 CACHE_DIR = ROOT_DIR / "data" / "cache"
 WEB_PUBLIC_API_DIR = ROOT_DIR / "web" / "public" / "api"
@@ -31,13 +33,30 @@ def cache_path(filename: str) -> Path:
     return WEB_PUBLIC_API_DIR / filename
 
 
+def refresh_universe_for_tickers(tickers: list[str]) -> list[dict[str, str]]:
+    requested = {ticker.strip().upper() for ticker in tickers if isinstance(ticker, str) and ticker.strip()}
+    if not requested:
+        return []
+
+    rows = []
+    for stock in read_search_universe():
+        ticker = stock.get("ticker", "").upper()
+        if ticker in requested:
+            rows.append({
+                key: stock[key]
+                for key in ("ticker", "name", "market", "category", "industry", "rawIndustry", "products")
+                if key in stock
+            })
+    return rows[:50]
+
+
 class Handler(BaseHTTPRequestHandler):
     def _send_json(self, status: int, payload: dict | list) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Headers", "content-type")
-        self.send_header("Access-Control-Allow-Methods", "GET, PUT, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -79,6 +98,37 @@ class Handler(BaseHTTPRequestHandler):
                 encoding="utf-8",
             )
         self._send_json(200, payload)
+
+    def do_POST(self) -> None:  # noqa: N802
+        path = urlparse(self.path).path
+        if path != "/api/admin/refresh-data":
+            self._send_json(404, {"error": "not found"})
+            return
+
+        length = int(self.headers.get("content-length", "0"))
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+        except json.JSONDecodeError:
+            self._send_json(400, {"error": "invalid json"})
+            return
+
+        universe = refresh_universe_for_tickers(payload.get("tickers", []))
+        if not universe:
+            self._send_json(400, {"error": "refresh tickers are empty or unknown"})
+            return
+
+        try:
+            run("valuation", universe=universe)
+            run("technical", universe=universe)
+            run("stocks")
+        except Exception as exc:  # noqa: BLE001 - local refresh should report failures to the UI
+            self._send_json(500, {"error": str(exc)})
+            return
+
+        self._send_json(200, {
+            "ok": True,
+            "refreshedTickers": [stock["ticker"] for stock in universe],
+        })
 
 
 def main() -> None:

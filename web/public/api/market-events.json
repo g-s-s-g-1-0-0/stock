@@ -2,9 +2,611 @@
   "meta": {
     "kind": "market-events",
     "schedule": "manual",
-    "updatedAt": null,
-    "lastSuccessfulRun": null,
+    "updatedAt": "2026-05-04T08:20:27.230Z",
+    "lastSuccessfulRun": "2026-05-04T08:20:27.230Z",
     "failedReason": null
   },
-  "groups": []
+  "yearLabel": "2026년",
+  "months": [
+    "1월",
+    "2월",
+    "3월",
+    "4월",
+    "5월",
+    "6월",
+    "7월",
+    "8월",
+    "9월",
+    "10월",
+    "11월",
+    "12월"
+  ],
+  "groups": [
+    {
+      "title": "금리 발표",
+      "tooltip": "미국 기준금리 방향을 확인하는 FOMC 발표입니다. 금리 경로가 바뀌면 할인율, 성장주 밸류에이션, 환율 기대가 동시에 움직여 변동성이 커질 수 있습니다.",
+      "entries": [
+        {
+          "month": "1월",
+          "date": "2026. 1. 29",
+          "dday": "95",
+          "time": "3:00"
+        },
+        {
+          "month": "2월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "3월",
+          "date": "2026. 3. 19",
+          "dday": "46",
+          "time": "3:00"
+        },
+        {
+          "month": "4월",
+          "date": "2026. 4. 30",
+          "dday": "4",
+          "time": "3:00"
+        },
+        {
+          "month": "5월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "6월",
+          "date": "2026. 6. 18",
+          "dday": "-45",
+          "time": "3:00",
+          "highlighted": true
+        },
+        {
+          "month": "7월",
+          "date": "2026. 7. 30",
+          "dday": "-87",
+          "time": "3:00",
+          "highlighted": true
+        },
+        {
+          "month": "8월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "9월",
+          "date": "2026. 9. 17",
+          "dday": "-136",
+          "time": "3:00",
+          "highlighted": true
+        },
+        {
+          "month": "10월",
+          "date": "2026. 10. 29",
+          "dday": "-178",
+          "time": "3:00",
+          "highlighted": true
+        },
+        {
+          "month": "11월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "12월",
+          "date": "2026. 12. 10",
+          "dday": "-220",
+          "time": "4:00",
+          "highlighted": true
+        }
+      ]
+    },
+    {
+      "title": "고용보고서 발표",
+      "tooltip": "미국 고용시장 강도를 보여주는 핵심 지표 발표입니다. 고용이 예상보다 강하거나 약하면 금리 인하 기대와 경기 판단이 급변해 지수 변동성이 커질 수 있습니다.",
+      "entries": [
+        {
+          "month": "1월",
+          "date": "2026. 1. 9",
+          "dday": "115",
+          "time": "22:30"
+        },
+        {
+          "month": "2월",
+          "date": "2026. 2. 6",
+          "dday": "87",
+          "time": "22:30"
+        },
+        {
+          "month": "3월",
+          "date": "2026. 3. 6",
+          "dday": "59",
+          "time": "22:30"
+        },
+        {
+          "month": "4월",
+          "date": "2026. 4. 3",
+          "dday": "31",
+          "time": "22:30"
+        },
+        {
+          "month": "5월",
+          "date": "2026. 5. 8",
+          "dday": "-4",
+          "time": "22:30"
+        },
+        {
+          "month": "6월",
+          "date": "2026. 6. 5",
+          "dday": "-32",
+          "time": "22:30",
+          "highlighted": true
+        },
+        {
+          "month": "7월",
+          "date": "2026. 7. 2",
+          "dday": "-59",
+          "time": "22:30",
+          "highlighted": true
+        },
+        {
+          "month": "8월",
+          "date": "2026. 8. 7",
+          "dday": "-95",
+          "time": "22:30",
+          "highlighted": true
+        },
+        {
+          "month": "9월",
+          "date": "2026. 9. 4",
+          "dday": "-123",
+          "time": "22:30",
+          "highlighted": true
+        },
+        {
+          "month": "10월",
+          "date": "2026. 10. 2",
+          "dday": "-151",
+          "time": "22:30",
+          "highlighted": true
+        },
+        {
+          "month": "11월",
+          "date": "2026. 11. 6",
+          "dday": "-186",
+          "time": "22:30",
+          "highlighted": true
+        },
+        {
+          "month": "12월",
+          "date": "2026. 12. 4",
+          "dday": "-214",
+          "time": "22:30",
+          "highlighted": true
+        }
+      ]
+    },
+    {
+      "title": "CPI 발표",
+      "tooltip": "소비자물가 상승률을 확인하는 대표 인플레이션 지표입니다. 예상치를 벗어나면 금리 기대가 크게 조정되어 채권, 달러, 성장주가 함께 흔들릴 수 있습니다.",
+      "entries": [
+        {
+          "month": "1월",
+          "date": "2026. 1. 13",
+          "dday": "111",
+          "time": "22:30"
+        },
+        {
+          "month": "2월",
+          "date": "2026. 2. 11",
+          "dday": "82",
+          "time": "22:30"
+        },
+        {
+          "month": "3월",
+          "date": "2026. 3. 11",
+          "dday": "54",
+          "time": "21:30"
+        },
+        {
+          "month": "4월",
+          "date": "2026. 4. 10",
+          "dday": "24",
+          "time": "21:30"
+        },
+        {
+          "month": "5월",
+          "date": "2026. 5. 12",
+          "dday": "-8",
+          "time": "21:30"
+        },
+        {
+          "month": "6월",
+          "date": "2026. 6. 10",
+          "dday": "-37",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "7월",
+          "date": "2026. 7. 14",
+          "dday": "-71",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "8월",
+          "date": "2026. 8. 12",
+          "dday": "-100",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "9월",
+          "date": "2026. 9. 11",
+          "dday": "-130",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "10월",
+          "date": "2026. 10. 14",
+          "dday": "-163",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "11월",
+          "date": "2026. 11. 10",
+          "dday": "-190",
+          "time": "22:30",
+          "highlighted": true
+        },
+        {
+          "month": "12월",
+          "date": "2026. 12. 10",
+          "dday": "-220",
+          "time": "22:30",
+          "highlighted": true
+        }
+      ]
+    },
+    {
+      "title": "PPI 발표",
+      "tooltip": "생산자물가로 기업 비용 압력과 향후 소비자물가 방향을 가늠합니다. 원가 부담이 예상보다 크면 인플레이션 우려가 커져 금리와 주식 변동성이 확대될 수 있습니다.",
+      "entries": [
+        {
+          "month": "1월",
+          "date": "2026. 1. 14",
+          "dday": "110",
+          "time": "22:30"
+        },
+        {
+          "month": "2월",
+          "date": "2026. 2. 27",
+          "dday": "66",
+          "time": "22:30"
+        },
+        {
+          "month": "3월",
+          "date": "2026. 3. 18",
+          "dday": "47",
+          "time": "21:30"
+        },
+        {
+          "month": "4월",
+          "date": "2026. 4. 14",
+          "dday": "20",
+          "time": "21:30"
+        },
+        {
+          "month": "5월",
+          "date": "2026. 5. 13",
+          "dday": "-9",
+          "time": "21:30"
+        },
+        {
+          "month": "6월",
+          "date": "2026. 6. 11",
+          "dday": "-38",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "7월",
+          "date": "2026. 7. 15",
+          "dday": "-72",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "8월",
+          "date": "2026. 8. 13",
+          "dday": "-101",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "9월",
+          "date": "2026. 9. 10",
+          "dday": "-129",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "10월",
+          "date": "2026. 10. 15",
+          "dday": "-164",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "11월",
+          "date": "2026. 11. 13",
+          "dday": "-193",
+          "time": "22:30",
+          "highlighted": true
+        },
+        {
+          "month": "12월",
+          "date": "2026. 12. 15",
+          "dday": "-225",
+          "time": "22:30",
+          "highlighted": true
+        }
+      ]
+    },
+    {
+      "title": "PCE 발표",
+      "tooltip": "연준이 선호하는 물가 지표로 소비와 인플레이션 흐름을 함께 봅니다. 예상보다 높거나 낮으면 통화정책 기대가 바뀌어 지수와 금리 변동성이 커질 수 있습니다.",
+      "entries": [
+        {
+          "month": "1월",
+          "date": "2026. 1. 29",
+          "dday": "95",
+          "time": "22:30"
+        },
+        {
+          "month": "2월",
+          "date": "2026. 2. 26",
+          "dday": "67",
+          "time": "22:30"
+        },
+        {
+          "month": "3월",
+          "date": "2026. 3. 26",
+          "dday": "39",
+          "time": "21:30"
+        },
+        {
+          "month": "4월",
+          "date": "2026. 4. 30",
+          "dday": "4",
+          "time": "21:30"
+        },
+        {
+          "month": "5월",
+          "date": "2026. 5. 28",
+          "dday": "-24",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "6월",
+          "date": "2026. 6. 25",
+          "dday": "-52",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "7월",
+          "date": "2026. 7. 30",
+          "dday": "-87",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "8월",
+          "date": "2026. 8. 26",
+          "dday": "-114",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "9월",
+          "date": "2026. 9. 30",
+          "dday": "-149",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "10월",
+          "date": "2026. 10. 29",
+          "dday": "-178",
+          "time": "21:30",
+          "highlighted": true
+        },
+        {
+          "month": "11월",
+          "date": "2026. 11. 25",
+          "dday": "-205",
+          "time": "22:30",
+          "highlighted": true
+        },
+        {
+          "month": "12월",
+          "date": "2026. 12. 23",
+          "dday": "-233",
+          "time": "22:30",
+          "highlighted": true
+        }
+      ]
+    },
+    {
+      "title": "네마녀의 날",
+      "tooltip": "주가지수·주식 옵션과 선물 만기가 겹치는 날입니다. 포지션 정리와 롤오버 수급이 집중되어 장중 거래량과 변동성이 평소보다 커질 수 있습니다.",
+      "entries": [
+        {
+          "month": "1월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "2월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "3월",
+          "date": "2026. 3. 21",
+          "dday": "44",
+          "time": "6:00"
+        },
+        {
+          "month": "4월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "5월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "6월",
+          "date": "2026. 6. 20",
+          "dday": "-47",
+          "time": "5:00",
+          "highlighted": true
+        },
+        {
+          "month": "7월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "8월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "9월",
+          "date": "2026. 9. 19",
+          "dday": "-138",
+          "time": "5:00",
+          "highlighted": true
+        },
+        {
+          "month": "10월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "11월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "12월",
+          "date": "2026. 12. 19",
+          "dday": "-229",
+          "time": "6:00",
+          "highlighted": true
+        }
+      ]
+    },
+    {
+      "title": "나스닥 100 리밸런싱",
+      "tooltip": "나스닥 100 구성 종목과 비중이 조정되는 일정입니다. 편입·편출 및 비중 변화에 맞춘 패시브 수급이 발생해 관련 종목 변동성이 커질 수 있습니다.",
+      "entries": [
+        {
+          "month": "1월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "2월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "3월",
+          "date": "2026. 3. 21",
+          "dday": "44",
+          "time": "6:00"
+        },
+        {
+          "month": "4월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "5월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "6월",
+          "date": "2026. 6. 20",
+          "dday": "-47",
+          "time": "5:00",
+          "highlighted": true
+        },
+        {
+          "month": "7월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "8월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "9월",
+          "date": "2026. 9. 19",
+          "dday": "-138",
+          "time": "5:00",
+          "highlighted": true
+        },
+        {
+          "month": "10월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "11월",
+          "date": "-",
+          "dday": "-",
+          "time": "-"
+        },
+        {
+          "month": "12월",
+          "date": "2026. 12. 19",
+          "dday": "-229",
+          "time": "6:00",
+          "highlighted": true
+        }
+      ]
+    }
+  ]
 }
