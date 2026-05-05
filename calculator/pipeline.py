@@ -38,6 +38,7 @@ NEWS_SOURCES = [
 
 GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MARKET_TREND_MODEL = "llama-3.3-70b-versatile"
+CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 
 DEFAULT_UNIVERSE = [
     {"ticker": "005930", "name": "삼성전자", "market": "KR"},
@@ -119,6 +120,53 @@ def fmt_price(value: Any, market: str) -> str:
     if market == "KR":
         return f"₩{round(float(value)):,.0f}"
     return f"${float(value):,.2f}"
+
+
+def fmt_fear_greed_score(value: Any) -> str:
+    try:
+        return str(round(float(value)))
+    except (TypeError, ValueError):
+        return "-"
+
+
+def fear_greed_rating_label(value: Any) -> str:
+    labels = {
+        "extreme fear": "극단적 공포",
+        "fear": "공포",
+        "neutral": "중립",
+        "greed": "탐욕",
+        "extreme greed": "극단적 탐욕",
+    }
+    key = str(value or "").strip().lower()
+    return labels.get(key, str(value or "-"))
+
+
+def fetch_cnn_fear_greed_rows() -> list[list[str]]:
+    request = urllib.request.Request(
+        CNN_FEAR_GREED_URL,
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9,ko;q=0.8",
+            "Origin": "https://edition.cnn.com",
+            "Referer": "https://edition.cnn.com/markets/fear-and-greed",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=15) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+
+    data = payload.get("fear_and_greed", {})
+    current_score = fmt_fear_greed_score(data.get("score"))
+    previous_close = fmt_fear_greed_score(data.get("previous_close"))
+
+    if current_score == "-":
+        return []
+    return [
+        ["CNN 공포·탐욕지수 당일·전날", f"{current_score} / {previous_close}"],
+    ]
 
 
 def fmt_amount(value: Any, market: str) -> str:
@@ -207,6 +255,19 @@ def fair_price_range(stock: dict[str, Any], metric: dict[str, str]) -> str:
     else:
         low_multiple, high_multiple = 50, 70
     return f"{fmt_price(eps * low_multiple, stock['market'])} ~ {fmt_price(eps * high_multiple, stock['market'])}"
+
+
+def valuation_from_price_range(current_price: str, fair_price: str) -> str:
+    current = parse_amount(current_price)
+    parts = [parse_amount(part) for part in fair_price.split("~")]
+    if current is None or len(parts) != 2 or parts[0] is None or parts[1] is None:
+        return "보통"
+    low, high = parts
+    if current < low:
+        return "저평가"
+    if current > high:
+        return "고평가"
+    return "보통"
 
 
 def latest_technical_row(stock: dict[str, str]) -> dict[str, str] | None:
@@ -302,6 +363,14 @@ def latest_technical_row(stock: dict[str, str]) -> dict[str, str] | None:
 def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[str, Any]:
     rows: dict[str, dict[str, str]] = read_cache("technical").get("rows", {})
     errors: list[dict[str, str]] = []
+    market_snapshot = [
+        ["시장 주요 이벤트", "당분간 없음"],
+    ]
+    try:
+        market_snapshot.extend(fetch_cnn_fear_greed_rows())
+    except Exception as exc:  # noqa: BLE001 - external market data should not block refresh
+        errors.append({"ticker": "CNN_FEAR_GREED", "error": str(exc)})
+
     for stock in (universe or read_universe())[:50]:
         try:
             row = latest_technical_row(stock)
@@ -317,10 +386,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
             "lastSuccessfulRun": now_iso() if rows else None,
             "failedReason": "; ".join(f"{e['ticker']}: {e['error']}" for e in errors) if errors else None,
         },
-        "marketSnapshot": [
-            ["시장 주요 이벤트", "캐시 기준"],
-            ["기술분석 갱신 주기", "2시간"],
-        ],
+        "marketSnapshot": market_snapshot,
         "rows": rows,
         "errors": errors,
     }
@@ -365,13 +431,15 @@ def build_stocks_cache() -> dict[str, Any]:
     for stock in read_search_universe():
         technical = technical_rows.get(stock["ticker"], {})
         valuation = valuation_rows.get(stock["ticker"], {})
+        fair_price = fair_price_range(stock, valuation)
+        current_price = technical.get("currentPrice", "-")
         rows.append({
             "ticker": stock["ticker"],
             "name": stock["name"],
             "market": stock["market"],
-            "fairPrice": fair_price_range(stock, valuation),
-            "currentPrice": technical.get("currentPrice", "-"),
-            "valuation": "보통",
+            "fairPrice": fair_price,
+            "currentPrice": current_price,
+            "valuation": valuation_from_price_range(current_price, fair_price),
             "opinion": technical.get("opinion", "관망"),
             "strategies": [technical["진입 전략"]] if technical.get("진입 전략") not in (None, "-") else [],
             "category": stock_category(stock),

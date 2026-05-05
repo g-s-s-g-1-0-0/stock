@@ -360,7 +360,7 @@
   overflow: hidden;
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -389,9 +389,9 @@
 }
 
 .strategy-filter-label {
-  color: var(--muted);
+  color: var(--text-h);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   margin-right: 8px;
 }
 
@@ -799,11 +799,11 @@
 }
 
 .trading-log-table {
-  min-width: 1080px;
+  min-width: 1180px;
 }
 
 .watchlist-table {
-  min-width: 1080px;
+  min-width: 1220px;
 }
 
 .holding-table {
@@ -827,8 +827,8 @@
 .value-analysis-heading p {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
-  line-height: 1.35;
+  font-size: 14px;
+  line-height: 1.16;
 }
 
 .value-analysis-sheet {
@@ -1658,7 +1658,11 @@
 
 .example-note {
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 400;
+}
+
+.example-row .numbering-cell {
+  font-weight: 400;
 }
 
 .name-cell {
@@ -1685,6 +1689,10 @@
 .watchlist-table .strategy-data-cell,
 .holding-table td:nth-child(5) {
   text-align: left;
+}
+
+.holding-table .holding-example-note-cell {
+  text-align: center !important;
 }
 
 .market-flag {
@@ -1843,6 +1851,21 @@
   color: #dc2626;
 }
 
+.status-badge.valuation-low {
+  background: rgba(239, 68, 68, 0.13);
+  color: #dc2626;
+}
+
+.status-badge.valuation-normal {
+  background: rgba(100, 116, 139, 0.14);
+  color: #64748b;
+}
+
+.status-badge.valuation-high {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
 .result-badge {
   cursor: help;
   outline: none;
@@ -1865,6 +1888,19 @@
 
 .trading-log-table .strategy-pill {
   font-weight: 900;
+}
+
+.mega-trend-cell {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.mega-trend-cell.positive {
+  color: #16a34a;
+}
+
+.mega-trend-cell.neutral {
+  color: #64748b;
 }
 
 .strategy-item {
@@ -1937,6 +1973,10 @@
   text-align: left;
   white-space: normal;
   transform: translate(-50%, -100%);
+}
+
+.market-events-floating-tooltip {
+  width: 330px;
 }
 
 .modal-backdrop {
@@ -2557,6 +2597,10 @@
   text-align: left !important;
 }
 
+.technical-analysis-table td.dash-cell {
+  text-align: center !important;
+}
+
 
 .technical-strategy-cell {
   min-width: 190px !important;
@@ -2598,7 +2642,7 @@
   font-size: 12px;
 }
 
-.footer-links button {
+.footer-links a {
   border: 0;
   background: transparent;
   color: var(--muted);
@@ -2606,10 +2650,11 @@
   font: inherit;
   font-weight: 800;
   padding: 0;
+  text-decoration: none;
 }
 
-.footer-links button:hover,
-.footer-links button:focus-visible {
+.footer-links a:hover,
+.footer-links a:focus-visible {
   color: var(--text-h);
   outline: none;
   text-decoration: underline;
