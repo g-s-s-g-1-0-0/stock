@@ -43,7 +43,7 @@ type TooltipState = {
 
 type ActivePage = 'home' | 'value-analysis' | 'technical-analysis' | 'market-events' | 'market-trends' | 'board'
 
-type AuthMode = 'login' | 'signup' | 'recover'
+type AuthMode = 'login' | 'signup' | 'recover' | 'reset'
 type BoardCategory = '칭찬' | '버그' | '건의' | '기타'
 type BoardFilter = '전체' | BoardCategory
 type BoardSortDirection = 'desc' | 'asc'
@@ -122,6 +122,13 @@ const OPERATOR_WATCHLIST_STORAGE_KEY = 'gongsu-operator-watchlist'
 const VIEW_MODE_STORAGE_KEY = 'gongsu-view-mode'
 const VIEW_MODE_HINT_STORAGE_KEY = 'gongsu-view-mode-hint-seen'
 const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
+const IS_DEV_MODE = import.meta.env.DEV
+const TEST_USER_SESSION: UserSession = {
+  id: 'local-test-user',
+  email: 'test@gongsu.local',
+  name: '테스트',
+  loggedInAt: '',
+}
 
 function configuredAdminEmails() {
   return (import.meta.env.VITE_ADMIN_EMAILS ?? DEFAULT_ADMIN_EMAILS.join(','))
@@ -2580,7 +2587,7 @@ function App() {
       }
     }
 
-    const syncAuthUser = async (user: User | null) => {
+    const syncAuthUser = async (user: User | null, keepLoginModal = false) => {
       if (!isMounted) return
       if (!user) {
         setUserSession(null)
@@ -2592,6 +2599,10 @@ function App() {
 
       const nextSession = sessionFromSupabaseUser(user)
       setUserSession(nextSession)
+      if (!keepLoginModal) {
+        setIsLoginOpen(false)
+        setAuthMode('login')
+      }
       localStorage.removeItem(LEGACY_AUTH_SESSION_STORAGE_KEY)
       await ensureProfile(nextSession)
       await loadServiceData(nextSession)
@@ -2601,8 +2612,16 @@ function App() {
       void syncAuthUser(data.session?.user ?? null)
     })
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      void syncAuthUser(session?.user ?? null)
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthMode('reset')
+        setLoginPassword('')
+        setLoginPasswordConfirm('')
+        setLoginError('')
+        setAuthInfoMessage('')
+        setIsLoginOpen(true)
+      }
+      void syncAuthUser(session?.user ?? null, event === 'PASSWORD_RECOVERY')
     })
 
     return () => {
@@ -2681,14 +2700,16 @@ function App() {
   const isLoginEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedLoginEmail)
   const shouldShowEmailValidation = loginEmail.trim().length > 0 && !isLoginEmailValid
   const shouldShowPasswordValidation = loginPassword.trim().length > 0 && loginPassword.trim().length < 8
-  const shouldShowPasswordConfirmValidation = authMode === 'signup'
+  const shouldShowPasswordConfirmValidation = (authMode === 'signup' || authMode === 'reset')
     && loginPasswordConfirm.trim().length > 0
     && loginPassword.trim() !== loginPasswordConfirm.trim()
   const isAuthSubmitDisabled = authMode === 'recover'
     ? !isLoginEmailValid || isRecoverySent
-    : authMode === 'signup'
-      ? !isLoginEmailValid || loginPassword.trim().length < 8 || loginPasswordConfirm.trim().length < 8 || loginPassword.trim() !== loginPasswordConfirm.trim()
-      : !isLoginEmailValid || loginPassword.trim().length < 8
+    : authMode === 'reset'
+      ? loginPassword.trim().length < 8 || loginPasswordConfirm.trim().length < 8 || loginPassword.trim() !== loginPasswordConfirm.trim()
+      : authMode === 'signup'
+        ? !isLoginEmailValid || loginPassword.trim().length < 8 || loginPasswordConfirm.trim().length < 8 || loginPassword.trim() !== loginPasswordConfirm.trim()
+        : !isLoginEmailValid || loginPassword.trim().length < 8
   const serviceStatusMessage = !isSupabaseConfigured
     ? 'Supabase 프로젝트 URL과 anon key를 .env에 입력해 주세요.'
     : !isRemoteDataReady
@@ -2830,7 +2851,7 @@ function App() {
       return
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (authMode !== 'reset' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setLoginError('이메일 형식이 올바르지 않습니다.')
       return
     }
@@ -2840,17 +2861,41 @@ function App() {
         redirectTo: window.location.origin,
       })
       if (error) {
-        setLoginError('비밀번호 재설정 안내를 보내지 못했습니다.\n잠시 후 다시 시도해 주세요.')
+        setLoginError(`비밀번호 재설정 안내를 보내지 못했습니다.\n${error.message}`)
         return
       }
       setLoginError('')
-      setAuthInfoMessage('비밀번호 재설정 안내를 보냈습니다.\n입력한 이메일함을 확인해 주세요.')
+      setAuthInfoMessage('계정이 등록된 이메일이라면 재설정 안내가 발송됩니다.\n입력한 이메일함을 확인해 주세요.')
       setIsRecoverySent(true)
       return
     }
 
     if (password.length < 8) {
       setLoginError('비밀번호는 8자 이상이어야 합니다.\n8자 이상 입력하면 계속 진행할 수 있습니다.')
+      return
+    }
+
+    if (authMode === 'reset') {
+      if (password !== passwordConfirm) {
+        setLoginError('비밀번호가 일치하지 않습니다.\n비밀번호 확인란을 다시 입력해 주세요.')
+        return
+      }
+
+      const { data, error } = await supabase.auth.updateUser({ password })
+      if (error || !data.user) {
+        setLoginError('비밀번호를 변경하지 못했습니다.\n재설정 링크를 다시 요청해 주세요.')
+        return
+      }
+
+      const nextSession = sessionFromSupabaseUser(data.user)
+      setUserSession(nextSession)
+      await ensureProfile(nextSession)
+      await loadServiceData(nextSession)
+      setSelectedTickers([])
+      setSelectedHoldingTradeKeys([])
+      clearAuthForm()
+      setAuthMode('login')
+      setIsLoginOpen(false)
       return
     }
 
@@ -2873,7 +2918,7 @@ function App() {
       if (error) {
         setLoginError(error.message.includes('already registered')
           ? '이미 가입된 이메일입니다.\n로그인 탭에서 기존 계정으로 로그인해 주세요.'
-          : '회원가입을 완료하지 못했습니다.\n잠시 후 다시 시도해 주세요.')
+          : `회원가입을 완료하지 못했습니다.\n${error.message}`)
         return
       }
 
@@ -2912,6 +2957,37 @@ function App() {
     clearAuthForm()
     setAuthMode('login')
     setIsLoginOpen(false)
+  }
+
+  const closeLoginModalAfterAccountSwitch = () => {
+    setIsLoginOpen(false)
+    window.setTimeout(() => setIsLoginOpen(false), 0)
+  }
+
+  const switchTestSession = (mode: 'admin' | 'user') => {
+    closeLoginModalAfterAccountSwitch()
+    const adminEmail = configuredAdminEmails()[0] ?? DEFAULT_ADMIN_EMAILS[0]
+    const nextSession = mode === 'admin'
+      ? {
+          id: 'local-test-admin',
+          email: adminEmail,
+          name: '어드민',
+          loggedInAt: new Date().toISOString(),
+        }
+      : {
+          ...TEST_USER_SESSION,
+          loggedInAt: new Date().toISOString(),
+        }
+
+    setUserSession(nextSession)
+    setWatchlist(readStoredWatchlist(nextSession))
+    setSelectedTickers([])
+    setSelectedHoldingTradeKeys([])
+    localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode === 'admin' ? 'operator' : 'personal')
+    setViewMode(mode === 'admin' ? 'operator' : 'personal')
+    clearAuthForm()
+    setAuthMode('login')
+    closeLoginModalAfterAccountSwitch()
   }
 
   const closeLoginModal = () => {
@@ -3716,14 +3792,43 @@ function App() {
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={closeLoginModal}>
               ×
             </button>
-            <h3>{userSession ? '내 계정' : authMode === 'recover' ? '비밀번호 찾기' : '로그인'}</h3>
-            {userSession ? (
+            <h3>{userSession && authMode !== 'reset' ? '내 계정' : authMode === 'recover' ? '비밀번호 찾기' : authMode === 'reset' ? '비밀번호 변경' : '로그인'}</h3>
+            {userSession && authMode !== 'reset' ? (
               <>
                 <p>현재 계정으로 관심 종목과 게시글을 여러 기기에서 관리할 수 있습니다.</p>
                 <div className="login-account-card">
                   <span>로그인 계정</span>
                   <strong>{userSession.email}</strong>
                 </div>
+                {IS_DEV_MODE && (
+                  <div className="account-bypass-card">
+                    <span>테스트 전환</span>
+                    <div className="account-bypass-actions">
+                      <button
+                        className={!isAdminUser ? 'active' : ''}
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          switchTestSession('user')
+                        }}
+                      >
+                        일반 계정
+                      </button>
+                      <button
+                        className={isAdminUser ? 'active' : ''}
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          switchTestSession('admin')
+                        }}
+                      >
+                        어드민 계정
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="modal-actions auth-modal-actions">
                   <button className="modal-confirm logout-confirm auth-submit-button" type="button" onClick={logout}>
                     로그아웃
@@ -3732,7 +3837,7 @@ function App() {
               </>
             ) : (
               <>
-                {authMode !== 'recover' ? (
+                {authMode !== 'recover' && authMode !== 'reset' ? (
                   <div className="auth-mode-tabs" aria-label="인증 방식">
                     <button className={authMode === 'login' ? 'active' : ''} type="button" onClick={() => switchAuthMode('login')}>
                       로그인
@@ -3746,15 +3851,16 @@ function App() {
                     로그인으로 돌아가기
                   </button>
                 )}
-                <p>{authMode === 'login' ? '가입한 이메일과 비밀번호로 로그인해 주세요.' : authMode === 'signup' ? '이메일 인증으로 계정을 만들어 주세요.' : '가입한 이메일로 비밀번호 재설정 안내를 받을 수 있습니다.'}</p>
+                <p>{authMode === 'login' ? '가입한 이메일과 비밀번호로 로그인해 주세요.' : authMode === 'signup' ? '이메일 인증으로 계정을 만들어 주세요.' : authMode === 'reset' ? '새 비밀번호를 입력해 변경을 완료해 주세요.' : '가입한 이메일을 입력하면 비밀번호 재설정 안내를 받을 수 있습니다.'}</p>
                 {serviceStatusMessage && (
                   <div className="recovery-sent-card">
                     <strong>{isSupabaseConfigured ? '계정 동기화 중입니다.' : '서비스 계정 설정이 필요합니다.'}</strong>
                     <span>{serviceStatusMessage}</span>
                   </div>
                 )}
-                <label className="login-field">
-                  <span>이메일</span>
+                {authMode !== 'reset' && (
+                  <label className="login-field">
+                    <span>이메일</span>
                   <input
                     autoFocus
                     aria-invalid={shouldShowEmailValidation}
@@ -3766,9 +3872,10 @@ function App() {
                     }}
                     placeholder="name@example.com"
                     type="email"
-                  />
-                </label>
-                {shouldShowEmailValidation && <span className="login-error">이메일 형식이 올바르지 않습니다.</span>}
+                    />
+                  </label>
+                )}
+                {authMode !== 'reset' && shouldShowEmailValidation && <span className="login-error">이메일 형식이 올바르지 않습니다.</span>}
                 {authMode !== 'recover' && (
                   <>
                     <label className="login-field">
@@ -3790,7 +3897,7 @@ function App() {
                         비밀번호를 잊으셨나요?
                       </button>
                     )}
-                    {authMode === 'signup' && (
+                    {(authMode === 'signup' || authMode === 'reset') && (
                       <label className="login-field">
                         <span>비밀번호 확인</span>
                         <input
@@ -3818,7 +3925,7 @@ function App() {
                 {loginError && <span className="login-error">{loginError}</span>}
                 <div className="modal-actions auth-modal-actions">
                   <button className="modal-confirm auth-submit-button" disabled={isAuthSubmitDisabled} type="submit">
-                    {authMode === 'login' ? '로그인' : authMode === 'signup' ? '회원가입' : '재설정 안내 받기'}
+                    {authMode === 'login' ? '로그인' : authMode === 'signup' ? '회원가입' : authMode === 'reset' ? '비밀번호 변경하기' : '재설정 안내 받기'}
                   </button>
                 </div>
               </>
