@@ -214,6 +214,26 @@ function readStoredOperatorWatchlist() {
   }
 }
 
+const APP_DATA_CACHE_STORAGE_KEY = 'gssg-app-data-cache-v1'
+
+function readCachedAppData() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(APP_DATA_CACHE_STORAGE_KEY) ?? 'null') as AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow> | null
+    if (!cached || typeof cached !== 'object') return null
+    return cached
+  } catch {
+    return null
+  }
+}
+
+function storeCachedAppData(data: AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>) {
+  try {
+    localStorage.setItem(APP_DATA_CACHE_STORAGE_KEY, JSON.stringify(data))
+  } catch {
+    // Cache is an optimization only; keep rendering with in-memory data.
+  }
+}
+
 function readStoredViewMode() {
   return localStorage.getItem(VIEW_MODE_STORAGE_KEY) === 'operator' ? 'operator' : 'personal'
 }
@@ -2789,6 +2809,7 @@ function BoardPage({
 }
 
 function App() {
+  const cachedAppData = useMemo(() => readCachedAppData(), [])
   const [query, setQuery] = useState('')
   const [watchlist, setWatchlist] = useState<string[]>(() => readStoredWatchlist())
   const [operatorWatchlist, setOperatorWatchlist] = useState<string[]>(() => readStoredOperatorWatchlist())
@@ -2823,14 +2844,14 @@ function App() {
   const [canUseAccountSwitch, setCanUseAccountSwitch] = useState(false)
   const [authInfoMessage, setAuthInfoMessage] = useState('')
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
-  const [apiStocks, setApiStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
-  const [apiValuationMetrics, setApiValuationMetrics] = useState<Record<string, ValuationMetric>>({})
-  const [apiTechnicalRows, setApiTechnicalRows] = useState<Record<string, Record<string, string>>>({})
-  const [apiMarketSnapshot, setApiMarketSnapshot] = useState<string[][]>(technicalMarketSnapshot)
-  const [apiMarketEventGroups, setApiMarketEventGroups] = useState<MarketEventGroup[]>(marketEventGroups)
-  const [marketEventYearLabel, setMarketEventYearLabel] = useState('2026년')
-  const [marketEventMonths, setMarketEventMonths] = useState(eventMonths)
-  const [apiMarketTrendRows, setApiMarketTrendRows] = useState<MarketTrendRow[]>([])
+  const [apiStocks, setApiStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? cachedAppData.stocks.rows : searchUniverse.map(stockSearchShell))
+  const [apiValuationMetrics, setApiValuationMetrics] = useState<Record<string, ValuationMetric>>(() => cachedAppData?.valuation?.rows ?? {})
+  const [apiTechnicalRows, setApiTechnicalRows] = useState<Record<string, Record<string, string>>>(() => cachedAppData?.technical?.rows ?? {})
+  const [apiMarketSnapshot, setApiMarketSnapshot] = useState<string[][]>(() => cachedAppData?.technical?.marketSnapshot && isMeaningfulMarketSnapshot(cachedAppData.technical.marketSnapshot) ? mergeMarketSnapshot(cachedAppData.technical.marketSnapshot) : technicalMarketSnapshot)
+  const [apiMarketEventGroups, setApiMarketEventGroups] = useState<MarketEventGroup[]>(() => cachedAppData?.marketEvents?.groups?.length ? cachedAppData.marketEvents.groups : marketEventGroups)
+  const [marketEventYearLabel, setMarketEventYearLabel] = useState(() => cachedAppData?.marketEvents?.yearLabel ?? '2026년')
+  const [marketEventMonths, setMarketEventMonths] = useState(() => cachedAppData?.marketEvents?.months?.length ? cachedAppData.marketEvents.months : eventMonths)
+  const [apiMarketTrendRows, setApiMarketTrendRows] = useState<MarketTrendRow[]>(() => cachedAppData?.marketTrends?.rows ?? [])
   const [marketEventsMeta, setMarketEventsMeta] = useState<RuntimeMeta | undefined>()
   const [isSavingMarketEvents, setIsSavingMarketEvents] = useState(false)
   const [isMarketEventsDirty, setIsMarketEventsDirty] = useState(false)
@@ -2847,6 +2868,7 @@ function App() {
   const watchlistSortMenuRef = useRef<HTMLDivElement | null>(null)
 
   const applyLoadedData = (data: AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>) => {
+    storeCachedAppData(data)
     if (data.stocks?.rows && data.stocks.rows.length > 0) {
       setApiStocks(data.stocks.rows)
     }
@@ -3067,7 +3089,6 @@ function App() {
   }
 
   async function loadServiceData(session: UserSession | null) {
-    setIsRemoteDataReady(false)
     try {
       const [personalTickers, operatorTickersFromDb, loadedSettings] = await Promise.all([
         session ? loadWatchlist('personal', session) : Promise.resolve(null),
@@ -3637,15 +3658,31 @@ function App() {
     }
 
     setIsRefreshingData(true)
-    setRefreshDataMessage('현재 시점 기준으로 데이터를 불러오는 중입니다...')
+    setRefreshDataMessage('데이터 갱신 작업을 실행하는 중입니다...')
     try {
-      const result = await refreshAppData(tickers)
+      if (!supabase) {
+        throw new Error('Supabase 연결값이 설정되지 않았습니다.')
+      }
+
+      const { data: authData } = await supabase.auth.getSession()
+      const accessToken = authData.session?.access_token
+      const result = await refreshAppData(tickers, accessToken)
+
+      if (result.mode === 'workflow_dispatch') {
+        setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 완료되면 최신 데이터가 자동 반영됩니다.')
+        await recordApiLog('refresh-data', 'success', 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다.', {
+          tickers: result.refreshedTickers,
+          actionsUrl: result.actionsUrl,
+        })
+        return
+      }
+
       const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>()
       applyLoadedData(data)
       setRefreshDataMessage(`${result.refreshedTickers.length}개 종목을 현재 시점 기준으로 갱신했습니다.`)
       await recordApiLog('refresh-data', 'success', `${result.refreshedTickers.length}개 종목을 갱신했습니다.`, { tickers: result.refreshedTickers })
     } catch (error) {
-      setRefreshDataMessage('즉시 갱신에 실패했습니다. 로컬 API 서버를 켠 뒤 다시 시도해 주세요.')
+      setRefreshDataMessage('즉시 갱신에 실패했습니다. GitHub Actions 토큰과 Vercel 환경 변수를 확인해 주세요.')
       await recordApiLog('refresh-data', 'failure', error instanceof Error ? error.message : '데이터 즉시 갱신에 실패했습니다.', { tickers })
     } finally {
       setIsRefreshingData(false)

@@ -112,26 +112,41 @@ export async function saveMarketEvents<TGroup>(
   throw new Error('시장 주요 이벤트 저장에 실패했습니다.')
 }
 
-export async function refreshAppData(tickers: string[]) {
-  const endpoints = ['/api/admin/refresh-data', 'http://127.0.0.1:8787/api/admin/refresh-data']
+export async function refreshAppData(tickers: string[], accessToken?: string) {
+  const endpoints = import.meta.env.DEV
+    ? ['/api/admin/trigger-refresh', '/api/admin/refresh-data', 'http://127.0.0.1:8787/api/admin/refresh-data']
+    : ['/api/admin/trigger-refresh']
   let lastError = ''
 
   for (const endpoint of endpoints) {
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({ tickers }),
       })
 
       if (response.ok) {
-        return await response.json() as { ok: boolean; refreshedTickers: string[] }
+        const payload = await response.json() as {
+          ok: boolean
+          refreshedTickers?: string[]
+          mode?: 'workflow_dispatch'
+          message?: string
+          actionsUrl?: string
+        }
+        return {
+          ...payload,
+          refreshedTickers: payload.refreshedTickers ?? tickers,
+        }
       }
 
       const payload = await response.json().catch(() => null) as { error?: string } | null
       lastError = payload?.error ?? response.statusText
     } catch {
-      // Try the local API server fallback.
+      // Try the next refresh endpoint fallback.
     }
   }
 
