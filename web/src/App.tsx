@@ -1335,8 +1335,31 @@ function tradeKey(trade: TradeLog) {
   return `${trade.ticker}-${trade.buyDate}`
 }
 
+function displayIndustryLabel(industry?: string) {
+  const value = industry?.trim()
+  if (!value || value === '-') return '-'
+
+  const items = value
+    .replaceAll('，', ',')
+    .split(',')
+    .map((item) => item.trim()
+      .replaceAll(' 등 제조 및 판매', '')
+      .replaceAll(' 등 제조/판매', '')
+      .replaceAll(' 제조 및 판매', '')
+      .replaceAll(' 제조/판매', '')
+      .replaceAll(' 개발/운영 서비스 등', '')
+      .replaceAll(' 개발·운영 서비스 등', '')
+      .replaceAll(' 서비스 등', '')
+      .replaceAll(' 사업 등', '')
+      .replace(/ 등$/, '')
+      .trim())
+    .filter(Boolean)
+
+  return Array.from(new Set(items)).slice(0, 5).join(', ') || value
+}
+
 function primaryIndustryLabel(industry?: string) {
-  return industry?.split(/[,|/]/)[0]?.trim() || '-'
+  return displayIndustryLabel(industry).split(/[,|/]/)[0]?.trim() || '-'
 }
 
 function industryTrendKeywords(industry?: string) {
@@ -1969,7 +1992,7 @@ function ValueAnalysisPage({
                   </td>
                   <td className="ticker-cell">{stock.ticker}</td>
                   <td>{stock.category ?? (stock.market === 'KR' ? '성장주' : '혼합주')}</td>
-                  <td className="industry-cell">{stock.industry ?? '-'}</td>
+                  <td className="industry-cell">{displayIndustryLabel(stock.industry)}</td>
                   <td className="number-cell">{isFairPriceUnavailable(stock) ? <span className="unavailable-value-label">{displayFairPriceText(stock)}</span> : displayFairPriceText(stock)}</td>
                   <td className="number-cell">{isCurrentPriceOutlier(stock) ? <span className="price-check-label">{displayCurrentPriceText(stock)}</span> : displayCurrentPriceText(stock)}</td>
                   <td><span className={`status-badge ${valuationBadgeClass(displayValuation)}`}>{displayValuation}</span></td>
@@ -4262,7 +4285,7 @@ function App() {
                           </div>
                         </td>
                         <td className="ticker-cell">{stock.ticker}</td>
-                        <td className="industry-cell">{stock.industry ?? '-'}</td>
+                        <td className="industry-cell">{displayIndustryLabel(stock.industry)}</td>
                         <td className="number-cell">
                           {isPendingValue(stock.fairPrice) ? (
                             <span className="pending-update-label">{fairPricePendingLabel}</span>

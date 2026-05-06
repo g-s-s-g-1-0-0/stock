@@ -20,7 +20,7 @@ from html import unescape
 from pathlib import Path
 from typing import Any
 
-from .industry_classification import CATEGORY_VALUES, classify_stock
+from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
 from .rules import IndicatorRow, evaluate_buy_condition, strategy_display_name
 from .sheet_sources import calc_technical_row, fetch_text, fetch_valuation
 
@@ -228,7 +228,7 @@ def stock_industry(stock: dict[str, Any], metric: dict[str, str] | None = None) 
     ]
     for candidate in candidates:
         if isinstance(candidate, str) and candidate.strip() and candidate.strip() != "-":
-            return candidate.strip()
+            return summarize_industry(candidate)
     return "-"
 
 

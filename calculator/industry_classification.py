@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 CATEGORY_VALUES = ("가치주", "혼합주", "성장주", "스윙주")
+MAX_INDUSTRY_ITEMS = 5
 
 CURATED_BY_TICKER: dict[str, tuple[str, str]] = {
     "000660": ("성장주", "반도체, 메모리, HBM, AI 메모리, DRAM"),
@@ -156,6 +157,33 @@ def _valid(value: Any) -> str:
     return "" if cleaned in ("", "-") else cleaned
 
 
+def summarize_industry(value: Any, max_items: int = MAX_INDUSTRY_ITEMS) -> str:
+    cleaned = _valid(value)
+    if not cleaned:
+        return "-"
+
+    parts: list[str] = []
+    for part in cleaned.replace("，", ",").split(","):
+        item = part.strip()
+        if not item:
+            continue
+        item = item.replace(" 등 제조 및 판매", "")
+        item = item.replace(" 등 제조/판매", "")
+        item = item.replace(" 제조 및 판매", "")
+        item = item.replace(" 제조/판매", "")
+        item = item.replace(" 개발/운영 서비스 등", "")
+        item = item.replace(" 개발·운영 서비스 등", "")
+        item = item.replace(" 서비스 등", "")
+        item = item.replace(" 사업 등", "")
+        item = item.removesuffix(" 등").strip()
+        if item and item not in parts:
+            parts.append(item)
+        if len(parts) >= max_items:
+            break
+
+    return ", ".join(parts) if parts else cleaned
+
+
 def _curated(row: dict[str, Any]) -> tuple[str, str] | None:
     ticker = _clean(row.get("ticker")).upper()
     name = _clean(row.get("name"))
@@ -202,5 +230,5 @@ def classify_stock(row: dict[str, Any]) -> dict[str, str]:
         category = "성장주"
     return {
         "category": category,
-        "industry": industry if industry else "-",
+        "industry": summarize_industry(industry),
     }
