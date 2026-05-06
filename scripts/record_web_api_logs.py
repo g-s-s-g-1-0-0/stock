@@ -13,6 +13,7 @@ from typing import Any
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 API_DIR = ROOT_DIR / "web" / "public" / "api"
+PREVIOUS_STOCKS_PATH = ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"
 MAX_LOG_ROWS = 80
 VALID_TASKS = {"value-analysis", "technical-analysis", "market-trends"}
 
@@ -68,6 +69,14 @@ def load_watchlist_tickers(stocks: list[dict[str, Any]]) -> list[str]:
         if str(stock.get("ticker", "")).strip()
     ]
     return tickers[:MAX_LOG_ROWS]
+
+
+def stocks_by_ticker(stocks: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    return {
+        str(stock.get("ticker", "")).strip().upper(): stock
+        for stock in stocks
+        if str(stock.get("ticker", "")).strip()
+    }
 
 
 def parse_log_tasks(argv: list[str]) -> set[str]:
@@ -129,23 +138,30 @@ def tech_value(row: dict[str, Any], *candidates: str) -> Any:
     return "-"
 
 
-def technical_log_rows(stocks: list[dict[str, Any]], technical: dict[str, Any], tickers: set[str]) -> list[dict[str, Any]]:
+def technical_log_rows(
+    stocks: list[dict[str, Any]],
+    previous_stocks: dict[str, dict[str, Any]],
+    technical: dict[str, Any],
+    tickers: set[str],
+) -> list[dict[str, Any]]:
     rows = []
     for stock in stocks:
         ticker = str(stock.get("ticker", "")).upper()
         if ticker not in tickers:
             continue
         row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
+        previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "-")
+        current_opinion = str(stock.get("opinion") or "-")
         strategies = stock.get("strategies")
         rows.append({
             "ticker": ticker,
             "name": stock.get("name") or row.get("name") or "-",
-            "currentPrice": tech_value(row, "현재가") or stock.get("currentPrice") or "-",
-            "opinion": stock.get("opinion", "-"),
+            "change": "변경" if previous_opinion != current_opinion else "유지",
+            "opinion": f"{previous_opinion} -> {current_opinion}",
             "strategy": ", ".join(str(v) for v in strategies) if isinstance(strategies, list) and strategies else tech_value(row, "진입 전략"),
+            "decision": row.get("decisionLog") or row.get("conditionSummary") or "-",
+            "currentPrice": tech_value(row, "현재가") or stock.get("currentPrice") or "-",
             "rsi": tech_value(row, "RSI"),
-            "cci": tech_value(row, "CCI"),
-            "macdHist": tech_value(row, "MACD Hist", "MACD"),
             "pctB": tech_value(row, "%B"),
             "ma200": tech_value(row, "MA200", "200일선"),
         })
@@ -178,11 +194,14 @@ def actions_url() -> str:
 
 def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
     stocks_payload = load_json(API_DIR / "stocks.json", {"rows": []})
+    previous_stocks_payload = load_json(PREVIOUS_STOCKS_PATH, {"rows": []})
     valuation_payload = load_json(API_DIR / "valuation.json", {"rows": {}})
     technical_payload = load_json(API_DIR / "technical.json", {"rows": {}})
     trends_payload = load_json(API_DIR / "market-trends.json", {"rows": []})
 
     stocks = stocks_payload.get("rows", []) if isinstance(stocks_payload, dict) else []
+    previous_stocks_list = previous_stocks_payload.get("rows", []) if isinstance(previous_stocks_payload, dict) else []
+    previous_stocks = stocks_by_ticker(previous_stocks_list)
     valuation = valuation_payload.get("rows", {}) if isinstance(valuation_payload, dict) else {}
     technical = technical_payload.get("rows", {}) if isinstance(technical_payload, dict) else {}
     market_trends = trends_payload.get("rows", []) if isinstance(trends_payload, dict) else []
@@ -194,7 +213,7 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
     }
 
     value_rows = value_log_rows(stocks, valuation, tickers)
-    technical_rows = technical_log_rows(stocks, technical, tickers)
+    technical_rows = technical_log_rows(stocks, previous_stocks, technical, tickers)
     trend_rows = market_trend_log_rows(market_trends)
 
     logs = [
@@ -234,12 +253,12 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
                 "columns": [
                     {"key": "ticker", "label": "종목"},
                     {"key": "name", "label": "종목명"},
-                    {"key": "currentPrice", "label": "현재가"},
+                    {"key": "change", "label": "변경"},
                     {"key": "opinion", "label": "투자의견"},
                     {"key": "strategy", "label": "진입 전략"},
+                    {"key": "decision", "label": "판단 로그"},
+                    {"key": "currentPrice", "label": "현재가"},
                     {"key": "rsi", "label": "RSI"},
-                    {"key": "cci", "label": "CCI"},
-                    {"key": "macdHist", "label": "MACD Hist"},
                     {"key": "pctB", "label": "%B"},
                     {"key": "ma200", "label": "MA200"},
                 ],

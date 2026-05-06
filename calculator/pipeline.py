@@ -329,6 +329,25 @@ def latest_technical_row(stock: dict[str, str]) -> dict[str, str] | None:
     )
     buy = evaluate_buy_condition(ind, vix=None, ixic_dist=None, ixic_filter_active=False)
     strategy = buy["strategyName"] if buy["entryTriggered"] else "-"
+    strategy_labels = {
+        "A": ["현재가 > MA200", "MACD 골든크로스", "종가%B > 80", "RSI > 70", "나스닥 강세 필터"],
+        "B": ["현재가 < MA200", "VIX >= 30", "RSI < 35 또는 CCI < -150", "LR 추세선 상승", "저가 추세선 터치", "나스닥 상단 차단 아님"],
+        "C": ["현재가 > MA200", "전일 BB 스퀴즈", "당일 BB 확장", "거래량 폭발", "종가%B > 55", "MACD Hist > 0", "나스닥 강세 필터"],
+        "D": ["현재가 > MA200", "+DI > -DI", "ADX > 30", "ADX 상승", "MACD Hist > 0", "종가%B 30~75", "나스닥 과열 아님", "나스닥 강세 필터"],
+        "E": ["현재가 > MA200", "BB폭 압축", "저가%B <= 50", "나스닥 바닥/정상 필터"],
+        "F": ["현재가 > MA200", "저가%B <= 3", "나스닥 바닥/정상 필터"],
+    }
+    condition_summaries = []
+    for group, labels in strategy_labels.items():
+        values = buy["conditions"].get(group, [])
+        passed = sum(1 for value in values if value)
+        details = " / ".join(f"{label}:{'통과' if value else '실패'}" for label, value in zip(labels, values))
+        condition_summaries.append(f"{group}그룹 {passed}/{len(values)} - {details}")
+    decision_log = "\n".join([
+        f"{stock['ticker']} 최종 판단: {'매수' if buy['entryTriggered'] else '관망'}",
+        f"진입 전략: {strategy}",
+        *condition_summaries,
+    ])
     return {
         "ticker": stock["ticker"],
         "name": clean_stock_name(stock["name"]),
@@ -337,6 +356,8 @@ def latest_technical_row(stock: dict[str, str]) -> dict[str, str] | None:
         "currentPrice": fmt_price(price, stock["market"]),
         "opinion": "매수" if buy["entryTriggered"] else "관망",
         "entryStrategy": strategy,
+        "decisionLog": decision_log,
+        "conditionSummary": " | ".join(condition_summaries),
         "RSI (D)": fmt_number(row["rsi"]),
         "RSI (D-1)": fmt_number(row["rsiD1"]),
         "RSI Signal": fmt_number(row["rsiSignal"]),
@@ -465,7 +486,6 @@ def build_stocks_cache() -> dict[str, Any]:
         fair_price_reason = fair_price_unavailable_reason(valuation)
         fair_price = fair_price_range(stock, valuation)
         current_price = technical.get("currentPrice", "-")
-        opinion_blocked = fair_price_reason == "loss_making"
         rows.append({
             "ticker": stock["ticker"],
             "name": clean_stock_name(stock["name"]),
@@ -474,8 +494,8 @@ def build_stocks_cache() -> dict[str, Any]:
             "fairPriceReason": fair_price_reason,
             "currentPrice": current_price,
             "valuation": valuation_from_price_range(current_price, fair_price),
-            "opinion": "-" if opinion_blocked else technical.get("opinion", "관망"),
-            "strategies": [] if opinion_blocked else [technical["진입 전략"]] if technical.get("진입 전략") not in (None, "-") else [],
+            "opinion": technical.get("opinion", "관망"),
+            "strategies": [technical["진입 전략"]] if technical.get("진입 전략") not in (None, "-") else [],
             "category": stock_category(stock),
             "industry": stock_industry(stock, valuation),
             "updatedAt": technical.get("updatedAt", now_iso()),

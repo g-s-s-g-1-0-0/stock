@@ -2976,6 +2976,15 @@
   white-space: nowrap;
 }
 
+.admin-log-detail-table th:nth-child(4),
+.admin-log-detail-table td:nth-child(4),
+.admin-log-detail-table th:nth-child(5),
+.admin-log-detail-table td:nth-child(5) {
+  min-width: 460px;
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
 .admin-log-detail-table th {
   position: sticky;
   top: 0;

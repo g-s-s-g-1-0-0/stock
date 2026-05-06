@@ -3226,15 +3226,15 @@ function App() {
   function buildTechnicalAnalysisLogMetadata(metadata: Record<string, unknown>) {
     const rows = logStocksForTickers(metadata.tickers).map((stock) => {
       const technical = apiTechnicalRows[stock.ticker]
+      const decision = technical?.decisionLog || technical?.conditionSummary || '-'
       return {
         ticker: stock.ticker,
         name: stock.name,
-        currentPrice: technicalValue(technical, ['현재가']) || displayCurrentPriceText(stock),
         opinion: displayStockOpinion(stock),
         strategy: stock.strategies.join(', ') || technicalValue(technical, ['진입 전략']),
+        decision,
+        currentPrice: technicalValue(technical, ['현재가']) || displayCurrentPriceText(stock),
         rsi: technicalValue(technical, ['RSI']),
-        cci: technicalValue(technical, ['CCI']),
-        macdHist: technicalValue(technical, ['MACD Hist', 'MACD']),
         pctB: technicalValue(technical, ['%B']),
         ma200: technicalValue(technical, ['MA200', '200일선']),
       }
@@ -3243,17 +3243,16 @@ function App() {
       ...metadata,
       source: 'refresh-data',
       task: 'technical-analysis',
-      summary: '갱신 시점의 종목별 기술분석 핵심 지표입니다.',
+      summary: '갱신 시점의 종목별 기술분석 판단 로그입니다.',
       total: rows.length,
       columns: [
         { key: 'ticker', label: '종목' },
         { key: 'name', label: '종목명' },
-        { key: 'currentPrice', label: '현재가' },
         { key: 'opinion', label: '투자의견' },
         { key: 'strategy', label: '진입 전략' },
+        { key: 'decision', label: '판단 로그' },
+        { key: 'currentPrice', label: '현재가' },
         { key: 'rsi', label: 'RSI' },
-        { key: 'cci', label: 'CCI' },
-        { key: 'macdHist', label: 'MACD Hist' },
         { key: 'pctB', label: '%B' },
         { key: 'ma200', label: 'MA200' },
       ],
