@@ -14,6 +14,7 @@ import math
 import re
 import urllib.parse
 import urllib.request
+from datetime import datetime, timedelta
 from html import unescape
 from typing import Any
 
@@ -315,6 +316,96 @@ def clean_html(value: str) -> str:
     return unescape(re.sub(r"<[^>]+>", "", value)).strip().replace(",", "")
 
 
+def snapshot_value(html: str, label: str) -> str:
+    pattern = (
+        r'<div class="snapshot-td-label">(?:<a[^>]*>)?'
+        + re.escape(label)
+        + r"(?:</a>)?</div></td><td[^>]*>[\s\S]*?<b>([\s\S]*?)</b>"
+    )
+    match = re.search(pattern, html)
+    return re.sub(r"<.*?>", "", match.group(1)).strip() if match else "-"
+
+
+def parse_us_earnings_date_from_html(html: str) -> str:
+    if not html:
+        return "-"
+
+    earnings_index = html.find("Earnings")
+    if earnings_index > -1:
+        section = html[earnings_index : earnings_index + 600]
+        match = re.search(r"[A-Z][a-z]{2} \d{1,2} (?:BMO|AMC)", section)
+        if match:
+            return match.group(0)
+
+    match = re.search(r"[A-Z][a-z]{2} \d{1,2} (?:BMO|AMC)", html)
+    return match.group(0) if match else "-"
+
+
+def format_d_day(target: datetime, today: datetime) -> str:
+    diff_days = round((target.date() - today.date()).total_seconds() / (24 * 60 * 60))
+    if diff_days == 0:
+        return "D-0"
+    return f"D{'+' if diff_days < 0 else '-'}{abs(diff_days)}"
+
+
+def process_us_earnings_date(raw: str) -> str:
+    value = re.sub(r"\s+", " ", raw or "").strip()
+    match = re.search(r"\b([A-Z][a-z]{2})\s+(\d{1,2})(?:\s+(BMO|AMC))?\b", value)
+    if not match:
+        return "-"
+
+    month_name, day, session = match.groups()
+    today = datetime.now()
+    try:
+        parsed = datetime.strptime(f"{today.year} {month_name} {day}", "%Y %b %d")
+    except ValueError:
+        return "-"
+
+    if session == "AMC":
+        # After-market US earnings are the following date in Korea.
+        parsed = parsed + timedelta(days=1)
+
+    diff_days = round((parsed.date() - today.date()).total_seconds() / (24 * 60 * 60))
+    if diff_days > 120:
+        parsed = parsed.replace(year=today.year - 1)
+    elif diff_days < -240:
+        parsed = parsed.replace(year=today.year + 1)
+
+    return f"{parsed:%Y-%m-%d} ({format_d_day(parsed, today)})"
+
+
+def fetch_korean_earnings_date(code: str) -> str:
+    url = f"https://comp.fnguide.com/SVO2/ASP/SVD_Main.asp?pGB=1&gicode=A{code}&cID=&MenuYn=Y&ReportGB=D&NewMenuID=Y&stkGb=701"
+    html = fetch_text(url, encoding="utf-8")
+    keywords = ["잠정실적발표예정일", "잠정실적발표일", "실적발표예정일", "실적발표일"]
+    for keyword in keywords:
+        index = html.find(keyword)
+        if index < 0:
+            continue
+        section = html[index : index + 600]
+        cell_match = re.search(r'<td[^>]*class="[^"]*clf[^"]*"[^>]*>\s*([\d\/\.\-]+|미정)\s*</td>', section)
+        if cell_match:
+            raw = cell_match.group(1).strip()
+            if raw == "미정":
+                return "-"
+            date_match = re.search(r"(\d{4})[\/\.\-](\d{2})[\/\.\-](\d{2})", raw)
+            if date_match:
+                return process_korean_earnings_date(f"{date_match.group(1)}/{date_match.group(2)}/{date_match.group(3)}")
+        any_date = re.search(r"(\d{4})[\/\.\-](\d{2})[\/\.\-](\d{2})", section)
+        if any_date:
+            return process_korean_earnings_date(f"{any_date.group(1)}/{any_date.group(2)}/{any_date.group(3)}")
+    return "-"
+
+
+def process_korean_earnings_date(raw: str) -> str:
+    try:
+        year, month, day = [int(part) for part in re.sub(r"[\.\-]", "/", raw).split("/")[:3]]
+        parsed = datetime(year, month, day)
+    except (TypeError, ValueError):
+        return "-"
+    return f"{parsed:%Y-%m-%d} ({format_d_day(parsed, datetime.now())})"
+
+
 def extract_row_values(table_html: str, row_label: str) -> list[float | None]:
     match = re.search(
         rf"<th[^>]*>(?:(?!</th>)[\s\S])*?{row_label}(?:(?!</th>)[\s\S])*?</th>([\s\S]*?)(?=<th|</tbody)",
@@ -414,7 +505,11 @@ def fetch_korean_valuation(code: str) -> list[str]:
         if eps_yoy > 0:
             peg = f"{float(per) / eps_yoy:.2f}"
     oper_margin = f"{(sum(qt_oper[-4:]) / sales_ttm_billion * 100):.2f}%" if len(qt_oper) >= 4 and sales_ttm_billion > 0 else "-"
-    return [market_cap, sales_ttm, sales_qq, sales_yy, sales_past, current_ratio, de, "-", ps, per, pbr, roe, peg, shares, "-", oper_margin, eps_ttm, eps_next, eps_qq, "-"]
+    try:
+        earnings_date = fetch_korean_earnings_date(code)
+    except Exception:
+        earnings_date = "-"
+    return [market_cap, sales_ttm, sales_qq, sales_yy, sales_past, current_ratio, de, "-", ps, per, pbr, roe, peg, shares, "-", oper_margin, eps_ttm, eps_next, eps_qq, earnings_date, "-"]
 
 
 def fetch_us_valuation(symbol: str) -> list[str]:
@@ -426,9 +521,8 @@ def fetch_us_valuation(symbol: str) -> list[str]:
     ]
     values = []
     for label in labels:
-        pattern = re.escape(label) + r"</div></td><td[^>]*><div[^>]*><b>([\s\S]*?)</b>"
-        match = re.search(pattern, html)
-        values.append(re.sub(r"<.*?>", "", match.group(1)).strip() if match else "-")
+        values.append(snapshot_value(html, label))
+    values.append(process_us_earnings_date(parse_us_earnings_date_from_html(html)))
     sector_match = re.search(r'href="screener\?v=111&f=sec_[^"]+"[^>]*>([\s\S]*?)</a>', html)
     industry_match = re.search(r'href="screener\?v=111&f=ind_[^"]+"[^>]*>([\s\S]*?)</a>', html)
     sector = re.sub(r"<.*?>", "", sector_match.group(1)).strip() if sector_match else "-"

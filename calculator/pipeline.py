@@ -301,7 +301,7 @@ def valuation_from_price_range(current_price: str, fair_price: str) -> str:
     return "보통"
 
 
-def latest_technical_row(stock: dict[str, str]) -> dict[str, str] | None:
+def latest_technical_row(stock: dict[str, str], earnings_date: str = "-") -> dict[str, str] | None:
     row = calc_technical_row(stock["ticker"])
     price = float(row["close"])
     ind = IndicatorRow(
@@ -405,7 +405,7 @@ def latest_technical_row(stock: dict[str, str]) -> dict[str, str] | None:
         "144일 이동평균선": fmt_price(row["ma144"], stock["market"]),
         "200일 이동평균선": fmt_price(row["ma200"], stock["market"]),
         "120일 저가 회귀 추세선": fmt_price(row["lrTrendline"], stock["market"]),
-        "실적발표일 (한국 시간 기준)": "-",
+        "실적발표일 (한국 시간 기준)": earnings_date or "-",
         "진입가": "-",
         "진입일": "-",
         "진입 전략": strategy,
@@ -414,6 +414,7 @@ def latest_technical_row(stock: dict[str, str]) -> dict[str, str] | None:
 
 def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[str, Any]:
     rows: dict[str, dict[str, str]] = read_cache("technical").get("rows", {})
+    valuation_rows = read_cache("valuation").get("rows", {})
     errors: list[dict[str, str]] = []
     market_snapshot = [
         ["시장 주요 이벤트", "당분간 없음"],
@@ -425,7 +426,9 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
 
     for stock in (universe or read_universe())[:MAX_REFRESH_UNIVERSE]:
         try:
-            row = latest_technical_row(stock)
+            metric = valuation_rows.get(stock["ticker"], {})
+            earnings_date = metric.get("earningsDate", "-") if isinstance(metric, dict) else "-"
+            row = latest_technical_row(stock, earnings_date=earnings_date)
             if row:
                 rows[stock["ticker"]] = row
         except Exception as exc:  # noqa: BLE001 - batch should preserve partial success
@@ -449,7 +452,7 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
         "marketCap", "sales", "salesQoq", "salesYoyTtm", "salesPastYears",
         "currentRatio", "debtToEquity", "priceToFreeCashFlow", "priceToSales",
         "per", "pbr", "roe", "peg", "sharesOutstanding", "grossMargin",
-        "operatingMargin", "epsTtm", "epsNextYear", "epsQoq", "industry",
+        "operatingMargin", "epsTtm", "epsNextYear", "epsQoq", "earningsDate", "industry",
     ]
     rows = read_cache("valuation").get("rows", {})
     errors: list[dict[str, str]] = []
@@ -459,7 +462,7 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
             metric = dict(zip(columns, values))
             metric["industry"] = stock_industry(stock, metric)
             metric["ruleOf40"] = rule_of_40(metric)
-            metric["earningsDate"] = "-"
+            metric["earningsDate"] = metric.get("earningsDate") or "-"
             rows[stock["ticker"]] = metric
         except Exception as exc:  # noqa: BLE001
             errors.append({"ticker": stock["ticker"], "error": str(exc)})
