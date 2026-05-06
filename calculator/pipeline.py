@@ -40,7 +40,6 @@ GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MARKET_TREND_MODEL = "llama-3.3-70b-versatile"
 CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 FAIR_PRICE_UNAVAILABLE_LABEL = "적자 상태라 판단 불가"
-PRICE_CHECK_REQUIRED_LABEL = "가격 확인 필요"
 MAX_REFRESH_UNIVERSE = int(os.environ.get("MAX_REFRESH_UNIVERSE", "200"))
 
 DEFAULT_UNIVERSE = [
@@ -287,25 +286,10 @@ def fair_price_range(stock: dict[str, Any], metric: dict[str, str]) -> str:
     return f"{fmt_price(eps * low_multiple, stock['market'])} ~ {fmt_price(eps * high_multiple, stock['market'])}"
 
 
-def price_validation_reason(stock: dict[str, Any], current_price: str, fair_price: str) -> str | None:
+def valuation_from_price_range(current_price: str, fair_price: str) -> str:
     current = parse_amount(current_price)
     parts = [parse_amount(part) for part in fair_price.split("~")]
-    if current is None or len(parts) != 2 or parts[0] is None or parts[1] is None:
-        return None
-    low, high = parts
-    if low <= 0 or high <= 0:
-        return None
-    # A common sheet failure is ticker collision: a US ticker such as STX can pick up
-    # a Korean stock price, then get formatted as USD. Block absurdly distant values.
-    if current > high * 5 or current < low / 5:
-        return "price_outlier"
-    return None
-
-
-def valuation_from_price_range(current_price: str, fair_price: str, price_reason: str | None = None) -> str:
-    current = parse_amount(current_price)
-    parts = [parse_amount(part) for part in fair_price.split("~")]
-    if fair_price == FAIR_PRICE_UNAVAILABLE_LABEL or price_reason == "price_outlier":
+    if fair_price == FAIR_PRICE_UNAVAILABLE_LABEL:
         return "판단 불가"
     if current is None or len(parts) != 2 or parts[0] is None or parts[1] is None:
         return "보통"
@@ -481,8 +465,7 @@ def build_stocks_cache() -> dict[str, Any]:
         fair_price_reason = fair_price_unavailable_reason(valuation)
         fair_price = fair_price_range(stock, valuation)
         current_price = technical.get("currentPrice", "-")
-        price_reason = price_validation_reason(stock, current_price, fair_price)
-        opinion_blocked = fair_price_reason == "loss_making" or price_reason == "price_outlier"
+        opinion_blocked = fair_price_reason == "loss_making"
         rows.append({
             "ticker": stock["ticker"],
             "name": clean_stock_name(stock["name"]),
@@ -490,8 +473,7 @@ def build_stocks_cache() -> dict[str, Any]:
             "fairPrice": fair_price,
             "fairPriceReason": fair_price_reason,
             "currentPrice": current_price,
-            "currentPriceReason": price_reason,
-            "valuation": valuation_from_price_range(current_price, fair_price, price_reason),
+            "valuation": valuation_from_price_range(current_price, fair_price),
             "opinion": "-" if opinion_blocked else technical.get("opinion", "관망"),
             "strategies": [] if opinion_blocked else [technical["진입 전략"]] if technical.get("진입 전략") not in (None, "-") else [],
             "category": stock_category(stock),

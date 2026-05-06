@@ -37,7 +37,6 @@ type Stock = {
   category?: string
   industry?: string
   fairPriceReason?: 'loss_making'
-  currentPriceReason?: 'price_outlier'
   updatedAt: string
 }
 
@@ -155,7 +154,6 @@ const USER_SETTINGS_STORAGE_KEY = 'gongsu-user-settings'
 const API_LOGS_STORAGE_KEY = 'gongsu-api-logs'
 const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
 const FAIR_PRICE_UNAVAILABLE_LABEL = '적자 상태라 판단 불가'
-const CURRENT_PRICE_CHECK_REQUIRED_LABEL = '가격 확인 필요'
 const FAIR_PRICE_RANGE_TOOLTIP = 'EPS(TTM) × 적용 PER 배수로 계산합니다. 가치주는 10~15배, 혼합주는 15~25배를 적용하고, 성장주는 매출 성장률에 따라 15~20배부터 최대 50~70배까지 적용합니다. EPS가 0 이하이면 판단 불가로 표시합니다.'
 const ADMIN_LOGS_PAGE_SIZE = 50
 const DEFAULT_WATCHLIST_SORT: WatchlistSortSettings = { primary: 'registered', secondary: 'registered' }
@@ -1111,26 +1109,16 @@ function displayFairPriceText(stock: Stock) {
   return isFairPriceUnavailable(stock) ? FAIR_PRICE_UNAVAILABLE_LABEL : stock.fairPrice
 }
 
-function isCurrentPriceOutlier(stock: Stock) {
-  if (stock.currentPriceReason === 'price_outlier') return true
-  const current = parsePriceValue(stock.currentPrice)
-  const [lowText, highText] = stock.fairPrice.split('~').map((value) => value.trim())
-  const low = parsePriceValue(lowText ?? '')
-  const high = parsePriceValue(highText ?? '')
-  if (current === null || low === null || high === null || low <= 0 || high <= 0) return false
-  return current > high * 5 || current < low / 5
-}
-
 function displayCurrentPriceText(stock: Stock) {
-  return isCurrentPriceOutlier(stock) ? CURRENT_PRICE_CHECK_REQUIRED_LABEL : stock.currentPrice
+  return stock.currentPrice
 }
 
 function displayStockOpinion(stock: Stock): Opinion {
-  return isFairPriceUnavailable(stock) || isCurrentPriceOutlier(stock) ? '-' : stock.opinion
+  return isFairPriceUnavailable(stock) ? '-' : stock.opinion
 }
 
 function displayStockValuation(stock: Stock): Valuation {
-  if (isFairPriceUnavailable(stock) || isCurrentPriceOutlier(stock)) return '판단 불가'
+  if (isFairPriceUnavailable(stock)) return '판단 불가'
   return valuationFromPriceRange(stock.currentPrice, stock.fairPrice) ?? stock.valuation
 }
 
@@ -2003,7 +1991,7 @@ function ValueAnalysisPage({
                   <td>{stock.category ?? (stock.market === 'KR' ? '성장주' : '혼합주')}</td>
                   <td className="industry-cell">{displayIndustryLabel(stock.industry)}</td>
                   <td className="number-cell">{isFairPriceUnavailable(stock) ? <span className="unavailable-value-label">{displayFairPriceText(stock)}</span> : displayFairPriceText(stock)}</td>
-                  <td className="number-cell">{isCurrentPriceOutlier(stock) ? <span className="price-check-label">{displayCurrentPriceText(stock)}</span> : displayCurrentPriceText(stock)}</td>
+                  <td className="number-cell">{displayCurrentPriceText(stock)}</td>
                   <td><span className={`status-badge ${valuationBadgeClass(displayValuation)}`}>{displayValuation}</span></td>
                   {valueMetricColumns.map((column) => (
                     <td className="number-cell" key={column.label}>
@@ -4311,9 +4299,7 @@ function App() {
                           ) : displayFairPriceText(stock)}
                         </td>
                         <td className="number-cell">
-                          {isCurrentPriceOutlier(stock) ? (
-                            <span className="price-check-label">{displayCurrentPriceText(stock)}</span>
-                          ) : isPendingValue(stock.currentPrice) ? (
+                          {isPendingValue(stock.currentPrice) ? (
                             <span className="pending-update-label">{currentPricePendingLabel}</span>
                           ) : displayCurrentPriceText(stock)}
                         </td>
