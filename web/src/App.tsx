@@ -154,11 +154,13 @@ const VIEW_MODE_STORAGE_KEY = 'gongsu-view-mode'
 const VIEW_MODE_HINT_STORAGE_KEY = 'gongsu-view-mode-hint-seen'
 const USER_SETTINGS_STORAGE_KEY = 'gongsu-user-settings'
 const API_LOGS_STORAGE_KEY = 'gongsu-api-logs'
+const ACTIVE_PAGE_STORAGE_KEY = 'gongsu-active-page'
 const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
 const FAIR_PRICE_UNAVAILABLE_LABEL = '적자 상태라 판단 불가'
 const FAIR_PRICE_RANGE_TOOLTIP = 'EPS(TTM) × 적용 PER 배수로 계산합니다. 가치주는 10~15배, 혼합주는 15~25배를 적용하고, 성장주는 매출 성장률에 따라 15~20배부터 최대 50~70배까지 적용합니다. EPS가 0 이하이면 판단 불가로 표시합니다.'
 const ADMIN_LOGS_PAGE_SIZE = 50
 const DEFAULT_WATCHLIST_SORT: WatchlistSortSettings = { primary: 'registered', secondary: 'registered' }
+const activePages: ActivePage[] = ['home', 'value-analysis', 'technical-analysis', 'market-events', 'market-trends', 'board', 'admin-logs']
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   opinionChangeEmail: true,
   weeklyTrendReport: true,
@@ -237,6 +239,11 @@ function storeCachedAppData(data: AppData<Stock, ValuationMetric, MarketEventGro
 
 function readStoredViewMode() {
   return localStorage.getItem(VIEW_MODE_STORAGE_KEY) === 'operator' ? 'operator' : 'personal'
+}
+
+function readStoredActivePage(): ActivePage {
+  const stored = localStorage.getItem(ACTIVE_PAGE_STORAGE_KEY)
+  return activePages.includes(stored as ActivePage) ? stored as ActivePage : 'home'
 }
 
 function userSettingsStorageKey(session: UserSession | null = null) {
@@ -3007,7 +3014,7 @@ function App() {
   const [isWatchlistSortOpen, setIsWatchlistSortOpen] = useState(false)
   const [apiLogs, setApiLogs] = useState<ApiLog[]>(() => readStoredApiLogs())
   const [isLoadingApiLogs, setIsLoadingApiLogs] = useState(false)
-  const [activePage, setActivePage] = useState<ActivePage>('home')
+  const [activePage, setActivePage] = useState<ActivePage>(() => readStoredActivePage())
   const addStockButtonRef = useRef<HTMLButtonElement | null>(null)
   const inlineAddRef = useRef<HTMLDivElement | null>(null)
   const watchlistSortMenuRef = useRef<HTMLDivElement | null>(null)
@@ -4055,6 +4062,10 @@ function App() {
   }
 
   const currentWatchlistTickers = isOperatorDataMode ? operatorWatchlist : watchlist
+
+  useEffect(() => {
+    localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, activePage)
+  }, [activePage])
   const rawTableStocks = isOperatorDataMode ? operatorStocks : watchlistStocks
   const tableStocks = useMemo(
     () => sortWatchlistStocks(rawTableStocks, watchlistSortSettings, currentWatchlistTickers, scopedTrades),
