@@ -158,7 +158,7 @@ def send_email(to_email: str, subject: str, html_body: str) -> None:
     smtp_user = os.environ.get("SMTP_USER", "").strip()
     smtp_password = os.environ.get("SMTP_PASSWORD", "").strip()
     smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com").strip()
-    smtp_port = int(os.environ.get("SMTP_PORT", "465"))
+    smtp_port = int(os.environ.get("SMTP_PORT", "").strip() or "465")
     from_email = os.environ.get("SMTP_FROM", smtp_user).strip()
     from_name = os.environ.get("SMTP_FROM_NAME", "공수성가").strip()
 
