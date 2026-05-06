@@ -2,8 +2,8 @@
   "meta": {
     "kind": "market-events",
     "schedule": "manual",
-    "updatedAt": "2026-05-06T12:14:29+00:00",
-    "lastSuccessfulRun": "2026-05-06T12:14:29+00:00",
+    "updatedAt": "2026-05-06T12:19:08+00:00",
+    "lastSuccessfulRun": "2026-05-06T12:19:08+00:00",
     "failedReason": null
   },
   "yearLabel": "2026년",
