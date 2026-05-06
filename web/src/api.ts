@@ -54,13 +54,21 @@ async function fetchJson<T>(paths: string[]): Promise<T | null> {
   return null
 }
 
+const dataPaths = {
+  stocks: import.meta.env.DEV ? ['/api/stocks.json', '/api/stocks', 'http://127.0.0.1:8787/api/stocks'] : ['/api/stocks.json'],
+  valuation: import.meta.env.DEV ? ['/api/valuation.json', '/api/valuation', 'http://127.0.0.1:8787/api/valuation'] : ['/api/valuation.json'],
+  technical: import.meta.env.DEV ? ['/api/technical.json', '/api/technical', 'http://127.0.0.1:8787/api/technical'] : ['/api/technical.json'],
+  marketEvents: import.meta.env.DEV ? ['/api/market-events.json', '/api/market-events', 'http://127.0.0.1:8787/api/market-events'] : ['/api/market-events.json'],
+  marketTrends: import.meta.env.DEV ? ['/api/market-trends.json', '/api/market-trends', 'http://127.0.0.1:8787/api/market-trends'] : ['/api/market-trends.json'],
+}
+
 export async function fetchAppData<TStock, TMetric, TGroup, TTrendRow>() {
   const [stocks, valuation, technical, marketEvents, marketTrends] = await Promise.all([
-    fetchJson<ApiStocksPayload<TStock>>(['/api/stocks', 'http://127.0.0.1:8787/api/stocks', '/api/stocks.json']),
-    fetchJson<ApiValuationPayload<TMetric>>(['/api/valuation', 'http://127.0.0.1:8787/api/valuation', '/api/valuation.json']),
-    fetchJson<ApiTechnicalPayload>(['/api/technical', 'http://127.0.0.1:8787/api/technical', '/api/technical.json']),
-    fetchJson<ApiMarketEventsPayload<TGroup>>(['/api/market-events', 'http://127.0.0.1:8787/api/market-events', '/api/market-events.json']),
-    fetchJson<ApiMarketTrendsPayload<TTrendRow>>(['/api/market-trends', 'http://127.0.0.1:8787/api/market-trends', '/api/market-trends.json']),
+    fetchJson<ApiStocksPayload<TStock>>(dataPaths.stocks),
+    fetchJson<ApiValuationPayload<TMetric>>(dataPaths.valuation),
+    fetchJson<ApiTechnicalPayload>(dataPaths.technical),
+    fetchJson<ApiMarketEventsPayload<TGroup>>(dataPaths.marketEvents),
+    fetchJson<ApiMarketTrendsPayload<TTrendRow>>(dataPaths.marketTrends),
   ])
 
   return { stocks, valuation, technical, marketEvents, marketTrends }
