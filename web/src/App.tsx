@@ -156,6 +156,7 @@ const API_LOGS_STORAGE_KEY = 'gongsu-api-logs'
 const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
 const FAIR_PRICE_UNAVAILABLE_LABEL = '적자 상태라 판단 불가'
 const CURRENT_PRICE_CHECK_REQUIRED_LABEL = '가격 확인 필요'
+const FAIR_PRICE_RANGE_TOOLTIP = 'EPS(TTM) × 적용 PER 배수로 계산합니다. 가치주는 10~15배, 혼합주는 15~25배를 적용하고, 성장주는 매출 성장률에 따라 15~20배부터 최대 50~70배까지 적용합니다. EPS가 0 이하이면 판단 불가로 표시합니다.'
 const ADMIN_LOGS_PAGE_SIZE = 50
 const DEFAULT_WATCHLIST_SORT: WatchlistSortSettings = { primary: 'registered', secondary: 'registered' }
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
@@ -1410,7 +1411,7 @@ const adminNotificationOptions: Array<{ key: NotificationPreferenceKey; title: s
   { key: 'adminAutoUpdateFailureEmail', title: '자동 업데이트 실패', description: '관리자 전용: 같은 작업이 연속 3회 이상 실패할 때' },
 ]
 const apiLogTabs: Array<{ key: ApiLogTrigger; label: string; description: string }> = [
-  { key: 'value-analysis', label: '가치분석', description: '적정가, 밸류에이션 캐시 생성' },
+  { key: 'value-analysis', label: '가치분석', description: '적정 주가 범위, 밸류에이션 캐시 생성' },
   { key: 'technical-analysis', label: '기술분석', description: '매수/관망/매도 신호와 전략 계산' },
   { key: 'market-trends', label: '시장 트렌드', description: '섹터·메가트렌드 랭킹 업데이트' },
 ]
@@ -1924,7 +1925,7 @@ function ValueAnalysisPage({
       <div className="section-heading value-analysis-heading">
         <div>
           <h2>가치 분석</h2>
-          <p>Home 관심 종목 기준으로 핵심 재무 지표를 확인해 적정가를 계산하고, 현재가를 기준으로 저평가/고평가 여부를 판단합니다.</p>
+          <p>Home 관심 종목 기준으로 핵심 재무 지표를 확인해 적정 주가 범위를 계산하고, 현재가를 기준으로 저평가/고평가 여부를 판단합니다.</p>
           <p className="page-update-note">각 지표는 매일 자정에 1회 업데이트됩니다.</p>
         </div>
         <span>총 {visibleStocks.length}개</span>
@@ -1961,7 +1962,15 @@ function ValueAnalysisPage({
                 </MetricValue>
               </th>
               <th>산업</th>
-              <th>적정 주가 범위</th>
+              <th>
+                <MetricValue
+                  tooltip={FAIR_PRICE_RANGE_TOOLTIP}
+                  onTooltipClose={onTooltipClose}
+                  onTooltipOpen={onTooltipOpen}
+                >
+                  적정 주가 범위
+                </MetricValue>
+              </th>
               <th>현재가</th>
               <th>가치 평가</th>
               {valueMetricColumns.map((column) => (
@@ -4250,7 +4259,15 @@ function App() {
                       <th>종목명</th>
                       <th>티커</th>
                       <th>산업군</th>
-                      <th>적정 가격</th>
+                      <th>
+                        <MetricValue
+                          tooltip={FAIR_PRICE_RANGE_TOOLTIP}
+                          onTooltipClose={() => setActiveTooltip(null)}
+                          onTooltipOpen={setActiveTooltip}
+                        >
+                          적정 주가 범위
+                        </MetricValue>
+                      </th>
                       <th>현재가</th>
                       <th>가치 분석</th>
                       <th>기술 분석</th>
