@@ -2,8 +2,8 @@
   "meta": {
     "kind": "valuation",
     "schedule": "0 0 * * *",
-    "updatedAt": "2026-05-06T12:18:54+00:00",
-    "lastSuccessfulRun": "2026-05-06T12:18:54+00:00",
+    "updatedAt": "2026-05-06T13:00:39+00:00",
+    "lastSuccessfulRun": "2026-05-06T13:00:39+00:00",
     "failedReason": null
   },
   "rows": {
@@ -869,6 +869,30 @@
       "epsQoq": "-383.33%",
       "industry": "반도체, 반도체 테스트 장비, 후공정 검사",
       "ruleOf40": "-60.15%",
+      "earningsDate": "-"
+    },
+    "LRCX": {
+      "marketCap": "323.36B",
+      "sales": "21.68B",
+      "salesQoq": "23.76%",
+      "salesYoyTtm": "26.53%",
+      "salesPastYears": "2.38% 12.92%",
+      "currentRatio": "2.54",
+      "debtToEquity": "0.35",
+      "priceToFreeCashFlow": "53.85",
+      "priceToSales": "14.91",
+      "per": "52.06",
+      "pbr": "32.58",
+      "roe": "66.76%",
+      "peg": "1.09",
+      "sharesOutstanding": "1.25B",
+      "grossMargin": "49.98%",
+      "operatingMargin": "34.26%",
+      "epsTtm": "5.30",
+      "epsNextYear": "7.93",
+      "epsQoq": "40.55%",
+      "industry": "반도체 장비, 식각·증착",
+      "ruleOf40": "60.79%",
       "earningsDate": "-"
     }
   },

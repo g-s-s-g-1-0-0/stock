@@ -2,7 +2,7 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 0 * * 1",
-    "updatedAt": "2026-05-06T12:19:08+00:00",
+    "updatedAt": "2026-05-06T13:00:53+00:00",
     "lastSuccessfulRun": "2026-05-04T17:16:53+09:00",
     "failedReason": "GROQ_API_KEY 환경변수가 설정되어 있지 않아 기존 시장 트렌드 캐시를 유지했습니다."
   },
