@@ -3810,7 +3810,7 @@ function App() {
       {showViewModeHint && <button className="view-mode-scrim" type="button" aria-label="안내 닫기" onClick={markViewModeHintSeen} />}
       <header className={`app-header ${showViewModeHint ? 'onboarding-header' : ''}`}>
         <div className="brand">
-          <img alt="공수성가 로고" className="brand-logo" src="/gongsu-logo.png" />
+          <img alt="공수성가 로고" className="brand-logo" src="/favicon.svg" />
           <span>공수성가</span>
         </div>
         <nav className="gnb-menu" aria-label="주요 메뉴">
