@@ -34,12 +34,12 @@ def service_key() -> str:
     return os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 
-def supabase_request(path: str, method: str = "GET", payload: Any | None = None) -> None:
+def supabase_request(path: str, method: str = "GET", payload: Any | None = None) -> Any | None:
     url = supabase_url()
     key = service_key()
     if not url or not key:
         print("[api_logs] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing; skipped.")
-        return
+        return None
 
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8") if payload is not None else None
     request = urllib.request.Request(
@@ -54,7 +54,10 @@ def supabase_request(path: str, method: str = "GET", payload: Any | None = None)
         },
     )
     with urllib.request.urlopen(request, timeout=30) as response:
-        response.read()
+        raw = response.read()
+    if method == "GET" and raw:
+        return json.loads(raw.decode("utf-8"))
+    return None
 
 
 def clean_old_logs() -> None:
@@ -63,6 +66,20 @@ def clean_old_logs() -> None:
 
 
 def load_watchlist_tickers(stocks: list[dict[str, Any]]) -> list[str]:
+    rows = supabase_request("/rest/v1/watchlists?select=tickers")
+    tickers: list[str] = []
+    if isinstance(rows, list):
+        for row in rows:
+            values = row.get("tickers") if isinstance(row, dict) else None
+            if not isinstance(values, list):
+                continue
+            for value in values:
+                ticker = str(value or "").strip().upper()
+                if ticker and ticker not in tickers:
+                    tickers.append(ticker)
+    if tickers:
+        return tickers[:MAX_LOG_ROWS]
+
     tickers = [
         str(stock.get("ticker", "")).strip().upper()
         for stock in stocks

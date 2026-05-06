@@ -2521,6 +2521,7 @@ function normalizeApiLogTask(metadata?: Record<string, unknown>): ApiLogTrigger 
 }
 
 function apiLogMatchesTab(log: ApiLog, tab: ApiLogTrigger) {
+  if (log.metadata?.source === 'refresh-data') return false
   return normalizeApiLogTrigger(log.triggerName) === tab || normalizeApiLogTask(log.metadata) === tab
 }
 
@@ -3955,10 +3956,6 @@ function App() {
 
       if (result.mode === 'workflow_dispatch') {
         setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 완료되면 최신 데이터가 자동 반영됩니다.')
-        await recordRefreshDataLogs('success', 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다.', {
-          tickers: result.refreshedTickers,
-          actionsUrl: result.actionsUrl,
-        })
         return
       }
 
