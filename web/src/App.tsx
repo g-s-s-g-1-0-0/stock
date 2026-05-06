@@ -246,6 +246,19 @@ function readStoredActivePage(): ActivePage {
   return activePages.includes(stored as ActivePage) ? stored as ActivePage : 'home'
 }
 
+function activePageFromHash() {
+  const page = window.location.hash.replace(/^#\/?/, '').split('?')[0]
+  return activePages.includes(page as ActivePage) ? page as ActivePage : null
+}
+
+function readInitialActivePage(): ActivePage {
+  return activePageFromHash() ?? readStoredActivePage()
+}
+
+function activePageHash(page: ActivePage) {
+  return `#${page}`
+}
+
 function userSettingsStorageKey(session: UserSession | null = null) {
   return `${USER_SETTINGS_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
 }
@@ -3014,7 +3027,7 @@ function App() {
   const [isWatchlistSortOpen, setIsWatchlistSortOpen] = useState(false)
   const [apiLogs, setApiLogs] = useState<ApiLog[]>(() => readStoredApiLogs())
   const [isLoadingApiLogs, setIsLoadingApiLogs] = useState(false)
-  const [activePage, setActivePage] = useState<ActivePage>(() => readStoredActivePage())
+  const [activePage, setActivePage] = useState<ActivePage>(() => readInitialActivePage())
   const addStockButtonRef = useRef<HTMLButtonElement | null>(null)
   const inlineAddRef = useRef<HTMLDivElement | null>(null)
   const watchlistSortMenuRef = useRef<HTMLDivElement | null>(null)
@@ -4065,7 +4078,20 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, activePage)
+    const nextHash = activePageHash(activePage)
+    if (window.location.hash !== nextHash) {
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`)
+    }
   }, [activePage])
+
+  useEffect(() => {
+    const syncPageFromHash = () => {
+      const page = activePageFromHash()
+      if (page) setActivePage(page)
+    }
+    window.addEventListener('hashchange', syncPageFromHash)
+    return () => window.removeEventListener('hashchange', syncPageFromHash)
+  }, [])
   const rawTableStocks = isOperatorDataMode ? operatorStocks : watchlistStocks
   const tableStocks = useMemo(
     () => sortWatchlistStocks(rawTableStocks, watchlistSortSettings, currentWatchlistTickers, scopedTrades),
