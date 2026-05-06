@@ -2504,7 +2504,16 @@ function normalizeApiLogTrigger(triggerName: string): ApiLogTrigger | null {
   return null
 }
 
+function isRefreshDataLog(triggerName: string) {
+  return triggerName.toLowerCase().includes('refresh-data')
+}
+
+function apiLogMatchesTab(log: ApiLog, tab: ApiLogTrigger) {
+  return normalizeApiLogTrigger(log.triggerName) === tab || isRefreshDataLog(log.triggerName)
+}
+
 function apiLogTriggerLabel(triggerName: string) {
+  if (isRefreshDataLog(triggerName)) return '전체 갱신'
   const normalized = normalizeApiLogTrigger(triggerName)
   return apiLogTabs.find((tab) => tab.key === normalized)?.label ?? triggerName
 }
@@ -2534,7 +2543,7 @@ function AdminLogsPage({
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
   const [adminLogPage, setAdminLogPage] = useState(1)
   const activeTab = apiLogTabs.find((tab) => tab.key === activeLogTab) ?? apiLogTabs[0]
-  const filteredLogs = logs.filter((log) => normalizeApiLogTrigger(log.triggerName) === activeLogTab)
+  const filteredLogs = logs.filter((log) => apiLogMatchesTab(log, activeLogTab))
   const totalLogPages = Math.max(1, Math.ceil(filteredLogs.length / ADMIN_LOGS_PAGE_SIZE))
   const currentLogPage = Math.min(adminLogPage, totalLogPages)
   const pagedLogs = filteredLogs.slice((currentLogPage - 1) * ADMIN_LOGS_PAGE_SIZE, currentLogPage * ADMIN_LOGS_PAGE_SIZE)
@@ -2558,7 +2567,7 @@ function AdminLogsPage({
 
       <div className="admin-log-tabs" aria-label="운영 로그 종류">
         {apiLogTabs.map((tab) => {
-          const tabLogs = logs.filter((log) => normalizeApiLogTrigger(log.triggerName) === tab.key)
+          const tabLogs = logs.filter((log) => apiLogMatchesTab(log, tab.key))
           const hasFailure = tabLogs.some((log) => log.status === 'failure')
           return (
             <button
@@ -3076,6 +3085,14 @@ function App() {
     } catch {
       // The in-memory log is still shown to the admin for this session.
     }
+  }
+
+  async function recordRefreshDataLogs(status: 'success' | 'failure', message: string, metadata: Record<string, unknown> = {}) {
+    await Promise.all(apiLogTabs.map((tab) => recordApiLog(tab.key, status, message, {
+      ...metadata,
+      source: 'refresh-data',
+      task: tab.key,
+    })))
   }
 
   async function loadWatchlist(scope: 'personal' | 'operator', session: UserSession | null) {
@@ -3735,7 +3752,7 @@ function App() {
 
       if (result.mode === 'workflow_dispatch') {
         setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 완료되면 최신 데이터가 자동 반영됩니다.')
-        await recordApiLog('refresh-data', 'success', 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다.', {
+        await recordRefreshDataLogs('success', 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다.', {
           tickers: result.refreshedTickers,
           actionsUrl: result.actionsUrl,
         })
@@ -3745,10 +3762,10 @@ function App() {
       const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>()
       applyLoadedData(data)
       setRefreshDataMessage(`${result.refreshedTickers.length}개 종목을 현재 시점 기준으로 갱신했습니다.`)
-      await recordApiLog('refresh-data', 'success', `${result.refreshedTickers.length}개 종목을 갱신했습니다.`, { tickers: result.refreshedTickers })
+      await recordRefreshDataLogs('success', `${result.refreshedTickers.length}개 종목을 갱신했습니다.`, { tickers: result.refreshedTickers })
     } catch (error) {
       setRefreshDataMessage('즉시 갱신에 실패했습니다. GitHub Actions 토큰과 Vercel 환경 변수를 확인해 주세요.')
-      await recordApiLog('refresh-data', 'failure', error instanceof Error ? error.message : '데이터 즉시 갱신에 실패했습니다.', { tickers })
+      await recordRefreshDataLogs('failure', error instanceof Error ? error.message : '데이터 즉시 갱신에 실패했습니다.', { tickers })
     } finally {
       setIsRefreshingData(false)
     }
