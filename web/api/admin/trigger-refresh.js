@@ -55,7 +55,7 @@ async function triggerWorkflow() {
       'user-agent': 'gongsuseongga-admin-refresh',
       'x-github-api-version': '2022-11-28',
     },
-    body: JSON.stringify({ ref }),
+    body: JSON.stringify({ ref, inputs: { refresh_scope: 'all' } }),
   })
 
   if (!response.ok) {

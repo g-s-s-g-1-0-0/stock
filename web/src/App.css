@@ -2888,12 +2888,16 @@
   min-width: 820px;
 }
 
+.admin-logs-table tbody tr:hover td {
+  background: var(--sheet-bg);
+}
+
 .admin-log-row {
   cursor: pointer;
 }
 
 .admin-log-row:hover td {
-  background: var(--subtle);
+  background: var(--sheet-bg);
 }
 
 .admin-log-message-cell {
@@ -2914,19 +2918,96 @@
 }
 
 .admin-log-detail-row td {
-  background: #0f172a;
+  background: #f8fafc;
   padding: 0;
+}
+
+.admin-log-detail-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.admin-log-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-log-detail-meta span,
+.admin-log-detail-meta a {
+  border: 1px solid #dbe4ef;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  padding: 5px 9px;
+  text-decoration: none;
+}
+
+.admin-log-detail-table-wrap {
+  overflow: auto;
+  border: 1px solid #dbe4ef;
+  border-radius: 12px;
+  background: #ffffff;
+  max-height: 320px;
+}
+
+.admin-log-detail-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: #1f2937;
+  font-size: 12px;
+}
+
+.admin-log-detail-table th,
+.admin-log-detail-table td {
+  border-bottom: 1px solid #e5edf5;
+  border-right: 1px solid #edf2f7;
+  background: #ffffff;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.admin-log-detail-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.admin-log-detail-table tbody tr:hover td {
+  background: #ffffff;
 }
 
 .admin-log-detail-row pre {
   margin: 0;
   overflow: auto;
-  color: #dbeafe;
+  border: 1px solid #dbe4ef;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #334155;
   font-size: 11px;
   line-height: 1.55;
   max-height: 240px;
   padding: 14px;
   white-space: pre-wrap;
+}
+
+.admin-log-detail-empty {
+  color: #64748b;
+  font-size: 12px;
+  padding: 14px;
 }
 
 .admin-log-empty-state code {

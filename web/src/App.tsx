@@ -120,6 +120,8 @@ type ApiLog = {
 }
 
 type ApiLogTrigger = 'value-analysis' | 'technical-analysis' | 'market-trends'
+type ApiLogDetailColumn = { key: string; label: string }
+type ApiLogDetailRow = Record<string, unknown>
 
 type ValuationMetric = {
   marketCap: string
@@ -1114,6 +1116,10 @@ function displayCurrentPriceText(stock: Stock) {
 }
 
 function displayStockOpinion(stock: Stock): Opinion {
+  return stock.opinion
+}
+
+function displayValueAnalysisOpinion(stock: Stock): Opinion {
   return isFairPriceUnavailable(stock) ? '-' : stock.opinion
 }
 
@@ -2525,9 +2531,69 @@ function apiLogDuration(metadata?: Record<string, unknown>) {
   return '-'
 }
 
-function formatApiLogMetadata(metadata?: Record<string, unknown>) {
-  if (!metadata || Object.keys(metadata).length === 0) return '기록된 세부 정보가 없습니다.'
-  return JSON.stringify(metadata, null, 2)
+function apiLogDetailRows(metadata?: Record<string, unknown>): ApiLogDetailRow[] {
+  return Array.isArray(metadata?.rows) ? metadata.rows.filter((row): row is ApiLogDetailRow => row !== null && typeof row === 'object' && !Array.isArray(row)) : []
+}
+
+function apiLogDetailColumns(metadata?: Record<string, unknown>, rows: ApiLogDetailRow[] = apiLogDetailRows(metadata)): ApiLogDetailColumn[] {
+  if (Array.isArray(metadata?.columns)) {
+    const columns = metadata.columns
+      .filter((column): column is ApiLogDetailColumn => column !== null && typeof column === 'object' && typeof column.key === 'string' && typeof column.label === 'string')
+      .slice(0, 10)
+    if (columns.length > 0) return columns
+  }
+  const firstRow = rows[0]
+  if (!firstRow) return []
+  return Object.keys(firstRow).slice(0, 10).map((key) => ({ key, label: key }))
+}
+
+function formatApiLogValue(value: unknown) {
+  if (value === null || value === undefined || value === '') return '-'
+  if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : '-'
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+
+function ApiLogMetadataDetail({ metadata }: { metadata?: Record<string, unknown> }) {
+  if (!metadata || Object.keys(metadata).length === 0) {
+    return <div className="admin-log-detail-empty">기록된 세부 정보가 없습니다.</div>
+  }
+
+  const rows = apiLogDetailRows(metadata)
+  const columns = apiLogDetailColumns(metadata, rows)
+  const summary = typeof metadata.summary === 'string' ? metadata.summary : ''
+  const actionUrl = typeof metadata.actionsUrl === 'string' ? metadata.actionsUrl : ''
+
+  return (
+    <div className="admin-log-detail-panel">
+      <div className="admin-log-detail-meta">
+        {summary && <span>{summary}</span>}
+        {typeof metadata.total === 'number' && <span>총 {metadata.total}개</span>}
+        {actionUrl && <a href={actionUrl} rel="noreferrer" target="_blank">GitHub Actions 보기</a>}
+      </div>
+
+      {rows.length > 0 && columns.length > 0 ? (
+        <div className="admin-log-detail-table-wrap">
+          <table className="admin-log-detail-table">
+            <thead>
+              <tr>
+                {columns.map((column) => <th key={column.key}>{column.label}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr key={`api-log-detail-${rowIndex}`}>
+                  {columns.map((column) => <td key={column.key}>{formatApiLogValue(row[column.key])}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <pre>{JSON.stringify(metadata, null, 2)}</pre>
+      )}
+    </div>
+  )
 }
 
 function AdminLogsPage({
@@ -2628,7 +2694,7 @@ function AdminLogsPage({
                     {isExpanded && (
                       <tr className="admin-log-detail-row">
                         <td colSpan={5}>
-                          <pre>{formatApiLogMetadata(log.metadata)}</pre>
+                          <ApiLogMetadataDetail metadata={log.metadata} />
                         </td>
                       </tr>
                     )}
@@ -3087,12 +3153,141 @@ function App() {
     }
   }
 
-  async function recordRefreshDataLogs(status: 'success' | 'failure', message: string, metadata: Record<string, unknown> = {}) {
-    await Promise.all(apiLogTabs.map((tab) => recordApiLog(tab.key, status, message, {
+  function logStocksForTickers(tickers: unknown) {
+    const tickerSet = new Set(
+      (Array.isArray(tickers) ? tickers : apiStocks.map((stock) => stock.ticker))
+        .map((ticker) => String(ticker).trim().toUpperCase())
+        .filter(Boolean),
+    )
+    return apiStocks.filter((stock) => tickerSet.has(stock.ticker.toUpperCase())).slice(0, 80)
+  }
+
+  function technicalValue(row: Record<string, string> | undefined, candidates: string[]) {
+    if (!row) return '-'
+    const entries = Object.entries(row)
+    for (const candidate of candidates) {
+      const exact = row[candidate]
+      if (exact !== undefined && String(exact).trim()) return exact
+      const found = entries.find(([key]) => key.toLowerCase().includes(candidate.toLowerCase()))
+      if (found && String(found[1]).trim()) return found[1]
+    }
+    return '-'
+  }
+
+  function buildValueAnalysisLogMetadata(metadata: Record<string, unknown>) {
+    const rows = logStocksForTickers(metadata.tickers).map((stock) => {
+      const metric = apiValuationMetrics[stock.ticker]
+      return {
+        ticker: stock.ticker,
+        name: stock.name,
+        market: stock.market,
+        industry: displayIndustryLabel(stock.industry),
+        currentPrice: displayCurrentPriceText(stock),
+        fairPrice: stock.fairPrice || '-',
+        valuation: displayStockValuation(stock),
+        opinion: displayValueAnalysisOpinion(stock),
+        per: metric?.per || '-',
+        epsTtm: metric?.epsTtm || '-',
+        roe: metric?.roe || '-',
+        updatedAt: stock.updatedAt || '-',
+      }
+    })
+    return {
       ...metadata,
       source: 'refresh-data',
-      task: tab.key,
-    })))
+      task: 'value-analysis',
+      summary: '갱신 시점의 종목별 가치분석 스냅샷입니다.',
+      total: rows.length,
+      columns: [
+        { key: 'ticker', label: '종목' },
+        { key: 'name', label: '종목명' },
+        { key: 'currentPrice', label: '현재가' },
+        { key: 'fairPrice', label: '적정 주가 범위' },
+        { key: 'valuation', label: '판단' },
+        { key: 'opinion', label: '투자의견' },
+        { key: 'per', label: 'PER' },
+        { key: 'epsTtm', label: 'EPS(TTM)' },
+        { key: 'roe', label: 'ROE' },
+        { key: 'industry', label: '산업' },
+      ],
+      rows,
+    }
+  }
+
+  function buildTechnicalAnalysisLogMetadata(metadata: Record<string, unknown>) {
+    const rows = logStocksForTickers(metadata.tickers).map((stock) => {
+      const technical = apiTechnicalRows[stock.ticker]
+      return {
+        ticker: stock.ticker,
+        name: stock.name,
+        currentPrice: technicalValue(technical, ['현재가']) || displayCurrentPriceText(stock),
+        opinion: displayStockOpinion(stock),
+        strategy: stock.strategies.join(', ') || technicalValue(technical, ['진입 전략']),
+        rsi: technicalValue(technical, ['RSI']),
+        cci: technicalValue(technical, ['CCI']),
+        macdHist: technicalValue(technical, ['MACD Hist', 'MACD']),
+        pctB: technicalValue(technical, ['%B']),
+        ma200: technicalValue(technical, ['MA200', '200일선']),
+      }
+    })
+    return {
+      ...metadata,
+      source: 'refresh-data',
+      task: 'technical-analysis',
+      summary: '갱신 시점의 종목별 기술분석 핵심 지표입니다.',
+      total: rows.length,
+      columns: [
+        { key: 'ticker', label: '종목' },
+        { key: 'name', label: '종목명' },
+        { key: 'currentPrice', label: '현재가' },
+        { key: 'opinion', label: '투자의견' },
+        { key: 'strategy', label: '진입 전략' },
+        { key: 'rsi', label: 'RSI' },
+        { key: 'cci', label: 'CCI' },
+        { key: 'macdHist', label: 'MACD Hist' },
+        { key: 'pctB', label: '%B' },
+        { key: 'ma200', label: 'MA200' },
+      ],
+      rows,
+    }
+  }
+
+  function buildMarketTrendsLogMetadata(metadata: Record<string, unknown>) {
+    const rows = apiMarketTrendRows.slice(0, 12).flatMap((trend) => trend.ranks.map((rankText, index) => {
+      const [sector = rankText, keywords = ''] = String(rankText).split('|').map((part) => part.trim())
+      return {
+        date: trend.date,
+        rank: index + 1,
+        sector,
+        keywords,
+        summary: trend.summary || '-',
+      }
+    }))
+    return {
+      ...metadata,
+      source: 'refresh-data',
+      task: 'market-trends',
+      summary: '갱신 시점의 시장 트렌드 순위 데이터입니다.',
+      total: rows.length,
+      columns: [
+        { key: 'date', label: '기준일' },
+        { key: 'rank', label: '순위' },
+        { key: 'sector', label: '섹터' },
+        { key: 'keywords', label: '키워드' },
+        { key: 'summary', label: '요약' },
+      ],
+      rows,
+    }
+  }
+
+  function buildRefreshLogMetadata(tab: ApiLogTrigger, metadata: Record<string, unknown>) {
+    if (tab === 'value-analysis') return buildValueAnalysisLogMetadata(metadata)
+    if (tab === 'technical-analysis') return buildTechnicalAnalysisLogMetadata(metadata)
+    return buildMarketTrendsLogMetadata(metadata)
+  }
+
+  async function recordRefreshDataLogs(status: 'success' | 'failure', message: string, metadata: Record<string, unknown> = {}) {
+    await Promise.all(apiLogTabs.map((tab) => recordApiLog(tab.key, status, message, buildRefreshLogMetadata(tab.key, metadata))))
   }
 
   async function loadWatchlist(scope: 'personal' | 'operator', session: UserSession | null) {

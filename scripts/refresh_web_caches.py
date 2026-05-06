@@ -14,6 +14,8 @@ if str(ROOT_DIR) not in sys.path:
 
 from calculator.pipeline import read_search_universe, read_universe, run
 
+VALID_TASKS = {"valuation", "technical", "stocks", "market-trends", "market-events"}
+
 
 def supabase_request(path: str) -> list[dict]:
     supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
@@ -73,15 +75,44 @@ def universe_for_tickers(tickers: list[str]) -> list[dict[str, str]]:
     return read_universe()
 
 
+def parse_tasks(argv: list[str]) -> list[str]:
+    raw_values = argv or [os.environ.get("REFRESH_TASKS", "all")]
+    tasks: list[str] = []
+    for raw in raw_values:
+        for value in str(raw or "").replace(",", " ").split():
+            task = value.strip()
+            if not task:
+                continue
+            if task == "all":
+                return ["valuation", "technical", "stocks", "market-trends", "market-events"]
+            if task not in VALID_TASKS:
+                raise SystemExit(f"unknown refresh task: {task}")
+            if task not in tasks:
+                tasks.append(task)
+
+    if not tasks:
+        return ["valuation", "technical", "stocks", "market-trends", "market-events"]
+    if ("valuation" in tasks or "technical" in tasks) and "stocks" not in tasks:
+        tasks.append("stocks")
+    return tasks
+
+
 def main() -> None:
+    tasks = parse_tasks(sys.argv[1:])
     tickers = load_watchlist_tickers()
     universe = universe_for_tickers(tickers)
     print(f"refresh universe size: {len(universe)}")
-    run("valuation", universe=universe)
-    run("technical", universe=universe)
-    run("stocks")
-    run("market-trends")
-    run("market-events")
+    print(f"refresh tasks: {', '.join(tasks)}")
+    if "valuation" in tasks:
+        run("valuation", universe=universe)
+    if "technical" in tasks:
+        run("technical", universe=universe)
+    if "stocks" in tasks:
+        run("stocks")
+    if "market-trends" in tasks:
+        run("market-trends")
+    if "market-events" in tasks:
+        run("market-events")
 
 
 if __name__ == "__main__":
