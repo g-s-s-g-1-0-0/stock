@@ -2514,12 +2514,21 @@ function isRefreshDataLog(triggerName: string) {
   return triggerName.toLowerCase().includes('refresh-data')
 }
 
-function apiLogMatchesTab(log: ApiLog, tab: ApiLogTrigger) {
-  return normalizeApiLogTrigger(log.triggerName) === tab || isRefreshDataLog(log.triggerName)
+function normalizeApiLogTask(metadata?: Record<string, unknown>): ApiLogTrigger | null {
+  const task = typeof metadata?.task === 'string' ? metadata.task : ''
+  if (!task) return null
+  return normalizeApiLogTrigger(task)
 }
 
-function apiLogTriggerLabel(triggerName: string) {
-  if (isRefreshDataLog(triggerName)) return '전체 갱신'
+function apiLogMatchesTab(log: ApiLog, tab: ApiLogTrigger) {
+  return normalizeApiLogTrigger(log.triggerName) === tab || normalizeApiLogTask(log.metadata) === tab
+}
+
+function apiLogTriggerLabel(log: ApiLog) {
+  const task = normalizeApiLogTask(log.metadata)
+  if (task) return apiLogTabs.find((tab) => tab.key === task)?.label ?? log.triggerName
+  if (isRefreshDataLog(log.triggerName)) return '전체 갱신'
+  const { triggerName } = log
   const normalized = normalizeApiLogTrigger(triggerName)
   return apiLogTabs.find((tab) => tab.key === normalized)?.label ?? triggerName
 }
@@ -2682,7 +2691,7 @@ function AdminLogsPage({
                   <Fragment key={log.id}>
                     <tr className="admin-log-row" onClick={() => setExpandedLogId(isExpanded ? null : log.id)}>
                       <td>{formatBoardPostDate(log.createdAt)}</td>
-                      <td>{apiLogTriggerLabel(log.triggerName)}</td>
+                      <td>{apiLogTriggerLabel(log)}</td>
                       <td>{apiLogDuration(log.metadata)}</td>
                       <td><span className={`status-badge ${log.status === 'success' ? 'positive' : 'negative'}`}>{log.status === 'success' ? '완료' : '실패'}</span></td>
                       <td className="admin-log-message-cell">
