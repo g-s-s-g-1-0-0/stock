@@ -2563,7 +2563,7 @@ function AdminLogsPage({
         <span>{activeTab.description}</span>
       </div>
 
-      <div className="sheet-wrap admin-logs-sheet">
+      <div className={`sheet-wrap admin-logs-sheet ${filteredLogs.length === 0 ? 'admin-logs-sheet-empty' : ''}`}>
         {filteredLogs.length === 0 ? (
           <div className="board-empty-state admin-log-empty-state">
             <strong>아직 이 작업의 실행 로그가 없습니다.</strong>

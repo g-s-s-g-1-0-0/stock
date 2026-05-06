@@ -2865,6 +2865,20 @@
   flex: 1;
 }
 
+.admin-logs-sheet-empty {
+  display: grid;
+  place-items: start center;
+  padding: 18px;
+}
+
+.admin-logs-sheet-empty .admin-log-empty-state {
+  width: min(560px, 100%);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 18px 16px;
+}
+
 .admin-logs-table {
   min-width: 820px;
 }
