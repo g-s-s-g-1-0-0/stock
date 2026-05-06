@@ -846,7 +846,7 @@
 .value-analysis-table {
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 2380px;
+  min-width: 2464px;
 }
 
 .value-analysis-table th:nth-child(1),
@@ -854,9 +854,9 @@
   position: sticky;
   left: 0;
   z-index: 3;
-  width: 136px;
-  min-width: 136px;
-  max-width: 136px;
+  width: 220px;
+  min-width: 220px;
+  max-width: 220px;
   background: var(--sheet-bg);
   border-right: 0;
 }
@@ -882,7 +882,7 @@
 .value-analysis-table th:nth-child(2),
 .value-analysis-table td:nth-child(2) {
   position: sticky;
-  left: 136px;
+  left: 220px;
   z-index: 3;
   width: 92px;
   min-width: 92px;
@@ -1615,6 +1615,11 @@
   max-width: 240px;
   overflow: hidden;
   text-align: left;
+  text-overflow: ellipsis;
+}
+
+.value-analysis-table .name-cell > span:last-child {
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 
@@ -2527,7 +2532,7 @@
 }
 
 .technical-analysis-table {
-  min-width: 6200px;
+  min-width: 6284px;
 }
 
 
@@ -2545,7 +2550,7 @@
 .technical-analysis-table th:nth-child(3),
 .technical-analysis-table td:nth-child(3) {
   position: sticky;
-  left: 228px;
+  left: 312px;
   z-index: 3;
   width: 96px;
   min-width: 96px;
