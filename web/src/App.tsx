@@ -3117,13 +3117,18 @@ function App() {
   useEffect(() => {
     let isMounted = true
 
-    fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>().then((data) => {
-      if (!isMounted) return
-      applyLoadedData(data)
-    })
+    const loadLatestData = () => {
+      fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>().then((data) => {
+        if (!isMounted) return
+        applyLoadedData(data)
+      })
+    }
+
+    const refreshTimer = window.setTimeout(loadLatestData, cachedAppData ? 900 : 0)
 
     return () => {
       isMounted = false
+      window.clearTimeout(refreshTimer)
     }
   }, [])
 

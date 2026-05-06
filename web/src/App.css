@@ -1696,6 +1696,10 @@
   text-align: left;
 }
 
+.watchlist-table .industry-cell {
+  text-align: left !important;
+}
+
 .holding-table .holding-example-note-cell {
   text-align: center !important;
 }

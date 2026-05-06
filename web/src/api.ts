@@ -45,7 +45,7 @@ export type AppData<TStock, TMetric, TGroup, TTrendRow> = {
 async function fetchJson<T>(paths: string[]): Promise<T | null> {
   for (const path of paths) {
     try {
-      const response = await fetch(path, { cache: 'no-store' })
+      const response = await fetch(path, { cache: 'default' })
       if (response.ok) return await response.json() as T
     } catch {
       // Try the next cache location.
