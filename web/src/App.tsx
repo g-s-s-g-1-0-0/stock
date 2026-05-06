@@ -504,7 +504,7 @@ const searchUniverse: Stock[] = [
 
 function stockSearchShell(stock: Stock): Stock {
   return {
-    ...stock,
+    ...withDisplayStockName(stock),
     fairPrice: '-',
     currentPrice: '-',
     valuation: '보통',
@@ -992,6 +992,46 @@ const valuationMetrics: Record<string, ValuationMetric> = {
 
 function normalizeQuery(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, '')
+}
+
+function displayStockName(name: string) {
+  let value = name.trim()
+  if (!value) return '-'
+
+  for (const marker of [' American Depositary', ' Depositary Shares', ' ADS']) {
+    if (value.includes(marker)) {
+      value = value.split(marker, 1)[0].trim()
+    }
+  }
+
+  for (const suffix of [', Ltd.', ' Ltd.', ', Inc.', ' Inc.', ', Corp.', ' Corp.', ', Co.', ' Co.']) {
+    const index = value.indexOf(suffix)
+    if (index !== -1) {
+      value = value.slice(0, index + suffix.length).trim()
+      break
+    }
+  }
+
+  return value
+}
+
+function withDisplayStockName(stock: Stock): Stock {
+  return {
+    ...stock,
+    name: displayStockName(stock.name),
+  }
+}
+
+function stockSearchRank(stock: Stock, normalizedQuery: string) {
+  const ticker = normalizeQuery(stock.ticker)
+  const name = normalizeQuery(stock.name)
+
+  if (ticker === normalizedQuery) return 0
+  if (ticker.startsWith(normalizedQuery)) return 1
+  if (ticker.includes(normalizedQuery)) return 2
+  if (name.startsWith(normalizedQuery)) return 3
+  if (name.includes(normalizedQuery)) return 4
+  return 99
 }
 
 function statusClass(value: Valuation | Opinion | TradeStatus) {
@@ -2844,7 +2884,7 @@ function App() {
   const [canUseAccountSwitch, setCanUseAccountSwitch] = useState(false)
   const [authInfoMessage, setAuthInfoMessage] = useState('')
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
-  const [apiStocks, setApiStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? cachedAppData.stocks.rows : searchUniverse.map(stockSearchShell))
+  const [apiStocks, setApiStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? cachedAppData.stocks.rows.map(withDisplayStockName) : searchUniverse.map(stockSearchShell))
   const [apiValuationMetrics, setApiValuationMetrics] = useState<Record<string, ValuationMetric>>(() => cachedAppData?.valuation?.rows ?? {})
   const [apiTechnicalRows, setApiTechnicalRows] = useState<Record<string, Record<string, string>>>(() => cachedAppData?.technical?.rows ?? {})
   const [apiMarketSnapshot, setApiMarketSnapshot] = useState<string[][]>(() => cachedAppData?.technical?.marketSnapshot && isMeaningfulMarketSnapshot(cachedAppData.technical.marketSnapshot) ? mergeMarketSnapshot(cachedAppData.technical.marketSnapshot) : technicalMarketSnapshot)
@@ -2870,7 +2910,7 @@ function App() {
   const applyLoadedData = (data: AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>) => {
     storeCachedAppData(data)
     if (data.stocks?.rows && data.stocks.rows.length > 0) {
-      setApiStocks(data.stocks.rows)
+      setApiStocks(data.stocks.rows.map(withDisplayStockName))
     }
     if (data.valuation?.rows) {
       setApiValuationMetrics(data.valuation.rows)
@@ -3234,12 +3274,12 @@ function App() {
   const searchResults = useMemo(() => {
     const normalized = normalizeQuery(query)
     if (!normalized) return []
-    return apiStocks.filter((stock) => {
-      const ticker = normalizeQuery(stock.ticker)
-      const name = normalizeQuery(stock.name)
 
-      return ticker.includes(normalized) || name.includes(normalized)
-    })
+    return apiStocks
+      .map((stock) => ({ stock, rank: stockSearchRank(stock, normalized) }))
+      .filter(({ rank }) => rank < 99)
+      .sort((a, b) => a.rank - b.rank || a.stock.ticker.localeCompare(b.stock.ticker))
+      .map(({ stock }) => stock)
   }, [apiStocks, query])
 
   const trimmedLoginEmail = loginEmail.trim().toLowerCase()

@@ -57,6 +57,24 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
+def clean_stock_name(name: Any) -> str:
+    value = str(name or "").strip()
+    if not value:
+        return "-"
+
+    for marker in (" American Depositary", " Depositary Shares", " ADS"):
+        if marker in value:
+            value = value.split(marker, 1)[0].strip()
+
+    for suffix in (", Ltd.", " Ltd.", ", Inc.", " Inc.", ", Corp.", " Corp.", ", Co.", " Co."):
+        index = value.find(suffix)
+        if index != -1:
+            value = value[:index + len(suffix)].strip()
+            break
+
+    return value
+
+
 def write_cache(name: str, payload: dict[str, Any]) -> None:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     WEB_PUBLIC_API_DIR.mkdir(parents=True, exist_ok=True)
@@ -329,7 +347,7 @@ def latest_technical_row(stock: dict[str, str]) -> dict[str, str] | None:
     strategy = buy["strategyName"] if buy["entryTriggered"] else "-"
     return {
         "ticker": stock["ticker"],
-        "name": stock["name"],
+        "name": clean_stock_name(stock["name"]),
         "market": stock["market"],
         "updatedAt": now_iso(),
         "currentPrice": fmt_price(price, stock["market"]),
@@ -467,7 +485,7 @@ def build_stocks_cache() -> dict[str, Any]:
         opinion_blocked = fair_price_reason == "loss_making" or price_reason == "price_outlier"
         rows.append({
             "ticker": stock["ticker"],
-            "name": stock["name"],
+            "name": clean_stock_name(stock["name"]),
             "market": stock["market"],
             "fairPrice": fair_price,
             "fairPriceReason": fair_price_reason,
