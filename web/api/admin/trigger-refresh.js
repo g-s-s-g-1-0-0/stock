@@ -1,5 +1,6 @@
 const DEFAULT_WORKFLOW_ID = 'web-data-refresh.yml'
 const DEFAULT_REPO = 'g-s-s-g-1-0-0/stock'
+const ALLOWED_SCOPES = new Set(['all', 'valuation', 'technical', 'market-trends', 'market-events'])
 
 function json(res, statusCode, payload) {
   res.statusCode = statusCode
@@ -12,6 +13,30 @@ function readAdminEmails() {
     .split(',')
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean)
+}
+
+function normalizeScope(value) {
+  const scope = String(value || 'all').trim()
+  return ALLOWED_SCOPES.has(scope) ? scope : null
+}
+
+function readRequestScope(req) {
+  return normalizeScope(req.query?.scope || req.body?.scope || 'all')
+}
+
+function readCronSecret(req) {
+  return String(
+    req.query?.secret ||
+    req.headers['x-cron-secret'] ||
+    req.headers['x-vercel-cron-signature'] ||
+    req.body?.secret ||
+    ''
+  ).trim()
+}
+
+function isValidCronRequest(req) {
+  const cronSecret = String(process.env.CRON_SECRET || '').trim()
+  return Boolean(cronSecret && readCronSecret(req) === cronSecret)
 }
 
 async function readSupabaseUser(accessToken) {
@@ -36,7 +61,7 @@ async function readSupabaseUser(accessToken) {
   return response.json()
 }
 
-async function triggerWorkflow() {
+async function triggerWorkflow(scope) {
   const token = process.env.GITHUB_ACTIONS_TOKEN
   const repo = process.env.GITHUB_REPO || DEFAULT_REPO
   const workflowId = process.env.GITHUB_REFRESH_WORKFLOW_ID || DEFAULT_WORKFLOW_ID
@@ -55,7 +80,7 @@ async function triggerWorkflow() {
       'user-agent': 'gongsuseongga-admin-refresh',
       'x-github-api-version': '2022-11-28',
     },
-    body: JSON.stringify({ ref, inputs: { refresh_scope: 'all' } }),
+    body: JSON.stringify({ ref, inputs: { refresh_scope: scope } }),
   })
 
   if (!response.ok) {
@@ -67,6 +92,7 @@ async function triggerWorkflow() {
     repo,
     workflowId,
     ref,
+    scope,
     actionsUrl: `https://github.com/${repo}/actions/workflows/${workflowId}`,
   }
 }
@@ -77,21 +103,28 @@ export default async function handler(req, res) {
     return json(res, 405, { error: 'Method not allowed.' })
   }
 
-  const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim()
-  if (!accessToken) {
-    return json(res, 401, { error: '로그인이 필요합니다.' })
+  const scope = readRequestScope(req)
+  if (!scope) {
+    return json(res, 400, { error: '지원하지 않는 갱신 범위입니다.' })
   }
 
   try {
-    const user = await readSupabaseUser(accessToken)
-    const userEmail = String(user.email || '').toLowerCase()
-    const adminEmails = readAdminEmails()
+    if (!isValidCronRequest(req)) {
+      const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim()
+      if (!accessToken) {
+        return json(res, 401, { error: '로그인이 필요합니다.' })
+      }
 
-    if (!adminEmails.includes(userEmail)) {
-      return json(res, 403, { error: '관리자만 즉시 갱신을 실행할 수 있습니다.' })
+      const user = await readSupabaseUser(accessToken)
+      const userEmail = String(user.email || '').toLowerCase()
+      const adminEmails = readAdminEmails()
+
+      if (!adminEmails.includes(userEmail)) {
+        return json(res, 403, { error: '관리자만 즉시 갱신을 실행할 수 있습니다.' })
+      }
     }
 
-    const workflow = await triggerWorkflow()
+    const workflow = await triggerWorkflow(scope)
     return json(res, 202, {
       ok: true,
       mode: 'workflow_dispatch',

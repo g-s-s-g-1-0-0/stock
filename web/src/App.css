@@ -963,10 +963,10 @@
   background: var(--sheet-head);
 }
 
-.watchlist-table.editable-home-table th:nth-child(1),
-.watchlist-table.editable-home-table td:nth-child(1),
-.holding-table.editable-home-table th:nth-child(1),
-.holding-table.editable-home-table td:nth-child(1) {
+.watchlist-table.pinned-home-table.editable-home-table th:nth-child(1),
+.watchlist-table.pinned-home-table.editable-home-table td:nth-child(1),
+.holding-table.pinned-home-table.editable-home-table th:nth-child(1),
+.holding-table.pinned-home-table.editable-home-table td:nth-child(1) {
   position: sticky;
   left: var(--home-select-left);
   z-index: 3;
@@ -976,10 +976,10 @@
   background: var(--sheet-bg);
 }
 
-.watchlist-table.readonly-home-table th:nth-child(1),
-.watchlist-table.readonly-home-table td:nth-child(1),
-.holding-table.readonly-home-table th:nth-child(1),
-.holding-table.readonly-home-table td:nth-child(1) {
+.watchlist-table.pinned-home-table.readonly-home-table th:nth-child(1),
+.watchlist-table.pinned-home-table.readonly-home-table td:nth-child(1),
+.holding-table.pinned-home-table.readonly-home-table th:nth-child(1),
+.holding-table.pinned-home-table.readonly-home-table td:nth-child(1) {
   position: sticky;
   left: var(--home-no-left);
   z-index: 3;
@@ -989,10 +989,10 @@
   background: var(--sheet-bg);
 }
 
-.watchlist-table.editable-home-table th:nth-child(2),
-.watchlist-table.editable-home-table td:nth-child(2),
-.holding-table.editable-home-table th:nth-child(2),
-.holding-table.editable-home-table td:nth-child(2) {
+.watchlist-table.pinned-home-table.editable-home-table th:nth-child(2),
+.watchlist-table.pinned-home-table.editable-home-table td:nth-child(2),
+.holding-table.pinned-home-table.editable-home-table th:nth-child(2),
+.holding-table.pinned-home-table.editable-home-table td:nth-child(2) {
   position: sticky;
   left: var(--home-no-left);
   z-index: 3;
@@ -1002,14 +1002,14 @@
   background: var(--sheet-bg);
 }
 
-.watchlist-table.readonly-home-table th:nth-child(2),
-.watchlist-table.readonly-home-table td:nth-child(2),
-.watchlist-table.editable-home-table th:nth-child(3),
-.watchlist-table.editable-home-table td:nth-child(3),
-.holding-table.readonly-home-table th:nth-child(3),
-.holding-table.readonly-home-table td:nth-child(3),
-.holding-table.editable-home-table th:nth-child(4),
-.holding-table.editable-home-table td:nth-child(4) {
+.watchlist-table.pinned-home-table.readonly-home-table th:nth-child(2),
+.watchlist-table.pinned-home-table.readonly-home-table td:nth-child(2),
+.watchlist-table.pinned-home-table.editable-home-table th:nth-child(3),
+.watchlist-table.pinned-home-table.editable-home-table td:nth-child(3),
+.holding-table.pinned-home-table.readonly-home-table th:nth-child(3),
+.holding-table.pinned-home-table.readonly-home-table td:nth-child(3),
+.holding-table.pinned-home-table.editable-home-table th:nth-child(4),
+.holding-table.pinned-home-table.editable-home-table td:nth-child(4) {
   position: sticky;
   left: var(--home-name-left);
   z-index: 3;
@@ -1022,10 +1022,10 @@
   text-overflow: ellipsis;
 }
 
-.holding-table.readonly-home-table th:nth-child(2),
-.holding-table.readonly-home-table td:nth-child(2),
-.holding-table.editable-home-table th:nth-child(3),
-.holding-table.editable-home-table td:nth-child(3) {
+.holding-table.pinned-home-table.readonly-home-table th:nth-child(2),
+.holding-table.pinned-home-table.readonly-home-table td:nth-child(2),
+.holding-table.pinned-home-table.editable-home-table th:nth-child(3),
+.holding-table.pinned-home-table.editable-home-table td:nth-child(3) {
   position: sticky;
   left: var(--home-ticker-left);
   z-index: 3;
@@ -1035,25 +1035,25 @@
   background: var(--sheet-bg);
 }
 
-.watchlist-table.readonly-home-table th:nth-child(2),
-.watchlist-table.readonly-home-table td:nth-child(2),
-.watchlist-table.editable-home-table th:nth-child(3),
-.watchlist-table.editable-home-table td:nth-child(3),
-.holding-table.readonly-home-table th:nth-child(3),
-.holding-table.readonly-home-table td:nth-child(3),
-.holding-table.editable-home-table th:nth-child(4),
-.holding-table.editable-home-table td:nth-child(4) {
+.watchlist-table.pinned-home-table.readonly-home-table th:nth-child(2),
+.watchlist-table.pinned-home-table.readonly-home-table td:nth-child(2),
+.watchlist-table.pinned-home-table.editable-home-table th:nth-child(3),
+.watchlist-table.pinned-home-table.editable-home-table td:nth-child(3),
+.holding-table.pinned-home-table.readonly-home-table th:nth-child(3),
+.holding-table.pinned-home-table.readonly-home-table td:nth-child(3),
+.holding-table.pinned-home-table.editable-home-table th:nth-child(4),
+.holding-table.pinned-home-table.editable-home-table td:nth-child(4) {
   box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
 }
 
-.watchlist-table.readonly-home-table th:nth-child(2)::after,
-.watchlist-table.readonly-home-table td:nth-child(2)::after,
-.watchlist-table.editable-home-table th:nth-child(3)::after,
-.watchlist-table.editable-home-table td:nth-child(3)::after,
-.holding-table.readonly-home-table th:nth-child(3)::after,
-.holding-table.readonly-home-table td:nth-child(3)::after,
-.holding-table.editable-home-table th:nth-child(4)::after,
-.holding-table.editable-home-table td:nth-child(4)::after {
+.watchlist-table.pinned-home-table.readonly-home-table th:nth-child(2)::after,
+.watchlist-table.pinned-home-table.readonly-home-table td:nth-child(2)::after,
+.watchlist-table.pinned-home-table.editable-home-table th:nth-child(3)::after,
+.watchlist-table.pinned-home-table.editable-home-table td:nth-child(3)::after,
+.holding-table.pinned-home-table.readonly-home-table th:nth-child(3)::after,
+.holding-table.pinned-home-table.readonly-home-table td:nth-child(3)::after,
+.holding-table.pinned-home-table.editable-home-table th:nth-child(4)::after,
+.holding-table.pinned-home-table.editable-home-table td:nth-child(4)::after {
   position: absolute;
   top: 0;
   right: 0;
@@ -1065,12 +1065,59 @@
   pointer-events: none;
 }
 
-.watchlist-table.editable-home-table th:nth-child(-n + 3),
-.watchlist-table.readonly-home-table th:nth-child(-n + 2),
-.holding-table.editable-home-table th:nth-child(-n + 4),
-.holding-table.readonly-home-table th:nth-child(-n + 3) {
+.watchlist-table.pinned-home-table.editable-home-table th:nth-child(-n + 3),
+.watchlist-table.pinned-home-table.readonly-home-table th:nth-child(-n + 2),
+.holding-table.pinned-home-table.editable-home-table th:nth-child(-n + 4),
+.holding-table.pinned-home-table.readonly-home-table th:nth-child(-n + 3) {
   z-index: 5;
   background: var(--sheet-head) !important;
+}
+
+.home-name-header {
+  padding-right: 34px !important;
+  padding-left: 34px !important;
+  text-align: center !important;
+}
+
+.home-name-header > span {
+  display: block;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+}
+
+.home-pin-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+  border: 1px solid #d8e1ec;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+}
+
+.home-pin-toggle.active {
+  border-color: rgba(34, 136, 238, 0.34);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.home-pin-toggle svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .market-events-panel {
@@ -2897,6 +2944,11 @@
 
 .technical-analysis-table td:nth-child(54) {
   text-align: left !important;
+}
+
+.value-analysis-table .earnings-date-cell,
+.technical-analysis-table .earnings-date-cell {
+  text-align: center !important;
 }
 
 .technical-analysis-table td.dash-cell {

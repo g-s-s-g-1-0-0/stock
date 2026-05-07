@@ -2031,7 +2031,7 @@ function ValueAnalysisPage({
               <th>현재가</th>
               <th>가치 평가</th>
               {valueMetricColumns.map((column) => (
-                <th key={column.label}>
+                <th className={column.label.startsWith('실적발표일') ? 'earnings-date-cell' : undefined} key={column.label}>
                   <MetricValue
                     tooltip={column.tooltip}
                     onTooltipClose={onTooltipClose}
@@ -2063,7 +2063,7 @@ function ValueAnalysisPage({
                   <td className="number-cell">{displayCurrentPriceText(stock)}</td>
                   <td><span className={`status-badge ${valuationBadgeClass(displayValuation)}`}>{displayValuation}</span></td>
                   {valueMetricColumns.map((column) => (
-                    <td className="number-cell" key={column.label}>
+                    <td className={`number-cell ${column.label.startsWith('실적발표일') ? 'earnings-date-cell' : ''}`.trim()} key={column.label}>
                       {metric ? column.value(metric) : '-'}
                     </td>
                   ))}
@@ -2177,7 +2177,7 @@ function TechnicalAnalysisPage({
                 <th>티커</th>
                 <th>투자의견</th>
                 {technicalMetricColumns.map((column) => (
-                  <th key={column.label}>
+                  <th className={column.label.startsWith('실적발표일') ? 'earnings-date-cell' : undefined} key={column.label}>
                     <MetricValue
                       tooltip={column.tooltip}
                       onTooltipClose={onTooltipClose}
@@ -2206,9 +2206,12 @@ function TechnicalAnalysisPage({
                   {technicalMetricColumns.map((column) => {
                     const value = apiRow?.[column.label] ?? '-'
                     const isEntryStrategy = column.label === '진입 전략'
+                    const isEarningsDate = column.label.startsWith('실적발표일')
                     const cellClassName = value === '-'
                       ? 'dash-cell'
-                      : isEntryStrategy ? 'strategy-data-cell technical-strategy-cell' : 'number-cell'
+                      : isEntryStrategy
+                        ? 'strategy-data-cell technical-strategy-cell'
+                        : `number-cell ${isEarningsDate ? 'earnings-date-cell' : ''}`.trim()
 
                     return (
                       <td className={cellClassName} key={column.label}>
@@ -3144,6 +3147,7 @@ function App() {
   const [apiLogs, setApiLogs] = useState<ApiLog[]>(() => readStoredApiLogs())
   const [isLoadingApiLogs, setIsLoadingApiLogs] = useState(false)
   const [activePage, setActivePage] = useState<ActivePage>(() => readInitialActivePage())
+  const [areHomeColumnsPinned, setAreHomeColumnsPinned] = useState(true)
   const addStockButtonRef = useRef<HTMLButtonElement | null>(null)
   const inlineAddRef = useRef<HTMLDivElement | null>(null)
   const watchlistSortMenuRef = useRef<HTMLDivElement | null>(null)
@@ -4662,12 +4666,29 @@ function App() {
                   </div>
                 </div>
               ) : (
-                <table className={`sheet-table watchlist-table ${canEditCurrentWatchlist ? 'editable-home-table' : 'readonly-home-table'}`}>
+                <table className={`sheet-table watchlist-table ${canEditCurrentWatchlist ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}>
                   <thead>
                     <tr>
                       {canEditCurrentWatchlist && <th>선택</th>}
                       <th>No</th>
-                      <th>종목명</th>
+                      <th className="home-name-header">
+                        <span>종목명</span>
+                        <button
+                          aria-label={areHomeColumnsPinned ? 'Home 종목명 고정 끄기' : 'Home 종목명 고정 켜기'}
+                          aria-pressed={areHomeColumnsPinned}
+                          className={`home-pin-toggle ${areHomeColumnsPinned ? 'active' : ''}`}
+                          title={areHomeColumnsPinned ? '종목명 고정 끄기' : '종목명 고정 켜기'}
+                          type="button"
+                          onClick={() => setAreHomeColumnsPinned((current) => !current)}
+                        >
+                          <svg aria-hidden="true" viewBox="0 0 24 24">
+                            <path d="M14 4l6 6" />
+                            <path d="M9 9l6 6" />
+                            <path d="M15 5l-7 7-4 1 1-4 7-7" />
+                            <path d="M12 16l-5 5" />
+                          </svg>
+                        </button>
+                      </th>
                       <th>티커</th>
                       <th>산업군</th>
                       <th>
@@ -4789,13 +4810,30 @@ function App() {
             </div>
 
             <div className="sheet-wrap holding-sheet">
-              <table className={`sheet-table holding-table ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'}`}>
+              <table className={`sheet-table holding-table ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}>
                 <thead>
                   <tr>
                     {effectiveViewMode === 'personal' && <th>선택</th>}
                     <th>No</th>
                     <th>티커</th>
-                    <th>종목명</th>
+                    <th className="home-name-header">
+                      <span>종목명</span>
+                      <button
+                        aria-label={areHomeColumnsPinned ? 'Home 종목명 고정 끄기' : 'Home 종목명 고정 켜기'}
+                        aria-pressed={areHomeColumnsPinned}
+                        className={`home-pin-toggle ${areHomeColumnsPinned ? 'active' : ''}`}
+                        title={areHomeColumnsPinned ? '종목명 고정 끄기' : '종목명 고정 켜기'}
+                        type="button"
+                        onClick={() => setAreHomeColumnsPinned((current) => !current)}
+                      >
+                        <svg aria-hidden="true" viewBox="0 0 24 24">
+                          <path d="M14 4l6 6" />
+                          <path d="M9 9l6 6" />
+                          <path d="M15 5l-7 7-4 1 1-4 7-7" />
+                          <path d="M12 16l-5 5" />
+                        </svg>
+                      </button>
+                    </th>
                     <th>신호일</th>
                     <th>매수 전략</th>
                     <th>현재 수익률</th>
