@@ -2301,8 +2301,16 @@ function marketEventTimeClass(entry: MarketEventEntry) {
 }
 
 function formatCurrentDateLabel(date = new Date()) {
-  const weekdays = ['일', '월', '화', '수', '목', '금', '토']
-  return `현재 날짜: ${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 (${weekdays[date.getDay()]})`
+  const parts = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    weekday: 'short',
+  }).formatToParts(date)
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? ''
+
+  return `현재 날짜: ${part('year')}년 ${part('month')}월 ${part('day')}일 (${part('weekday')}) (한국시간 기준)`
 }
 
 function marketEventDateToInputValue(date: string) {
@@ -2323,7 +2331,6 @@ function MarketEventsPage({
   groups,
   yearLabel,
   months,
-  updateLabel,
   isAdmin,
   isSaving,
   isDirty,
@@ -2337,7 +2344,6 @@ function MarketEventsPage({
   groups: MarketEventGroup[]
   yearLabel: string
   months: string[]
-  updateLabel: string
   isAdmin: boolean
   isSaving: boolean
   isDirty: boolean
@@ -2356,7 +2362,7 @@ function MarketEventsPage({
           <p>금리, 고용, 물가, 리밸런싱 등 시장 변동성을 키울 수 있는 주요 이벤트 일정을 확인합니다. 모든 날짜는 한국 시간 기준입니다.</p>
           <p className="page-warning">※ 이벤트 일정은 미국 정부 상황에 따라 유동적으로 달라져 간혹 맞지 않을 수 있습니다.</p>
         </div>
-        <span className="section-heading-meta">{formatCurrentDateLabel()} <b>|</b> {updateLabel}</span>
+        <span className="section-heading-meta">{formatCurrentDateLabel()} <b>|</b> 매일 00:00 확인</span>
       </div>
       {isAdmin && (
         <div className="admin-event-toolbar">
@@ -2543,19 +2549,6 @@ function MarketTrendsPage({ rows, updateLabel }: { rows: MarketTrendRow[]; updat
   )
 }
 
-function formatBoardPostDate(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-
-  return `${year}.${month}.${day} ${hours}:${minutes}`
-}
-
 function formatKstDateTime(value?: string | null) {
   if (!value) return '-'
   const date = new Date(value)
@@ -2574,8 +2567,12 @@ function formatKstDateTime(value?: string | null) {
   return `${part('year')}.${part('month')}.${part('day')} ${part('hour')}:${part('minute')}`
 }
 
+function formatBoardPostDate(value: string) {
+  return formatKstDateTime(value)
+}
+
 function formatUpdateLabel(meta?: RuntimeMeta) {
-  return `업데이트: ${formatKstDateTime(meta?.lastSuccessfulRun ?? meta?.updatedAt)}`
+  return `최근 업데이트: ${formatKstDateTime(meta?.lastSuccessfulRun ?? meta?.updatedAt)} (한국시간)`
 }
 
 function boardCurrentUserId(userSession: UserSession | null) {
@@ -4562,7 +4559,7 @@ function App() {
             <div className="section-heading">
               <div className="section-title-inline">
                 <h2>관심 종목</h2>
-                <span className="section-heading-meta">총 {tableStocks.length}개 <b>|</b> {formatUpdateLabel(apiMetas.stocks)}</span>
+                <span>총 {tableStocks.length}개</span>
               </div>
               <div className="heading-actions">
                 {canEditCurrentWatchlist ? (
@@ -4665,7 +4662,7 @@ function App() {
                   </div>
                 </div>
               ) : (
-                <table className="sheet-table watchlist-table">
+                <table className={`sheet-table watchlist-table ${canEditCurrentWatchlist ? 'editable-home-table' : 'readonly-home-table'}`}>
                   <thead>
                     <tr>
                       {canEditCurrentWatchlist && <th>선택</th>}
@@ -4792,7 +4789,7 @@ function App() {
             </div>
 
             <div className="sheet-wrap holding-sheet">
-              <table className="sheet-table holding-table">
+              <table className={`sheet-table holding-table ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'}`}>
                 <thead>
                   <tr>
                     {effectiveViewMode === 'personal' && <th>선택</th>}
@@ -4884,7 +4881,6 @@ function App() {
           groups={apiMarketEventGroups}
           yearLabel={marketEventYearLabel}
           months={marketEventMonths}
-          updateLabel={formatUpdateLabel(marketEventsMeta ?? apiMetas.marketEvents)}
           isAdmin={isAdminUser}
           isSaving={isSavingMarketEvents}
           isDirty={isMarketEventsDirty}
