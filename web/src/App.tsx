@@ -1758,6 +1758,22 @@ const technicalMarketSnapshot: string[][] = [
   ['나스닥 (QQQ, 200일 이동평균선)', '604.08'],
 ]
 
+const technicalSummaryTooltips: Record<string, string> = {
+  '시장 주요 이벤트': '금리, 물가, 고용처럼 시장 전체 변동성을 키울 수 있는 일정을 먼저 확인합니다.',
+  'VIX (변동성지수) 당일·전날': '시장 공포심과 변동성 수준을 봅니다. 높거나 급등하면 보수적으로 판단합니다.',
+  'CNN 공포·탐욕지수 당일·전날': '투자 심리가 과열인지 공포인지 확인합니다. 극단 구간에서는 반대 움직임을 주의합니다.',
+  '미국 10년물 금리': '성장주와 할인율에 영향을 주는 핵심 금리입니다. 급등하면 기술주 부담이 커질 수 있습니다.',
+  '달러 인덱스': '달러 강세 여부를 봅니다. 달러가 강하면 위험자산과 해외 매출 기업에 부담이 될 수 있습니다.',
+  'QQQ 주봉 RSI (14)': '나스닥 중기 과열·침체를 봅니다. 주봉 기준이라 큰 추세 판단에 씁니다.',
+  'QQQ 일봉 RSI (14, 당일)': '나스닥 단기 과열 여부를 확인합니다. 높으면 신규 진입을 조심합니다.',
+  'QQQ 일봉 RSI (14, 전날)': '전날 RSI와 비교해 단기 매수세가 강해졌는지 약해졌는지 봅니다.',
+  '나스닥 (QQQ, 당일)': '기술주 대표 지수의 현재 위치를 봅니다. 개별 종목 신호의 시장 배경입니다.',
+  '나스닥 (QQQ, 20일 이동평균선)': '단기 평균선입니다. QQQ가 이 선 위면 단기 흐름이 비교적 양호합니다.',
+  '나스닥 (QQQ, 60일 이동평균선)': '중기 평균선입니다. 시장의 중기 추세가 꺾이는지 확인합니다.',
+  '나스닥 (QQQ, 144일 이동평균선)': '200일선보다 빠른 장기 흐름 기준입니다. 추세 변화 조기 확인에 씁니다.',
+  '나스닥 (QQQ, 200일 이동평균선)': '장기 추세의 기준선입니다. 이탈하면 시장 리스크를 더 크게 봅니다.',
+}
+
 function isMeaningfulMarketSnapshot(snapshot: string[][]) {
   return snapshot.length > 2 || !snapshot.some(([label, value]) => (
     (label === '시장 주요 이벤트' && value === '캐시 기준')
@@ -2147,7 +2163,15 @@ function TechnicalAnalysisPage({
         <div className="technical-summary-strip" aria-label="기술 분석 시장 요약">
           {marketSnapshot.map(([label, value]) => (
             <div className="technical-summary-item" key={label}>
-              <span>{label}</span>
+              <span>
+                <MetricValue
+                  tooltip={technicalSummaryTooltips[label]}
+                  onTooltipClose={onTooltipClose}
+                  onTooltipOpen={onTooltipOpen}
+                >
+                  {label}
+                </MetricValue>
+              </span>
               <strong>{value}</strong>
             </div>
           ))}

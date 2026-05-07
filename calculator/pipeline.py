@@ -413,9 +413,13 @@ def latest_technical_row(stock: dict[str, str], earnings_date: str = "-") -> dic
 
 
 def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[str, Any]:
-    rows: dict[str, dict[str, str]] = read_cache("technical").get("rows", {})
+    existing = read_cache("technical")
+    existing_meta = existing.get("meta", {}) if isinstance(existing, dict) else {}
+    rows: dict[str, dict[str, str]] = dict(existing.get("rows", {})) if isinstance(existing.get("rows"), dict) else {}
     valuation_rows = read_cache("valuation").get("rows", {})
     errors: list[dict[str, str]] = []
+    successful_rows = 0
+    refreshed_at = now_iso()
     market_snapshot = [
         ["시장 주요 이벤트", "당분간 없음"],
     ]
@@ -431,15 +435,17 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
             row = latest_technical_row(stock, earnings_date=earnings_date)
             if row:
                 rows[stock["ticker"]] = row
+                successful_rows += 1
         except Exception as exc:  # noqa: BLE001 - batch should preserve partial success
             errors.append({"ticker": stock["ticker"], "error": str(exc)})
     return {
         "meta": {
             "kind": "technical",
             "schedule": "0 */2 * * *",
-            "updatedAt": now_iso(),
-            "lastSuccessfulRun": now_iso() if rows else None,
+            "updatedAt": refreshed_at,
+            "lastSuccessfulRun": refreshed_at if successful_rows else existing_meta.get("lastSuccessfulRun"),
             "failedReason": "; ".join(f"{e['ticker']}: {e['error']}" for e in errors) if errors else None,
+            "successfulRows": successful_rows,
         },
         "marketSnapshot": market_snapshot,
         "rows": rows,
@@ -454,8 +460,12 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
         "per", "pbr", "roe", "peg", "sharesOutstanding", "grossMargin",
         "operatingMargin", "epsTtm", "epsNextYear", "epsQoq", "earningsDate", "industry",
     ]
-    rows = read_cache("valuation").get("rows", {})
+    existing = read_cache("valuation")
+    existing_meta = existing.get("meta", {}) if isinstance(existing, dict) else {}
+    rows = dict(existing.get("rows", {})) if isinstance(existing.get("rows"), dict) else {}
     errors: list[dict[str, str]] = []
+    successful_rows = 0
+    refreshed_at = now_iso()
     for stock in (universe or read_universe())[:MAX_REFRESH_UNIVERSE]:
         try:
             values = fetch_valuation(stock["ticker"])
@@ -464,15 +474,17 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
             metric["ruleOf40"] = rule_of_40(metric)
             metric["earningsDate"] = metric.get("earningsDate") or "-"
             rows[stock["ticker"]] = metric
+            successful_rows += 1
         except Exception as exc:  # noqa: BLE001
             errors.append({"ticker": stock["ticker"], "error": str(exc)})
     return {
         "meta": {
             "kind": "valuation",
             "schedule": "0 0 * * *",
-            "updatedAt": now_iso(),
-            "lastSuccessfulRun": now_iso() if rows else None,
+            "updatedAt": refreshed_at,
+            "lastSuccessfulRun": refreshed_at if successful_rows else existing_meta.get("lastSuccessfulRun"),
             "failedReason": "; ".join(f"{e['ticker']}: {e['error']}" for e in errors) if errors else None,
+            "successfulRows": successful_rows,
         },
         "rows": rows,
         "errors": errors,
