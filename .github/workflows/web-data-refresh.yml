@@ -1,12 +1,6 @@
 name: Web data refresh
 
 on:
-  schedule:
-    # Technical analysis: every 2 hours.
-    - cron: "0 */2 * * *"
-    # Value analysis: daily at 00:00 KST (15:00 UTC).
-    # Market trends also run here only on Monday 00:00 KST.
-    - cron: "0 15 * * *"
   workflow_dispatch:
     inputs:
       refresh_scope:
@@ -19,9 +13,14 @@ on:
           - valuation
           - technical
           - market-trends
+          - market-events
 
 permissions:
   contents: write
+
+concurrency:
+  group: web-data-refresh-main
+  cancel-in-progress: false
 
 jobs:
   refresh:
@@ -58,22 +57,14 @@ jobs:
 
       - name: Resolve refresh tasks
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            case "${{ inputs.refresh_scope }}" in
-              all) TASKS="valuation technical market-trends market-events" ;;
-              valuation) TASKS="valuation" ;;
-              technical) TASKS="technical" ;;
-              market-trends) TASKS="market-trends" ;;
-              *) TASKS="valuation technical market-trends market-events" ;;
-            esac
-          elif [ "${{ github.event.schedule }}" = "0 15 * * *" ]; then
-            TASKS="valuation"
-            if [ "$(TZ=Asia/Seoul date +%u)" = "1" ]; then
-              TASKS="$TASKS market-trends"
-            fi
-          else
-            TASKS="technical"
-          fi
+          case "${{ inputs.refresh_scope }}" in
+            all) TASKS="valuation technical market-trends market-events" ;;
+            valuation) TASKS="valuation" ;;
+            technical) TASKS="technical" ;;
+            market-trends) TASKS="market-trends" ;;
+            market-events) TASKS="market-events" ;;
+            *) TASKS="valuation technical market-trends market-events" ;;
+          esac
           echo "REFRESH_TASKS=$TASKS" >> "$GITHUB_ENV"
           echo "Resolved refresh tasks: $TASKS"
 
