@@ -4705,12 +4705,7 @@ function App() {
                           type="button"
                           onClick={() => setAreHomeColumnsPinned((current) => !current)}
                         >
-                          <svg aria-hidden="true" viewBox="0 0 24 24">
-                            <path d="M14 4l6 6" />
-                            <path d="M9 9l6 6" />
-                            <path d="M15 5l-7 7-4 1 1-4 7-7" />
-                            <path d="M12 16l-5 5" />
-                          </svg>
+                          <span aria-hidden="true">📌</span>
                         </button>
                       </th>
                       <th>티커</th>
@@ -4850,12 +4845,7 @@ function App() {
                         type="button"
                         onClick={() => setAreHomeColumnsPinned((current) => !current)}
                       >
-                        <svg aria-hidden="true" viewBox="0 0 24 24">
-                          <path d="M14 4l6 6" />
-                          <path d="M9 9l6 6" />
-                          <path d="M15 5l-7 7-4 1 1-4 7-7" />
-                          <path d="M12 16l-5 5" />
-                        </svg>
+                        <span aria-hidden="true">📌</span>
                       </button>
                     </th>
                     <th>신호일</th>

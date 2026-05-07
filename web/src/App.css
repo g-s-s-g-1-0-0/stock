@@ -1074,8 +1074,8 @@
 }
 
 .home-name-header {
-  padding-right: 34px !important;
-  padding-left: 34px !important;
+  padding-right: 28px !important;
+  padding-left: 28px !important;
   text-align: center !important;
 }
 
@@ -1091,33 +1091,28 @@
   top: 50%;
   right: 8px;
   display: inline-flex;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   align-items: center;
   justify-content: center;
   transform: translateY(-50%);
-  border: 1px solid #d8e1ec;
-  border-radius: 999px;
-  background: #ffffff;
-  color: #94a3b8;
+  border: 0;
+  background: transparent;
   cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0.35;
   padding: 0;
 }
 
 .home-pin-toggle.active {
-  border-color: rgba(34, 136, 238, 0.34);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  opacity: 1;
 }
 
-.home-pin-toggle svg {
-  width: 12px;
-  height: 12px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
+.home-pin-toggle:hover,
+.home-pin-toggle:focus-visible {
+  opacity: 1;
+  outline: none;
 }
 
 .market-events-panel {
