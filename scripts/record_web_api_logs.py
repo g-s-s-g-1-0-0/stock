@@ -7,6 +7,7 @@ import os
 import sys
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from urllib.error import HTTPError, URLError
 from pathlib import Path
 from typing import Any
 
@@ -61,8 +62,12 @@ def supabase_request(path: str, method: str = "GET", payload: Any | None = None)
 
 
 def clean_old_logs() -> None:
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=21)).isoformat()
-    supabase_request(f"/rest/v1/api_logs?created_at=lt.{cutoff}", method="DELETE")
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=21)).isoformat().replace("+00:00", "Z")
+    try:
+        supabase_request(f"/rest/v1/api_logs?created_at=lt.{cutoff}", method="DELETE")
+    except (HTTPError, URLError, TimeoutError) as error:
+        # Cleanup should never block recording the current refresh result.
+        print(f"[api_logs] old-log cleanup failed; continuing: {error}")
 
 
 def load_watchlist_tickers(stocks: list[dict[str, Any]]) -> list[str]:
