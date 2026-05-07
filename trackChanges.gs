@@ -491,7 +491,6 @@ const Utils = {
     ADX_MIN:         30,
     ADX_PCTB_MIN:    30,
     ADX_PCTB_MAX:    75,
-    D_NASDAQ_DIST_MAX: 13,
     TARGET_PCT_E:    0.20,
     CIRCUIT_PCT_E:   0.30,
     SQUEEZE_RATIO:   0.5,
@@ -505,7 +504,7 @@ const Utils = {
     SELL_HOLD_HOURS:   48,
     REENTRY_DAYS:      10,
     REENTRY_DROP:      0.03,
-    NASDAQ_BUY_BLOCK_MAX: 9,
+    NASDAQ_BUY_BLOCK_MAX: 10,
     NASDAQ_DIST_UPPER:   -3,
     NASDAQ_DIST_LOWER:   -12,
     NASDAQ_DIST_RELEASE: -2.5,
@@ -1020,9 +1019,8 @@ const Utils = {
     const dCond4 = adx !== null && adxD1 !== null && adx > adxD1;
     const dCond5 = macdHist !== null && macdHist > 0;
     const dCond6 = pctB !== null && pctB >= S.ADX_PCTB_MIN && pctB <= S.ADX_PCTB_MAX;
-    const dCond7 = Number.isFinite(ixicDist) && ixicDist <= S.D_NASDAQ_DIST_MAX;
     const entryGroupD = !entryGroupA && !entryGroupB && !entryGroupC
-                     && dCond1 && dCond2 && dCond3 && dCond4 && dCond5 && dCond6 && dCond7
+                     && dCond1 && dCond2 && dCond3 && dCond4 && dCond5 && dCond6
                      && nasdaqAllowsStrictMomentum;
 
     const eCond1 = currentPrice !== null && ma200 !== null && currentPrice > ma200;

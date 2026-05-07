@@ -49,7 +49,6 @@ const CONSTANTS = {
     ADX_MIN:         30,
     ADX_PCTB_MIN:    30,
     ADX_PCTB_MAX:    75,
-    D_NASDAQ_DIST_MAX: 13,
     TARGET_PCT_E:    0.20,
     CIRCUIT_PCT_E:   0.30,
     SQUEEZE_RATIO:   0.5,
@@ -63,7 +62,7 @@ const CONSTANTS = {
     SELL_HOLD_HOURS:   48,
     REENTRY_DAYS:      10,
     REENTRY_DROP:      0.03,
-    NASDAQ_BUY_BLOCK_MAX: 9,
+    NASDAQ_BUY_BLOCK_MAX: 10,
     NASDAQ_DIST_UPPER:   -3,
     NASDAQ_DIST_LOWER:   -12,
     NASDAQ_DIST_RELEASE: -2.5,
@@ -489,7 +488,7 @@ function clearExitReason(stockName) {
  * A: MA200 위 + MACD 골든크로스 + %B>80 + RSI>70          (강세장 전용, 나스닥 ≥ -3%)
  * B: MA200 아래 + VIX≥25 + 과매도 + 추세선 터치            (나스닥 필터 미적용)
  * C: MA200 위 + BB스퀴즈 돌파 + 거래량 폭발 + %B>55        (강세장 전용, 나스닥 ≥ -3%)
- * D: MA200 위 + ADX>30 + +DI>-DI + ADX상승 + MACD>0 + %B 30~75 + QQQ ≤ 13% (강세장 전용, -3% ≤ 나스닥 ≤ 13%)
+ * D: MA200 위 + ADX>30 + +DI>-DI + ADX상승 + MACD>0 + %B 30~75 (강세장 전용, 나스닥 ≥ -3%)
  * E: MA200 위 + BB스퀴즈 + 저가%B≤50                       (히스테리시스 + 찐바닥 허용)
  * F: MA200 위 + 저가%B≤5                                   (히스테리시스 + 찐바닥 허용)
  */
@@ -543,9 +542,8 @@ function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding =
   const dCond4 = ind.adx !== null && ind.adxD1 !== null && ind.adx > ind.adxD1;
   const dCond5 = ind.macdHist !== null && ind.macdHist > 0;
   const dCond6 = ind.pctB !== null && ind.pctB >= S.ADX_PCTB_MIN && ind.pctB <= S.ADX_PCTB_MAX;
-  const dCond7 = Number.isFinite(ixicDist) && ixicDist <= S.D_NASDAQ_DIST_MAX;
   const entryGroupD = !entryGroupA && !entryGroupB && !entryGroupC
-                   && dCond1 && dCond2 && dCond3 && dCond4 && dCond5 && dCond6 && dCond7
+                   && dCond1 && dCond2 && dCond3 && dCond4 && dCond5 && dCond6
                    && nasdaqAllowsStrictMomentum;
 
   const eCond1 = ind.currentPrice > ind.ma200;
@@ -593,7 +591,7 @@ function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding =
     bCond1, bCond2, bCond3, bCond3Hold, bCond3Released, bCond4, bCond5,
     hasRsi, hasCci, rsiOk, cciOk, vixThreshold, lrSlope,
     cCond1, cCond2, cCond3, cCond4, cCond5, cCond6, bbPairOk,
-    dCond1, dCond2, dCond3, dCond4, dCond5, dCond6, dCond7,
+    dCond1, dCond2, dCond3, dCond4, dCond5, dCond6,
     eCond1, eCond2, eCond3,
     fCond1, fCond2,
     nasdaqAllowsStrictMomentum, nasdaqAllowsBottomBuy, nasdaqBelowBuyBlock, ixicDist, ixicFilterActive,
@@ -1098,7 +1096,6 @@ function _buildReleaseReason(stratType, ind, buy, vixD, ixicDist, S) {
     case "D":
       if (!buy.dCond1) return `200일선 하방 이탈 (현재가 ${fP(ind.currentPrice)} / MA200 ${fP(ind.ma200)})`;
       if (!buy.nasdaqAllowsStrictMomentum) return `나스닥 이격도 부족 (${ixicDist.toFixed(1)}% < ${S.NASDAQ_DIST_UPPER}%)`;
-      if (!buy.dCond7) return `나스닥 과열 구간 (${ixicDist.toFixed(1)}% > ${S.D_NASDAQ_DIST_MAX}%)`;
       if (ind.plusDI === null || ind.minusDI === null || ind.macdHist === null) return "DMI/MACD 일시 결측 (추세 약화로 단정하지 않음)";
       return `추세 흐름 약화 (+DI ${fn(ind.plusDI, 1)} / -DI ${fn(ind.minusDI, 1)} 또는 MACD hist ${fn(ind.macdHist, 4)})`;
     case "E": {
@@ -1260,8 +1257,8 @@ function logStockAnalysis(ind, vixD, ixicDist, event, buy, exit, now, isHolding,
     `\n  ⑥ 종가%B(${fn(ind.pctB, 1)}) > ${S.SQUEEZE_BREAKOUT_PCTB_MIN}: ${buy.cCond5 ? "✅" : "❌"}` +
     `\n  ⑦ MACD hist(${fn(ind.macdHist, 4)}) > 0: ${buy.cCond6 ? "✅" : "❌"}` +
 
-    `\n[D그룹: 200일선 상방 & 상승 흐름 강화 (-3% ≤ 나스닥 ≤ ${S.D_NASDAQ_DIST_MAX}%)]` +
-    `\n  ① 나스닥 필터(강세장전용): ${buy.nasdaqAllowsStrictMomentum ? "✅" : "❌"} | 상단캡 ${S.D_NASDAQ_DIST_MAX}% 이하: ${buy.dCond7 ? "✅" : "❌"} (현재 ${ixicDist.toFixed(1)}%)` +
+    `\n[D그룹: 200일선 상방 & 상승 흐름 강화 (나스닥 ≥${S.NASDAQ_DIST_UPPER}%)]` +
+    `\n  ① 나스닥 필터(강세장전용): ${buy.nasdaqAllowsStrictMomentum ? "✅" : "❌"} (이격도 ${ixicDist.toFixed(1)}%)` +
     `\n  ② 현재가(${fmtP(ind.currentPrice)}) > MA200(${fmtP(ind.ma200)}): ${buy.dCond1 ? "✅" : "❌"}` +
     `\n  ③ +DI(${fn(ind.plusDI, 1)}) > -DI(${fn(ind.minusDI, 1)})${ind.plusDI === null ? " [컬럼 미설정 → 비활성]" : ""}: ${buy.dCond2 ? "✅" : "❌"}` +
     `\n  ④ ADX(${fn(ind.adx, 1)}) > ${S.ADX_MIN}: ${buy.dCond3 ? "✅" : "❌"}` +

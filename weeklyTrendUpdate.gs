@@ -290,4 +290,3 @@ function sendApiFailureEmail(errorDetail, httpCode) {
     console.log(`[API 실패 알림 이메일 오류] ${e}`);
   }
 }
-ㅏ

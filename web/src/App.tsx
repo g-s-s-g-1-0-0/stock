@@ -106,7 +106,17 @@ type BoardPost = {
   createdAt: string
   authorId: string
   authorName: string
+  comments: BoardComment[]
   hidden?: boolean
+}
+
+type BoardComment = {
+  id: string
+  postId: string
+  content: string
+  createdAt: string
+  authorId: string
+  authorName: string
 }
 
 type ApiLog = {
@@ -159,6 +169,8 @@ const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
 const FAIR_PRICE_UNAVAILABLE_LABEL = '적자 상태라 판단 불가'
 const FAIR_PRICE_RANGE_TOOLTIP = 'EPS(TTM) × 적용 PER 배수로 계산합니다. 가치주는 10~15배, 혼합주는 15~25배를 적용하고, 성장주는 매출 성장률에 따라 15~20배부터 최대 50~70배까지 적용합니다. EPS가 0 이하이면 판단 불가로 표시합니다.'
 const ADMIN_LOGS_PAGE_SIZE = 50
+const MAX_BOARD_COMMENTS_PER_POST = 50
+const MAX_BOARD_COMMENT_LENGTH = 500
 const DEFAULT_WATCHLIST_SORT: WatchlistSortSettings = { primary: 'registered', secondary: 'registered' }
 const activePages: ActivePage[] = ['home', 'value-analysis', 'technical-analysis', 'market-events', 'market-trends', 'board', 'admin-logs']
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
@@ -376,6 +388,14 @@ function mapBoardPost(row: {
   author_id: string
   author_name: string
   hidden: boolean | null
+  board_comments?: Array<{
+    id: string
+    post_id: string
+    content: string
+    created_at: string
+    author_id: string
+    author_name: string
+  }> | null
 }): BoardPost {
   return {
     id: row.id,
@@ -384,7 +404,28 @@ function mapBoardPost(row: {
     createdAt: row.created_at,
     authorId: row.author_id,
     authorName: row.author_name,
+    comments: (row.board_comments ?? [])
+      .map(mapBoardComment)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()),
     hidden: row.hidden ?? false,
+  }
+}
+
+function mapBoardComment(row: {
+  id: string
+  post_id: string
+  content: string
+  created_at: string
+  author_id: string
+  author_name: string
+}): BoardComment {
+  return {
+    id: row.id,
+    postId: row.post_id,
+    content: row.content,
+    createdAt: row.created_at,
+    authorId: row.author_id,
+    authorName: row.author_name,
   }
 }
 
@@ -1699,7 +1740,7 @@ const valueMetricColumns: Array<{ label: string; value: (metric: ValuationMetric
   { label: 'EPS Next Y', value: (metric) => metric.epsNextYear, tooltip: '다음 해에 예상되는 1주당 이익입니다. 현재보다 높으면 성장 기대가 있고, 자주 낮아지면 보수적으로 봅니다.' },
   { label: 'EPS Q/Q (%)', value: (metric) => metric.epsQoq, tooltip: '직전 분기보다 1주당 이익이 얼마나 늘었는지 봅니다. 높으면 최근 실적 흐름이 좋다는 뜻입니다.' },
   { label: 'Rule of 40%', value: (metric) => metric.ruleOf40, tooltip: '성장률과 이익률을 같이 보는 지표입니다. 40% 이상이면 성장과 수익의 균형이 좋다고 봅니다.' },
-  { label: '실적발표일', value: (metric) => metric.earningsDate },
+  { label: '실적발표일 (한국 시간 기준)', value: (metric) => metric.earningsDate },
 ]
 
 const technicalMarketSnapshot: string[][] = [
@@ -1917,6 +1958,7 @@ function ValueAnalysisPage({
   stocks,
   viewMode,
   valuationRows,
+  updateLabel,
   addStockControl,
   onAddStock,
   onTooltipOpen,
@@ -1925,6 +1967,7 @@ function ValueAnalysisPage({
   stocks: Stock[]
   viewMode: 'personal' | 'operator'
   valuationRows: Record<string, ValuationMetric>
+  updateLabel: string
   addStockControl?: ReactNode
   onAddStock: () => void
   onTooltipOpen: (tooltip: TooltipState) => void
@@ -1942,7 +1985,7 @@ function ValueAnalysisPage({
           <p>Home 관심 종목 기준으로 핵심 재무 지표를 확인해 적정 주가 범위를 계산하고, 현재가를 기준으로 저평가/고평가 여부를 판단합니다.</p>
           <p className="page-update-note">각 지표는 매일 자정에 1회 업데이트됩니다.</p>
         </div>
-        <span>총 {visibleStocks.length}개</span>
+        <span className="section-heading-meta">총 {visibleStocks.length}개 <b>|</b> {updateLabel}</span>
       </div>
 
       {addStockControl}
@@ -2047,6 +2090,7 @@ function TechnicalAnalysisPage({
   viewMode,
   technicalRows,
   marketSnapshot,
+  updateLabel,
   addStockControl,
   onAddStock,
   onTooltipOpen,
@@ -2056,6 +2100,7 @@ function TechnicalAnalysisPage({
   viewMode: 'personal' | 'operator'
   technicalRows: Record<string, Record<string, string>>
   marketSnapshot: string[][]
+  updateLabel: string
   addStockControl?: ReactNode
   onAddStock: () => void
   onTooltipOpen: (tooltip: TooltipState) => void
@@ -2085,7 +2130,7 @@ function TechnicalAnalysisPage({
           <p>Home 관심 종목 기준으로 RSI, CCI, MACD, DMI, 캔들, 거래량, 볼린저밴드, 이동평균 데이터 등의 기술 지표들을 활용해 매매 타이밍을 판단합니다.</p>
           <p className="page-update-note">각 지표는 2시간마다 업데이트되며, 삼성증권 앱과 동일한 계산 방식을 적용하기 때문에 본인이 바라보는 지표와 일부 다를 수 있습니다.</p>
         </div>
-        <span>총 {visibleStocks.length}개</span>
+        <span className="section-heading-meta">총 {visibleStocks.length}개 <b>|</b> {updateLabel}</span>
       </div>
 
       <details className="technical-summary-disclosure">
@@ -2278,6 +2323,7 @@ function MarketEventsPage({
   groups,
   yearLabel,
   months,
+  updateLabel,
   isAdmin,
   isSaving,
   isDirty,
@@ -2291,6 +2337,7 @@ function MarketEventsPage({
   groups: MarketEventGroup[]
   yearLabel: string
   months: string[]
+  updateLabel: string
   isAdmin: boolean
   isSaving: boolean
   isDirty: boolean
@@ -2309,7 +2356,7 @@ function MarketEventsPage({
           <p>금리, 고용, 물가, 리밸런싱 등 시장 변동성을 키울 수 있는 주요 이벤트 일정을 확인합니다. 모든 날짜는 한국 시간 기준입니다.</p>
           <p className="page-warning">※ 이벤트 일정은 미국 정부 상황에 따라 유동적으로 달라져 간혹 맞지 않을 수 있습니다.</p>
         </div>
-        <span>{formatCurrentDateLabel()}</span>
+        <span className="section-heading-meta">{formatCurrentDateLabel()} <b>|</b> {updateLabel}</span>
       </div>
       {isAdmin && (
         <div className="admin-event-toolbar">
@@ -2417,7 +2464,7 @@ function MarketEventsPage({
   )
 }
 
-function MarketTrendsPage({ rows }: { rows: MarketTrendRow[] }) {
+function MarketTrendsPage({ rows, updateLabel }: { rows: MarketTrendRow[]; updateLabel: string }) {
   const [page, setPage] = useState(1)
   const sortedMarketTrendRows = [...rows].sort((a, b) => new Date(b.date.replaceAll('.', '-')).getTime() - new Date(a.date.replaceAll('.', '-')).getTime())
   const pageSize = 50
@@ -2434,7 +2481,7 @@ function MarketTrendsPage({ rows }: { rows: MarketTrendRow[] }) {
           <h2>시장 트렌드</h2>
           <p>주간 시장에서 자주 언급된 핵심 테마와 섹터를 순위별로 확인합니다.</p>
         </div>
-        <span>총 {rows.length}개</span>
+        <span className="section-heading-meta">총 {rows.length}개 <b>|</b> {updateLabel}</span>
       </div>
 
       <div className="sheet-wrap market-trends-sheet">
@@ -2507,6 +2554,28 @@ function formatBoardPostDate(value: string) {
   const minutes = String(date.getMinutes()).padStart(2, '0')
 
   return `${year}.${month}.${day} ${hours}:${minutes}`
+}
+
+function formatKstDateTime(value?: string | null) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  const parts = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(date)
+  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? ''
+
+  return `${part('year')}.${part('month')}.${part('day')} ${part('hour')}:${part('minute')}`
+}
+
+function formatUpdateLabel(meta?: RuntimeMeta) {
+  return `업데이트: ${formatKstDateTime(meta?.lastSuccessfulRun ?? meta?.updatedAt)}`
 }
 
 function boardCurrentUserId(userSession: UserSession | null) {
@@ -2753,12 +2822,14 @@ function BoardPage({
   posts,
   category,
   content,
+  commentDrafts,
   filter,
   currentUserId,
   page,
   showMineOnly,
   sortDirection,
   onCategoryChange,
+  onCommentChange,
   onContentChange,
   onDeletePost,
   onFilterChange,
@@ -2769,11 +2840,13 @@ function BoardPage({
   onShowMineOnlyChange,
   onSortDirectionChange,
   onSubmit,
+  onSubmitComment,
   selectedPostIds,
 }: {
   posts: BoardPost[]
   category: BoardCategory
   content: string
+  commentDrafts: Record<string, string>
   filter: BoardFilter
   currentUserId: string
   page: number
@@ -2781,6 +2854,7 @@ function BoardPage({
   sortDirection: BoardSortDirection
   selectedPostIds: string[]
   onCategoryChange: (category: BoardCategory) => void
+  onCommentChange: (postId: string, content: string) => void
   onContentChange: (content: string) => void
   onDeletePost: (postId: string) => void
   onFilterChange: (filter: BoardFilter) => void
@@ -2791,6 +2865,7 @@ function BoardPage({
   onShowMineOnlyChange: (showMineOnly: boolean) => void
   onSortDirectionChange: (direction: BoardSortDirection) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
+  onSubmitComment: (event: FormEvent<HTMLFormElement>, post: BoardPost) => void
 }) {
   const postsPerPage = 10
   const filteredPosts = posts
@@ -2898,6 +2973,7 @@ function BoardPage({
                     <span className={`board-category-pill category-${post.category}`}>{post.category}</span>
                     {post.authorId === currentUserId && <span className="my-post-badge">내 글</span>}
                     <span>{maskBoardAuthorName(post.authorName)}</span>
+                    <span className="board-comment-count">댓글 {post.comments.length}</span>
                   </div>
                   <div className="board-post-meta-right">
                     <time dateTime={post.createdAt}>{formatBoardPostDate(post.createdAt)}</time>
@@ -2907,6 +2983,41 @@ function BoardPage({
                   </div>
                 </div>
                 <p>{post.content}</p>
+                <div className="board-comment-panel">
+                  {post.comments.length > 0 ? (
+                    <div className="board-comment-list">
+                      {post.comments.map((comment) => (
+                        <div className={`board-comment ${comment.authorId === currentUserId ? 'my-board-comment' : ''}`} key={comment.id}>
+                          <div className="board-comment-meta">
+                            <strong>{maskBoardAuthorName(comment.authorName)}</strong>
+                            <time dateTime={comment.createdAt}>{formatBoardPostDate(comment.createdAt)}</time>
+                          </div>
+                          <span>{comment.content}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="board-comment-empty">첫 댓글을 남겨 대화를 이어가 보세요.</div>
+                  )}
+                  <form className="board-comment-form" onSubmit={(event) => onSubmitComment(event, post)}>
+                    <textarea
+                      maxLength={MAX_BOARD_COMMENT_LENGTH}
+                      placeholder={post.comments.length >= MAX_BOARD_COMMENTS_PER_POST ? '댓글 한도에 도달했습니다.' : '댓글을 입력하세요.'}
+                      rows={2}
+                      value={commentDrafts[post.id] ?? ''}
+                      onChange={(event) => onCommentChange(post.id, event.target.value)}
+                    />
+                    <div className="board-comment-form-actions">
+                      <span>{(commentDrafts[post.id] ?? '').length}/{MAX_BOARD_COMMENT_LENGTH}</span>
+                      <button
+                        disabled={(commentDrafts[post.id] ?? '').trim().length === 0 || post.comments.length >= MAX_BOARD_COMMENTS_PER_POST}
+                        type="submit"
+                      >
+                        댓글
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </article>
             )) : (
               <div className="board-empty-state">
@@ -2999,6 +3110,7 @@ function App() {
   const [boardPosts, setBoardPosts] = useState<BoardPost[]>(initialBoardPosts)
   const [boardCategory, setBoardCategory] = useState<BoardCategory>('건의')
   const [boardContent, setBoardContent] = useState('')
+  const [boardCommentDrafts, setBoardCommentDrafts] = useState<Record<string, string>>({})
   const [boardFilter, setBoardFilter] = useState<BoardFilter>('전체')
   const [boardPage, setBoardPage] = useState(1)
   const [showMineOnly, setShowMineOnly] = useState(false)
@@ -3017,6 +3129,13 @@ function App() {
   const [marketEventYearLabel, setMarketEventYearLabel] = useState(() => cachedAppData?.marketEvents?.yearLabel ?? '2026년')
   const [marketEventMonths, setMarketEventMonths] = useState(() => cachedAppData?.marketEvents?.months?.length ? cachedAppData.marketEvents.months : eventMonths)
   const [apiMarketTrendRows, setApiMarketTrendRows] = useState<MarketTrendRow[]>(() => cachedAppData?.marketTrends?.rows ?? [])
+  const [apiMetas, setApiMetas] = useState(() => ({
+    stocks: cachedAppData?.stocks?.meta,
+    valuation: cachedAppData?.valuation?.meta,
+    technical: cachedAppData?.technical?.meta,
+    marketEvents: cachedAppData?.marketEvents?.meta,
+    marketTrends: cachedAppData?.marketTrends?.meta,
+  }))
   const [marketEventsMeta, setMarketEventsMeta] = useState<RuntimeMeta | undefined>()
   const [isSavingMarketEvents, setIsSavingMarketEvents] = useState(false)
   const [isMarketEventsDirty, setIsMarketEventsDirty] = useState(false)
@@ -3034,6 +3153,13 @@ function App() {
 
   const applyLoadedData = (data: AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>) => {
     storeCachedAppData(data)
+    setApiMetas({
+      stocks: data.stocks?.meta,
+      valuation: data.valuation?.meta,
+      technical: data.technical?.meta,
+      marketEvents: data.marketEvents?.meta,
+      marketTrends: data.marketTrends?.meta,
+    })
     if (data.stocks?.rows && data.stocks.rows.length > 0) {
       setApiStocks(data.stocks.rows.map(withDisplayStockName))
     }
@@ -3382,7 +3508,7 @@ function App() {
 
     const { data, error } = await supabase
       .from('board_posts')
-      .select('id, category, content, created_at, author_id, author_name, hidden')
+      .select('id, category, content, created_at, author_id, author_name, hidden, board_comments(id, post_id, content, created_at, author_id, author_name)')
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -3939,6 +4065,7 @@ function App() {
       })
       setApiMarketEventGroups(saved.groups)
       setMarketEventsMeta(saved.meta)
+      setApiMetas((current) => ({ ...current, marketEvents: saved.meta }))
       if (saved.yearLabel) {
         setMarketEventYearLabel(saved.yearLabel)
       }
@@ -4005,7 +4132,7 @@ function App() {
           author_id: userSession.id,
           author_name: boardCurrentUserName(userSession),
         })
-        .select('id, category, content, created_at, author_id, author_name, hidden')
+        .select('id, category, content, created_at, author_id, author_name, hidden, board_comments(id, post_id, content, created_at, author_id, author_name)')
         .single()
 
       if (error) return
@@ -4019,6 +4146,7 @@ function App() {
           createdAt: new Date().toISOString(),
           authorId: boardCurrentUserId(userSession),
           authorName: boardCurrentUserName(userSession),
+          comments: [],
         },
         ...currentPosts,
       ])
@@ -4028,6 +4156,50 @@ function App() {
     setBoardPage(1)
     setShowMineOnly(false)
     setBoardSortDirection('desc')
+  }
+
+  const updateBoardCommentDraft = (postId: string, content: string) => {
+    setBoardCommentDrafts((current) => ({ ...current, [postId]: content.slice(0, MAX_BOARD_COMMENT_LENGTH) }))
+  }
+
+  const submitBoardComment = async (event: FormEvent<HTMLFormElement>, post: BoardPost) => {
+    event.preventDefault()
+    const nextContent = (boardCommentDrafts[post.id] ?? '').trim()
+    if (!nextContent || !userSession || post.comments.length >= MAX_BOARD_COMMENTS_PER_POST) return
+
+    const draftComment: BoardComment = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      postId: post.id,
+      content: nextContent,
+      createdAt: new Date().toISOString(),
+      authorId: boardCurrentUserId(userSession),
+      authorName: boardCurrentUserName(userSession),
+    }
+
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('board_comments')
+        .insert({
+          post_id: post.id,
+          content: nextContent,
+          author_id: userSession.id,
+          author_name: boardCurrentUserName(userSession),
+        })
+        .select('id, post_id, content, created_at, author_id, author_name')
+        .single()
+      if (error) return
+      draftComment.id = data.id
+      draftComment.createdAt = data.created_at
+      draftComment.authorId = data.author_id
+      draftComment.authorName = data.author_name
+    }
+
+    setBoardPosts((currentPosts) => currentPosts.map((currentPost) => (
+      currentPost.id === post.id
+        ? { ...currentPost, comments: [...currentPost.comments, draftComment] }
+        : currentPost
+    )))
+    setBoardCommentDrafts((current) => ({ ...current, [post.id]: '' }))
   }
 
   const deleteBoardPost = (postId: string) => {
@@ -4390,7 +4562,7 @@ function App() {
             <div className="section-heading">
               <div className="section-title-inline">
                 <h2>관심 종목</h2>
-                <span>총 {tableStocks.length}개</span>
+                <span className="section-heading-meta">총 {tableStocks.length}개 <b>|</b> {formatUpdateLabel(apiMetas.stocks)}</span>
               </div>
               <div className="heading-actions">
                 {canEditCurrentWatchlist ? (
@@ -4712,6 +4884,7 @@ function App() {
           groups={apiMarketEventGroups}
           yearLabel={marketEventYearLabel}
           months={marketEventMonths}
+          updateLabel={formatUpdateLabel(marketEventsMeta ?? apiMetas.marketEvents)}
           isAdmin={isAdminUser}
           isSaving={isSavingMarketEvents}
           isDirty={isMarketEventsDirty}
@@ -4723,13 +4896,14 @@ function App() {
           onSave={saveMarketEventEntries}
         />
       ) : currentActivePage === 'market-trends' ? (
-        <MarketTrendsPage rows={apiMarketTrendRows} />
+        <MarketTrendsPage rows={apiMarketTrendRows} updateLabel={formatUpdateLabel(apiMetas.marketTrends)} />
       ) : currentActivePage === 'admin-logs' && isAdminUser ? (
         <AdminLogsPage logs={apiLogs} isLoading={isLoadingApiLogs} onRefresh={loadApiLogs} />
       ) : currentActivePage === 'board' && isAdminUser ? (
         <BoardPage
           category={boardCategory}
           content={boardContent}
+          commentDrafts={boardCommentDrafts}
           currentUserId={boardCurrentUserId(userSession)}
           filter={boardFilter}
           page={boardPage}
@@ -4738,6 +4912,7 @@ function App() {
           showMineOnly={showMineOnly}
           sortDirection={boardSortDirection}
           onCategoryChange={setBoardCategory}
+          onCommentChange={updateBoardCommentDraft}
           onContentChange={setBoardContent}
           onDeletePost={deleteBoardPost}
           onFilterChange={setBoardFilter}
@@ -4748,12 +4923,14 @@ function App() {
           onShowMineOnlyChange={setShowMineOnly}
           onSortDirectionChange={setBoardSortDirection}
           onSubmit={submitBoardPost}
+          onSubmitComment={submitBoardComment}
         />
       ) : currentActivePage === 'value-analysis' ? (
         <ValueAnalysisPage
           stocks={tableStocks}
           viewMode={effectiveViewMode}
           valuationRows={apiValuationMetrics}
+          updateLabel={formatUpdateLabel(apiMetas.valuation)}
           addStockControl={addStockInlineControl}
           onTooltipClose={() => setActiveTooltip(null)}
           onTooltipOpen={setActiveTooltip}
@@ -4765,6 +4942,7 @@ function App() {
           viewMode={effectiveViewMode}
           marketSnapshot={apiMarketSnapshot}
           technicalRows={apiTechnicalRows}
+          updateLabel={formatUpdateLabel(apiMetas.technical)}
           addStockControl={addStockInlineControl}
           onTooltipClose={() => setActiveTooltip(null)}
           onTooltipOpen={setActiveTooltip}
