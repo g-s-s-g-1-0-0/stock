@@ -76,6 +76,21 @@ jobs:
         continue-on-error: true
         run: python scripts/web_refresh_notifications.py opinion
 
+      - name: Send Nasdaq peak emails
+        if: ${{ contains(env.REFRESH_TASKS, 'technical') }}
+        continue-on-error: true
+        run: python scripts/web_refresh_notifications.py nasdaq-peak
+
+      - name: Send earnings D-1 emails
+        if: ${{ contains(env.REFRESH_TASKS, 'valuation') }}
+        continue-on-error: true
+        run: python scripts/web_refresh_notifications.py earnings
+
+      - name: Send weekly trend report emails
+        if: ${{ contains(env.REFRESH_TASKS, 'market-trends') }}
+        continue-on-error: true
+        run: python scripts/web_refresh_notifications.py weekly-trend
+
       - name: Record stock-level operation logs
         continue-on-error: true
         run: python scripts/record_web_api_logs.py $REFRESH_TASKS

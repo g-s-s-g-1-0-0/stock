@@ -27,15 +27,29 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from calculator.sheet_sources import calc_rsi, calc_technical_row
+
 DEFAULT_PREVIOUS_STOCKS = ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"
 DEFAULT_CURRENT_STOCKS = ROOT_DIR / "web" / "public" / "api" / "stocks.json"
+DEFAULT_VALUATION = ROOT_DIR / "web" / "public" / "api" / "valuation.json"
+DEFAULT_MARKET_TRENDS = ROOT_DIR / "web" / "public" / "api" / "market-trends.json"
+NOTIFICATION_STATE = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
+QQQ_PEAK_MULTIPLIER = 1.14
+QQQ_PEAK_RSI_THRESHOLD = 65
+KST = ZoneInfo("Asia/Seoul")
+ET = ZoneInfo("America/New_York")
 
 
 @dataclass(frozen=True)
 class Recipient:
+    owner_id: str
     email: str
     is_admin: bool
     preferences: dict[str, Any]
@@ -60,6 +74,34 @@ def stock_rows_by_ticker(path: Path) -> dict[str, dict[str, Any]]:
         for row in rows
         if isinstance(row, dict) and str(row.get("ticker", "")).strip()
     }
+
+
+def valuation_rows_by_ticker(path: Path = DEFAULT_VALUATION) -> dict[str, dict[str, Any]]:
+    payload = read_json(path)
+    rows = payload.get("rows") if isinstance(payload, dict) else {}
+    if not isinstance(rows, dict):
+        return {}
+    return {
+        str(ticker).strip().upper(): row
+        for ticker, row in rows.items()
+        if isinstance(row, dict) and str(ticker).strip()
+    }
+
+
+def write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def now_labels() -> tuple[str, str]:
+    now = datetime.now().astimezone()
+    return (
+        now.astimezone(KST).strftime("%Y.%m.%d %H:%M"),
+        now.astimezone(ET).strftime("%m/%d %H:%M ET"),
+    )
 
 
 def opinion_changes(previous_path: Path, current_path: Path) -> list[dict[str, Any]]:
@@ -121,6 +163,7 @@ def load_recipients() -> list[Recipient]:
         if not target_email:
             continue
         recipients.append(Recipient(
+            owner_id=str(row.get("owner_id") or ""),
             email=target_email,
             is_admin=profile.get("is_admin") is True,
             preferences=prefs,
@@ -134,7 +177,32 @@ def fallback_admin_recipients() -> list[Recipient]:
         for email in os.environ.get("ADMIN_EMAILS", "").split(",")
         if email.strip()
     ]
-    return [Recipient(email=email, is_admin=True, preferences={}) for email in emails]
+    return [Recipient(owner_id="", email=email, is_admin=True, preferences={}) for email in emails]
+
+
+def load_watchlists() -> dict[str, set[str]]:
+    rows = supabase_request("/rest/v1/watchlists?select=owner_id,scope,tickers")
+    result: dict[str, set[str]] = {}
+    operator_tickers: set[str] = set()
+
+    for row in rows:
+        tickers = {
+            str(ticker or "").strip().upper()
+            for ticker in row.get("tickers") or []
+            if str(ticker or "").strip()
+        }
+        if not tickers:
+            continue
+        if row.get("scope") == "operator":
+            operator_tickers.update(tickers)
+            continue
+        owner_id = str(row.get("owner_id") or "")
+        if owner_id:
+            result.setdefault(owner_id, set()).update(tickers)
+
+    if operator_tickers:
+        result[""] = operator_tickers
+    return result
 
 
 def dedupe_recipients(recipients: list[Recipient]) -> list[Recipient]:
@@ -189,13 +257,13 @@ def opinion_email_body(changes: list[dict[str, Any]]) -> str:
         changed_html.append(
             f"""
             <div style="margin-bottom:8px;padding:8px;background:#f9f9f9;border-left:3px solid {border};">
-              {index}. <strong>{html.escape(str(change["name"]))}</strong>
-              <span style="color:#aaa;">({html.escape(str(change["ticker"]))})</span>
-              &nbsp;<span style="color:#888;">'{html.escape(str(change["from"]))}'</span>
-              → <strong style="color:{color};">{html.escape(str(change["to"]))}</strong><br>
-              <span style="font-size:13px;">현재가: <strong>{html.escape(str(change["price"]))}</strong></span><br>
-              <span style="font-size:13px;">가치판단: {html.escape(str(change["valuation"]))}</span><br>
-              <span style="font-size:12px;color:#666;">산업: {html.escape(str(change["industry"]))}</span><br>
+              {index}. <strong>{html.escape(str(change['name']))}</strong>
+              <span style="color:#aaa;">({html.escape(str(change['ticker']))})</span>
+              &nbsp;<span style="color:#888;">'{html.escape(str(change['from']))}'</span>
+              → <strong style="color:{color};">{html.escape(str(change['to']))}</strong><br>
+              <span style="font-size:13px;">현재가: <strong>{html.escape(str(change['price']))}</strong></span><br>
+              <span style="font-size:13px;">가치판단: {html.escape(str(change['valuation']))}</span><br>
+              <span style="font-size:12px;color:#666;">산업: {html.escape(str(change['industry']))}</span><br>
               <span style="font-size:12px;color:#e67e22;">전략: {html.escape(strategy_text)}</span>
             </div>
             """
@@ -227,6 +295,318 @@ def admin_failure_body(message: str) -> str:
       <p style="color:#888;font-size:12px;margin-top:18px;">발송 시각: {html.escape(now)}</p>
     </div>
     """
+
+
+def latest_market_trend() -> dict[str, Any]:
+    payload = read_json(DEFAULT_MARKET_TRENDS)
+    rows = payload.get("rows") if isinstance(payload, dict) else []
+    return rows[0] if rows and isinstance(rows[0], dict) else {}
+
+
+def top_sector_text() -> str:
+    trend = latest_market_trend()
+    ranks = trend.get("ranks") if isinstance(trend.get("ranks"), list) else []
+    if not ranks:
+        return "트렌드 데이터 없음"
+    labels = []
+    for index, rank in enumerate(ranks[:3], start=1):
+        sector = str(rank).split("|", 1)[0].strip()
+        if sector:
+            labels.append(f"{sector} ({index}위)")
+    return ", ".join(labels) if labels else "트렌드 데이터 없음"
+
+
+def market_trend_ranks(trend: dict[str, Any]) -> list[dict[str, Any]]:
+    ranks = trend.get("ranks") if isinstance(trend.get("ranks"), list) else []
+    result = []
+    for index, raw_rank in enumerate(ranks[:10], start=1):
+        parts = [part.strip() for part in str(raw_rank).split("|", 1)]
+        result.append({
+            "rank": index,
+            "sector": parts[0] if parts else "-",
+            "keywords": parts[1] if len(parts) > 1 else "",
+        })
+    return result
+
+
+def weekly_trend_email_body(trend: dict[str, Any]) -> str:
+    ranks = market_trend_ranks(trend)
+    report_date = str(trend.get("date") or datetime.now(KST).strftime("%Y.%m.%d"))
+    summary = str(trend.get("summary") or "시장 요약 데이터가 없습니다.")
+    ranks_html = "".join(
+        f"""
+        <div style="padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:14px;">
+          <span style="color:#aaa;min-width:32px;display:inline-block;">{rank['rank']}위</span>
+          <strong style="color:#222;">{html.escape(str(rank['sector']))}</strong>
+          <span style="color:#666;margin-left:8px;font-size:13px;">{html.escape(str(rank['keywords']))}</span>
+        </div>
+        """
+        for rank in ranks
+    )
+
+    return f"""
+    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7;max-width:640px;">
+      <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
+        주간 시장 트렌드 리포트 ({html.escape(report_date)})
+      </p>
+      <div style="margin:12px 0;">{ranks_html or '<p>트렌드 순위 데이터가 없습니다.</p>'}</div>
+      <div style="margin-top:16px;padding:10px 14px;background:#f0f7ff;border-left:3px solid #3498db;font-size:13px;color:#333;">
+        ※ {html.escape(summary)}
+      </div>
+      <p style="color:#bbb;font-size:11px;margin-top:20px;">시장 트렌드 갱신 완료 후 자동 발송</p>
+    </div>
+    """
+
+
+def send_weekly_trend_notifications() -> int:
+    trend = latest_market_trend()
+    if not trend:
+        print("No market trend data.")
+        return 0
+
+    recipients = [
+        recipient
+        for recipient in load_recipients()
+        if enabled(recipient, "weeklyTrendReport")
+    ]
+    if not recipients:
+        print("No recipients for weeklyTrendReport.")
+        return 0
+
+    report_date = str(trend.get("date") or datetime.now(KST).strftime("%Y.%m.%d"))
+    subject = f"[주간 트렌드] 시장 트렌드 리포트 ({report_date})"
+    body = weekly_trend_email_body(trend)
+    sent = 0
+    for recipient in recipients:
+        send_email(recipient.email, subject, body)
+        sent += 1
+    print(f"Sent weekly trend notifications: {sent}")
+    return sent
+
+
+def fetch_weekly_rsi(symbol: str = "QQQ") -> float:
+    url = (
+        "https://query1.finance.yahoo.com/v8/finance/chart/"
+        + urllib.parse.quote(symbol)
+        + "?range=2y&interval=1wk"
+    )
+    request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(request, timeout=20) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    result = payload.get("chart", {}).get("result", [{}])[0]
+    closes = [
+        float(value)
+        for value in result.get("indicators", {}).get("quote", [{}])[0].get("close", [])
+        if value is not None
+    ]
+    rsi_values = calc_rsi(closes)
+    if not rsi_values:
+        raise RuntimeError("QQQ 주봉 RSI를 계산할 데이터가 부족합니다.")
+    return round(rsi_values[-1], 2)
+
+
+def qqq_peak_snapshot() -> dict[str, Any]:
+    row = calc_technical_row("QQQ")
+    current_price = float(row["close"])
+    ma200 = float(row["ma200"])
+    daily_rsi = float(row["rsi"])
+    daily_rsi_prev = float(row["rsiD1"])
+    weekly_rsi = fetch_weekly_rsi("QQQ")
+    threshold = ma200 * QQQ_PEAK_MULTIPLIER
+    premium_percent = (current_price / ma200 - 1) * 100
+    is_triggered = (
+        current_price > threshold
+        and weekly_rsi >= QQQ_PEAK_RSI_THRESHOLD
+        and daily_rsi >= QQQ_PEAK_RSI_THRESHOLD
+        and daily_rsi < daily_rsi_prev
+    )
+    return {
+        "currentPrice": current_price,
+        "ma200": ma200,
+        "threshold": threshold,
+        "premiumPercent": premium_percent,
+        "weeklyRsi": weekly_rsi,
+        "dailyRsi": daily_rsi,
+        "dailyRsiPrev": daily_rsi_prev,
+        "triggered": is_triggered,
+    }
+
+
+def nasdaq_peak_email_body(snapshot: dict[str, Any]) -> str:
+    kst_date, et_date = now_labels()
+    return f"""
+    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;max-width:640px;">
+      <p style="font-size:16px;font-weight:bold;color:#333;margin:0 0 12px 0;">
+        QQQ가 고점 과열 구간에 진입했으며, RSI 둔화 신호가 감지되었습니다.
+      </p>
+      <div style="margin:0 0 14px 0;">
+        <div><strong>QQQ 현재가:</strong> {snapshot['currentPrice']:.2f}</div>
+        <div><strong>QQQ 200일 이평선:</strong> {snapshot['ma200']:.2f}</div>
+        <div><strong>200일선 대비:</strong> +{snapshot['premiumPercent']:.2f}%</div>
+        <div><strong>기준선 (MA200 ×1.14):</strong> {snapshot['threshold']:.2f}</div>
+      </div>
+      <div style="margin:0 0 14px 0;">
+        <div><strong>QQQ 주봉 RSI(14):</strong> {snapshot['weeklyRsi']:.2f}</div>
+        <div><strong>QQQ 일봉 RSI(14):</strong> {snapshot['dailyRsi']:.2f}</div>
+        <div><strong>QQQ 일봉 RSI 전일:</strong> {snapshot['dailyRsiPrev']:.2f}</div>
+      </div>
+      <p>
+        QQQ가 200일 이동평균선 대비 ×1.14 이상 과열된 상태에서,
+        주봉/일봉 RSI가 65 이상이고 일봉 RSI가 전일 대비 하락했습니다.
+        이는 고점 구간에서 단기 에너지가 둔화되는 신호로 해석합니다.
+      </p>
+      <p>
+        웹서비스는 이 시장 과열 알림을 먼저 발송합니다. 구글 시트처럼 개별 보유 종목을
+        자동으로 매도 상태로 바꾸는 포지션 상태 관리는 아직 별도 이관 대상입니다.
+      </p>
+      <p style="color:#888;font-size:12px;margin:0;">
+        발송 시각 (한국): {html.escape(kst_date)}<br>
+        발송 시각 (미 동부): {html.escape(et_date)}
+      </p>
+    </div>
+    """
+
+
+def send_nasdaq_peak_notifications() -> int:
+    state = read_json(NOTIFICATION_STATE)
+    if not isinstance(state, dict):
+        state = {}
+    snapshot = qqq_peak_snapshot()
+    peak_state = state.get("nasdaqPeak") if isinstance(state.get("nasdaqPeak"), dict) else {}
+    was_sent = peak_state.get("sent") is True
+
+    if snapshot["currentPrice"] <= snapshot["threshold"] and was_sent:
+        state["nasdaqPeak"] = {"sent": False, "resetAt": datetime.now().astimezone().isoformat()}
+        write_json(NOTIFICATION_STATE, state)
+        print("Nasdaq peak state reset.")
+        return 0
+
+    if not snapshot["triggered"]:
+        print("Nasdaq peak signal not triggered.")
+        return 0
+    if was_sent:
+        print("Nasdaq peak notification already sent.")
+        return 0
+
+    recipients = [
+        recipient
+        for recipient in load_recipients()
+        if enabled(recipient, "nasdaqPeakEmail")
+    ] or fallback_admin_recipients()
+    recipients = dedupe_recipients(recipients)
+    if not recipients:
+        print("No recipients for nasdaq peak notification.")
+        return 0
+
+    subject = "나스닥 고점 구간 알림 (매도 시그널)"
+    body = nasdaq_peak_email_body(snapshot)
+    sent = 0
+    for recipient in recipients:
+        send_email(recipient.email, subject, body)
+        sent += 1
+
+    state["nasdaqPeak"] = {
+        "sent": True,
+        "sentAt": datetime.now().astimezone().isoformat(),
+        "snapshot": snapshot,
+    }
+    write_json(NOTIFICATION_STATE, state)
+    print(f"Sent nasdaq peak notifications: {sent}")
+    return sent
+
+
+def earnings_candidates(tickers: set[str], stocks: dict[str, dict[str, Any]], valuations: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    for ticker in sorted(tickers):
+        metric = valuations.get(ticker)
+        if not metric:
+            continue
+        earnings_date = str(metric.get("earningsDate") or "").strip()
+        if "(D-1)" not in earnings_date:
+            continue
+        stock = stocks.get(ticker, {})
+        candidates.append({
+            "ticker": ticker,
+            "name": stock.get("name") or ticker,
+            "date": earnings_date.split(" ", 1)[0],
+            "industry": stock.get("industry") or metric.get("industry") or "-",
+            "opinion": stock.get("opinion") or "관망",
+            "price": stock.get("currentPrice") or "-",
+        })
+    return candidates
+
+
+def earnings_email_body(candidates: list[dict[str, Any]]) -> str:
+    kst_date, et_date = now_labels()
+    cards = []
+    for stock in candidates:
+        is_buy = stock["opinion"] == "매수"
+        is_sell = "매도" in str(stock["opinion"])
+        border = "#2ecc71" if is_buy else "#e74c3c" if is_sell else "#95a5a6"
+        badge = "#27ae60" if is_buy else "#c0392b" if is_sell else "#7f8c8d"
+        cons = ["현재 매수 신호 미충족"] if stock["opinion"] == "관망" else []
+        if is_sell:
+            cons.append("현재 매도/쿨다운 상태")
+        cards.append(f"""
+        <div style="margin-bottom:10px;padding:10px;background:#f9f9f9;border-left:3px solid {border};">
+          <strong style="font-size:15px;">{html.escape(str(stock['ticker']))}</strong>
+          <span style="font-size:12px;color:#fff;background:{badge};padding:1px 6px;border-radius:3px;">{html.escape(str(stock['opinion']))}</span><br>
+          <span style="font-size:13px;">발표일: <strong>{html.escape(str(stock['date']).replace("-", "."))}</strong></span><br>
+          <span style="font-size:13px;">현재가: <strong>{html.escape(str(stock['price']))}</strong></span><br>
+          <span style="font-size:12px;color:#666;">산업: {html.escape(str(stock['industry']))}</span><br><br>
+          <span style="font-size:13px;color:#27ae60;">▲ 우호 요인</span>
+          <span style="font-size:13px;color:#444;"> 시장 이벤트 사전 확인 가능</span><br>
+          <span style="font-size:13px;color:#c0392b;">▼ 주의 요인</span>
+          <span style="font-size:13px;color:#444;"> {html.escape(" · ".join(cons) if cons else "실적 변동성 확대 가능")}</span><br><br>
+          <span style="font-size:13px;font-weight:bold;color:#333;">발표 직후 볼 것: 매출 · EPS · 가이던스 · 컨콜 톤</span>
+        </div>
+        """)
+
+    return f"""
+    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:640px;">
+      <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
+        내일 실적발표 종목 알림
+      </p>
+      <div style="margin-bottom:16px;padding:8px 12px;background:#f0f7ff;border-left:3px solid #3498db;font-size:13px;color:#333;">
+        이번 주 주도 섹터: {html.escape(top_sector_text())}
+      </div>
+      {''.join(cards)}
+      <div style="padding:10px 14px;background:#fffbe6;border-left:3px solid #f39c12;font-size:13px;color:#555;">
+        <strong>발표 후 공통 체크</strong><br>
+        숫자(매출·EPS)보다 가이던스·컨콜 톤이 시초가를 결정하는 경우가 많습니다.
+      </div>
+      <p style="color:#888;font-size:12px;margin-top:14px;">
+        발송 시각 (한국): {html.escape(kst_date)}<br>
+        발송 시각 (미 동부): {html.escape(et_date)}
+      </p>
+    </div>
+    """
+
+
+def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuation: Path = DEFAULT_VALUATION) -> int:
+    stocks = stock_rows_by_ticker(current)
+    valuations = valuation_rows_by_ticker(valuation)
+    watchlists = load_watchlists()
+    recipients = [
+        recipient
+        for recipient in load_recipients()
+        if enabled(recipient, "earningsDayBefore")
+    ]
+    if not recipients:
+        print("No recipients for earningsDayBefore.")
+        return 0
+
+    sent = 0
+    for recipient in recipients:
+        tickers = watchlists.get(recipient.owner_id, set())
+        candidates = earnings_candidates(tickers, stocks, valuations)
+        if not candidates:
+            continue
+        subject = "[실적발표 D-1] " + ", ".join(stock["ticker"] for stock in candidates[:8]) + " — 내일 발표"
+        send_email(recipient.email, subject, earnings_email_body(candidates))
+        sent += 1
+    print(f"Sent earnings notifications: {sent}")
+    return sent
 
 
 def send_opinion_notifications(previous: Path, current: Path) -> int:
@@ -284,12 +664,28 @@ def main() -> int:
     opinion_parser.add_argument("--previous", type=Path, default=DEFAULT_PREVIOUS_STOCKS)
     opinion_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
 
+    earnings_parser = subparsers.add_parser("earnings")
+    earnings_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
+    earnings_parser.add_argument("--valuation", type=Path, default=DEFAULT_VALUATION)
+
+    subparsers.add_parser("nasdaq-peak")
+    subparsers.add_parser("weekly-trend")
+
     failure_parser = subparsers.add_parser("admin-failure")
     failure_parser.add_argument("--message", default="자동 업데이트 작업이 실패했습니다.")
 
     args = parser.parse_args()
     if args.command == "opinion":
         send_opinion_notifications(args.previous, args.current)
+        return 0
+    if args.command == "earnings":
+        send_earnings_notifications(args.current, args.valuation)
+        return 0
+    if args.command == "nasdaq-peak":
+        send_nasdaq_peak_notifications()
+        return 0
+    if args.command == "weekly-trend":
+        send_weekly_trend_notifications()
         return 0
     if args.command == "admin-failure":
         send_admin_failure(args.message)

@@ -17,13 +17,14 @@ type WatchlistSortSettings = {
 
 type NotificationPreferences = {
   opinionChangeEmail: boolean
+  nasdaqPeakEmail: boolean
   weeklyTrendReport: boolean
   earningsDayBefore: boolean
   adminAutoUpdateFailureEmail: boolean
   recipientEmail: string
 }
 
-type NotificationPreferenceKey = 'opinionChangeEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
+type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
 
 type Stock = {
   ticker: string
@@ -175,6 +176,7 @@ const DEFAULT_WATCHLIST_SORT: WatchlistSortSettings = { primary: 'registered', s
 const activePages: ActivePage[] = ['home', 'value-analysis', 'technical-analysis', 'market-events', 'market-trends', 'board', 'admin-logs']
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   opinionChangeEmail: true,
+  nasdaqPeakEmail: true,
   weeklyTrendReport: true,
   earningsDayBefore: true,
   adminAutoUpdateFailureEmail: true,
@@ -299,6 +301,7 @@ function normalizeNotificationPreferences(value: unknown): NotificationPreferenc
   const candidate = value as Partial<NotificationPreferences> | null
   return {
     opinionChangeEmail: typeof candidate?.opinionChangeEmail === 'boolean' ? candidate.opinionChangeEmail : DEFAULT_NOTIFICATION_PREFERENCES.opinionChangeEmail,
+    nasdaqPeakEmail: typeof candidate?.nasdaqPeakEmail === 'boolean' ? candidate.nasdaqPeakEmail : DEFAULT_NOTIFICATION_PREFERENCES.nasdaqPeakEmail,
     weeklyTrendReport: typeof candidate?.weeklyTrendReport === 'boolean' ? candidate.weeklyTrendReport : DEFAULT_NOTIFICATION_PREFERENCES.weeklyTrendReport,
     earningsDayBefore: typeof candidate?.earningsDayBefore === 'boolean' ? candidate.earningsDayBefore : DEFAULT_NOTIFICATION_PREFERENCES.earningsDayBefore,
     adminAutoUpdateFailureEmail: typeof candidate?.adminAutoUpdateFailureEmail === 'boolean' ? candidate.adminAutoUpdateFailureEmail : DEFAULT_NOTIFICATION_PREFERENCES.adminAutoUpdateFailureEmail,
@@ -1459,6 +1462,7 @@ const watchlistSortOptions: Array<{ value: WatchlistSortKey; label: string; desc
 ]
 const notificationOptions: Array<{ key: NotificationPreferenceKey; title: string; description: string }> = [
   { key: 'opinionChangeEmail', title: '투자의견 변경', description: '관심종목의 매수/관망/매도 신호가 바뀔 때' },
+  { key: 'nasdaqPeakEmail', title: '나스닥 고점 과열', description: 'QQQ 과열과 RSI 둔화가 동시에 감지될 때' },
   { key: 'weeklyTrendReport', title: '주간 트렌드 리포트', description: '시장 트렌드와 관심종목 흐름을 주 1회 정리' },
   { key: 'earningsDayBefore', title: '실적발표 전날', description: '관심종목 실적발표 전 리스크 점검' },
 ]

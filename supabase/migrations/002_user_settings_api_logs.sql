@@ -1,7 +1,7 @@
 create table if not exists public.user_settings (
   owner_id uuid primary key references auth.users(id) on delete cascade,
   watchlist_sort jsonb not null default '{"primary":"registered","secondary":"registered"}'::jsonb,
-  notification_preferences jsonb not null default '{"opinionChangeEmail":true,"weeklyTrendReport":true,"earningsDayBefore":true,"adminAutoUpdateFailureEmail":true,"recipientEmail":""}'::jsonb,
+  notification_preferences jsonb not null default '{"opinionChangeEmail":true,"nasdaqPeakEmail":true,"weeklyTrendReport":true,"earningsDayBefore":true,"adminAutoUpdateFailureEmail":true,"recipientEmail":""}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
