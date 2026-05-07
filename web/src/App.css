@@ -1087,22 +1087,26 @@
 }
 
 .home-pin-toggle {
+  all: unset;
   position: absolute;
   top: 50%;
   right: 8px;
   appearance: none;
   -webkit-appearance: none;
-  display: inline-flex;
-  width: 16px;
-  height: 16px;
+  display: inline-flex !important;
+  width: 16px !important;
+  height: 16px !important;
   align-items: center;
   justify-content: center;
-  transform: translateY(-50%);
-  border: 0;
-  background: transparent;
+  transform: translateY(-50%) !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
   cursor: pointer;
-  font-size: 13px;
-  line-height: 1;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  line-height: 16px !important;
   opacity: 0.35;
   padding: 0;
   vertical-align: top;
@@ -1112,18 +1116,36 @@
   opacity: 1;
 }
 
+.home-pin-toggle:hover,
 .home-pin-toggle:focus,
 .home-pin-toggle:focus-visible,
 .home-pin-toggle:active {
-  outline: none;
-  transform: translateY(-50%);
+  width: 16px !important;
+  height: 16px !important;
+  transform: translateY(-50%) !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+  opacity: 0.35;
+  outline: none !important;
+}
+
+.home-pin-toggle.active:hover,
+.home-pin-toggle.active:focus,
+.home-pin-toggle.active:focus-visible,
+.home-pin-toggle.active:active {
+  opacity: 1;
 }
 
 .home-pin-toggle span {
   display: block;
-  width: 16px;
-  height: 16px;
-  line-height: 16px;
+  width: 16px !important;
+  height: 16px !important;
+  transform: none !important;
+  font-size: 13px !important;
+  line-height: 16px !important;
+  text-align: center;
 }
 
 .market-events-panel {
