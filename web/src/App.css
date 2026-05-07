@@ -1090,6 +1090,8 @@
   position: absolute;
   top: 50%;
   right: 8px;
+  appearance: none;
+  -webkit-appearance: none;
   display: inline-flex;
   width: 16px;
   height: 16px;
@@ -1103,16 +1105,25 @@
   line-height: 1;
   opacity: 0.35;
   padding: 0;
+  vertical-align: top;
 }
 
 .home-pin-toggle.active {
   opacity: 1;
 }
 
-.home-pin-toggle:hover,
-.home-pin-toggle:focus-visible {
-  opacity: 1;
+.home-pin-toggle:focus,
+.home-pin-toggle:focus-visible,
+.home-pin-toggle:active {
   outline: none;
+  transform: translateY(-50%);
+}
+
+.home-pin-toggle span {
+  display: block;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
 }
 
 .market-events-panel {
