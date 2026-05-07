@@ -1218,6 +1218,11 @@
     var(--card-bg);
 }
 
+.board-panel,
+.board-panel * {
+  box-sizing: border-box;
+}
+
 .board-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
@@ -1233,6 +1238,7 @@
 .board-feed {
   display: grid;
   gap: 14px;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.76);
@@ -1390,6 +1396,8 @@
 .board-post-card {
   display: grid;
   gap: 12px;
+  min-width: 0;
+  max-width: 100%;
   border-radius: 12px;
   padding: 14px 16px;
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
@@ -1419,6 +1427,7 @@
 
 .board-post-meta-left {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   min-width: 0;
   gap: 10px;
@@ -1530,12 +1539,15 @@
   color: var(--text-h);
   font-size: 14px;
   line-height: 1.6;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 
 .board-comment-panel {
   display: grid;
   gap: 10px;
+  min-width: 0;
+  max-width: 100%;
   border-top: 1px solid #e5edf5;
   padding-top: 10px;
 }
@@ -1548,6 +1560,7 @@
 .board-comment {
   display: grid;
   gap: 4px;
+  min-width: 0;
   border-radius: 12px;
   background: #ffffff;
   padding: 9px 10px;
@@ -1580,6 +1593,7 @@
   color: #334155;
   font-size: 13px;
   line-height: 1.55;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 
@@ -1591,10 +1605,13 @@
 .board-comment-form {
   display: grid;
   gap: 8px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .board-comment-form textarea {
   width: 100%;
+  max-width: 100%;
   min-height: 64px;
   resize: vertical;
   border: 1px solid #d8e1ec;
@@ -3335,6 +3352,34 @@
 }
 
 @media (max-width: 760px) {
+  .board-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .board-aside {
+    position: static;
+  }
+
+  .board-feed {
+    padding: 14px;
+  }
+
+  .board-feed-header,
+  .board-post-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .board-feed-actions,
+  .board-post-meta-right {
+    justify-self: start;
+  }
+
+  .board-post-meta-right {
+    align-items: flex-start;
+    min-width: 0;
+    min-height: 0;
+  }
+
   .admin-log-tabs {
     grid-template-columns: 1fr;
   }
