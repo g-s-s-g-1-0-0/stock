@@ -158,9 +158,15 @@ def update_trade_logs(
 
     for trade in trades:
         ticker = str(trade.get("ticker") or "").strip().upper()
-        if not ticker or str(trade.get("status") or "") != "보유 중":
+        if not ticker:
             continue
         stock = stocks_by_symbol.get(ticker, {})
+        if stock:
+            trade["name"] = stock.get("name") or trade.get("name") or ticker
+            trade["market"] = stock.get("market") or trade.get("market") or "-"
+            trade["currentPrice"] = stock.get("currentPrice") or trade.get("currentPrice") or "-"
+        if str(trade.get("status") or "") != "보유 중":
+            continue
         if str(stock.get("opinion") or "").strip() != "매도":
             continue
         sell_price = stock.get("currentPrice") or "-"
@@ -187,6 +193,9 @@ def update_trade_logs(
         strategy = ", ".join(str(v) for v in strategies) if isinstance(strategies, list) and strategies else tech_value(row, "진입 전략")
         trades.append({
             "ticker": ticker,
+            "name": stock.get("name") or ticker,
+            "market": stock.get("market") or "-",
+            "currentPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
             "strategy": strategy if strategy and strategy != "-" else "시스템 매수 신호",
             "buyDate": today,
             "buyPrice": stock.get("currentPrice") or tech_value(row, "현재가"),

@@ -10,6 +10,9 @@
   "rows": [
     {
       "ticker": "375500",
+      "name": "DL이앤씨",
+      "market": "KR",
+      "currentPrice": "₩95,400",
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",
       "buyDate": "2026.05.09",
       "buyPrice": "₩95,400",
@@ -21,6 +24,9 @@
     },
     {
       "ticker": "079550",
+      "name": "LIG디펜스앤에어로스페이스",
+      "market": "KR",
+      "currentPrice": "₩840,000",
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",
       "buyDate": "2026.05.09",
       "buyPrice": "₩840,000",

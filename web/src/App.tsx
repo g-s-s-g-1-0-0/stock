@@ -43,6 +43,9 @@ type Stock = {
 
 type TradeLog = {
   ticker: string
+  name?: string
+  market?: Market
+  currentPrice?: string
   strategy: string
   buyDate: string
   buyPrice: string
@@ -1298,6 +1301,14 @@ function stockMarket(ticker: string) {
   return searchUniverse.find((stock) => stock.ticker === ticker)?.market ?? 'US'
 }
 
+function tradeName(trade: TradeLog) {
+  return trade.name || stockName(trade.ticker)
+}
+
+function tradeMarket(trade: TradeLog) {
+  return trade.market || stockMarket(trade.ticker)
+}
+
 function marketFlag(market: Market) {
   return market === 'KR' ? '🇰🇷' : '🇺🇸'
 }
@@ -1405,9 +1416,9 @@ function parsePriceValue(value: string) {
   return Number.isFinite(parsed) ? parsed : null
 }
 
-function currentReturnPct(trade: TradeLog) {
+function currentReturnPct(trade: TradeLog, stocks: Stock[] = searchUniverse) {
   const buyPrice = parsePriceValue(trade.buyPrice)
-  const currentPrice = parsePriceValue(searchUniverse.find((stock) => stock.ticker === trade.ticker)?.currentPrice ?? '')
+  const currentPrice = parsePriceValue(trade.currentPrice || stocks.find((stock) => stock.ticker === trade.ticker)?.currentPrice || '')
 
   if (!buyPrice || currentPrice === null) return null
   return ((currentPrice - buyPrice) / buyPrice) * 100
@@ -4685,8 +4696,8 @@ function App() {
                     <td className="numbering-cell">{index + 1}</td>
                     <td>
                       <div className="name-cell">
-                        <span className="market-flag" aria-hidden="true">{marketFlag(stockMarket(trade.ticker))}</span>
-                        <span>{stockName(trade.ticker)}</span>
+                        <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>
+                        <span>{tradeName(trade)}</span>
                       </div>
                     </td>
                     <td className="ticker-cell">{trade.ticker}</td>
@@ -5037,7 +5048,7 @@ function App() {
                       {effectiveViewMode === 'personal' && (
                         <td className="checkbox-cell">
                           <input
-                            aria-label={`${stockName(trade.ticker)} 보유 항목 선택`}
+                            aria-label={`${tradeName(trade)} 보유 항목 선택`}
                             checked={selectedHoldingTradeKeys.includes(tradeKey(trade))}
                             onChange={() => toggleSelectedHoldingTrade(tradeKey(trade))}
                             type="checkbox"
@@ -5048,8 +5059,8 @@ function App() {
                       <td className="ticker-cell">{trade.ticker}</td>
                       <td>
                         <div className="name-cell">
-                          <span className="market-flag" aria-hidden="true">{marketFlag(stockMarket(trade.ticker))}</span>
-                          <span>{stockName(trade.ticker)}</span>
+                          <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>
+                          <span>{tradeName(trade)}</span>
                         </div>
                       </td>
                       <td>{trade.buyDate}</td>
@@ -5060,11 +5071,11 @@ function App() {
                           strategy={trade.strategy}
                         />
                       </td>
-                      {currentReturnPct(trade) === null ? (
+                      {currentReturnPct(trade, apiStocks) === null ? (
                         <td className="dash-cell">-</td>
                       ) : (
-                        <td className={`number-cell ${returnClass(currentReturnPct(trade) ?? 0)}`}>
-                          {(currentReturnPct(trade) ?? 0) >= 0 ? '+' : ''}{(currentReturnPct(trade) ?? 0).toFixed(1)}%
+                        <td className={`number-cell ${returnClass(currentReturnPct(trade, apiStocks) ?? 0)}`}>
+                          {(currentReturnPct(trade, apiStocks) ?? 0) >= 0 ? '+' : ''}{(currentReturnPct(trade, apiStocks) ?? 0).toFixed(1)}%
                         </td>
                       )}
                       <td>{holdingPeriodDays(trade)}</td>
