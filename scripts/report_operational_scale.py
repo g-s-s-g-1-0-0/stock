@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import urllib.parse
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -63,10 +64,14 @@ def supabase_request(path: str, *, headers: dict[str, str] | None = None) -> tup
             **(headers or {}),
         },
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        raw = response.read().decode("utf-8")
-        payload = json.loads(raw) if raw else []
-        return payload, dict(response.headers.items())
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            raw = response.read().decode("utf-8")
+            payload = json.loads(raw) if raw else []
+            return payload, dict(response.headers.items())
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Supabase request failed: {exc.code} {detail}") from exc
 
 
 def supabase_count(table: str) -> int | None:
@@ -89,11 +94,14 @@ def load_watchlists() -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     offset = 0
     while True:
-        query = urllib.parse.urlencode({
-            "select": "scope,tickers",
-            "limit": str(PAGE_SIZE),
-            "offset": str(offset),
-        })
+        query = urllib.parse.urlencode(
+            {
+                "select": "scope,tickers",
+                "limit": str(PAGE_SIZE),
+                "offset": str(offset),
+            },
+            safe=",",
+        )
         payload, _ = supabase_request(f"/rest/v1/watchlists?{query}")
         if not isinstance(payload, list) or not payload:
             break
@@ -105,9 +113,19 @@ def load_watchlists() -> list[dict[str, Any]]:
 
 
 def print_supabase_metrics() -> None:
-    profiles = supabase_count("profiles")
-    user_settings = supabase_count("user_settings")
-    watchlists = load_watchlists()
+    try:
+        profiles = supabase_count("profiles")
+    except Exception as exc:  # noqa: BLE001 - reporting should stay best-effort
+        profiles = f"error:{exc}"
+    try:
+        user_settings = supabase_count("user_settings")
+    except Exception as exc:  # noqa: BLE001 - reporting should stay best-effort
+        user_settings = f"error:{exc}"
+    try:
+        watchlists = load_watchlists()
+    except Exception as exc:  # noqa: BLE001 - reporting should stay best-effort
+        print(f"[scale] watchlists.report_error={exc}")
+        watchlists = []
 
     unique_tickers: set[str] = set()
     max_watchlist_size = 0
