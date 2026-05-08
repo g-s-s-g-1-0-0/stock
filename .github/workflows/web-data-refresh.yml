@@ -115,22 +115,6 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' }}
         run: python scripts/refresh_web_caches.py $REFRESH_TASKS
 
-      - name: Send opinion change emails
-        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'technical') }}
-        run: python scripts/web_refresh_notifications.py opinion
-
-      - name: Send Nasdaq peak emails
-        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'technical') }}
-        run: python scripts/web_refresh_notifications.py nasdaq-peak
-
-      - name: Send earnings D-1 emails
-        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'valuation') }}
-        run: python scripts/web_refresh_notifications.py earnings
-
-      - name: Send weekly trend report emails
-        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
-        run: python scripts/web_refresh_notifications.py weekly-trend
-
       - name: Record stock-level operation logs
         if: ${{ env.SKIP_REFRESH != 'true' }}
         continue-on-error: true
@@ -154,6 +138,22 @@ jobs:
           git add data/cache web/public/api
           git commit -m "Update scheduled web data caches"
           git push origin "HEAD:${GITHUB_REF_NAME:-main}"
+
+      - name: Send opinion change emails
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'technical') }}
+        run: python scripts/web_refresh_notifications.py opinion
+
+      - name: Send Nasdaq peak emails
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'technical') }}
+        run: python scripts/web_refresh_notifications.py nasdaq-peak
+
+      - name: Send earnings D-1 emails
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'valuation') }}
+        run: python scripts/web_refresh_notifications.py earnings
+
+      - name: Send weekly trend report emails
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
+        run: python scripts/web_refresh_notifications.py weekly-trend
 
       - name: Deploy refreshed web
         if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' }}
