@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-08T13:00:44+00:00",
-    "lastSuccessfulRun": "2026-05-08T13:00:44+00:00",
+    "updatedAt": "2026-05-08T15:01:14+00:00",
+    "lastSuccessfulRun": "2026-05-08T15:01:14+00:00",
     "failedReason": null
   },
   "rows": [
@@ -235,7 +235,7 @@
       "ticker": "ACLS",
       "name": "Axcelis Technologies, Inc.",
       "market": "US",
-      "fairPrice": "$57.00 ~ $76.00",
+      "fairPrice": "$48.15 ~ $64.20",
       "fairPriceReason": null,
       "currentPrice": "$158.66",
       "valuation": "고평가",
@@ -403,10 +403,10 @@
       "ticker": "IREN",
       "name": "IREN Limited -",
       "market": "US",
-      "fairPrice": "$43.50 ~ $60.90",
+      "fairPrice": "$14.50 ~ $20.30",
       "fairPriceReason": null,
       "currentPrice": "$56.85",
-      "valuation": "보통",
+      "valuation": "고평가",
       "opinion": "관망",
       "strategies": [],
       "category": "성장주",
