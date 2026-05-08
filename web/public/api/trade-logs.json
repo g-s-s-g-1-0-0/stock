@@ -1,11 +1,12 @@
 {
   "meta": {
     "kind": "trade-logs",
-    "schedule": "manual-recovery",
-    "updatedAt": "2026-05-08T19:16:00Z",
-    "lastSuccessfulRun": "2026-05-08T19:16:00Z",
+    "schedule": "auto",
+    "updatedAt": "2026-05-08T20:38:53.167178Z",
+    "lastSuccessfulRun": "2026-05-08T20:38:53.167187Z",
     "failedReason": null,
-    "appendedOpenTrades": 2
+    "appendedOpenTrades": 1,
+    "closedTrades": 0
   },
   "rows": [
     {
@@ -30,6 +31,20 @@
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",
       "buyDate": "2026.05.09",
       "buyPrice": "₩840,000",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중"
+    },
+    {
+      "ticker": "MP",
+      "name": "MP Materials Corp.",
+      "market": "US",
+      "currentPrice": "$67.43",
+      "strategy": "D. 200일선 상방 & 상승 흐름 강화",
+      "buyDate": "2026.05.09",
+      "buyPrice": "$67.43",
       "sellDate": "보유 중",
       "sellPrice": "-",
       "returnPct": 0,
