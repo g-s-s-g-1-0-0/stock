@@ -232,16 +232,24 @@ def smtp_port() -> int:
         raise RuntimeError("SMTP_PORT는 숫자여야 합니다.") from exc
 
 
-def send_email(to_email: str, subject: str, html_body: str) -> None:
+def email_sender() -> tuple[str, str]:
+    smtp_user = os.environ.get("SMTP_USER", "").strip()
+    from_email = os.environ.get("SMTP_FROM", smtp_user).strip()
+    from_name = os.environ.get("SMTP_FROM_NAME", "공수성가").strip()
+    if not from_email:
+        raise RuntimeError("SMTP_FROM 설정이 필요합니다.")
+    return from_email, from_name
+
+
+def send_smtp_email(to_email: str, subject: str, html_body: str) -> None:
     smtp_user = os.environ.get("SMTP_USER", "").strip()
     smtp_password = os.environ.get("SMTP_PASSWORD", "").strip()
     smtp_host = (os.environ.get("SMTP_HOST") or "smtp.gmail.com").strip()
     port = smtp_port()
-    from_email = os.environ.get("SMTP_FROM", smtp_user).strip()
-    from_name = os.environ.get("SMTP_FROM_NAME", "공수성가").strip()
+    from_email, from_name = email_sender()
 
-    if not smtp_user or not smtp_password or not from_email:
-        raise RuntimeError("SMTP_USER, SMTP_PASSWORD, SMTP_FROM 설정이 필요합니다.")
+    if not smtp_user or not smtp_password:
+        raise RuntimeError("SMTP_USER, SMTP_PASSWORD 설정이 필요합니다.")
 
     message = MIMEMultipart("alternative")
     message["Subject"] = subject
@@ -260,6 +268,44 @@ def send_email(to_email: str, subject: str, html_body: str) -> None:
         server.starttls(context=context)
         server.login(smtp_user, smtp_password)
         server.sendmail(from_email, [to_email], message.as_string())
+
+
+def send_brevo_email(to_email: str, subject: str, html_body: str) -> None:
+    api_key = os.environ.get("BREVO_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("BREVO_API_KEY 설정이 필요합니다.")
+
+    from_email, from_name = email_sender()
+    payload = {
+        "sender": {"email": from_email, "name": from_name},
+        "to": [{"email": to_email}],
+        "subject": subject,
+        "htmlContent": html_body,
+    }
+    request = urllib.request.Request(
+        "https://api.brevo.com/v3/smtp/email",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "accept": "application/json",
+            "api-key": api_key,
+            "content-type": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        if response.status >= 300:
+            raise RuntimeError(f"Brevo email request failed with {response.status}.")
+
+
+def send_email(to_email: str, subject: str, html_body: str) -> None:
+    provider = os.environ.get("EMAIL_PROVIDER", "smtp").strip().lower()
+    if provider == "smtp":
+        send_smtp_email(to_email, subject, html_body)
+        return
+    if provider == "brevo":
+        send_brevo_email(to_email, subject, html_body)
+        return
+    raise RuntimeError(f"지원하지 않는 EMAIL_PROVIDER입니다: {provider}")
 
 
 def opinion_email_body(changes: list[dict[str, Any]]) -> str:

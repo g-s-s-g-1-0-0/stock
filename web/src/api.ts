@@ -17,6 +17,11 @@ export type ApiStocksPayload<TStock> = {
   rows?: TStock[]
 }
 
+export type ApiStockSearchPayload<TStock> = {
+  meta?: RuntimeMeta
+  rows?: TStock[]
+}
+
 export type ApiValuationPayload<TMetric> = {
   meta?: RuntimeMeta
   rows?: Record<string, TMetric>
@@ -60,6 +65,7 @@ const dataPaths = {
   technical: import.meta.env.DEV ? ['/api/technical.json', '/api/technical', 'http://127.0.0.1:8787/api/technical'] : ['/api/technical.json'],
   marketEvents: import.meta.env.DEV ? ['/api/market-events.json', '/api/market-events', 'http://127.0.0.1:8787/api/market-events'] : ['/api/market-events.json'],
   marketTrends: import.meta.env.DEV ? ['/api/market-trends.json', '/api/market-trends', 'http://127.0.0.1:8787/api/market-trends'] : ['/api/market-trends.json'],
+  stockSearch: import.meta.env.DEV ? ['/api/stock-search.json', '/api/stock-search', 'http://127.0.0.1:8787/api/stock-search'] : ['/api/stock-search.json'],
 }
 
 export async function fetchAppData<TStock, TMetric, TGroup, TTrendRow>() {
@@ -72,6 +78,10 @@ export async function fetchAppData<TStock, TMetric, TGroup, TTrendRow>() {
   ])
 
   return { stocks, valuation, technical, marketEvents, marketTrends }
+}
+
+export async function fetchStockSearchData<TStock>() {
+  return fetchJson<ApiStockSearchPayload<TStock>>(dataPaths.stockSearch)
 }
 
 export async function saveMarketEvents<TGroup>(

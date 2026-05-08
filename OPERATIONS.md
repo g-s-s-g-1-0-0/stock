@@ -7,6 +7,17 @@
 - Scheduled trigger: external `cron-job.org` jobs call the GitHub Actions workflow/API.
 - Do not assume a missing `schedule:` block means refresh is unscheduled. The schedule is managed outside this repository.
 
+## Scale Checks
+
+The refresh workflow runs `scripts/report_operational_scale.py` after data refreshes. Check the Actions logs for lines beginning with `[scale]`.
+
+Watch these values before public traffic spikes:
+
+- `watchlists.unique_tickers`: total distinct tickers across all user watchlists. If this grows beyond `MAX_REFRESH_UNIVERSE`, refresh coverage and cache size need review.
+- `cache.*.bytes`: static JSON payload size. Large JSON files increase first-load time and Vercel/CDN transfer.
+- `watchlists.max_size`: should stay at or below the product limit of 50 per user.
+
+
 ## Deployment
 
 - Vercel is connected to GitHub push auto-deploy.
@@ -29,8 +40,11 @@ Optional GitHub Secrets:
 - `SMTP_PORT` defaults to `465` when empty.
 - `SMTP_FROM_NAME` defaults to `공수성가`.
 - `ADMIN_EMAILS` is used as the fallback admin recipient list.
+- `EMAIL_PROVIDER` defaults to `smtp`. Set it to `brevo` to use Brevo.
+- `BREVO_API_KEY` is required only when `EMAIL_PROVIDER=brevo`.
 
 For Gmail, `SMTP_PASSWORD` must be an app password, not the normal account password.
+Brevo is the preferred free-volume upgrade path when notification volume outgrows Gmail SMTP.
 
 Notification failures are not ignored. If an email step fails, the GitHub Actions run should fail and appear in the repository Actions tab.
 

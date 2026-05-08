@@ -1,7 +1,7 @@
 import './App.css'
 import { Fragment, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { fetchAppData, refreshAppData, saveMarketEvents, type AppData, type RuntimeMeta } from './api'
+import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, type AppData, type RuntimeMeta } from './api'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 
 type Market = 'KR' | 'US'
@@ -170,6 +170,7 @@ const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
 const FAIR_PRICE_UNAVAILABLE_LABEL = '적자 상태라 판단 불가'
 const FAIR_PRICE_RANGE_TOOLTIP = 'EPS(TTM) × 적용 PER 배수로 계산합니다. 가치주는 10~15배, 혼합주는 15~25배를 적용하고, 성장주는 매출 성장률에 따라 15~20배부터 최대 50~70배까지 적용합니다. EPS가 0 이하이면 판단 불가로 표시합니다.'
 const ADMIN_LOGS_PAGE_SIZE = 50
+const BOARD_POST_PAGE_SIZE = 50
 const MAX_BOARD_COMMENTS_PER_POST = 50
 const MAX_BOARD_COMMENT_LENGTH = 500
 const DEFAULT_WATCHLIST_SORT: WatchlistSortSettings = { primary: 'registered', secondary: 'registered' }
@@ -579,6 +580,13 @@ function stockSearchShell(stock: Stock): Stock {
     industry: stock.industry ?? '-',
     updatedAt: '-',
   }
+}
+
+function mergeStocks(primary: Stock[], secondary: Stock[]) {
+  const rowsByTicker = new Map<string, Stock>()
+  for (const stock of secondary) rowsByTicker.set(stock.ticker, stockSearchShell(stock))
+  for (const stock of primary) rowsByTicker.set(stock.ticker, withDisplayStockName(stock))
+  return [...rowsByTicker.values()]
 }
 
 const initialWatchlist: string[] = []
@@ -3150,6 +3158,8 @@ function App() {
   const [authInfoMessage, setAuthInfoMessage] = useState('')
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
   const [apiStocks, setApiStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? cachedAppData.stocks.rows.map(withDisplayStockName) : searchUniverse.map(stockSearchShell))
+  const [apiSearchStocks, setApiSearchStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? mergeStocks(cachedAppData.stocks.rows, searchUniverse) : searchUniverse.map(stockSearchShell))
+  const [isStockSearchLoaded, setIsStockSearchLoaded] = useState(false)
   const [apiValuationMetrics, setApiValuationMetrics] = useState<Record<string, ValuationMetric>>(() => cachedAppData?.valuation?.rows ?? {})
   const [apiTechnicalRows, setApiTechnicalRows] = useState<Record<string, Record<string, string>>>(() => cachedAppData?.technical?.rows ?? {})
   const [apiMarketSnapshot, setApiMarketSnapshot] = useState<string[][]>(() => cachedAppData?.technical?.marketSnapshot && isMeaningfulMarketSnapshot(cachedAppData.technical.marketSnapshot) ? mergeMarketSnapshot(cachedAppData.technical.marketSnapshot) : technicalMarketSnapshot)
@@ -3190,7 +3200,9 @@ function App() {
       marketTrends: data.marketTrends?.meta,
     })
     if (data.stocks?.rows && data.stocks.rows.length > 0) {
-      setApiStocks(data.stocks.rows.map(withDisplayStockName))
+      const stocks = data.stocks.rows.map(withDisplayStockName)
+      setApiStocks(stocks)
+      setApiSearchStocks((currentStocks) => mergeStocks(stocks, currentStocks))
     }
     if (data.valuation?.rows) {
       setApiValuationMetrics(data.valuation.rows)
@@ -3539,6 +3551,7 @@ function App() {
       .from('board_posts')
       .select('id, category, content, created_at, author_id, author_name, hidden, board_comments(id, post_id, content, created_at, author_id, author_name)')
       .order('created_at', { ascending: false })
+      .limit(BOARD_POST_PAGE_SIZE)
 
     if (error) throw error
     setBoardPosts((data ?? []).map(mapBoardPost))
@@ -3587,6 +3600,23 @@ function App() {
       window.clearTimeout(refreshTimer)
     }
   }, [])
+
+  useEffect(() => {
+    const normalized = normalizeQuery(query)
+    if (!normalized || isStockSearchLoaded) return
+
+    let isMounted = true
+    fetchStockSearchData<Stock>().then((data) => {
+      const rows = data?.rows ?? []
+      if (!isMounted || rows.length === 0) return
+      setApiSearchStocks((currentStocks) => mergeStocks(apiStocks, [...currentStocks, ...rows]))
+      setIsStockSearchLoaded(true)
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [apiStocks, isStockSearchLoaded, query])
 
   useEffect(() => {
     let isMounted = true
@@ -3691,12 +3721,12 @@ function App() {
     const normalized = normalizeQuery(query)
     if (!normalized) return []
 
-    return apiStocks
+    return apiSearchStocks
       .map((stock) => ({ stock, rank: stockSearchRank(stock, normalized) }))
       .filter(({ rank }) => rank < 99)
       .sort((a, b) => a.rank - b.rank || a.stock.ticker.localeCompare(b.stock.ticker))
       .map(({ stock }) => stock)
-  }, [apiStocks, query])
+  }, [apiSearchStocks, query])
 
   const trimmedLoginEmail = loginEmail.trim().toLowerCase()
   const isAdminUser = userSession ? configuredAdminEmails().includes(userSession.email.toLowerCase()) : false
@@ -3799,6 +3829,10 @@ function App() {
       const nextWatchlist = watchlist.includes(ticker) ? watchlist : [...watchlist, ticker]
       setWatchlist(nextWatchlist)
       await persistWatchlist('personal', nextWatchlist)
+    }
+    const searchedStock = apiSearchStocks.find((stock) => stock.ticker === ticker)
+    if (searchedStock && !apiStocks.some((stock) => stock.ticker === ticker)) {
+      setApiStocks((currentStocks) => [...currentStocks, searchedStock])
     }
     setQuery('')
     setIsAddingStock(true)

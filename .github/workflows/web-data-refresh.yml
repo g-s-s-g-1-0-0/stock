@@ -36,6 +36,8 @@ jobs:
       SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
       SMTP_FROM: ${{ secrets.SMTP_FROM }}
       SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
+      EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -90,6 +92,10 @@ jobs:
       - name: Record stock-level operation logs
         continue-on-error: true
         run: python scripts/record_web_api_logs.py $REFRESH_TASKS
+
+      - name: Report operational scale metrics
+        continue-on-error: true
+        run: python scripts/report_operational_scale.py
 
       - name: Commit refreshed caches
         run: |

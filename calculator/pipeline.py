@@ -491,11 +491,33 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
     }
 
 
-def build_stocks_cache() -> dict[str, Any]:
+def build_stock_search_cache() -> dict[str, Any]:
+    rows = []
+    for stock in read_search_universe():
+        rows.append({
+            "ticker": stock["ticker"],
+            "name": clean_stock_name(stock["name"]),
+            "market": stock["market"],
+            "category": stock_category(stock),
+            "industry": stock_industry(stock, {}),
+        })
+    return {
+        "meta": {
+            "kind": "stock-search",
+            "schedule": "derived",
+            "updatedAt": now_iso(),
+            "lastSuccessfulRun": now_iso(),
+            "failedReason": None,
+        },
+        "rows": rows,
+    }
+
+
+def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str, Any]:
     technical_rows = read_cache("technical").get("rows", {})
     valuation_rows = read_cache("valuation").get("rows", {})
     rows = []
-    for stock in read_search_universe():
+    for stock in universe or read_universe():
         technical = technical_rows.get(stock["ticker"], {})
         valuation = valuation_rows.get(stock["ticker"], {})
         fair_price_reason = fair_price_unavailable_reason(valuation)
@@ -762,7 +784,7 @@ def build_market_events_cache() -> dict[str, Any]:
 
 def run(job: str, universe: list[dict[str, str]] | None = None) -> None:
     jobs = {
-        "stocks": build_stocks_cache,
+        "stocks": lambda: build_stocks_cache(universe),
         "valuation": lambda: build_valuation_cache(universe),
         "technical": lambda: build_technical_cache(universe),
         "market-trends": build_market_trends_cache,
@@ -773,6 +795,10 @@ def run(job: str, universe: list[dict[str, str]] | None = None) -> None:
         payload = jobs[name]()
         write_cache(name, payload)
         print(f"wrote {name}: {payload['meta']['updatedAt']}")
+        if name == "stocks":
+            search_payload = build_stock_search_cache()
+            write_cache("stock-search", search_payload)
+            print(f"wrote stock-search: {search_payload['meta']['updatedAt']}")
 
 
 def main() -> None:
