@@ -298,7 +298,7 @@ def send_brevo_email(to_email: str, subject: str, html_body: str) -> None:
 
 
 def send_email(to_email: str, subject: str, html_body: str) -> None:
-    provider = os.environ.get("EMAIL_PROVIDER", "smtp").strip().lower()
+    provider = os.environ.get("EMAIL_PROVIDER", "").strip().lower() or "smtp"
     if provider == "smtp":
         send_smtp_email(to_email, subject, html_body)
         return
