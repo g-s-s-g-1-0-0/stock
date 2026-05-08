@@ -222,11 +222,21 @@ def enabled(recipient: Recipient, key: str, *, default: bool = True) -> bool:
     return value if isinstance(value, bool) else default
 
 
+def smtp_port() -> int:
+    raw_port = os.environ.get("SMTP_PORT", "").strip()
+    if not raw_port:
+        return 465
+    try:
+        return int(raw_port)
+    except ValueError as exc:
+        raise RuntimeError("SMTP_PORT는 숫자여야 합니다.") from exc
+
+
 def send_email(to_email: str, subject: str, html_body: str) -> None:
     smtp_user = os.environ.get("SMTP_USER", "").strip()
     smtp_password = os.environ.get("SMTP_PASSWORD", "").strip()
-    smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com").strip()
-    smtp_port = int(os.environ.get("SMTP_PORT", "").strip() or "465")
+    smtp_host = (os.environ.get("SMTP_HOST") or "smtp.gmail.com").strip()
+    port = smtp_port()
     from_email = os.environ.get("SMTP_FROM", smtp_user).strip()
     from_name = os.environ.get("SMTP_FROM_NAME", "공수성가").strip()
 
@@ -240,7 +250,14 @@ def send_email(to_email: str, subject: str, html_body: str) -> None:
     message.attach(MIMEText(html_body, "html", "utf-8"))
 
     context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
+    if port == 465:
+        with smtplib.SMTP_SSL(smtp_host, port, context=context, timeout=30) as server:
+            server.login(smtp_user, smtp_password)
+            server.sendmail(from_email, [to_email], message.as_string())
+        return
+
+    with smtplib.SMTP(smtp_host, port, timeout=30) as server:
+        server.starttls(context=context)
         server.login(smtp_user, smtp_password)
         server.sendmail(from_email, [to_email], message.as_string())
 
