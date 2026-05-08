@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "kind": "trade-logs",
+    "schedule": "manual-recovery",
+    "updatedAt": "2026-05-08T19:16:00Z",
+    "lastSuccessfulRun": "2026-05-08T19:16:00Z",
+    "failedReason": null,
+    "appendedOpenTrades": 2
+  },
+  "rows": [
+    {
+      "ticker": "375500",
+      "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+      "buyDate": "2026.05.09",
+      "buyPrice": "₩95,400",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중"
+    },
+    {
+      "ticker": "079550",
+      "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+      "buyDate": "2026.05.09",
+      "buyPrice": "₩840,000",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중"
+    }
+  ]
+}

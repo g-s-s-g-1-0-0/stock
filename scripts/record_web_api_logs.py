@@ -7,6 +7,7 @@ import os
 import sys
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from urllib.error import HTTPError, URLError
 from pathlib import Path
 from typing import Any
@@ -15,8 +16,11 @@ from typing import Any
 ROOT_DIR = Path(__file__).resolve().parents[1]
 API_DIR = ROOT_DIR / "web" / "public" / "api"
 PREVIOUS_STOCKS_PATH = ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"
+TRADE_LOG_CACHE_PATH = ROOT_DIR / "data" / "cache" / "trade-logs.json"
+TRADE_LOG_PUBLIC_PATH = API_DIR / "trade-logs.json"
 MAX_LOG_ROWS = 80
 VALID_TASKS = {"value-analysis", "technical-analysis", "market-trends"}
+KST = ZoneInfo("Asia/Seoul")
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -101,6 +105,116 @@ def stocks_by_ticker(stocks: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     }
 
 
+def kst_trade_date() -> str:
+    return datetime.now(timezone.utc).astimezone(KST).strftime("%Y.%m.%d")
+
+
+def trade_key(trade: dict[str, Any]) -> tuple[str, str]:
+    return (str(trade.get("ticker") or "").strip().upper(), str(trade.get("buyDate") or "").strip())
+
+
+def open_trade_tickers(trades: list[dict[str, Any]]) -> set[str]:
+    return {
+        str(trade.get("ticker") or "").strip().upper()
+        for trade in trades
+        if str(trade.get("status") or "") == "보유 중"
+    }
+
+
+def parse_price(value: Any) -> float | None:
+    cleaned = "".join(char for char in str(value or "") if char.isdigit() or char in ".-")
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def return_pct(buy_price: Any, sell_price: Any) -> float:
+    buy = parse_price(buy_price)
+    sell = parse_price(sell_price)
+    if not buy or sell is None:
+        return 0.0
+    return round(((sell - buy) / buy) * 100, 2)
+
+
+def write_trade_logs(payload: dict[str, Any]) -> None:
+    for path in (TRADE_LOG_CACHE_PATH, TRADE_LOG_PUBLIC_PATH):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def update_trade_logs(
+    stocks: list[dict[str, Any]],
+    previous_stocks: dict[str, dict[str, Any]],
+    technical: dict[str, Any],
+) -> None:
+    existing = load_json(TRADE_LOG_PUBLIC_PATH, load_json(TRADE_LOG_CACHE_PATH, {"rows": []}))
+    rows = existing.get("rows", []) if isinstance(existing, dict) else []
+    trades = [row for row in rows if isinstance(row, dict)]
+    stocks_by_symbol = stocks_by_ticker(stocks)
+    today = kst_trade_date()
+    appended = 0
+    closed = 0
+
+    for trade in trades:
+        ticker = str(trade.get("ticker") or "").strip().upper()
+        if not ticker or str(trade.get("status") or "") != "보유 중":
+            continue
+        stock = stocks_by_symbol.get(ticker, {})
+        if str(stock.get("opinion") or "").strip() != "매도":
+            continue
+        sell_price = stock.get("currentPrice") or "-"
+        result = return_pct(trade.get("buyPrice"), sell_price)
+        trade["sellDate"] = today
+        trade["sellPrice"] = sell_price
+        trade["returnPct"] = result
+        trade["holdingDays"] = "-"
+        trade["status"] = "익절" if result > 0 else "손절"
+        closed += 1
+
+    current_open = open_trade_tickers(trades)
+
+    for stock in stocks:
+        ticker = str(stock.get("ticker") or "").strip().upper()
+        if not ticker or ticker in current_open:
+            continue
+        previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "").strip()
+        current_opinion = str(stock.get("opinion") or "").strip()
+        if not previous_opinion or previous_opinion == "매수" or current_opinion != "매수":
+            continue
+        row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
+        strategies = stock.get("strategies")
+        strategy = ", ".join(str(v) for v in strategies) if isinstance(strategies, list) and strategies else tech_value(row, "진입 전략")
+        trades.append({
+            "ticker": ticker,
+            "strategy": strategy if strategy and strategy != "-" else "시스템 매수 신호",
+            "buyDate": today,
+            "buyPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
+            "sellDate": "보유 중",
+            "sellPrice": "-",
+            "returnPct": 0,
+            "holdingDays": "-",
+            "status": "보유 중",
+        })
+        current_open.add(ticker)
+        appended += 1
+
+    deduped = list({trade_key(trade): trade for trade in trades}.values())
+    payload = {
+        "meta": {
+            "kind": "trade-logs",
+            "schedule": "auto",
+            "updatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "lastSuccessfulRun": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "failedReason": None,
+            "appendedOpenTrades": appended,
+            "closedTrades": closed,
+        },
+        "rows": deduped,
+    }
+    write_trade_logs(payload)
+
+
 def parse_log_tasks(argv: list[str]) -> set[str]:
     aliases = {
         "all": {"value-analysis", "technical-analysis", "market-trends"},
@@ -178,6 +292,8 @@ def technical_log_rows(
         rows.append({
             "ticker": ticker,
             "name": stock.get("name") or row.get("name") or "-",
+            "market": stock.get("market") or "-",
+            "industry": stock.get("industry") or "-",
             "change": "변경" if previous_opinion != current_opinion else "유지",
             "opinion": f"{previous_opinion} -> {current_opinion}",
             "strategy": ", ".join(str(v) for v in strategies) if isinstance(strategies, list) and strategies else tech_value(row, "진입 전략"),
@@ -186,6 +302,7 @@ def technical_log_rows(
             "rsi": tech_value(row, "RSI"),
             "pctB": tech_value(row, "%B"),
             "ma200": tech_value(row, "MA200", "200일선"),
+            "updatedAt": stock.get("updatedAt") or "-",
         })
     return rows[:MAX_LOG_ROWS]
 
@@ -237,6 +354,8 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
     value_rows = value_log_rows(stocks, valuation, tickers)
     technical_rows = technical_log_rows(stocks, previous_stocks, technical, tickers)
     trend_rows = market_trend_log_rows(market_trends)
+    if "technical-analysis" in enabled_tasks:
+        update_trade_logs(stocks, previous_stocks, technical)
 
     logs = [
         {
@@ -275,6 +394,8 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
                 "columns": [
                     {"key": "ticker", "label": "종목"},
                     {"key": "name", "label": "종목명"},
+                    {"key": "market", "label": "시장"},
+                    {"key": "industry", "label": "산업"},
                     {"key": "change", "label": "변경"},
                     {"key": "opinion", "label": "투자의견"},
                     {"key": "strategy", "label": "진입 전략"},
@@ -283,6 +404,7 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
                     {"key": "rsi", "label": "RSI"},
                     {"key": "pctB", "label": "%B"},
                     {"key": "ma200", "label": "MA200"},
+                    {"key": "updatedAt", "label": "갱신"},
                 ],
                 "rows": technical_rows,
             },

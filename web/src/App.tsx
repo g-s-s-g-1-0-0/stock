@@ -131,7 +131,7 @@ type ApiLog = {
 }
 
 type ApiLogTrigger = 'value-analysis' | 'technical-analysis' | 'market-trends'
-type ApiLogDetailColumn = { key: string; label: string }
+type ApiLogDetailColumn = { key: string; label: string; width?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' }
 type ApiLogDetailRow = Record<string, unknown>
 
 type ValuationMetric = {
@@ -234,9 +234,11 @@ function readStoredOperatorWatchlist() {
 
 const APP_DATA_CACHE_STORAGE_KEY = 'gssg-app-data-cache-v1'
 
+type GssgAppData = AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>
+
 function readCachedAppData() {
   try {
-    const cached = JSON.parse(localStorage.getItem(APP_DATA_CACHE_STORAGE_KEY) ?? 'null') as AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow> | null
+    const cached = JSON.parse(localStorage.getItem(APP_DATA_CACHE_STORAGE_KEY) ?? 'null') as GssgAppData | null
     if (!cached || typeof cached !== 'object') return null
     return cached
   } catch {
@@ -244,7 +246,7 @@ function readCachedAppData() {
   }
 }
 
-function storeCachedAppData(data: AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>) {
+function storeCachedAppData(data: GssgAppData) {
   try {
     localStorage.setItem(APP_DATA_CACHE_STORAGE_KEY, JSON.stringify(data))
   } catch {
@@ -1140,6 +1142,7 @@ function statusClass(value: Valuation | Opinion | TradeStatus) {
 function valuationBadgeClass(value: Valuation) {
   if (value === '저평가') return 'valuation-low'
   if (value === '고평가') return 'valuation-high'
+  if (value === '판단 불가') return 'valuation-unavailable'
   return 'valuation-normal'
 }
 
@@ -2709,7 +2712,7 @@ function apiLogDetailColumns(metadata?: Record<string, unknown>, rows: ApiLogDet
   if (Array.isArray(metadata?.columns)) {
     const columns = metadata.columns
       .filter((column): column is ApiLogDetailColumn => column !== null && typeof column === 'object' && typeof column.key === 'string' && typeof column.label === 'string')
-      .slice(0, 10)
+      .slice(0, 14)
     if (columns.length > 0) return columns
   }
   const firstRow = rows[0]
@@ -2724,9 +2727,44 @@ function formatApiLogValue(value: unknown) {
   return String(value)
 }
 
-function ApiLogMetadataDetail({ metadata }: { metadata?: Record<string, unknown> }) {
+function apiLogColumnClass(column: ApiLogDetailColumn) {
+  const width = column.width ?? (
+    column.key === 'decision' || column.key === 'summary' ? 'xl'
+      : column.key === 'name' || column.key === 'strategy' || column.key === 'industry' || column.key === 'keywords' ? 'md'
+        : column.key === 'ticker' || column.key === 'rank' || column.key === 'change' || column.key === 'rsi' || column.key === 'pctB' || column.key === 'ma200' ? 'xs'
+          : 'sm'
+  )
+  return `admin-log-col-${width} admin-log-col-${column.key}`
+}
+
+function apiLogCopyText(log: ApiLog) {
+  return JSON.stringify({
+    createdAt: log.createdAt,
+    triggerName: log.triggerName,
+    status: log.status,
+    message: log.message,
+    actorEmail: log.actorEmail,
+    metadata: log.metadata ?? {},
+  }, null, 2)
+}
+
+function ApiLogMetadataDetail({
+  log,
+  copied,
+  onCopy,
+}: {
+  log: ApiLog
+  copied: boolean
+  onCopy: () => void
+}) {
+  const metadata = log.metadata
   if (!metadata || Object.keys(metadata).length === 0) {
-    return <div className="admin-log-detail-empty">기록된 세부 정보가 없습니다.</div>
+    return (
+      <div className="admin-log-detail-empty">
+        기록된 세부 정보가 없습니다.
+        <button className="admin-log-copy-button" type="button" onClick={onCopy}>{copied ? '복사됨' : '로그 전체 복사'}</button>
+      </div>
+    )
   }
 
   const rows = apiLogDetailRows(metadata)
@@ -2740,6 +2778,7 @@ function ApiLogMetadataDetail({ metadata }: { metadata?: Record<string, unknown>
         {summary && <span>{summary}</span>}
         {typeof metadata.total === 'number' && <span>총 {metadata.total}개</span>}
         {actionUrl && <a href={actionUrl} rel="noreferrer" target="_blank">GitHub Actions 보기</a>}
+        <button className="admin-log-copy-button" type="button" onClick={onCopy}>{copied ? '복사됨' : '로그 전체 복사'}</button>
       </div>
 
       {rows.length > 0 && columns.length > 0 ? (
@@ -2747,13 +2786,13 @@ function ApiLogMetadataDetail({ metadata }: { metadata?: Record<string, unknown>
           <table className="admin-log-detail-table">
             <thead>
               <tr>
-                {columns.map((column) => <th key={column.key}>{column.label}</th>)}
+                {columns.map((column) => <th className={apiLogColumnClass(column)} key={column.key}>{column.label}</th>)}
               </tr>
             </thead>
             <tbody>
               {rows.map((row, rowIndex) => (
                 <tr key={`api-log-detail-${rowIndex}`}>
-                  {columns.map((column) => <td key={column.key}>{formatApiLogValue(row[column.key])}</td>)}
+                  {columns.map((column) => <td className={apiLogColumnClass(column)} key={column.key}>{formatApiLogValue(row[column.key])}</td>)}
                 </tr>
               ))}
             </tbody>
@@ -2778,6 +2817,7 @@ function AdminLogsPage({
   const [activeLogTab, setActiveLogTab] = useState<ApiLogTrigger>('value-analysis')
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
   const [adminLogPage, setAdminLogPage] = useState(1)
+  const [copiedLogId, setCopiedLogId] = useState<string | null>(null)
   const activeTab = apiLogTabs.find((tab) => tab.key === activeLogTab) ?? apiLogTabs[0]
   const filteredLogs = logs.filter((log) => apiLogMatchesTab(log, activeLogTab))
   const totalLogPages = Math.max(1, Math.ceil(filteredLogs.length / ADMIN_LOGS_PAGE_SIZE))
@@ -2787,7 +2827,14 @@ function AdminLogsPage({
   useEffect(() => {
     setAdminLogPage(1)
     setExpandedLogId(null)
+    setCopiedLogId(null)
   }, [activeLogTab])
+
+  const copyLog = async (log: ApiLog) => {
+    await navigator.clipboard.writeText(apiLogCopyText(log))
+    setCopiedLogId(log.id)
+    window.setTimeout(() => setCopiedLogId((current) => current === log.id ? null : current), 1600)
+  }
 
   return (
     <section className="panel board-panel admin-logs-panel">
@@ -2864,7 +2911,11 @@ function AdminLogsPage({
                     {isExpanded && (
                       <tr className="admin-log-detail-row">
                         <td colSpan={5}>
-                          <ApiLogMetadataDetail metadata={log.metadata} />
+                          <ApiLogMetadataDetail
+                            copied={copiedLogId === log.id}
+                            log={log}
+                            onCopy={() => void copyLog(log)}
+                          />
                         </td>
                       </tr>
                     )}
@@ -3161,6 +3212,7 @@ function App() {
   const [watchlist, setWatchlist] = useState<string[]>(() => readStoredWatchlist())
   const [operatorWatchlist, setOperatorWatchlist] = useState<string[]>(() => readStoredOperatorWatchlist())
   const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(personalTrades)
+  const [systemTradeLogs, setSystemTradeLogs] = useState<TradeLog[]>(() => cachedAppData?.tradeLogs?.rows ?? operatorTrades)
   const [isAddingStock, setIsAddingStock] = useState(false)
   const [viewMode, setViewMode] = useState<'personal' | 'operator'>(() => readStoredViewMode())
   const [showViewModeHint, setShowViewModeHint] = useState(() => localStorage.getItem(VIEW_MODE_HINT_STORAGE_KEY) !== 'true')
@@ -3225,7 +3277,7 @@ function App() {
   const inlineAddRef = useRef<HTMLDivElement | null>(null)
   const watchlistSortMenuRef = useRef<HTMLDivElement | null>(null)
 
-  const applyLoadedData = (data: AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>) => {
+  const applyLoadedData = (data: GssgAppData) => {
     storeCachedAppData(data)
     setApiMetas({
       stocks: data.stocks?.meta,
@@ -3262,6 +3314,9 @@ function App() {
     }
     if (data.marketTrends?.rows) {
       setApiMarketTrendRows(data.marketTrends.rows)
+    }
+    if (data.tradeLogs?.rows) {
+      setSystemTradeLogs(data.tradeLogs.rows)
     }
   }
 
@@ -3453,6 +3508,8 @@ function App() {
       return {
         ticker: stock.ticker,
         name: stock.name,
+        market: stock.market,
+        industry: displayIndustryLabel(stock.industry),
         opinion: displayStockOpinion(stock),
         strategy: stock.strategies.join(', ') || technicalValue(technical, ['진입 전략']),
         decision,
@@ -3460,6 +3517,7 @@ function App() {
         rsi: technicalValue(technical, ['RSI']),
         pctB: technicalValue(technical, ['%B']),
         ma200: technicalValue(technical, ['MA200', '200일선']),
+        updatedAt: stock.updatedAt || '-',
       }
     })
     return {
@@ -3471,6 +3529,8 @@ function App() {
       columns: [
         { key: 'ticker', label: '종목' },
         { key: 'name', label: '종목명' },
+        { key: 'market', label: '시장' },
+        { key: 'industry', label: '산업' },
         { key: 'opinion', label: '투자의견' },
         { key: 'strategy', label: '진입 전략' },
         { key: 'decision', label: '판단 로그' },
@@ -3478,6 +3538,7 @@ function App() {
         { key: 'rsi', label: 'RSI' },
         { key: 'pctB', label: '%B' },
         { key: 'ma200', label: 'MA200' },
+        { key: 'updatedAt', label: '갱신' },
       ],
       rows,
     }
@@ -3622,7 +3683,7 @@ function App() {
     let isMounted = true
 
     const loadLatestData = () => {
-      fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>().then((data) => {
+      fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>().then((data) => {
         if (!isMounted) return
         applyLoadedData(data)
       })
@@ -3775,7 +3836,7 @@ function App() {
 
   const effectiveViewMode = isAdminUser ? 'operator' : viewMode
   const isOperatorDataMode = effectiveViewMode === 'operator'
-  const scopedTrades = isOperatorDataMode ? operatorTrades : personalTradeLogs
+  const scopedTrades = isOperatorDataMode ? systemTradeLogs : personalTradeLogs
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const filteredTrades = scopedTrades
     .filter((trade) => selectedStrategy === '전체' || strategyCode(trade.strategy) === selectedStrategy)
@@ -4204,7 +4265,7 @@ function App() {
         setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 최신 데이터 반영 여부를 확인하는 중입니다...')
         for (let attempt = 1; attempt <= 40; attempt += 1) {
           await wait(attempt <= 3 ? 8000 : 15000)
-          const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>()
+          const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>()
           const isRefreshed = (
             runtimeMetaChanged(data.stocks?.meta, previousMetas.stocks)
             || runtimeMetaChanged(data.valuation?.meta, previousMetas.valuation)
@@ -4225,7 +4286,7 @@ function App() {
         return
       }
 
-      const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>()
+      const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>()
       applyLoadedData(data)
       setRefreshDataMessage(`${result.refreshedTickers.length}개 종목을 현재 시점 기준으로 갱신했습니다.`)
       await recordRefreshDataLogs('success', `${result.refreshedTickers.length}개 종목을 갱신했습니다.`, { tickers: result.refreshedTickers })

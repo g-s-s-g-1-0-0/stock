@@ -25,6 +25,7 @@ ENDPOINTS = {
     "/api/technical": "technical.json",
     "/api/market-events": "market-events.json",
     "/api/market-trends": "market-trends.json",
+    "/api/trade-logs": "trade-logs.json",
 }
 
 

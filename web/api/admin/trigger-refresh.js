@@ -131,7 +131,7 @@ export default async function handler(req, res) {
       }
     }
 
-    const workflow = await triggerWorkflow(scope, isCronRequest)
+    const workflow = await triggerWorkflow(scope, true)
     return json(res, 202, {
       ok: true,
       mode: 'workflow_dispatch',

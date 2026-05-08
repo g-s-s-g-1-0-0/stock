@@ -2279,13 +2279,19 @@
 }
 
 .status-badge.valuation-normal {
-  background: rgba(100, 116, 139, 0.14);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(248, 250, 252, 0.95);
   color: #64748b;
 }
 
 .status-badge.valuation-high {
   background: rgba(37, 99, 235, 0.12);
   color: #2563eb;
+}
+
+.status-badge.valuation-unavailable {
+  background: rgba(100, 116, 139, 0.18);
+  color: #475569;
 }
 
 .result-badge {
@@ -3352,11 +3358,17 @@
 }
 
 .admin-log-detail-meta span,
-.admin-log-detail-meta a {
+.admin-log-detail-meta a,
+.admin-log-detail-meta button,
+.admin-log-copy-button {
   border: 1px solid #dbe4ef;
   border-radius: 999px;
   background: #ffffff;
   color: #334155;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
   padding: 5px 9px;
   text-decoration: none;
 }
@@ -3371,7 +3383,7 @@
 
 .admin-log-detail-table {
   width: 100%;
-  min-width: 980px;
+  min-width: 1120px;
   border-collapse: separate;
   border-spacing: 0;
   color: #1f2937;
@@ -3386,16 +3398,39 @@
   padding: 8px 10px;
   text-align: left;
   vertical-align: top;
+  white-space: normal;
+  line-height: 1.55;
+}
+
+.admin-log-detail-table .admin-log-col-xs {
+  min-width: 74px;
+  max-width: 96px;
   white-space: nowrap;
 }
 
-.admin-log-detail-table th:nth-child(4),
-.admin-log-detail-table td:nth-child(4),
-.admin-log-detail-table th:nth-child(5),
-.admin-log-detail-table td:nth-child(5) {
-  min-width: 460px;
+.admin-log-detail-table .admin-log-col-sm {
+  min-width: 104px;
+  max-width: 140px;
+}
+
+.admin-log-detail-table .admin-log-col-md {
+  min-width: 150px;
+  max-width: 220px;
+}
+
+.admin-log-detail-table .admin-log-col-lg {
+  min-width: 240px;
+  max-width: 340px;
+}
+
+.admin-log-detail-table .admin-log-col-xl {
+  min-width: 420px;
+  max-width: 640px;
+}
+
+.admin-log-detail-table .admin-log-col-decision,
+.admin-log-detail-table .admin-log-col-summary {
   white-space: pre-wrap;
-  line-height: 1.55;
 }
 
 .admin-log-detail-table th {

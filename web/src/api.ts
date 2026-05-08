@@ -39,12 +39,18 @@ export type ApiMarketTrendsPayload<TRow> = {
   rows?: TRow[]
 }
 
-export type AppData<TStock, TMetric, TGroup, TTrendRow> = {
+export type ApiTradeLogsPayload<TTradeLog> = {
+  meta?: RuntimeMeta
+  rows?: TTradeLog[]
+}
+
+export type AppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog = unknown> = {
   stocks: ApiStocksPayload<TStock> | null
   valuation: ApiValuationPayload<TMetric> | null
   technical: ApiTechnicalPayload | null
   marketEvents: ApiMarketEventsPayload<TGroup> | null
   marketTrends: ApiMarketTrendsPayload<TTrendRow> | null
+  tradeLogs: ApiTradeLogsPayload<TTradeLog> | null
 }
 
 async function fetchJson<T>(paths: string[]): Promise<T | null> {
@@ -66,19 +72,21 @@ const dataPaths = {
   technical: import.meta.env.DEV ? ['/api/technical.json', '/api/technical', 'http://127.0.0.1:8787/api/technical'] : ['/api/technical.json'],
   marketEvents: import.meta.env.DEV ? ['/api/market-events.json', '/api/market-events', 'http://127.0.0.1:8787/api/market-events'] : ['/api/market-events.json'],
   marketTrends: import.meta.env.DEV ? ['/api/market-trends.json', '/api/market-trends', 'http://127.0.0.1:8787/api/market-trends'] : ['/api/market-trends.json'],
+  tradeLogs: import.meta.env.DEV ? ['/api/trade-logs.json', '/api/trade-logs', 'http://127.0.0.1:8787/api/trade-logs'] : ['/api/trade-logs.json'],
   stockSearch: import.meta.env.DEV ? ['/api/stock-search.json', '/api/stock-search', 'http://127.0.0.1:8787/api/stock-search'] : ['/api/stock-search.json'],
 }
 
-export async function fetchAppData<TStock, TMetric, TGroup, TTrendRow>() {
-  const [stocks, valuation, technical, marketEvents, marketTrends] = await Promise.all([
+export async function fetchAppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog = unknown>() {
+  const [stocks, valuation, technical, marketEvents, marketTrends, tradeLogs] = await Promise.all([
     fetchJson<ApiStocksPayload<TStock>>(dataPaths.stocks),
     fetchJson<ApiValuationPayload<TMetric>>(dataPaths.valuation),
     fetchJson<ApiTechnicalPayload>(dataPaths.technical),
     fetchJson<ApiMarketEventsPayload<TGroup>>(dataPaths.marketEvents),
     fetchJson<ApiMarketTrendsPayload<TTrendRow>>(dataPaths.marketTrends),
+    fetchJson<ApiTradeLogsPayload<TTradeLog>>(dataPaths.tradeLogs),
   ])
 
-  return { stocks, valuation, technical, marketEvents, marketTrends }
+  return { stocks, valuation, technical, marketEvents, marketTrends, tradeLogs }
 }
 
 export async function fetchStockSearchData<TStock>() {
