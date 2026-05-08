@@ -1,6 +1,10 @@
 name: Web data refresh
 
 on:
+  schedule:
+    # Backup technical refresh every 2 hours at KST even hours + 10 minutes.
+    # External cron-job.org dispatches remain the primary scheduler.
+    - cron: "10 1-23/2 * * *"
   workflow_dispatch:
     inputs:
       refresh_scope:
@@ -67,45 +71,78 @@ jobs:
 
       - name: Resolve refresh tasks
         run: |
-          case "${{ inputs.refresh_scope }}" in
-            all) TASKS="valuation technical market-trends market-events" ;;
-            valuation) TASKS="valuation" ;;
-            technical) TASKS="technical" ;;
-            market-trends) TASKS="market-trends" ;;
-            market-events) TASKS="market-events" ;;
-            *) TASKS="valuation technical market-trends market-events" ;;
-          esac
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            TASKS="technical"
+          else
+            case "${{ inputs.refresh_scope }}" in
+              all) TASKS="valuation technical market-trends market-events" ;;
+              valuation) TASKS="valuation" ;;
+              technical) TASKS="technical" ;;
+              market-trends) TASKS="market-trends" ;;
+              market-events) TASKS="market-events" ;;
+              *) TASKS="valuation technical market-trends market-events" ;;
+            esac
+          fi
           echo "REFRESH_TASKS=$TASKS" >> "$GITHUB_ENV"
           echo "Resolved refresh tasks: $TASKS"
 
+      - name: Skip fresh scheduled refresh
+        if: ${{ github.event_name == 'schedule' }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          path = Path("web/public/api/technical.json")
+          skip = False
+          if path.exists():
+              payload = json.loads(path.read_text(encoding="utf-8"))
+              meta = payload.get("meta", {}) if isinstance(payload, dict) else {}
+              raw_updated_at = meta.get("lastSuccessfulRun") or meta.get("updatedAt")
+              if raw_updated_at:
+                  updated_at = datetime.fromisoformat(str(raw_updated_at).replace("Z", "+00:00"))
+                  age_seconds = (datetime.now(timezone.utc) - updated_at.astimezone(timezone.utc)).total_seconds()
+                  skip = age_seconds < 90 * 60
+                  print(f"Technical cache age: {age_seconds:.0f}s")
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              env_file.write(f"SKIP_REFRESH={'true' if skip else 'false'}\n")
+          print("Scheduled refresh skipped because cache is fresh." if skip else "Scheduled refresh will run.")
+          PY
+
       - name: Refresh web caches
+        if: ${{ env.SKIP_REFRESH != 'true' }}
         run: python scripts/refresh_web_caches.py $REFRESH_TASKS
 
       - name: Send opinion change emails
-        if: ${{ contains(env.REFRESH_TASKS, 'technical') }}
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         run: python scripts/web_refresh_notifications.py opinion
 
       - name: Send Nasdaq peak emails
-        if: ${{ contains(env.REFRESH_TASKS, 'technical') }}
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         run: python scripts/web_refresh_notifications.py nasdaq-peak
 
       - name: Send earnings D-1 emails
-        if: ${{ contains(env.REFRESH_TASKS, 'valuation') }}
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'valuation') }}
         run: python scripts/web_refresh_notifications.py earnings
 
       - name: Send weekly trend report emails
-        if: ${{ contains(env.REFRESH_TASKS, 'market-trends') }}
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
         run: python scripts/web_refresh_notifications.py weekly-trend
 
       - name: Record stock-level operation logs
+        if: ${{ env.SKIP_REFRESH != 'true' }}
         continue-on-error: true
         run: python scripts/record_web_api_logs.py $REFRESH_TASKS
 
       - name: Report operational scale metrics
+        if: ${{ env.SKIP_REFRESH != 'true' }}
         continue-on-error: true
         run: python scripts/report_operational_scale.py
 
       - name: Commit refreshed caches
+        if: ${{ env.SKIP_REFRESH != 'true' }}
         run: |
           rm -f data/cache/stocks.before-refresh.json
           if git diff --quiet -- data/cache web/public/api; then
@@ -119,7 +156,7 @@ jobs:
           git push origin "HEAD:${GITHUB_REF_NAME:-main}"
 
       - name: Deploy refreshed web
-        if: ${{ env.VERCEL_TOKEN != '' }}
+        if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' }}
         working-directory: web
         run: npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
 
