@@ -22,7 +22,7 @@ from typing import Any
 
 from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
 from .rules import IndicatorRow, evaluate_buy_condition, strategy_display_name
-from .sheet_sources import calc_technical_row, fetch_text, fetch_valuation
+from .sheet_sources import calc_rsi, calc_technical_row, fetch_ohlcv, fetch_text, fetch_valuation
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CACHE_DIR = ROOT_DIR / "data" / "cache"
@@ -187,6 +187,74 @@ def fetch_cnn_fear_greed_rows() -> list[list[str]]:
     return [
         ["CNN 공포·탐욕지수 당일·전날", f"{current_score} / {previous_close}"],
     ]
+
+
+def fetch_weekly_rsi(symbol: str = "QQQ") -> float:
+    url = (
+        "https://query1.finance.yahoo.com/v8/finance/chart/"
+        + urllib.parse.quote(symbol)
+        + "?range=2y&interval=1wk"
+    )
+    payload = json.loads(fetch_text(url))
+    result = payload.get("chart", {}).get("result", [{}])[0]
+    closes = [
+        float(value)
+        for value in result.get("indicators", {}).get("quote", [{}])[0].get("close", [])
+        if value is not None
+    ]
+    rsi_values = calc_rsi(closes)
+    if not rsi_values:
+        raise RuntimeError(f"{symbol} weekly RSI source has insufficient data.")
+    return round(rsi_values[-1], 2)
+
+
+def build_market_snapshot_rows() -> list[list[str]]:
+    rows = [
+        ["시장 주요 이벤트", "당분간 없음"],
+    ]
+
+    try:
+        vix_rows = fetch_ohlcv("^VIX")
+        rows.append([
+            "VIX (변동성지수) 당일·전날",
+            f"{fmt_number(vix_rows[-1]['close'])} / {fmt_number(vix_rows[-2]['close'])}",
+        ])
+    except Exception as exc:  # noqa: BLE001 - snapshot rows are best-effort
+        rows.append(["VIX (변동성지수) 당일·전날", f"수집 실패: {exc}"])
+
+    try:
+        rows.extend(fetch_cnn_fear_greed_rows())
+    except Exception as exc:  # noqa: BLE001
+        rows.append(["CNN 공포·탐욕지수 당일·전날", f"수집 실패: {exc}"])
+
+    try:
+        tnx_rows = fetch_ohlcv("^TNX")
+        rows.append(["미국 10년물 금리", fmt_number(tnx_rows[-1]["close"], 3)])
+    except Exception as exc:  # noqa: BLE001
+        rows.append(["미국 10년물 금리", f"수집 실패: {exc}"])
+
+    try:
+        dollar_rows = fetch_ohlcv("DX-Y.NYB")
+        rows.append(["달러 인덱스", fmt_number(dollar_rows[-1]["close"])])
+    except Exception as exc:  # noqa: BLE001
+        rows.append(["달러 인덱스", f"수집 실패: {exc}"])
+
+    try:
+        qqq = calc_technical_row("QQQ")
+        rows.extend([
+            ["QQQ 주봉 RSI (14)", fmt_number(fetch_weekly_rsi("QQQ"))],
+            ["QQQ 일봉 RSI (14, 당일)", fmt_number(qqq["rsi"])],
+            ["QQQ 일봉 RSI (14, 전날)", fmt_number(qqq["rsiD1"])],
+            ["나스닥 (QQQ, 당일)", fmt_number(qqq["close"])],
+            ["나스닥 (QQQ, 20일 이동평균선)", fmt_number(qqq["ma20"])],
+            ["나스닥 (QQQ, 60일 이동평균선)", fmt_number(qqq["ma60"])],
+            ["나스닥 (QQQ, 144일 이동평균선)", fmt_number(qqq["ma144"])],
+            ["나스닥 (QQQ, 200일 이동평균선)", fmt_number(qqq["ma200"])],
+        ])
+    except Exception as exc:  # noqa: BLE001
+        rows.append(["나스닥 (QQQ)", f"수집 실패: {exc}"])
+
+    return rows
 
 
 def fmt_amount(value: Any, market: str) -> str:
@@ -415,17 +483,16 @@ def latest_technical_row(stock: dict[str, str], earnings_date: str = "-") -> dic
 def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[str, Any]:
     existing = read_cache("technical")
     existing_meta = existing.get("meta", {}) if isinstance(existing, dict) else {}
-    rows: dict[str, dict[str, str]] = dict(existing.get("rows", {})) if isinstance(existing.get("rows"), dict) else {}
+    existing_rows = dict(existing.get("rows", {})) if isinstance(existing.get("rows"), dict) else {}
+    rows: dict[str, dict[str, str]] = {}
     valuation_rows = read_cache("valuation").get("rows", {})
     errors: list[dict[str, str]] = []
     successful_rows = 0
     refreshed_at = now_iso()
-    market_snapshot = [
-        ["시장 주요 이벤트", "당분간 없음"],
-    ]
     try:
-        market_snapshot.extend(fetch_cnn_fear_greed_rows())
+        market_snapshot = build_market_snapshot_rows()
     except Exception as exc:  # noqa: BLE001 - external market data should not block refresh
+        market_snapshot = [["시장 주요 이벤트", "당분간 없음"]]
         errors.append({"ticker": "CNN_FEAR_GREED", "error": str(exc)})
 
     for stock in (universe or read_universe())[:MAX_REFRESH_UNIVERSE]:
@@ -437,6 +504,8 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 rows[stock["ticker"]] = row
                 successful_rows += 1
         except Exception as exc:  # noqa: BLE001 - batch should preserve partial success
+            if stock["ticker"] in existing_rows:
+                rows[stock["ticker"]] = existing_rows[stock["ticker"]]
             errors.append({"ticker": stock["ticker"], "error": str(exc)})
     return {
         "meta": {
@@ -462,7 +531,8 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
     ]
     existing = read_cache("valuation")
     existing_meta = existing.get("meta", {}) if isinstance(existing, dict) else {}
-    rows = dict(existing.get("rows", {})) if isinstance(existing.get("rows"), dict) else {}
+    existing_rows = dict(existing.get("rows", {})) if isinstance(existing.get("rows"), dict) else {}
+    rows: dict[str, dict[str, str]] = {}
     errors: list[dict[str, str]] = []
     successful_rows = 0
     refreshed_at = now_iso()
@@ -476,6 +546,8 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
             rows[stock["ticker"]] = metric
             successful_rows += 1
         except Exception as exc:  # noqa: BLE001
+            if stock["ticker"] in existing_rows:
+                rows[stock["ticker"]] = existing_rows[stock["ticker"]]
             errors.append({"ticker": stock["ticker"], "error": str(exc)})
     return {
         "meta": {
@@ -526,20 +598,6 @@ def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str
         ticker = str(stock.get("ticker", "")).strip().upper()
         if ticker:
             rows_by_ticker[ticker] = {**search_rows_by_ticker.get(ticker, {}), **stock, "ticker": ticker}
-    for ticker in sorted(set(technical_rows) | set(valuation_rows)):
-        normalized_ticker = str(ticker).strip().upper()
-        if not normalized_ticker or normalized_ticker in rows_by_ticker:
-            continue
-        search_row = search_rows_by_ticker.get(normalized_ticker, {})
-        rows_by_ticker[normalized_ticker] = {
-            "ticker": normalized_ticker,
-            "name": search_row.get("name") or normalized_ticker,
-            "market": search_row.get("market") or ("KR" if normalized_ticker.isdigit() else "US"),
-            "category": search_row.get("category", "stocks"),
-            "industry": search_row.get("industry", "-"),
-            "rawIndustry": search_row.get("rawIndustry"),
-            "products": search_row.get("products"),
-        }
 
     rows = []
     for stock in rows_by_ticker.values():

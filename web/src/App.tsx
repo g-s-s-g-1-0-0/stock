@@ -1815,17 +1815,16 @@ function mergeMarketSnapshot(snapshot: string[][]): string[][] {
   const incomingValues = new Map<string, string>(
     snapshot.map(([label, value]) => [label, label === '시장 주요 이벤트' && value === '캐시 기준' ? '당분간 없음' : value]),
   )
-  const defaultLabels = new Set(technicalMarketSnapshot.map(([label]) => label))
-  const extraRows = snapshot.filter(([label]) => !defaultLabels.has(label) && label !== '기술분석 갱신 주기')
-  const mergedDefaults = technicalMarketSnapshot.map(([label, value]) => [label, incomingValues.get(label) ?? value])
-  const [eventRow, ...restRows] = mergedDefaults
+  const normalizedRows = snapshot
+    .filter(([label]) => label !== '기술분석 갱신 주기')
+    .map(([label, value]) => [label, incomingValues.get(label) ?? value])
+  const [eventRow = technicalMarketSnapshot[0], ...restRows] = normalizedRows
   const vixRows = restRows.filter(([label]) => label.startsWith('VIX'))
   const otherRows = restRows.filter(([label]) => !label.startsWith('VIX'))
 
   return [
     eventRow,
     ...vixRows,
-    ...extraRows,
     ...otherRows,
   ]
 }
