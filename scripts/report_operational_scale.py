@@ -74,10 +74,11 @@ def supabase_request(path: str, *, headers: dict[str, str] | None = None) -> tup
         raise RuntimeError(f"Supabase request failed: {exc.code} {detail}") from exc
 
 
-def supabase_count(table: str) -> int | None:
+def supabase_count(table: str, column: str = "id") -> int | None:
     encoded_table = urllib.parse.quote(table, safe="")
+    encoded_column = urllib.parse.quote(column, safe="*")
     payload, headers = supabase_request(
-        f"/rest/v1/{encoded_table}?select=id",
+        f"/rest/v1/{encoded_table}?select={encoded_column}",
         headers={"Prefer": "count=exact", "Range": "0-0"},
     )
     if not headers and payload == []:
@@ -118,7 +119,7 @@ def print_supabase_metrics() -> None:
     except Exception as exc:  # noqa: BLE001 - reporting should stay best-effort
         profiles = f"error:{exc}"
     try:
-        user_settings = supabase_count("user_settings")
+        user_settings = supabase_count("user_settings", "owner_id")
     except Exception as exc:  # noqa: BLE001 - reporting should stay best-effort
         user_settings = f"error:{exc}"
     try:
