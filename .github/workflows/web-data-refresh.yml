@@ -153,6 +153,11 @@ jobs:
           git commit -m "Update scheduled web data caches"
           git push origin "HEAD:${GITHUB_REF_NAME:-main}"
 
+      - name: Deploy refreshed web
+        if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' }}
+        working-directory: web
+        run: npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
+
       - name: Send opinion change emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         run: python scripts/web_refresh_notifications.py opinion
@@ -168,11 +173,6 @@ jobs:
       - name: Send weekly trend report emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
         run: python scripts/web_refresh_notifications.py weekly-trend
-
-      - name: Deploy refreshed web
-        if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' }}
-        working-directory: web
-        run: npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
 
       - name: Notify admins on failure
         if: failure()
