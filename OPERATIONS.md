@@ -7,6 +7,12 @@
 - Scheduled trigger: external `cron-job.org` jobs call the GitHub Actions workflow/API.
 - Do not assume a missing `schedule:` block means refresh is unscheduled. The schedule is managed outside this repository.
 
+## Deployment
+
+- Vercel is connected to GitHub push auto-deploy.
+- Pushing to the GitHub repository deploys the web app automatically through Vercel.
+- The workflow's `Deploy refreshed web` step can remain skipped when `VERCEL_TOKEN` is empty, as long as the GitHub-to-Vercel integration is active.
+
 ## Email Notifications
 
 Required GitHub Secrets:
