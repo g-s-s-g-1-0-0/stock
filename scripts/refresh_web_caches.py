@@ -108,7 +108,7 @@ def main() -> None:
     if "technical" in tasks:
         run("technical", universe=universe)
     if "stocks" in tasks:
-        run("stocks")
+        run("stocks", universe=universe)
     if "market-trends" in tasks:
         run("market-trends")
     if "market-events" in tasks:
