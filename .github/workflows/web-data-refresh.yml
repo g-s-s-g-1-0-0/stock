@@ -39,6 +39,8 @@ jobs:
       EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER }}
       BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+      WEB_APP_URL: ${{ secrets.WEB_APP_URL }}
+      NOTIFICATION_UNSUBSCRIBE_SECRET: ${{ secrets.NOTIFICATION_UNSUBSCRIBE_SECRET }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

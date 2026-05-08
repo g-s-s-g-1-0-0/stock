@@ -274,6 +274,22 @@ function activePageHash(page: ActivePage) {
   return `#${page}`
 }
 
+function activePageHashParams() {
+  const [, rawQuery = ''] = window.location.hash.split('?')
+  return new URLSearchParams(rawQuery)
+}
+
+function notificationSettingsDeepLinkMessage() {
+  const params = activePageHashParams()
+  if (params.get('notification') === 'unsubscribed') {
+    return '알림 수신 설정이 해제되었습니다. 로그인하면 계정 설정에서 변경 내용을 확인할 수 있습니다.'
+  }
+  if (params.get('settings') === 'notifications') {
+    return '로그인하면 계정 알림 설정을 확인할 수 있습니다.'
+  }
+  return ''
+}
+
 function userSettingsStorageKey(session: UserSession | null = null) {
   return `${USER_SETTINGS_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
 }
@@ -3136,7 +3152,7 @@ function App() {
   const [selectedHoldingTradeKeys, setSelectedHoldingTradeKeys] = useState<string[]>([])
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false)
   const [isHoldingDeleteConfirmOpen, setIsHoldingDeleteConfirmOpen] = useState(false)
-  const [isLoginOpen, setIsLoginOpen] = useState(false)
+  const [isLoginOpen, setIsLoginOpen] = useState(() => Boolean(notificationSettingsDeepLinkMessage()))
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
@@ -3155,7 +3171,7 @@ function App() {
   const [pendingBoardDeleteIds, setPendingBoardDeleteIds] = useState<string[]>([])
   const [userSession, setUserSession] = useState<UserSession | null>(null)
   const [canUseAccountSwitch, setCanUseAccountSwitch] = useState(false)
-  const [authInfoMessage, setAuthInfoMessage] = useState('')
+  const [authInfoMessage, setAuthInfoMessage] = useState(() => notificationSettingsDeepLinkMessage())
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
   const [apiStocks, setApiStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? cachedAppData.stocks.rows.map(withDisplayStockName) : searchUniverse.map(stockSearchShell))
   const [apiSearchStocks, setApiSearchStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? mergeStocks(cachedAppData.stocks.rows, searchUniverse) : searchUniverse.map(stockSearchShell))
@@ -4314,7 +4330,7 @@ function App() {
   useEffect(() => {
     localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, activePage)
     const nextHash = activePageHash(activePage)
-    if (window.location.hash !== nextHash) {
+    if (activePageFromHash() !== activePage) {
       window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`)
     }
   }, [activePage])
@@ -4327,6 +4343,7 @@ function App() {
     window.addEventListener('hashchange', syncPageFromHash)
     return () => window.removeEventListener('hashchange', syncPageFromHash)
   }, [])
+
   const rawTableStocks = isOperatorDataMode ? operatorStocks : watchlistStocks
   const tableStocks = useMemo(
     () => sortWatchlistStocks(rawTableStocks, watchlistSortSettings, currentWatchlistTickers, scopedTrades),

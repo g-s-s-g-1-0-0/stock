@@ -13,6 +13,9 @@ app password is stored in GitHub Secrets.
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
+import hmac
 import html
 import json
 import os
@@ -24,6 +27,7 @@ import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime
+from datetime import timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -333,6 +337,78 @@ def send_email(to_email: str, subject: str, html_body: str) -> None:
             time.sleep(wait_seconds)
 
 
+def base64url(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
+
+
+def unsubscribe_secret() -> str:
+    return (os.environ.get("NOTIFICATION_UNSUBSCRIBE_SECRET") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+
+
+def web_app_url() -> str:
+    return (
+        os.environ.get("WEB_APP_URL")
+        or os.environ.get("APP_URL")
+        or os.environ.get("SITE_URL")
+        or ""
+    ).strip().rstrip("/")
+
+
+def settings_url() -> str:
+    base_url = web_app_url()
+    return f"{base_url}/#home?settings=notifications" if base_url else ""
+
+
+def unsubscribe_token(recipient: Recipient, preference_key: str) -> str:
+    secret = unsubscribe_secret()
+    if not secret or not recipient.owner_id:
+        return ""
+    payload = {
+        "ownerId": recipient.owner_id,
+        "email": recipient.email.lower(),
+        "key": preference_key,
+        "exp": int((datetime.now().astimezone() + timedelta(days=365)).timestamp()),
+    }
+    encoded_payload = base64url(json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8"))
+    signature = hmac.new(secret.encode("utf-8"), encoded_payload.encode("ascii"), hashlib.sha256).digest()
+    return f"{encoded_payload}.{base64url(signature)}"
+
+
+def notification_preference_label(preference_key: str) -> str:
+    labels = {
+        "opinionChangeEmail": "투자의견 변경 알림",
+        "nasdaqPeakEmail": "나스닥 고점 과열 알림",
+        "weeklyTrendReport": "주간 트렌드 리포트",
+        "earningsDayBefore": "실적발표 전날 알림",
+        "adminAutoUpdateFailureEmail": "자동 업데이트 실패 알림",
+    }
+    return labels.get(preference_key, "이 알림")
+
+
+def append_notification_footer(html_body: str, recipient: Recipient, preference_key: str) -> str:
+    base_url = web_app_url()
+    account_url = settings_url()
+    unsubscribe_url = ""
+    token = unsubscribe_token(recipient, preference_key)
+    if token and base_url:
+        unsubscribe_url = f"{base_url}/api/notifications/unsubscribe?token={urllib.parse.quote(token)}"
+    if not unsubscribe_url and not account_url:
+        return html_body
+
+    label = html.escape(notification_preference_label(preference_key))
+    links = []
+    if unsubscribe_url:
+        links.append(f'<a href="{html.escape(unsubscribe_url)}" style="color:#777;text-decoration:underline;">{label} 끄기</a>')
+    if account_url:
+        links.append(f'<a href="{html.escape(account_url)}" style="color:#777;text-decoration:underline;">알림 설정 열기</a>')
+    return html_body + f"""
+    <div style="font-family:Arial,sans-serif;max-width:640px;margin-top:18px;padding-top:12px;border-top:1px solid #eee;color:#888;font-size:12px;line-height:1.6;">
+      이 메일은 계정 알림 설정에 따라 발송되었습니다.<br>
+      {' · '.join(links)}
+    </div>
+    """
+
+
 def opinion_email_body(changes: list[dict[str, Any]]) -> str:
     changed_html = []
     for index, change in enumerate(changes, start=1):
@@ -466,7 +542,7 @@ def send_weekly_trend_notifications() -> int:
     body = weekly_trend_email_body(trend)
     sent = 0
     for recipient in recipients:
-        send_email(recipient.email, subject, body)
+        send_email(recipient.email, subject, append_notification_footer(body, recipient, "weeklyTrendReport"))
         sent += 1
     print(f"Sent weekly trend notifications: {sent}")
     return sent
@@ -590,7 +666,7 @@ def send_nasdaq_peak_notifications() -> int:
     body = nasdaq_peak_email_body(snapshot)
     sent = 0
     for recipient in recipients:
-        send_email(recipient.email, subject, body)
+        send_email(recipient.email, subject, append_notification_footer(body, recipient, "nasdaqPeakEmail"))
         sent += 1
 
     state["nasdaqPeak"] = {
@@ -691,7 +767,7 @@ def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuatio
         if not candidates:
             continue
         subject = "[실적발표 D-1] " + ", ".join(stock["ticker"] for stock in candidates[:8]) + " — 내일 발표"
-        send_email(recipient.email, subject, earnings_email_body(candidates))
+        send_email(recipient.email, subject, append_notification_footer(earnings_email_body(candidates), recipient, "earningsDayBefore"))
         sent += 1
     print(f"Sent earnings notifications: {sent}")
     return sent
@@ -716,7 +792,7 @@ def send_opinion_notifications(previous: Path, current: Path) -> int:
     body = opinion_email_body(changes)
     sent = 0
     for recipient in recipients:
-        send_email(recipient.email, subject, body)
+        send_email(recipient.email, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
         sent += 1
     print(f"Sent opinion notifications: {sent}")
     return sent
@@ -738,7 +814,7 @@ def send_admin_failure(message: str) -> int:
     body = admin_failure_body(message)
     sent = 0
     for recipient in recipients:
-        send_email(recipient.email, subject, body)
+        send_email(recipient.email, subject, append_notification_footer(body, recipient, "adminAutoUpdateFailureEmail"))
         sent += 1
     print(f"Sent admin failure notifications: {sent}")
     return sent

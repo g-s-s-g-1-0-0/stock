@@ -33,6 +33,7 @@ Required GitHub Secrets:
 - `SMTP_FROM`
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `WEB_APP_URL`
 
 Optional GitHub Secrets:
 
@@ -42,11 +43,20 @@ Optional GitHub Secrets:
 - `ADMIN_EMAILS` is used as the fallback admin recipient list.
 - `EMAIL_PROVIDER` defaults to `smtp`. Set it to `brevo` to use Brevo.
 - `BREVO_API_KEY` is required only when `EMAIL_PROVIDER=brevo`.
+- `NOTIFICATION_UNSUBSCRIBE_SECRET` signs one-click unsubscribe links. When empty, `SUPABASE_SERVICE_ROLE_KEY` is used as the signing secret.
+- `EMAIL_SEND_ATTEMPTS` defaults to `3`.
 
 For Gmail, `SMTP_PASSWORD` must be an app password, not the normal account password.
 Brevo is the preferred free-volume upgrade path when notification volume outgrows Gmail SMTP.
 
 Notification failures are not ignored. If an email step fails, the GitHub Actions run should fail and appear in the repository Actions tab.
+
+One-click unsubscribe links require these Vercel environment variables on the deployed web app:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `WEB_APP_URL`
+- `NOTIFICATION_UNSUBSCRIBE_SECRET` if it is set in GitHub Secrets
 
 ## GitHub Push Permission
 
