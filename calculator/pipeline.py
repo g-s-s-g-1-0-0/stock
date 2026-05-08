@@ -22,7 +22,7 @@ from typing import Any
 
 from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
 from .rules import IndicatorRow, evaluate_buy_condition, strategy_display_name
-from .sheet_sources import calc_rsi, calc_technical_row, fetch_ohlcv, fetch_text, fetch_valuation
+from .sheet_sources import USER_AGENT, calc_rsi, calc_technical_row, fetch_ohlcv, fetch_text, fetch_valuation
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CACHE_DIR = ROOT_DIR / "data" / "cache"
