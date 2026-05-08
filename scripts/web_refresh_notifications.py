@@ -19,6 +19,7 @@ import os
 import smtplib
 import ssl
 import sys
+import time
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -299,13 +300,37 @@ def send_brevo_email(to_email: str, subject: str, html_body: str) -> None:
 
 def send_email(to_email: str, subject: str, html_body: str) -> None:
     provider = os.environ.get("EMAIL_PROVIDER", "").strip().lower() or "smtp"
-    if provider == "smtp":
-        send_smtp_email(to_email, subject, html_body)
-        return
-    if provider == "brevo":
-        send_brevo_email(to_email, subject, html_body)
-        return
-    raise RuntimeError(f"지원하지 않는 EMAIL_PROVIDER입니다: {provider}")
+    try:
+        attempts = int(os.environ.get("EMAIL_SEND_ATTEMPTS", "3"))
+    except ValueError:
+        attempts = 3
+    attempts = max(1, attempts)
+
+    for attempt in range(1, attempts + 1):
+        try:
+            if provider == "smtp":
+                send_smtp_email(to_email, subject, html_body)
+                return
+            if provider == "brevo":
+                send_brevo_email(to_email, subject, html_body)
+                return
+            raise RuntimeError(f"지원하지 않는 EMAIL_PROVIDER입니다: {provider}")
+        except Exception as exc:
+            message = str(exc)
+            is_config_error = any(
+                marker in message
+                for marker in (
+                    "설정이 필요합니다",
+                    "숫자여야 합니다",
+                    "지원하지 않는 EMAIL_PROVIDER",
+                    "BREVO_API_KEY 설정",
+                )
+            )
+            if is_config_error or attempt == attempts:
+                raise
+            wait_seconds = min(2 ** attempt, 10)
+            print(f"Email send failed for {to_email}; retrying in {wait_seconds}s ({attempt}/{attempts}): {exc}")
+            time.sleep(wait_seconds)
 
 
 def opinion_email_body(changes: list[dict[str, Any]]) -> str:
