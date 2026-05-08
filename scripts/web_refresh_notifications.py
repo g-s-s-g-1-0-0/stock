@@ -23,6 +23,7 @@ import smtplib
 import ssl
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -297,9 +298,13 @@ def send_brevo_email(to_email: str, subject: str, html_body: str) -> None:
         },
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        if response.status >= 300:
-            raise RuntimeError(f"Brevo email request failed with {response.status}.")
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            if response.status >= 300:
+                raise RuntimeError(f"Brevo email request failed with {response.status}.")
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Brevo email request failed with HTTP {exc.code}: {detail}") from exc
 
 
 def send_email(to_email: str, subject: str, html_body: str) -> None:

@@ -4177,8 +4177,7 @@ function App() {
 
       const { data: authData } = await supabase.auth.getSession()
       const accessToken = authData.session?.access_token
-      const refreshScope = currentActivePage === 'value-analysis' ? 'valuation' : 'technical'
-      const result = await refreshAppData(tickers, accessToken, refreshScope)
+      const result = await refreshAppData(tickers, accessToken)
 
       if (result.mode === 'workflow_dispatch') {
         setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 완료되면 최신 데이터가 자동 반영됩니다.')

@@ -1,6 +1,6 @@
 const DEFAULT_WORKFLOW_ID = 'web-data-refresh.yml'
 const DEFAULT_REPO = 'g-s-s-g-1-0-0/stock'
-const ALLOWED_SCOPES = new Set(['all', 'valuation', 'technical', 'market-trends', 'market-events'])
+const ALLOWED_SCOPES = new Set(['all', 'analysis', 'valuation', 'technical', 'market-trends', 'market-events'])
 
 function json(res, statusCode, payload) {
   res.statusCode = statusCode
@@ -61,7 +61,7 @@ async function readSupabaseUser(accessToken) {
   return response.json()
 }
 
-async function triggerWorkflow(scope) {
+async function triggerWorkflow(scope, sendNotifications) {
   const token = process.env.GITHUB_ACTIONS_TOKEN
   const repo = process.env.GITHUB_REPO || DEFAULT_REPO
   const workflowId = process.env.GITHUB_REFRESH_WORKFLOW_ID || DEFAULT_WORKFLOW_ID
@@ -80,7 +80,13 @@ async function triggerWorkflow(scope) {
       'user-agent': 'gongsuseongga-admin-refresh',
       'x-github-api-version': '2022-11-28',
     },
-    body: JSON.stringify({ ref, inputs: { refresh_scope: scope } }),
+    body: JSON.stringify({
+      ref,
+      inputs: {
+        refresh_scope: scope,
+        send_notifications: sendNotifications ? 'true' : 'false',
+      },
+    }),
   })
 
   if (!response.ok) {
@@ -109,7 +115,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    if (!isValidCronRequest(req)) {
+    const isCronRequest = isValidCronRequest(req)
+    if (!isCronRequest) {
       const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim()
       if (!accessToken) {
         return json(res, 401, { error: '로그인이 필요합니다.' })
@@ -124,7 +131,7 @@ export default async function handler(req, res) {
       }
     }
 
-    const workflow = await triggerWorkflow(scope)
+    const workflow = await triggerWorkflow(scope, isCronRequest)
     return json(res, 202, {
       ok: true,
       mode: 'workflow_dispatch',

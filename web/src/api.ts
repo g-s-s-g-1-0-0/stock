@@ -123,7 +123,7 @@ export async function saveMarketEvents<TGroup>(
   throw new Error('시장 주요 이벤트 저장에 실패했습니다.')
 }
 
-export async function refreshAppData(tickers: string[], accessToken?: string, scope = 'technical') {
+export async function refreshAppData(tickers: string[], accessToken?: string, scope = 'analysis') {
   const endpoints = import.meta.env.DEV
     ? ['/api/admin/trigger-refresh', '/api/admin/refresh-data', 'http://127.0.0.1:8787/api/admin/refresh-data']
     : ['/api/admin/trigger-refresh']

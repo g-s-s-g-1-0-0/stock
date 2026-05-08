@@ -14,10 +14,19 @@ on:
         type: choice
         options:
           - all
+          - analysis
           - valuation
           - technical
           - market-trends
           - market-events
+      send_notifications:
+        description: "Send notification emails"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 permissions:
   contents: write
@@ -73,18 +82,23 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
             TASKS="technical"
+            SEND_NOTIFICATIONS="true"
           else
             case "${{ inputs.refresh_scope }}" in
               all) TASKS="valuation technical market-trends market-events" ;;
+              analysis) TASKS="valuation technical" ;;
               valuation) TASKS="valuation" ;;
               technical) TASKS="technical" ;;
               market-trends) TASKS="market-trends" ;;
               market-events) TASKS="market-events" ;;
               *) TASKS="valuation technical market-trends market-events" ;;
             esac
+            SEND_NOTIFICATIONS="${{ inputs.send_notifications || 'true' }}"
           fi
           echo "REFRESH_TASKS=$TASKS" >> "$GITHUB_ENV"
+          echo "SEND_NOTIFICATIONS=$SEND_NOTIFICATIONS" >> "$GITHUB_ENV"
           echo "Resolved refresh tasks: $TASKS"
+          echo "Send notifications: $SEND_NOTIFICATIONS"
 
       - name: Skip fresh scheduled refresh
         if: ${{ github.event_name == 'schedule' }}
@@ -140,19 +154,19 @@ jobs:
           git push origin "HEAD:${GITHUB_REF_NAME:-main}"
 
       - name: Send opinion change emails
-        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'technical') }}
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         run: python scripts/web_refresh_notifications.py opinion
 
       - name: Send Nasdaq peak emails
-        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'technical') }}
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         run: python scripts/web_refresh_notifications.py nasdaq-peak
 
       - name: Send earnings D-1 emails
-        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'valuation') }}
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'valuation') }}
         run: python scripts/web_refresh_notifications.py earnings
 
       - name: Send weekly trend report emails
-        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
         run: python scripts/web_refresh_notifications.py weekly-trend
 
       - name: Deploy refreshed web
