@@ -145,12 +145,14 @@ def evaluate_buy_condition(
     *,
     is_holding: bool = False,
     holding_strategy_type: str | None = None,
+    nasdaq_buy_block_max: float | None = None,
 ) -> dict[str, Any]:
     """Evaluate A-F entry/hold conditions in the same priority as the sheet."""
 
     s = STRATEGY_RULES
     vix_threshold = float(s["VIX_RELEASE"] if is_holding else s["VIX_MIN"])
-    nasdaq_below_buy_block = ixic_dist is not None and ixic_dist <= float(s["NASDAQ_BUY_BLOCK_MAX"])
+    buy_block_max = float(nasdaq_buy_block_max if nasdaq_buy_block_max is not None else s["NASDAQ_BUY_BLOCK_MAX"])
+    nasdaq_below_buy_block = ixic_dist is not None and ixic_dist <= buy_block_max
     nasdaq_strict = (
         nasdaq_below_buy_block
         and not ixic_filter_active

@@ -21,8 +21,9 @@ from pathlib import Path
 from typing import Any
 
 from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
-from .rules import IndicatorRow, evaluate_buy_condition, strategy_display_name
-from .sheet_sources import USER_AGENT, calc_rsi, calc_technical_row, fetch_ohlcv, fetch_text, fetch_valuation
+from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
+from .rules import IndicatorRow, compute_nasdaq_filter_active, evaluate_buy_condition, strategy_display_name
+from .sheet_sources import USER_AGENT, calc_rsi, calc_technical_row, fetch_ohlcv, fetch_text, fetch_us_ohlcv, fetch_valuation
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CACHE_DIR = ROOT_DIR / "data" / "cache"
@@ -208,13 +209,49 @@ def fetch_weekly_rsi(symbol: str = "QQQ") -> float:
     return round(rsi_values[-1], 2)
 
 
-def build_market_snapshot_rows() -> list[list[str]]:
+def fmt_signed_percent(value: Any) -> str:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    if parsed != parsed:
+        return "-"
+    return f"{parsed:+.2f}%"
+
+
+def fmt_signed_number(value: Any) -> str:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    if parsed != parsed:
+        return "-"
+    return f"{parsed:+.2f}"
+
+
+def qqq_market_state_snapshot() -> dict[str, Any]:
+    qqq = calc_technical_row("QQQ")
+    qqq_rows = fetch_us_ohlcv("QQQ", range_value="2y")
+    weekly_rsi = fetch_weekly_rsi("QQQ")
+    recent_min_dist = qqq_recent_ma200_min_distance(qqq_rows)
+    state = build_qqq_market_state(qqq, recent_min_dist=recent_min_dist, weekly_rsi=weekly_rsi)
+    state.update({
+        "ma20": qqq.get("ma20"),
+        "ma60": qqq.get("ma60"),
+        "ma144": qqq.get("ma144"),
+    })
+    return state
+
+
+def build_market_snapshot() -> tuple[list[list[str]], dict[str, Any], float | None]:
     rows = [
         ["시장 주요 이벤트", "당분간 없음"],
     ]
+    vix_today: float | None = None
 
     try:
         vix_rows = fetch_ohlcv("^VIX")
+        vix_today = float(vix_rows[-1]["close"])
         rows.append([
             "VIX (변동성지수) 당일·전날",
             f"{fmt_number(vix_rows[-1]['close'])} / {fmt_number(vix_rows[-2]['close'])}",
@@ -239,21 +276,39 @@ def build_market_snapshot_rows() -> list[list[str]]:
     except Exception as exc:  # noqa: BLE001
         rows.append(["달러 인덱스", f"수집 실패: {exc}"])
 
+    qqq_state: dict[str, Any] = {}
     try:
-        qqq = calc_technical_row("QQQ")
+        qqq_state = qqq_market_state_snapshot()
         rows.extend([
-            ["QQQ 주봉 RSI (14)", fmt_number(fetch_weekly_rsi("QQQ"))],
-            ["QQQ 일봉 RSI (14, 당일)", fmt_number(qqq["rsi"])],
-            ["QQQ 일봉 RSI (14, 전날)", fmt_number(qqq["rsiD1"])],
-            ["나스닥 (QQQ, 당일)", fmt_number(qqq["close"])],
-            ["나스닥 (QQQ, 20일 이동평균선)", fmt_number(qqq["ma20"])],
-            ["나스닥 (QQQ, 60일 이동평균선)", fmt_number(qqq["ma60"])],
-            ["나스닥 (QQQ, 144일 이동평균선)", fmt_number(qqq["ma144"])],
-            ["나스닥 (QQQ, 200일 이동평균선)", fmt_number(qqq["ma200"])],
+            ["QQQ 주봉 RSI (14)", fmt_number(qqq_state.get("weeklyRsi"))],
+            ["QQQ 일봉 RSI (14, 당일)", fmt_number(qqq_state.get("dailyRsi"))],
+            ["QQQ 일봉 RSI (14, 전날)", fmt_number(qqq_state.get("dailyRsiPrev"))],
+            ["QQQ MACD Histogram (D/D-1/D-2)", " / ".join([
+                fmt_signed_number(qqq_state.get("macdHist")),
+                fmt_signed_number(qqq_state.get("macdHistD1")),
+                fmt_signed_number(qqq_state.get("macdHistD2")),
+            ])],
+            ["QQQ 60거래일 최저 이격도", fmt_signed_percent(qqq_state.get("recent60MinPremiumPercent"))],
+            ["QQQ 시장 국면", f"{qqq_state.get('regimeLabel', '-')} · 매수 차단 > {fmt_signed_percent(qqq_state.get('buyBlockMax'))}"],
+            ["QQQ 고점 청산 기준", (
+                f">{fmt_signed_percent(qqq_state.get('peakDirectDist'))}"
+                f" 또는 >{fmt_signed_percent(qqq_state.get('peakConfirmDist'))}+RSI/MACD 둔화"
+            )],
+            ["나스닥 (QQQ, 당일)", fmt_number(qqq_state.get("currentPrice"))],
+            ["나스닥 (QQQ, 20일 이동평균선)", fmt_number(qqq_state.get("ma20"))],
+            ["나스닥 (QQQ, 60일 이동평균선)", fmt_number(qqq_state.get("ma60"))],
+            ["나스닥 (QQQ, 144일 이동평균선)", fmt_number(qqq_state.get("ma144"))],
+            ["나스닥 (QQQ, 200일 이동평균선)", fmt_number(qqq_state.get("ma200"))],
+            ["나스닥 (QQQ, 200일선 이격도)", fmt_signed_percent(qqq_state.get("premiumPercent"))],
         ])
     except Exception as exc:  # noqa: BLE001
         rows.append(["나스닥 (QQQ)", f"수집 실패: {exc}"])
 
+    return rows, qqq_state, vix_today
+
+
+def build_market_snapshot_rows() -> list[list[str]]:
+    rows, _, _ = build_market_snapshot()
     return rows
 
 
@@ -369,7 +424,13 @@ def valuation_from_price_range(current_price: str, fair_price: str) -> str:
     return "보통"
 
 
-def latest_technical_row(stock: dict[str, str], earnings_date: str = "-") -> dict[str, str] | None:
+def latest_technical_row(
+    stock: dict[str, str],
+    earnings_date: str = "-",
+    *,
+    qqq_market_state: dict[str, Any] | None = None,
+    vix: float | None = None,
+) -> dict[str, str] | None:
     row = calc_technical_row(stock["ticker"])
     price = float(row["close"])
     ind = IndicatorRow(
@@ -395,11 +456,21 @@ def latest_technical_row(stock: dict[str, str], earnings_date: str = "-") -> dic
         lr_trendline=row["lrTrendline"],
         candle_low=row["low"],
     )
-    buy = evaluate_buy_condition(ind, vix=None, ixic_dist=None, ixic_filter_active=False)
+    ixic_dist = qqq_market_state.get("premiumPercent") if qqq_market_state else None
+    nasdaq_buy_block_max = qqq_market_state.get("buyBlockMax") if qqq_market_state else None
+    ixic_filter_active = compute_nasdaq_filter_active(ixic_dist)
+    buy = evaluate_buy_condition(
+        ind,
+        vix=vix,
+        ixic_dist=ixic_dist,
+        ixic_filter_active=ixic_filter_active,
+        nasdaq_buy_block_max=nasdaq_buy_block_max,
+    )
     strategy = buy["strategyName"] if buy["entryTriggered"] else "-"
+    buy_block_label = f"나스닥 상단 차단 아님(≤{float(nasdaq_buy_block_max):.0f}%)" if nasdaq_buy_block_max is not None else "나스닥 상단 차단 아님"
     strategy_labels = {
         "A": ["현재가 > MA200", "MACD 골든크로스", "종가%B > 80", "RSI > 70", "나스닥 강세 필터"],
-        "B": ["현재가 < MA200", "VIX >= 30", "RSI < 35 또는 CCI < -150", "LR 추세선 상승", "저가 추세선 터치", "나스닥 상단 차단 아님"],
+        "B": ["현재가 < MA200", "VIX >= 30", "RSI < 35 또는 CCI < -150", "LR 추세선 상승", "저가 추세선 터치", buy_block_label],
         "C": ["현재가 > MA200", "전일 BB 스퀴즈", "당일 BB 확장", "거래량 폭발", "종가%B > 55", "MACD Hist > 0", "나스닥 강세 필터"],
         "D": ["현재가 > MA200", "+DI > -DI", "ADX > 30", "ADX 상승", "MACD Hist > 0", "종가%B 30~75", "나스닥 과열 아님", "나스닥 강세 필터"],
         "E": ["현재가 > MA200", "BB폭 압축", "저가%B <= 50", "나스닥 바닥/정상 필터"],
@@ -411,9 +482,16 @@ def latest_technical_row(stock: dict[str, str], earnings_date: str = "-") -> dic
         passed = sum(1 for value in values if value)
         details = " / ".join(f"{label}:{'통과' if value else '실패'}" for label, value in zip(labels, values))
         condition_summaries.append(f"{group}그룹 {passed}/{len(values)} - {details}")
+    market_line = (
+        f"시장 국면: {qqq_market_state.get('regimeLabel')} / "
+        f"QQQ 이격도 {fmt_signed_percent(qqq_market_state.get('premiumPercent'))} / "
+        f"최근 60거래일 최저 {fmt_signed_percent(qqq_market_state.get('recent60MinPremiumPercent'))} / "
+        f"매수 차단선 > {fmt_signed_percent(qqq_market_state.get('buyBlockMax'))}"
+    ) if qqq_market_state else "시장 국면: 데이터 없음"
     decision_log = "\n".join([
         f"{stock['ticker']} 최종 판단: {'매수' if buy['entryTriggered'] else '관망'}",
         f"진입 전략: {strategy}",
+        market_line,
         *condition_summaries,
     ])
     return {
@@ -489,8 +567,10 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
     errors: list[dict[str, str]] = []
     successful_rows = 0
     refreshed_at = now_iso()
+    qqq_market_state: dict[str, Any] = {}
+    vix_today: float | None = None
     try:
-        market_snapshot = build_market_snapshot_rows()
+        market_snapshot, qqq_market_state, vix_today = build_market_snapshot()
     except Exception as exc:  # noqa: BLE001 - external market data should not block refresh
         market_snapshot = [["시장 주요 이벤트", "당분간 없음"]]
         errors.append({"ticker": "CNN_FEAR_GREED", "error": str(exc)})
@@ -499,7 +579,12 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
         try:
             metric = valuation_rows.get(stock["ticker"], {})
             earnings_date = metric.get("earningsDate", "-") if isinstance(metric, dict) else "-"
-            row = latest_technical_row(stock, earnings_date=earnings_date)
+            row = latest_technical_row(
+                stock,
+                earnings_date=earnings_date,
+                qqq_market_state=qqq_market_state,
+                vix=vix_today,
+            )
             if row:
                 rows[stock["ticker"]] = row
                 successful_rows += 1

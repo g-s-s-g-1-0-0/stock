@@ -40,15 +40,15 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from calculator.sheet_sources import calc_rsi, calc_technical_row
+from calculator.market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
+from calculator.sheet_sources import calc_rsi, calc_technical_row, fetch_us_ohlcv
 
 DEFAULT_PREVIOUS_STOCKS = ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"
 DEFAULT_CURRENT_STOCKS = ROOT_DIR / "web" / "public" / "api" / "stocks.json"
+DEFAULT_TECHNICAL = ROOT_DIR / "web" / "public" / "api" / "technical.json"
 DEFAULT_VALUATION = ROOT_DIR / "web" / "public" / "api" / "valuation.json"
 DEFAULT_MARKET_TRENDS = ROOT_DIR / "web" / "public" / "api" / "market-trends.json"
 NOTIFICATION_STATE = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
-QQQ_PEAK_MULTIPLIER = 1.14
-QQQ_PEAK_RSI_THRESHOLD = 65
 KST = ZoneInfo("Asia/Seoul")
 ET = ZoneInfo("America/New_York")
 
@@ -110,9 +110,36 @@ def now_labels() -> tuple[str, str]:
     )
 
 
-def opinion_changes(previous_path: Path, current_path: Path) -> list[dict[str, Any]]:
+def fmt_signed(value: Any, suffix: str = "") -> str:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    if parsed != parsed:
+        return "-"
+    return f"{parsed:+.2f}{suffix}"
+
+
+def fmt_number(value: Any) -> str:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    if parsed != parsed:
+        return "-"
+    return f"{parsed:.2f}"
+
+
+def technical_rows_by_ticker(path: Path = DEFAULT_TECHNICAL) -> dict[str, dict[str, Any]]:
+    payload = read_json(path)
+    rows = payload.get("rows") if isinstance(payload, dict) else {}
+    return rows if isinstance(rows, dict) else {}
+
+
+def opinion_changes(previous_path: Path, current_path: Path, technical_path: Path = DEFAULT_TECHNICAL) -> list[dict[str, Any]]:
     previous = stock_rows_by_ticker(previous_path)
     current = stock_rows_by_ticker(current_path)
+    technical_rows = technical_rows_by_ticker(technical_path)
     changes: list[dict[str, Any]] = []
 
     for ticker, current_stock in current.items():
@@ -123,6 +150,7 @@ def opinion_changes(previous_path: Path, current_path: Path) -> list[dict[str, A
         new_opinion = str(current_stock.get("opinion") or "").strip()
         if not old_opinion or not new_opinion or old_opinion == new_opinion:
             continue
+        technical_row = technical_rows.get(ticker, {})
         changes.append({
             "ticker": ticker,
             "name": current_stock.get("name") or ticker,
@@ -132,6 +160,7 @@ def opinion_changes(previous_path: Path, current_path: Path) -> list[dict[str, A
             "valuation": current_stock.get("valuation") or "-",
             "industry": current_stock.get("industry") or "-",
             "strategies": current_stock.get("strategies") or [],
+            "reason": technical_row.get("conditionSummary") or technical_row.get("decisionLog") or "-",
         })
     return changes
 
@@ -423,6 +452,12 @@ def opinion_email_body(changes: list[dict[str, Any]]) -> str:
         color = "#27ae60" if is_buy else "#c0392b" if is_sell else "#7f8c8d"
         strategies = change.get("strategies") if isinstance(change.get("strategies"), list) else []
         strategy_text = ", ".join(str(item) for item in strategies) if strategies else "-"
+        reason = str(change.get("reason") or "-")
+        reason_html = "<br>".join(
+            html.escape(part.strip())
+            for part in reason.replace("\n", " | ").split(" | ")
+            if part.strip()
+        ) or "-"
         changed_html.append(
             f"""
             <div style="margin-bottom:8px;padding:8px;background:#f9f9f9;border-left:3px solid {border};">
@@ -433,7 +468,10 @@ def opinion_email_body(changes: list[dict[str, Any]]) -> str:
               <span style="font-size:13px;">현재가: <strong>{html.escape(str(change['price']))}</strong></span><br>
               <span style="font-size:13px;">가치판단: {html.escape(str(change['valuation']))}</span><br>
               <span style="font-size:12px;color:#666;">산업: {html.escape(str(change['industry']))}</span><br>
-              <span style="font-size:12px;color:#e67e22;">전략: {html.escape(strategy_text)}</span>
+              <span style="font-size:12px;color:#e67e22;">전략: {html.escape(strategy_text)}</span><br>
+              <div style="margin-top:6px;padding:6px 8px;background:#fff;border:1px solid #eee;color:#555;font-size:12px;line-height:1.5;">
+                <strong style="color:#333;">판단 근거</strong><br>{reason_html}
+              </div>
             </div>
             """
         )
@@ -576,57 +614,54 @@ def fetch_weekly_rsi(symbol: str = "QQQ") -> float:
 
 def qqq_peak_snapshot() -> dict[str, Any]:
     row = calc_technical_row("QQQ")
-    current_price = float(row["close"])
-    ma200 = float(row["ma200"])
-    daily_rsi = float(row["rsi"])
-    daily_rsi_prev = float(row["rsiD1"])
+    qqq_rows = fetch_us_ohlcv("QQQ", range_value="2y")
     weekly_rsi = fetch_weekly_rsi("QQQ")
-    threshold = ma200 * QQQ_PEAK_MULTIPLIER
-    premium_percent = (current_price / ma200 - 1) * 100
-    is_triggered = (
-        current_price > threshold
-        and weekly_rsi >= QQQ_PEAK_RSI_THRESHOLD
-        and daily_rsi >= QQQ_PEAK_RSI_THRESHOLD
-        and daily_rsi < daily_rsi_prev
-    )
-    return {
-        "currentPrice": current_price,
-        "ma200": ma200,
-        "threshold": threshold,
-        "premiumPercent": premium_percent,
-        "weeklyRsi": weekly_rsi,
-        "dailyRsi": daily_rsi,
-        "dailyRsiPrev": daily_rsi_prev,
-        "triggered": is_triggered,
-    }
+    recent_min_dist = qqq_recent_ma200_min_distance(qqq_rows)
+    snapshot = build_qqq_market_state(row, recent_min_dist=recent_min_dist, weekly_rsi=weekly_rsi)
+    ma200 = float(snapshot["ma200"] or 0)
+    snapshot["directThreshold"] = ma200 * (1 + float(snapshot["peakDirectDist"]) / 100) if ma200 > 0 else 0
+    snapshot["confirmThreshold"] = ma200 * (1 + float(snapshot["peakConfirmDist"]) / 100) if ma200 > 0 else 0
+    snapshot["resetThreshold"] = ma200 * (1 + float(snapshot["peakResetDist"]) / 100) if ma200 > 0 else 0
+    snapshot["triggered"] = snapshot["peakTriggered"]
+    return snapshot
 
 
 def nasdaq_peak_email_body(snapshot: dict[str, Any]) -> str:
     kst_date, et_date = now_labels()
+    regime = html.escape(str(snapshot.get("regimeLabel") or "-"))
+    direct_dist = float(snapshot.get("peakDirectDist") or 0)
+    confirm_dist = float(snapshot.get("peakConfirmDist") or 0)
+    trigger_rule = (
+        f"회복장 기준: QQQ 이격도 +{direct_dist:.0f}% 초과 또는 +{confirm_dist:.0f}% 초과에서 RSI 과열 둔화와 MACD 히스토그램 2일 연속 둔화"
+        if snapshot.get("isRecoveryMarket")
+        else f"비회복장 기준: QQQ 이격도 +{direct_dist:.0f}% 초과에서 RSI 과열 둔화, 또는 +{confirm_dist:.0f}% 초과에서 RSI 과열 둔화와 MACD 히스토그램 2일 연속 둔화"
+    )
     return f"""
     <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;max-width:640px;">
       <p style="font-size:16px;font-weight:bold;color:#333;margin:0 0 12px 0;">
-        QQQ가 고점 과열 구간에 진입했으며, RSI 둔화 신호가 감지되었습니다.
+        QQQ가 동적 고점 청산 구간에 진입했습니다.
       </p>
       <div style="margin:0 0 14px 0;">
         <div><strong>QQQ 현재가:</strong> {snapshot['currentPrice']:.2f}</div>
         <div><strong>QQQ 200일 이평선:</strong> {snapshot['ma200']:.2f}</div>
-        <div><strong>200일선 대비:</strong> +{snapshot['premiumPercent']:.2f}%</div>
-        <div><strong>기준선 (MA200 ×1.14):</strong> {snapshot['threshold']:.2f}</div>
+        <div><strong>200일선 대비:</strong> {fmt_signed(snapshot.get('premiumPercent'), '%')}</div>
+        <div><strong>최근 60거래일 최저 이격도:</strong> {fmt_signed(snapshot.get('recent60MinPremiumPercent'), '%')}</div>
+        <div><strong>시장 국면:</strong> {regime}</div>
+        <div><strong>직접 청산선:</strong> +{direct_dist:.0f}% ({snapshot['directThreshold']:.2f})</div>
+        <div><strong>확인 청산선:</strong> +{confirm_dist:.0f}% ({snapshot['confirmThreshold']:.2f})</div>
       </div>
       <div style="margin:0 0 14px 0;">
-        <div><strong>QQQ 주봉 RSI(14):</strong> {snapshot['weeklyRsi']:.2f}</div>
-        <div><strong>QQQ 일봉 RSI(14):</strong> {snapshot['dailyRsi']:.2f}</div>
-        <div><strong>QQQ 일봉 RSI 전일:</strong> {snapshot['dailyRsiPrev']:.2f}</div>
+        <div><strong>QQQ 주봉 RSI(14):</strong> {fmt_number(snapshot.get('weeklyRsi'))}</div>
+        <div><strong>QQQ 일봉 RSI(14):</strong> {fmt_number(snapshot.get('dailyRsi'))}</div>
+        <div><strong>QQQ 일봉 RSI 전일:</strong> {fmt_number(snapshot.get('dailyRsiPrev'))}</div>
+        <div><strong>QQQ MACD Histogram (D/D-1/D-2):</strong> {fmt_signed(snapshot.get('macdHist'))} / {fmt_signed(snapshot.get('macdHistD1'))} / {fmt_signed(snapshot.get('macdHistD2'))}</div>
       </div>
       <p>
-        QQQ가 200일 이동평균선 대비 ×1.14 이상 과열된 상태에서,
-        주봉/일봉 RSI가 65 이상이고 일봉 RSI가 전일 대비 하락했습니다.
-        이는 고점 구간에서 단기 에너지가 둔화되는 신호로 해석합니다.
+        {html.escape(trigger_rule)} 조건을 충족했습니다.
+        기존 고정 +14% 기준보다 급락 후 회복장은 더 넓게 보고, 비회복장에서는 RSI와 MACD 둔화를 함께 확인합니다.
       </p>
       <p>
-        웹서비스는 이 시장 과열 알림을 먼저 발송합니다. 구글 시트처럼 개별 보유 종목을
-        자동으로 매도 상태로 바꾸는 포지션 상태 관리는 아직 별도 이관 대상입니다.
+        웹서비스는 이 시장 과열 알림을 먼저 발송합니다. 개별 종목의 투자의견 변경 메일에는 같은 QQQ 국면과 차단선이 판단 근거로 함께 반영됩니다.
       </p>
       <p style="color:#888;font-size:12px;margin:0;">
         발송 시각 (한국): {html.escape(kst_date)}<br>
@@ -644,7 +679,7 @@ def send_nasdaq_peak_notifications() -> int:
     peak_state = state.get("nasdaqPeak") if isinstance(state.get("nasdaqPeak"), dict) else {}
     was_sent = peak_state.get("sent") is True
 
-    if snapshot["currentPrice"] <= snapshot["threshold"] and was_sent:
+    if snapshot["currentPrice"] <= snapshot["resetThreshold"] and was_sent:
         state["nasdaqPeak"] = {"sent": False, "resetAt": datetime.now().astimezone().isoformat()}
         write_json(NOTIFICATION_STATE, state)
         print("Nasdaq peak state reset.")
