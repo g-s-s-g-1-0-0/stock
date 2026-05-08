@@ -37,7 +37,7 @@ NEWS_SOURCES = [
 ]
 
 GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MARKET_TREND_MODEL = "llama-3.3-70b-versatile"
+GROQ_MARKET_TREND_MODEL = os.environ.get("GROQ_MARKET_TREND_MODEL", "llama-3.3-70b-versatile").strip()
 CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 FAIR_PRICE_UNAVAILABLE_LABEL = "적자 상태라 판단 불가"
 MAX_REFRESH_UNIVERSE = int(os.environ.get("MAX_REFRESH_UNIVERSE", "200"))
@@ -769,6 +769,13 @@ def analyze_market_trends_with_groq(news_text: str, api_key: str) -> dict[str, A
     return parsed
 
 
+def http_error_detail(exc: urllib.error.HTTPError) -> str:
+    detail = exc.read().decode("utf-8", errors="replace").strip()
+    if not detail:
+        return f"HTTP {exc.code}"
+    return f"HTTP {exc.code}: {detail[:500]}"
+
+
 def upsert_market_trend_row(rows: list[Any], new_row: dict[str, Any]) -> list[Any]:
     sanitized_rows = sanitize_market_trend_rows(rows)
     existing_index = next((index for index, row in enumerate(sanitized_rows) if row.get("date") == new_row["date"]), None)
@@ -811,7 +818,7 @@ def build_market_trends_cache() -> dict[str, Any]:
                 "schedule": "0 0 * * 1",
                 "updatedAt": now_iso(),
                 "lastSuccessfulRun": existing.get("meta", {}).get("lastSuccessfulRun"),
-                "failedReason": f"Groq API 호출 실패: HTTP {exc.code}",
+                "failedReason": f"Groq API 호출 실패: {http_error_detail(exc)}",
             },
             "rows": rows,
         }

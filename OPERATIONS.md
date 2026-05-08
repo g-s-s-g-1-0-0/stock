@@ -45,6 +45,7 @@ Optional GitHub Secrets:
 - `BREVO_API_KEY` is required only when `EMAIL_PROVIDER=brevo`.
 - `NOTIFICATION_UNSUBSCRIBE_SECRET` signs one-click unsubscribe links. When empty, `SUPABASE_SERVICE_ROLE_KEY` is used as the signing secret.
 - `EMAIL_SEND_ATTEMPTS` defaults to `3`.
+- `GROQ_MARKET_TREND_MODEL` defaults to `llama-3.3-70b-versatile`. Set this if the Groq project restricts model access.
 
 For Gmail, `SMTP_PASSWORD` must be an app password, not the normal account password.
 Brevo is the preferred free-volume upgrade path when notification volume outgrows Gmail SMTP.

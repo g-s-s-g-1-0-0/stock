@@ -40,6 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GROQ_MARKET_TREND_MODEL: ${{ secrets.GROQ_MARKET_TREND_MODEL }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       MAX_REFRESH_UNIVERSE: "200"
