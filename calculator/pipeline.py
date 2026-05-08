@@ -280,10 +280,6 @@ def build_market_snapshot() -> tuple[list[list[str]], dict[str, Any], float | No
             ])],
             ["QQQ 60거래일 최저 이격도", fmt_signed_percent(qqq_state.get("recent60MinPremiumPercent"))],
             ["QQQ 매수 차단 기준", f">{fmt_signed_percent(qqq_state.get('buyBlockMax'))}"],
-            ["QQQ 고점 청산 기준", (
-                f">{fmt_signed_percent(qqq_state.get('peakDirectDist'))}"
-                f" 또는 >{fmt_signed_percent(qqq_state.get('peakConfirmDist'))}+RSI/MACD 둔화"
-            )],
             ["나스닥 (QQQ, 당일)", fmt_number(qqq_state.get("currentPrice"))],
             ["나스닥 (QQQ, 20일 이동평균선)", fmt_number(qqq_state.get("ma20"))],
             ["나스닥 (QQQ, 60일 이동평균선)", fmt_number(qqq_state.get("ma60"))],
