@@ -516,8 +516,33 @@ def build_stock_search_cache() -> dict[str, Any]:
 def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str, Any]:
     technical_rows = read_cache("technical").get("rows", {})
     valuation_rows = read_cache("valuation").get("rows", {})
-    rows = []
+    search_rows_by_ticker = {
+        str(row.get("ticker", "")).strip().upper(): row
+        for row in read_search_universe()
+        if isinstance(row, dict)
+    }
+    rows_by_ticker: dict[str, dict[str, Any]] = {}
     for stock in universe or read_universe():
+        ticker = str(stock.get("ticker", "")).strip().upper()
+        if ticker:
+            rows_by_ticker[ticker] = {**search_rows_by_ticker.get(ticker, {}), **stock, "ticker": ticker}
+    for ticker in sorted(set(technical_rows) | set(valuation_rows)):
+        normalized_ticker = str(ticker).strip().upper()
+        if not normalized_ticker or normalized_ticker in rows_by_ticker:
+            continue
+        search_row = search_rows_by_ticker.get(normalized_ticker, {})
+        rows_by_ticker[normalized_ticker] = {
+            "ticker": normalized_ticker,
+            "name": search_row.get("name") or normalized_ticker,
+            "market": search_row.get("market") or ("KR" if normalized_ticker.isdigit() else "US"),
+            "category": search_row.get("category", "stocks"),
+            "industry": search_row.get("industry", "-"),
+            "rawIndustry": search_row.get("rawIndustry"),
+            "products": search_row.get("products"),
+        }
+
+    rows = []
+    for stock in rows_by_ticker.values():
         technical = technical_rows.get(stock["ticker"], {})
         valuation = valuation_rows.get(stock["ticker"], {})
         fair_price_reason = fair_price_unavailable_reason(valuation)
