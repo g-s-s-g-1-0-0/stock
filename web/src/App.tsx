@@ -252,6 +252,14 @@ function storeCachedAppData(data: AppData<Stock, ValuationMetric, MarketEventGro
   }
 }
 
+function wait(ms: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, ms))
+}
+
+function runtimeMetaChanged(current: RuntimeMeta | undefined, previous: RuntimeMeta | undefined) {
+  return Boolean(current?.updatedAt && current.updatedAt !== previous?.updatedAt)
+}
+
 function readStoredViewMode() {
   return localStorage.getItem(VIEW_MODE_STORAGE_KEY) === 'operator' ? 'operator' : 'personal'
 }
@@ -4177,10 +4185,31 @@ function App() {
 
       const { data: authData } = await supabase.auth.getSession()
       const accessToken = authData.session?.access_token
+      const previousMetas = apiMetas
       const result = await refreshAppData(tickers, accessToken)
 
       if (result.mode === 'workflow_dispatch') {
-        setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 완료되면 최신 데이터가 자동 반영됩니다.')
+        setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 최신 데이터 반영 여부를 확인하는 중입니다...')
+        for (let attempt = 1; attempt <= 40; attempt += 1) {
+          await wait(attempt <= 3 ? 8000 : 15000)
+          const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow>()
+          const isRefreshed = (
+            runtimeMetaChanged(data.stocks?.meta, previousMetas.stocks)
+            || runtimeMetaChanged(data.valuation?.meta, previousMetas.valuation)
+            || runtimeMetaChanged(data.technical?.meta, previousMetas.technical)
+          )
+          if (isRefreshed) {
+            applyLoadedData(data)
+            const rowCount = data.stocks?.rows?.length ?? result.refreshedTickers.length
+            setRefreshDataMessage(`최신 데이터가 반영됐습니다. ${rowCount}개 종목 기준으로 갱신되었습니다.`)
+            await recordRefreshDataLogs('success', `${rowCount}개 종목 최신 데이터가 반영됐습니다.`, { tickers: result.refreshedTickers })
+            return
+          }
+          if (attempt === 3 || attempt % 4 === 0) {
+            setRefreshDataMessage(`데이터 갱신 워크플로가 진행 중입니다. 최신 데이터 반영을 확인하는 중입니다... (${attempt}/40)`)
+          }
+        }
+        setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 아직 반영 확인이 끝나지 않았습니다. 잠시 후 새로고침해 주세요.')
         return
       }
 
@@ -4448,7 +4477,11 @@ function App() {
           <span>데이터는 2시간 간격으로 정각에 업데이트됩니다.</span>
           <span>공수성가 또한 실제 데이터이며, 참고할 수 있게 제공됩니다.</span>
           <span>단, 모든 투자의 책임은 본인에게 있습니다.</span>
-          {isAdminUser && refreshDataMessage && <strong>{refreshDataMessage}</strong>}
+          {isAdminUser && refreshDataMessage && (
+            <strong className={`refresh-data-message ${isRefreshingData ? 'refresh-data-message-active' : ''} ${refreshDataMessage.includes('반영됐습니다') ? 'refresh-data-message-success' : ''}`}>
+              {refreshDataMessage}
+            </strong>
+          )}
         </div>
         <div className={`segmented-tabs global-tabs view-mode-tabs ${showViewModeHint ? 'view-mode-tabs-highlight' : ''}`} aria-label="화면 기준">
           <button
