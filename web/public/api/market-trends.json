@@ -2,7 +2,7 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 0 * * 1",
-    "updatedAt": "2026-05-08T09:19:41+00:00",
+    "updatedAt": "2026-05-08T09:24:53+00:00",
     "lastSuccessfulRun": "2026-05-04T17:16:53+09:00",
     "failedReason": "Groq API 호출 실패: HTTP 403"
   },
