@@ -1,0 +1,16 @@
+{
+  "nasdaqPeak": {
+    "sent": true,
+    "sentAt": "2026-05-08T04:46:08.514016+00:00",
+    "snapshot": {
+      "currentPrice": 694.9400024414062,
+      "dailyRsi": 78.78,
+      "dailyRsiPrev": 81.56,
+      "ma200": 606.5682495117187,
+      "premiumPercent": 14.569135954746383,
+      "threshold": 691.4878044433592,
+      "triggered": true,
+      "weeklyRsi": 72.07
+    }
+  }
+}
