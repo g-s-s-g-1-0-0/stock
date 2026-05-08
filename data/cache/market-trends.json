@@ -2,9 +2,9 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 0 * * 1",
-    "updatedAt": "2026-05-08T18:16:08+00:00",
+    "updatedAt": "2026-05-08T18:23:14+00:00",
     "lastSuccessfulRun": "2026-05-04T17:16:53+09:00",
-    "failedReason": "Groq API 호출 실패: HTTP 403: error code: 1010"
+    "failedReason": "name 'USER_AGENT' is not defined"
   },
   "rows": [
     {
