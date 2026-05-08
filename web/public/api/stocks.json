@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-08T18:09:43+09:00",
-    "lastSuccessfulRun": "2026-05-08T18:09:43+09:00",
+    "updatedAt": "2026-05-08T09:14:19+00:00",
+    "lastSuccessfulRun": "2026-05-08T09:14:19+00:00",
     "failedReason": null
   },
   "rows": [
@@ -19,7 +19,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체, 메모리·파운드리, 스마트폰, 소비자 가전",
-      "updatedAt": "2026-05-08T09:00:40+00:00"
+      "updatedAt": "2026-05-08T09:14:08+00:00"
     },
     {
       "ticker": "NVDA",
@@ -33,7 +33,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, AI GPU, 데이터센터, CUDA",
-      "updatedAt": "2026-05-08T09:00:40+00:00"
+      "updatedAt": "2026-05-08T09:14:09+00:00"
     },
     {
       "ticker": "AAPL",
