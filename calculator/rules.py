@@ -34,7 +34,6 @@ STRATEGY_RULES: dict[str, float | int] = {
     "ADX_MIN": 30,
     "ADX_PCTB_MIN": 30,
     "ADX_PCTB_MAX": 75,
-    "D_NASDAQ_DIST_MAX": 13,
     "TARGET_PCT_E": 0.20,
     "CIRCUIT_PCT_E": 0.30,
     "SQUEEZE_RATIO": 0.5,
@@ -196,8 +195,7 @@ def evaluate_buy_condition(
     d_cond4 = ind.adx is not None and ind.adx_d1 is not None and ind.adx > ind.adx_d1
     d_cond5 = _gt(ind.macd_hist, 0)
     d_cond6 = _between(ind.pct_b, float(s["ADX_PCTB_MIN"]), float(s["ADX_PCTB_MAX"]))
-    d_cond7 = ixic_dist is not None and ixic_dist <= float(s["D_NASDAQ_DIST_MAX"])
-    entry_d = not entry_a and not entry_b and not entry_c and d_cond1 and d_cond2 and d_cond3 and d_cond4 and d_cond5 and d_cond6 and d_cond7 and nasdaq_strict
+    entry_d = not entry_a and not entry_b and not entry_c and d_cond1 and d_cond2 and d_cond3 and d_cond4 and d_cond5 and d_cond6 and nasdaq_strict
 
     e_cond1 = _gt(ind.current_price, ind.ma200)
     e_cond2 = bb_pair_ok and ind.bb_width is not None and (ind.bb_width / ind.bb_width_avg60) < float(s["SQUEEZE_RATIO"])
@@ -236,7 +234,7 @@ def evaluate_buy_condition(
             "A": [a_cond1, a_cond2, a_cond3, a_cond4, nasdaq_strict],
             "B": [b_cond1, b_cond2, b_cond3, b_cond4, b_cond5, nasdaq_below_buy_block],
             "C": [c_cond1, c_cond2, c_cond3, c_cond4, c_cond5, c_cond6, nasdaq_strict],
-            "D": [d_cond1, d_cond2, d_cond3, d_cond4, d_cond5, d_cond6, d_cond7, nasdaq_strict],
+            "D": [d_cond1, d_cond2, d_cond3, d_cond4, d_cond5, d_cond6, nasdaq_strict],
             "E": [e_cond1, e_cond2, e_cond3, nasdaq_bottom],
             "F": [f_cond1, f_cond2, nasdaq_bottom],
         },
