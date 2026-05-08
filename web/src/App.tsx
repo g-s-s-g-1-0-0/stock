@@ -1789,7 +1789,7 @@ const technicalMarketSnapshot: string[][] = [
   ['QQQ 일봉 RSI (14, 전날)', '82.78'],
   ['QQQ MACD Histogram (D/D-1/D-2)', '+12.34 / +13.21 / +14.02'],
   ['QQQ 60거래일 최저 이격도', '-5.20%'],
-  ['QQQ 시장 국면', '급락 후 회복장 · 매수 차단 > +18.00%'],
+  ['QQQ 매수 차단 기준', '>+18.00%'],
   ['QQQ 고점 청산 기준', '>+22.00% 또는 >+18.00%+RSI/MACD 둔화'],
   ['나스닥 (QQQ, 당일)', '674.18'],
   ['나스닥 (QQQ, 20일 이동평균선)', '638.20'],
@@ -1810,7 +1810,7 @@ const technicalSummaryTooltips: Record<string, string> = {
   'QQQ 일봉 RSI (14, 전날)': '전날 RSI와 비교해 단기 매수세가 강해졌는지 약해졌는지 봅니다.',
   'QQQ MACD Histogram (D/D-1/D-2)': 'QQQ의 MACD 히스토그램 3일 흐름입니다. D < D-1 < D-2이면 상승 힘이 2일 연속 둔화된 것으로 봅니다.',
   'QQQ 60거래일 최저 이격도': '최근 60거래일 동안 QQQ가 200일선 대비 가장 낮았던 위치입니다. -5% 이하 이력이 있으면 급락 후 회복장 후보로 봅니다.',
-  'QQQ 시장 국면': '최근 60거래일 최저 이격도와 현재 200일선 이격도로 회복장인지 비회복장인지 나눕니다. 이 국면에 따라 매수 차단선이 달라집니다.',
+  'QQQ 매수 차단 기준': '현재 QQQ 이격도와 비교하는 신규·재진입 차단선입니다. 급락 후 회복장은 +18%, 비회복장은 +9%를 씁니다.',
   'QQQ 고점 청산 기준': '현재 시장 국면에서 쓰는 동적 고점 청산 기준입니다. 비회복장은 더 보수적이고, 급락 후 회복장은 상단을 더 넓게 봅니다.',
   '나스닥 (QQQ, 당일)': '기술주 대표 지수의 현재 위치를 봅니다. 개별 종목 신호의 시장 배경입니다.',
   '나스닥 (QQQ, 20일 이동평균선)': '단기 평균선입니다. QQQ가 이 선 위면 단기 흐름이 비교적 양호합니다.',
@@ -2176,7 +2176,6 @@ function TechnicalAnalysisPage({
   const dollarSnapshot = marketSnapshot.find(([label]) => label === '달러 인덱스')?.[1] ?? '98.21'
   const qqqDailyRsi = marketSnapshot.find(([label]) => label === 'QQQ 일봉 RSI (14, 당일)')?.[1] ?? '82.79'
   const qqqDailyRsiPrev = marketSnapshot.find(([label]) => label === 'QQQ 일봉 RSI (14, 전날)')?.[1] ?? '82.78'
-  const qqqRegime = marketSnapshot.find(([label]) => label === 'QQQ 시장 국면')?.[1]
   const qqqPrice = marketSnapshot.find(([label]) => label === '나스닥 (QQQ, 당일)')?.[1] ?? '674.18'
   const qqqMa200 = marketSnapshot.find(([label]) => label === '나스닥 (QQQ, 200일 이동평균선)')?.[1] ?? '604.08'
   const qqqPriceValue = parsePriceValue(qqqPrice)
@@ -2205,7 +2204,6 @@ function TechnicalAnalysisPage({
           <strong>VIX (변동성지수) {vixSnapshot}</strong>
           {fearGreedSnapshot && <strong>CNN 공포·탐욕지수 {fearGreedSnapshot}</strong>}
           <strong>{qqqSummary}</strong>
-          {qqqRegime && <strong>QQQ 국면 {qqqRegime}</strong>}
           <strong>미국 10년물 금리 {tnxSnapshot}</strong>
           <strong>달러 인덱스 {dollarSnapshot}</strong>
           <strong>QQQ 일봉 RSI 당일 {qqqDailyRsi} / 전날 {qqqDailyRsiPrev}</strong>

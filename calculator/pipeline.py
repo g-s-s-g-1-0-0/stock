@@ -43,16 +43,6 @@ CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graph
 FAIR_PRICE_UNAVAILABLE_LABEL = "적자 상태라 판단 불가"
 MAX_REFRESH_UNIVERSE = int(os.environ.get("MAX_REFRESH_UNIVERSE", "200"))
 
-DEFAULT_UNIVERSE = [
-    {"ticker": "005930", "name": "삼성전자", "market": "KR"},
-    {"ticker": "NVDA", "name": "NVIDIA", "market": "US"},
-    {"ticker": "AAPL", "name": "Apple", "market": "US"},
-    {"ticker": "TSLA", "name": "Tesla", "market": "US"},
-    {"ticker": "035420", "name": "NAVER", "market": "KR"},
-    {"ticker": "042700", "name": "한미반도체", "market": "KR"},
-]
-
-
 def now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
@@ -100,13 +90,13 @@ def read_cache(name: str) -> dict[str, Any]:
 def read_universe() -> list[dict[str, str]]:
     path = ROOT_DIR / "data" / "universe.json"
     if not path.exists():
-        return DEFAULT_UNIVERSE
+        return []
     try:
         loaded = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
-        return DEFAULT_UNIVERSE
+        return []
     if not isinstance(loaded, list):
-        return DEFAULT_UNIVERSE
+        return []
     return loaded[:MAX_REFRESH_UNIVERSE]
 
 
@@ -289,7 +279,7 @@ def build_market_snapshot() -> tuple[list[list[str]], dict[str, Any], float | No
                 fmt_signed_number(qqq_state.get("macdHistD2")),
             ])],
             ["QQQ 60거래일 최저 이격도", fmt_signed_percent(qqq_state.get("recent60MinPremiumPercent"))],
-            ["QQQ 시장 국면", f"{qqq_state.get('regimeLabel', '-')} · 매수 차단 > {fmt_signed_percent(qqq_state.get('buyBlockMax'))}"],
+            ["QQQ 매수 차단 기준", f">{fmt_signed_percent(qqq_state.get('buyBlockMax'))}"],
             ["QQQ 고점 청산 기준", (
                 f">{fmt_signed_percent(qqq_state.get('peakDirectDist'))}"
                 f" 또는 >{fmt_signed_percent(qqq_state.get('peakConfirmDist'))}+RSI/MACD 둔화"
@@ -562,6 +552,17 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
     existing = read_cache("technical")
     existing_meta = existing.get("meta", {}) if isinstance(existing, dict) else {}
     existing_rows = dict(existing.get("rows", {})) if isinstance(existing.get("rows"), dict) else {}
+    source_universe = (universe if universe is not None else read_universe())[:MAX_REFRESH_UNIVERSE]
+    if not source_universe and existing_rows:
+        return {
+            **existing,
+            "meta": {
+                **existing_meta,
+                "kind": "technical",
+                "updatedAt": now_iso(),
+                "failedReason": "refresh universe is empty; preserved existing technical cache",
+            },
+        }
     rows: dict[str, dict[str, str]] = {}
     valuation_rows = read_cache("valuation").get("rows", {})
     errors: list[dict[str, str]] = []
@@ -575,7 +576,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
         market_snapshot = [["시장 주요 이벤트", "당분간 없음"]]
         errors.append({"ticker": "CNN_FEAR_GREED", "error": str(exc)})
 
-    for stock in (universe or read_universe())[:MAX_REFRESH_UNIVERSE]:
+    for stock in source_universe:
         try:
             metric = valuation_rows.get(stock["ticker"], {})
             earnings_date = metric.get("earningsDate", "-") if isinstance(metric, dict) else "-"
@@ -617,11 +618,22 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
     existing = read_cache("valuation")
     existing_meta = existing.get("meta", {}) if isinstance(existing, dict) else {}
     existing_rows = dict(existing.get("rows", {})) if isinstance(existing.get("rows"), dict) else {}
+    source_universe = (universe if universe is not None else read_universe())[:MAX_REFRESH_UNIVERSE]
+    if not source_universe and existing_rows:
+        return {
+            **existing,
+            "meta": {
+                **existing_meta,
+                "kind": "valuation",
+                "updatedAt": now_iso(),
+                "failedReason": "refresh universe is empty; preserved existing valuation cache",
+            },
+        }
     rows: dict[str, dict[str, str]] = {}
     errors: list[dict[str, str]] = []
     successful_rows = 0
     refreshed_at = now_iso()
-    for stock in (universe or read_universe())[:MAX_REFRESH_UNIVERSE]:
+    for stock in source_universe:
         try:
             values = fetch_valuation(stock["ticker"])
             metric = dict(zip(columns, values))
@@ -671,6 +683,19 @@ def build_stock_search_cache() -> dict[str, Any]:
 
 
 def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str, Any]:
+    existing = read_cache("stocks")
+    existing_rows = existing.get("rows", []) if isinstance(existing, dict) else []
+    source_universe = universe if universe is not None else read_universe()
+    if not source_universe and existing_rows:
+        return {
+            **existing,
+            "meta": {
+                **(existing.get("meta", {}) if isinstance(existing, dict) else {}),
+                "kind": "stocks",
+                "updatedAt": now_iso(),
+                "failedReason": "refresh universe is empty; preserved existing stocks cache",
+            },
+        }
     technical_rows = read_cache("technical").get("rows", {})
     valuation_rows = read_cache("valuation").get("rows", {})
     search_rows_by_ticker = {
@@ -679,7 +704,7 @@ def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str
         if isinstance(row, dict)
     }
     rows_by_ticker: dict[str, dict[str, Any]] = {}
-    for stock in universe or read_universe():
+    for stock in source_universe:
         ticker = str(stock.get("ticker", "")).strip().upper()
         if ticker:
             rows_by_ticker[ticker] = {**search_rows_by_ticker.get(ticker, {}), **stock, "ticker": ticker}

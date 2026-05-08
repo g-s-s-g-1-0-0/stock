@@ -158,7 +158,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             run("valuation", universe=universe)
             run("technical", universe=universe)
-            run("stocks")
+            run("stocks", universe=universe)
         except Exception as exc:  # noqa: BLE001 - local refresh should report failures to the UI
             append_api_log("refresh-data", "failure", str(exc), {"tickers": [stock["ticker"] for stock in universe]})
             self._send_json(500, {"error": str(exc)})

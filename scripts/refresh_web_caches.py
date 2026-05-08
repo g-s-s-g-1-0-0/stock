@@ -12,7 +12,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from calculator.pipeline import read_search_universe, read_universe, run
+from calculator.pipeline import read_search_universe, run
 
 VALID_TASKS = {"valuation", "technical", "stocks", "market-trends", "market-events"}
 
@@ -68,11 +68,7 @@ def universe_for_tickers(tickers: list[str]) -> list[dict[str, str]]:
             if key in row
         })
 
-    if universe:
-        return universe
-
-    # Fallback keeps local/dev refresh useful before Supabase is configured.
-    return read_universe()
+    return universe
 
 
 def parse_tasks(argv: list[str]) -> list[str]:
