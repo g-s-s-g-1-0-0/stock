@@ -1,42 +1,14 @@
 {
   "meta": {
     "kind": "trade-logs",
-    "schedule": "auto",
-    "updatedAt": "2026-05-09T17:18:44.978468Z",
-    "lastSuccessfulRun": "2026-05-09T17:18:44.978479Z",
+    "schedule": "manual-reset",
+    "updatedAt": "2026-05-09T17:26:05.612178Z",
+    "lastSuccessfulRun": "2026-05-09T17:26:05.612178Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
     "closedTrades": 0,
-    "nasdaqPeakLiquidation": false
+    "nasdaqPeakLiquidation": false,
+    "resetAt": "2026-05-09T17:26:05.612178Z"
   },
-  "rows": [
-    {
-      "ticker": "375500",
-      "name": "DL이앤씨",
-      "market": "KR",
-      "currentPrice": "₩95,400",
-      "strategy": "E. 200일선 상방 & 스퀴즈 저점",
-      "buyDate": "2026.05.09",
-      "buyPrice": "₩95,400",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
-      "holdingDays": "-",
-      "status": "보유 중"
-    },
-    {
-      "ticker": "MP",
-      "name": "MP Materials Corp.",
-      "market": "US",
-      "currentPrice": "$67.43",
-      "strategy": "D. 200일선 상방 & 상승 흐름 강화",
-      "buyDate": "2026.05.09",
-      "buyPrice": "$67.43",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
-      "holdingDays": "-",
-      "status": "보유 중"
-    }
-  ]
+  "rows": []
 }

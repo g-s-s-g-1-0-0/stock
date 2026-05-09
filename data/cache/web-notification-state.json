@@ -1,16 +1,13 @@
 {
   "nasdaqPeak": {
-    "resetAt": "2026-05-09T04:52:00+00:00",
-    "sent": false,
-    "snapshot": {
-      "currentPrice": 694.9400024414062,
-      "dailyRsi": 78.78,
-      "dailyRsiPrev": 81.56,
-      "ma200": 606.5682495117187,
-      "premiumPercent": 14.569135954746383,
-      "threshold": 691.4878044433592,
-      "triggered": true,
-      "weeklyRsi": 72.07
-    }
+    "resetAt": "2026-05-09T17:26:05.612178Z",
+    "sent": false
+  },
+  "runtimeReset": {
+    "createdAt": "2026-05-09T17:26:05.612178Z",
+    "opinionBaseline": "관망",
+    "reason": "manual runtime state reset after live smoke tests",
+    "resetApiLogs": true,
+    "seedNextRefresh": true
   }
 }

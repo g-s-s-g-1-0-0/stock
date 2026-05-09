@@ -25,6 +25,7 @@ PREVIOUS_STOCKS_PATH = Path(
 )
 TRADE_LOG_CACHE_PATH = ROOT_DIR / "data" / "cache" / "trade-logs.json"
 TRADE_LOG_PUBLIC_PATH = API_DIR / "trade-logs.json"
+RUNTIME_STATE_PATH = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
 MAX_LOG_ROWS = 80
 VALID_TASKS = {"value-analysis", "technical-analysis", "market-trends"}
 KST = ZoneInfo("Asia/Seoul")
@@ -85,6 +86,20 @@ def clean_old_logs() -> None:
     except (HTTPError, URLError, TimeoutError) as error:
         # Cleanup should never block recording the current refresh result.
         print(f"[api_logs] old-log cleanup failed; continuing: {error}")
+
+
+def runtime_reset_requested() -> bool:
+    state = load_json(RUNTIME_STATE_PATH, {})
+    reset = state.get("runtimeReset") if isinstance(state, dict) else None
+    return isinstance(reset, dict) and reset.get("seedNextRefresh") is True
+
+
+def reset_api_logs() -> None:
+    try:
+        supabase_request("/rest/v1/api_logs?created_at=not.is.null", method="DELETE")
+        print("[api_logs] runtime reset cleared existing operation logs.")
+    except (HTTPError, URLError, TimeoutError) as error:
+        print(f"[api_logs] runtime reset cleanup failed; continuing: {error}")
 
 
 def load_watchlist_tickers(stocks: list[dict[str, Any]]) -> list[str]:
@@ -371,6 +386,7 @@ def update_trade_logs(
     today = kst_trade_date()
     today_date = parse_trade_date(today) or datetime.now(timezone.utc).astimezone(KST).date()
     nasdaq_peak_alert = bool((qqq_market_state or {}).get("peakTriggered"))
+    seed_after_reset = runtime_reset_requested()
     appended = 0
     closed = 0
 
@@ -442,7 +458,7 @@ def update_trade_logs(
                 if not restore_source_trades:
                     continue
             closed_trade = latest_closed_trade(trades, ticker, code)
-            if open_count == 0 and closed_trade is None and previous_opinion == "매수":
+            if not seed_after_reset and open_count == 0 and closed_trade is None and previous_opinion == "매수":
                 continue
             if not sell_reentry_allowed(closed_trade, current_price, today_date):
                 continue
@@ -707,7 +723,10 @@ def main() -> None:
     if not supabase_url() or not service_key():
         print("[api_logs] Supabase service credentials are missing; skipped.")
         return
-    clean_old_logs()
+    if runtime_reset_requested():
+        reset_api_logs()
+    else:
+        clean_old_logs()
     logs = build_logs(parse_log_tasks(sys.argv[1:]))
     if not logs:
         print("[api_logs] no matching operation-log tasks; skipped.")

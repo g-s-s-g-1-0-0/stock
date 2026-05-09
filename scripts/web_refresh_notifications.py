@@ -104,6 +104,22 @@ def write_json(path: Path, payload: Any) -> None:
     )
 
 
+def runtime_reset_state() -> dict[str, Any]:
+    state = read_json(NOTIFICATION_STATE)
+    reset = state.get("runtimeReset") if isinstance(state, dict) else None
+    if isinstance(reset, dict) and reset.get("seedNextRefresh") is True:
+        return reset
+    return {}
+
+
+def clear_runtime_reset() -> None:
+    state = read_json(NOTIFICATION_STATE)
+    if not isinstance(state, dict) or "runtimeReset" not in state:
+        return
+    state.pop("runtimeReset", None)
+    write_json(NOTIFICATION_STATE, state)
+
+
 def now_labels() -> tuple[str, str]:
     now = datetime.now().astimezone()
     return (
@@ -192,10 +208,14 @@ def opinion_changes(previous_path: Path, current_path: Path, technical_path: Pat
     previous = stock_rows_by_ticker(previous_path)
     current = stock_rows_by_ticker(current_path)
     technical_rows = technical_rows_by_ticker(technical_path)
+    reset = runtime_reset_state()
+    forced_baseline = str(reset.get("opinionBaseline") or "관망").strip()
     changes: list[dict[str, Any]] = []
 
     for ticker, current_stock in current.items():
         previous_stock = previous.get(ticker)
+        if reset and forced_baseline in VALID_OPINIONS:
+            previous_stock = {**current_stock, "opinion": forced_baseline}
         if not previous_stock:
             continue
         old_opinion = str(previous_stock.get("opinion") or "").strip()
@@ -1012,9 +1032,12 @@ def send_opinion_notifications(
     previous: Path,
     current: Path,
 ) -> int:
+    reset_active = bool(runtime_reset_state())
     changes = opinion_changes(previous, current, DEFAULT_TECHNICAL)
     if not changes:
         print("No opinion changes.")
+        if reset_active:
+            clear_runtime_reset()
         return 0
 
     recipients = [
@@ -1024,6 +1047,8 @@ def send_opinion_notifications(
     ]
     if not recipients:
         print("No recipients for opinionChangeEmail.")
+        if reset_active:
+            clear_runtime_reset()
         return 0
 
     subject = "투자의견 변경 알림 (" + ", ".join(change["ticker"] for change in changes[:8]) + ")"
@@ -1032,6 +1057,8 @@ def send_opinion_notifications(
     for recipient in recipients:
         send_email(recipient.email, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
         sent += 1
+    if reset_active:
+        clear_runtime_reset()
     print(f"Sent opinion notifications: {sent}")
     return sent
 
