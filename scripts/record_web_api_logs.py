@@ -420,6 +420,7 @@ def update_trade_logs(
         if not ticker:
             continue
         current_opinion = str(stock.get("opinion") or "").strip()
+        previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "").strip()
         row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
         if not isinstance(row, dict):
             continue
@@ -429,15 +430,23 @@ def update_trade_logs(
         for code in entry_signal_codes(row):
             slot_key = (ticker, code)
             open_count = current_open_counts.get(slot_key, 0)
+            restore_source_trades: list[dict[str, Any]] = []
             if open_count >= MAX_OPEN_PER_STRATEGY:
                 continue
             if open_count > 0:
-                if not any(hold_restore_allowed(trade, current_price, today_date) for trade in current_open_trades.get(slot_key, [])):
+                restore_source_trades = [
+                    trade
+                    for trade in current_open_trades.get(slot_key, [])
+                    if hold_restore_allowed(trade, current_price, today_date)
+                ]
+                if not restore_source_trades:
                     continue
             closed_trade = latest_closed_trade(trades, ticker, code)
+            if open_count == 0 and closed_trade is None and previous_opinion == "매수":
+                continue
             if not sell_reentry_allowed(closed_trade, current_price, today_date):
                 continue
-            trades.append({
+            new_trade = {
                 "slotId": next_slot_id(ticker, code, trades, today),
                 "ticker": ticker,
                 "name": stock.get("name") or ticker,
@@ -451,9 +460,12 @@ def update_trade_logs(
                 "returnPct": 0,
                 "holdingDays": "-",
                 "status": "보유 중",
-            })
+            }
+            trades.append(new_trade)
+            for trade in restore_source_trades:
+                trade.pop("restoreWatchDate", None)
             current_open_counts[slot_key] = open_count + 1
-            current_open_trades.setdefault(slot_key, []).append(trades[-1])
+            current_open_trades.setdefault(slot_key, []).append(new_trade)
             appended += 1
 
     deduped = list({trade_key(trade): trade for trade in trades}.values())
