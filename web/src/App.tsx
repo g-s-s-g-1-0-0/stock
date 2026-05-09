@@ -1,5 +1,5 @@
 import './App.css'
-import { Fragment, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, type FormEvent, type ReactNode, type WheelEvent, useEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, type AppData, type RuntimeMeta } from './api'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
@@ -1161,6 +1161,17 @@ function stockSearchRank(stock: Stock, normalizedQuery: string) {
   return 99
 }
 
+function preventVerticalScrollBounce(event: WheelEvent<HTMLElement>) {
+  const container = event.currentTarget
+  if (Math.abs(event.deltaY) < Math.abs(event.deltaX) || container.scrollHeight <= container.clientHeight) return
+
+  const isAtTop = container.scrollTop <= 0
+  const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight
+  if ((event.deltaY < 0 && isAtTop) || (event.deltaY > 0 && isAtBottom)) {
+    event.preventDefault()
+  }
+}
+
 function statusClass(value: Valuation | Opinion | TradeStatus) {
   if (value === '저평가' || value === '매수' || value === '익절') return 'positive'
   if (value === '고평가' || value === '매도' || value === '손절' || value === '실패 익절') return 'negative'
@@ -2101,7 +2112,7 @@ function ValueAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet">
+        <div className="sheet-wrap value-analysis-sheet" onWheel={preventVerticalScrollBounce}>
           <table className="sheet-table value-analysis-table">
           <thead>
             <tr>
@@ -2279,7 +2290,7 @@ function TechnicalAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet">
+        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet" onWheel={preventVerticalScrollBounce}>
           <table className="sheet-table value-analysis-table technical-analysis-table">
             <thead>
               <tr>
@@ -3306,6 +3317,8 @@ function App() {
   const [watchlistSortSettings, setWatchlistSortSettings] = useState<WatchlistSortSettings>(() => readStoredUserSettings().watchlistSort)
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(() => readStoredUserSettings().notificationPreferences)
   const [isWatchlistSortOpen, setIsWatchlistSortOpen] = useState(false)
+  const [isOperatorImportOpen, setIsOperatorImportOpen] = useState(false)
+  const [operatorImportTickers, setOperatorImportTickers] = useState<string[]>([])
   const [apiLogs, setApiLogs] = useState<ApiLog[]>(() => readStoredApiLogs())
   const [isLoadingApiLogs, setIsLoadingApiLogs] = useState(false)
   const [activePage, setActivePage] = useState<ActivePage>(() => readInitialActivePage())
@@ -3902,7 +3915,8 @@ function App() {
     }
   }, [isAdminUser, userSession?.id])
 
-  const effectiveViewMode = isAdminUser ? 'operator' : viewMode
+  const canAdminUsePersonalMode = isAdminUser && canUseAccountSwitch
+  const effectiveViewMode = isAdminUser && !canAdminUsePersonalMode ? 'operator' : viewMode
   const isOperatorDataMode = effectiveViewMode === 'operator'
   const scopedTrades = isOperatorDataMode ? systemTradeLogs : personalTradeLogs
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
@@ -4021,6 +4035,11 @@ function App() {
         ? current.filter((item) => item !== ticker)
         : [...current, ticker]
     ))
+  }
+
+  const closeOperatorImportModal = () => {
+    setIsOperatorImportOpen(false)
+    setOperatorImportTickers([])
   }
 
   const toggleSelectedHoldingTrade = (key: string) => {
@@ -4524,6 +4543,49 @@ function App() {
   const canEditCurrentWatchlist = effectiveViewMode === 'personal' || isAdminUser
   const isCurrentWatchlistEmpty = tableStocks.length === 0
   const isCurrentWatchlistFull = canEditCurrentWatchlist && currentWatchlistTickers.length >= MAX_WATCHLIST_ITEMS
+  const personalRemainingSlots = Math.max(0, MAX_WATCHLIST_ITEMS - watchlist.length)
+  const operatorImportCandidates = useMemo(
+    () => operatorWatchlist
+      .filter((ticker) => !watchlist.includes(ticker))
+      .map((ticker) => apiStocks.find((stock) => stock.ticker === ticker) ?? apiSearchStocks.find((stock) => stock.ticker === ticker))
+      .filter((stock): stock is Stock => Boolean(stock)),
+    [apiSearchStocks, apiStocks, operatorWatchlist, watchlist],
+  )
+  const isOperatorImportSelectionFull = operatorImportTickers.length >= personalRemainingSlots
+  const canOpenOperatorImport = Boolean(userSession) && effectiveViewMode === 'personal' && isAddingStock
+  const toggleOperatorImportTicker = (ticker: string) => {
+    setOperatorImportTickers((current) => {
+      if (current.includes(ticker)) return current.filter((item) => item !== ticker)
+      if (current.length >= personalRemainingSlots) return current
+      return [...current, ticker]
+    })
+  }
+  const importOperatorStocks = async () => {
+    if (!userSession || operatorImportTickers.length === 0 || personalRemainingSlots <= 0) return
+
+    const tickersToImport = operatorImportTickers
+      .filter((ticker) => !watchlist.includes(ticker))
+      .slice(0, personalRemainingSlots)
+    if (tickersToImport.length === 0) {
+      closeOperatorImportModal()
+      return
+    }
+
+    const nextWatchlist = [...watchlist, ...tickersToImport]
+    setWatchlist(nextWatchlist)
+    await persistWatchlist('personal', nextWatchlist)
+
+    const importedStocks = tickersToImport
+      .map((ticker) => operatorImportCandidates.find((stock) => stock.ticker === ticker))
+      .filter((stock): stock is Stock => Boolean(stock))
+    if (importedStocks.length > 0) {
+      setApiStocks((currentStocks) => {
+        const currentTickers = new Set(currentStocks.map((stock) => stock.ticker))
+        return [...currentStocks, ...importedStocks.filter((stock) => !currentTickers.has(stock.ticker))]
+      })
+    }
+    closeOperatorImportModal()
+  }
   const megaTrendStatus = (trade: TradeLog) => {
     const stock = apiStocks.find((candidate) => candidate.ticker === trade.ticker)
     const industry = primaryIndustryLabel(stock?.industry)
@@ -4588,6 +4650,74 @@ function App() {
   return (
     <main className={`app-shell ${showViewModeHint ? 'onboarding-active' : ''}`}>
       {showViewModeHint && <button className="view-mode-scrim" type="button" aria-label="안내 닫기" onClick={markViewModeHintSeen} />}
+      {isOperatorImportOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={closeOperatorImportModal}>
+          <section
+            aria-labelledby="operator-import-title"
+            aria-modal="true"
+            className="confirm-modal operator-import-modal"
+            role="dialog"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={closeOperatorImportModal}>×</button>
+            <h3 id="operator-import-title">공수성가 종목 가져오기</h3>
+            <p>
+              공수성가가 현재 보고 있는 종목 중 내 관심종목에 없는 종목만 가져올 수 있습니다.
+              남은 슬롯은 {personalRemainingSlots}개입니다.
+            </p>
+            <div className="operator-import-status">
+              <strong>{operatorImportTickers.length}개 선택</strong>
+              <span>
+                {personalRemainingSlots > 0
+                  ? `${personalRemainingSlots}개까지 선택할 수 있어요. 한도에 도달하면 기존 관심종목을 제거한 뒤 다시 추가해 주세요.`
+                  : '관심종목 50개 한도에 도달했습니다. 기존 종목을 제거한 뒤 다시 가져올 수 있습니다.'}
+              </span>
+            </div>
+            <div className="operator-import-list">
+              {operatorImportCandidates.length > 0 ? operatorImportCandidates.map((stock) => {
+                const isChecked = operatorImportTickers.includes(stock.ticker)
+                const isDisabled = !isChecked && isOperatorImportSelectionFull
+
+                return (
+                  <label className={`operator-import-option ${isDisabled ? 'disabled' : ''}`} key={stock.ticker}>
+                    <input
+                      checked={isChecked}
+                      disabled={isDisabled}
+                      type="checkbox"
+                      onChange={() => toggleOperatorImportTicker(stock.ticker)}
+                    />
+                    <span className="market-flag" aria-hidden="true">{marketFlag(stock.market)}</span>
+                    <span>
+                      <strong>{stock.name}</strong>
+                      <small>{stock.ticker} · {displayIndustryLabel(stock.industry)}</small>
+                    </span>
+                  </label>
+                )
+              }) : (
+                <div className="operator-import-empty">
+                  가져올 수 있는 공수성가 종목이 없습니다. 이미 모두 추가했거나 공수성가 목록을 불러오는 중입니다.
+                </div>
+              )}
+            </div>
+            {isOperatorImportSelectionFull && operatorImportCandidates.length > operatorImportTickers.length && (
+              <div className="operator-import-limit-message">
+                남은 {personalRemainingSlots}개를 모두 선택했습니다. 더 가져오려면 기존 관심종목을 제거한 다음 다시 추가해 주세요.
+              </div>
+            )}
+            <div className="modal-actions">
+              <button className="modal-cancel" type="button" onClick={closeOperatorImportModal}>취소</button>
+              <button
+                className="modal-confirm"
+                disabled={operatorImportTickers.length === 0}
+                type="button"
+                onClick={() => void importOperatorStocks()}
+              >
+                선택한 종목 가져오기
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       <header className={`app-header ${showViewModeHint ? 'onboarding-header' : ''}`}>
         <div className="brand">
           <img alt="공수성가 로고" className="brand-logo" src="/gongsu-logo.png" />
@@ -4630,8 +4760,8 @@ function App() {
         <div className={`segmented-tabs global-tabs view-mode-tabs ${showViewModeHint ? 'view-mode-tabs-highlight' : ''}`} aria-label="화면 기준">
           <button
             className={effectiveViewMode === 'personal' ? 'active' : ''}
-            disabled={isAdminUser}
-            title={isAdminUser ? '어드민 계정은 공수성가 탭만 사용할 수 있습니다.' : undefined}
+            disabled={isAdminUser && !canAdminUsePersonalMode}
+            title={isAdminUser && !canAdminUsePersonalMode ? '어드민 계정은 공수성가 탭만 사용할 수 있습니다.' : undefined}
             type="button"
             onClick={() => changeViewMode('personal')}
           >
@@ -4833,6 +4963,15 @@ function App() {
                     {selectedTickers.length > 0 && (
                       <button className="remove-selected-button" type="button" onClick={removeSelectedStocks}>
                         제거
+                      </button>
+                    )}
+                    {canOpenOperatorImport && (
+                      <button
+                        className="import-operator-button"
+                        type="button"
+                        onClick={() => setIsOperatorImportOpen(true)}
+                      >
+                        공수성가 종목 가져오기
                       </button>
                     )}
                     <button
