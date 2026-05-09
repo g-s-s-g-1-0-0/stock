@@ -915,7 +915,8 @@
 }
 
 .value-analysis-panel {
-  min-height: calc(100svh - 104px);
+  height: calc(100svh - 104px);
+  min-height: 520px;
 }
 
 .value-analysis-heading {
@@ -935,10 +936,9 @@
 }
 
 .value-analysis-sheet {
-  flex: none;
-  height: auto;
-  overflow-x: auto;
-  overflow-y: visible;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .value-analysis-table {
@@ -2886,12 +2886,6 @@
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.technical-analysis-sheet {
-  height: auto;
-  overflow-x: auto;
-  overflow-y: visible;
 }
 
 .admin-event-toolbar {
