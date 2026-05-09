@@ -32,7 +32,6 @@ from datetime import timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -817,88 +816,28 @@ def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuatio
 def send_opinion_notifications(
     previous: Path,
     current: Path,
-    *,
-    recipients_override: list[Recipient] | None = None,
-    subject_prefix: str = "",
 ) -> int:
     changes = opinion_changes(previous, current)
     if not changes:
         print("No opinion changes.")
         return 0
 
-    recipients = recipients_override
-    if recipients is None:
-        recipients = [
-            recipient
-            for recipient in load_recipients()
-            if enabled(recipient, "opinionChangeEmail")
-        ]
+    recipients = [
+        recipient
+        for recipient in load_recipients()
+        if enabled(recipient, "opinionChangeEmail")
+    ]
     if not recipients:
         print("No recipients for opinionChangeEmail.")
         return 0
 
-    subject = subject_prefix + "투자의견 변경 알림 (" + ", ".join(change["ticker"] for change in changes[:8]) + ")"
+    subject = "투자의견 변경 알림 (" + ", ".join(change["ticker"] for change in changes[:8]) + ")"
     body = opinion_email_body(changes)
     sent = 0
     for recipient in recipients:
         send_email(recipient.email, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
         sent += 1
     print(f"Sent opinion notifications: {sent}")
-    return sent
-
-
-def smoke_test_recipients() -> list[Recipient]:
-    recipients = fallback_admin_recipients() or [
-        recipient
-        for recipient in load_recipients()
-        if recipient.is_admin
-    ]
-    return dedupe_recipients(recipients)
-
-
-def send_opinion_smoke_test() -> int:
-    recipients = smoke_test_recipients()
-    if not recipients:
-        raise RuntimeError("No admin recipients for opinion smoke test.")
-
-    with TemporaryDirectory() as temp_dir:
-        previous = Path(temp_dir) / "stocks.before-refresh.json"
-        current = Path(temp_dir) / "stocks.json"
-        previous.write_text(
-            json.dumps({
-                "rows": [{
-                    "ticker": "SMOKE",
-                    "name": "Workflow Smoke Test",
-                    "opinion": "관망",
-                    "currentPrice": "-",
-                    "valuation": "-",
-                    "industry": "운영 검증",
-                    "strategies": [],
-                }]
-            }),
-            encoding="utf-8",
-        )
-        current.write_text(
-            json.dumps({
-                "rows": [{
-                    "ticker": "SMOKE",
-                    "name": "Workflow Smoke Test",
-                    "opinion": "매수",
-                    "currentPrice": "-",
-                    "valuation": "-",
-                    "industry": "운영 검증",
-                    "strategies": ["GitHub Actions live smoke test"],
-                }]
-            }),
-            encoding="utf-8",
-        )
-        sent = send_opinion_notifications(
-            previous,
-            current,
-            recipients_override=recipients,
-            subject_prefix="[테스트] ",
-        )
-    print(f"Sent opinion smoke test notifications: {sent}")
     return sent
 
 
@@ -938,7 +877,6 @@ def main() -> int:
 
     subparsers.add_parser("nasdaq-peak")
     subparsers.add_parser("weekly-trend")
-    subparsers.add_parser("smoke-opinion")
 
     failure_parser = subparsers.add_parser("admin-failure")
     failure_parser.add_argument("--message", default="자동 업데이트 작업이 실패했습니다.")
@@ -955,9 +893,6 @@ def main() -> int:
         return 0
     if args.command == "weekly-trend":
         send_weekly_trend_notifications()
-        return 0
-    if args.command == "smoke-opinion":
-        send_opinion_smoke_test()
         return 0
     if args.command == "admin-failure":
         send_admin_failure(args.message)

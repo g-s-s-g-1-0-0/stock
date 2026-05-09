@@ -303,6 +303,11 @@ function notificationSettingsDeepLinkMessage() {
   return ''
 }
 
+function hasNotificationSettingsDeepLink() {
+  const params = activePageHashParams()
+  return params.get('settings') === 'notifications' || params.get('notification') === 'unsubscribed'
+}
+
 function userSettingsStorageKey(session: UserSession | null = null) {
   return `${USER_SETTINGS_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
 }
@@ -3747,7 +3752,10 @@ function App() {
 
       const nextSession = sessionFromSupabaseUser(user)
       setUserSession(nextSession)
-      if (!keepLoginModal) {
+      if (hasNotificationSettingsDeepLink()) {
+        setIsLoginOpen(true)
+        setAuthMode('login')
+      } else if (!keepLoginModal) {
         setIsLoginOpen(false)
         setAuthMode('login')
       }
@@ -4451,6 +4459,11 @@ function App() {
     const syncPageFromHash = () => {
       const page = activePageFromHash()
       if (page) setActivePage(page)
+      if (hasNotificationSettingsDeepLink()) {
+        setAuthMode('login')
+        setAuthInfoMessage(notificationSettingsDeepLinkMessage())
+        setIsLoginOpen(true)
+      }
     }
     window.addEventListener('hashchange', syncPageFromHash)
     return () => window.removeEventListener('hashchange', syncPageFromHash)

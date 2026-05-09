@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import json
-import os
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -38,18 +37,6 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertLess(commit_state_index, failure_index)
         self.assertIn("git add data/cache web/public/api", workflow)
         self.assertIn('git commit -m "Update scheduled web data caches"', workflow)
-
-    def test_workflow_has_admin_only_live_notification_smoke_test(self) -> None:
-        workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
-
-        smoke_index = workflow.index("- name: Send notification smoke test email")
-        commit_state_index = workflow.index("- name: Commit refreshed caches and notification state")
-
-        self.assertIn("notification_smoke_test:", workflow)
-        self.assertIn("NOTIFICATION_SMOKE_TEST", workflow)
-        self.assertIn("python scripts/web_refresh_notifications.py smoke-opinion", workflow)
-        self.assertLess(smoke_index, commit_state_index)
-
 
 class WebRefreshNotificationsTest(unittest.TestCase):
     def setUp(self) -> None:
@@ -116,29 +103,6 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("user@example.com", sent_messages[0][0])
         self.assertEqual("투자의견 변경 알림 (MP)", sent_messages[0][1])
         self.assertIn("MP Materials", sent_messages[0][2])
-        self.assertIn("관망", sent_messages[0][2])
-        self.assertIn("매수", sent_messages[0][2])
-
-    def test_smoke_opinion_uses_admin_recipient_and_real_email_path(self) -> None:
-        sent_messages: list[tuple[str, str, str]] = []
-        original_admin_emails = os.environ.get("ADMIN_EMAILS")
-        original_send_email = self.notifications.send_email
-        os.environ["ADMIN_EMAILS"] = "admin@example.com"
-        self.notifications.send_email = lambda email, subject, body: sent_messages.append((email, subject, body))
-
-        try:
-            sent = self.notifications.send_opinion_smoke_test()
-        finally:
-            if original_admin_emails is None:
-                os.environ.pop("ADMIN_EMAILS", None)
-            else:
-                os.environ["ADMIN_EMAILS"] = original_admin_emails
-            self.notifications.send_email = original_send_email
-
-        self.assertEqual(1, sent)
-        self.assertEqual("admin@example.com", sent_messages[0][0])
-        self.assertEqual("[테스트] 투자의견 변경 알림 (SMOKE)", sent_messages[0][1])
-        self.assertIn("Workflow Smoke Test", sent_messages[0][2])
         self.assertIn("관망", sent_messages[0][2])
         self.assertIn("매수", sent_messages[0][2])
 
