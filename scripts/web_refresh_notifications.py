@@ -178,7 +178,9 @@ def trade_key(row: dict[str, Any]) -> tuple[str, str, str]:
 def display_stock(row: dict[str, Any], ticker: str | None = None) -> str:
     symbol = str(ticker or row.get("ticker") or "").strip().upper()
     name = str(row.get("name") or symbol or "-").strip()
-    return f"{name} ({symbol})" if symbol and symbol not in name else name
+    if not symbol or name == symbol or name.upper().endswith(f"({symbol})"):
+        return name
+    return f"{name} ({symbol})"
 
 
 def opinion_groups(current_path: Path, trade_logs_path: Path = DEFAULT_CURRENT_TRADE_LOGS) -> tuple[list[str], list[str], list[str]]:
@@ -578,14 +580,53 @@ def strategy_code(value: Any) -> str:
     return text[:1] if text[:1] in {"A", "B", "C", "D", "E", "F"} else ""
 
 
-def buy_reason(stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
-    strategy = first_text(
-        stock.get("strategies"),
-        technical_row.get("진입 전략"),
-        technical_row.get("entryStrategy"),
-        technical_row.get("entrySignals"),
+STRATEGY_LABELS = {
+    "A": "A. 200일선 상방 & 모멘텀 재가속",
+    "B": "B. 200일선 하방 & 공황 저점",
+    "C": "C. 200일선 상방 & 스퀴즈 거래량 돌파",
+    "D": "D. 200일선 상방 & 상승 흐름 강화",
+    "E": "E. 200일선 상방 & 스퀴즈 저점",
+    "F": "F. 200일선 상방 & BB 극단 저점",
+}
+
+
+def strategy_values(value: Any) -> list[str]:
+    if isinstance(value, list):
+        values = value
+    else:
+        values = str(value or "").replace("/", ",").split(",")
+    return [str(item or "").strip() for item in values if str(item or "").strip()]
+
+
+def buy_strategy_codes(stock: dict[str, Any], technical_row: dict[str, Any]) -> list[str]:
+    values = (
+        strategy_values(technical_row.get("entrySignalCodes"))
+        + strategy_values(stock.get("strategies"))
+        + strategy_values(technical_row.get("진입 전략"))
+        + strategy_values(technical_row.get("entryStrategy"))
+        + strategy_values(technical_row.get("entrySignals"))
     )
-    code = strategy_code(strategy)
+    codes: list[str] = []
+    for value in values:
+        code = strategy_code(value)
+        if code and code not in codes:
+            codes.append(code)
+    return codes
+
+
+def strategy_label(code: str, stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
+    for value in (
+        strategy_values(stock.get("strategies"))
+        + strategy_values(technical_row.get("진입 전략"))
+        + strategy_values(technical_row.get("entryStrategy"))
+        + strategy_values(technical_row.get("entrySignals"))
+    ):
+        if strategy_code(value) == code:
+            return value
+    return STRATEGY_LABELS.get(code, "매수 조건 충족")
+
+
+def buy_reason_detail(code: str, stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
     price = first_text(stock.get("currentPrice"), technical_row.get("현재가"))
     ma200 = tech_text(technical_row, "200일 이동평균선", "MA200", "ma200")
     pct_b = tech_text(technical_row, "볼린저밴드 %B (종가)", "%B", "pctB")
@@ -613,7 +654,21 @@ def buy_reason(stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
         detail = f"현재가 {price} / MA200 {ma200} | 저가 %B {pct_b_low}"
     else:
         detail = f"현재가 {price} / MA200 {ma200}"
-    return f"{strategy} — {detail}" if strategy != "-" else f"매수 조건 충족 — {detail}"
+    return detail
+
+
+def buy_reason(stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
+    codes = buy_strategy_codes(stock, technical_row)
+    if not codes:
+        return f"매수 조건 충족 — {buy_reason_detail('', stock, technical_row)}"
+
+    reasons = [
+        f"{strategy_label(code, stock, technical_row)} — {buy_reason_detail(code, stock, technical_row)}"
+        for code in codes
+    ]
+    if len(reasons) == 1:
+        return reasons[0]
+    return "동시 충족 전략 " + str(len(reasons)) + "개\n- " + "\n- ".join(reasons)
 
 
 def watch_reason(old_opinion: str, previous_stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
