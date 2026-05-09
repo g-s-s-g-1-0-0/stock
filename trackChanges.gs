@@ -347,6 +347,7 @@ var NASDAQ_PEAK_SIGNAL_CONFIG = {
   weeklyRsiCell: "AS1",
   dailyRsiCell: "AU1",
   dailyRsiPrevCell: "AW1",
+  recentMinPremiumCell: "AY1",
   macdHistCell: "P26",
   macdHistD1Cell: "Q26",
   macdHistD2Cell: "R26",
@@ -362,7 +363,8 @@ var NASDAQ_PEAK_SIGNAL_CONFIG = {
   stateKey: "NasdaqPeakSellState",
   dailyReachedKey: "NasdaqPeakReachedToday",
   lastResetDateKey: "NasdaqPeakLastResetDate",
-  premiumHistoryKey: "NasdaqPremiumHistory"
+  premiumHistoryKey: "NasdaqPremiumHistory",
+  latestRecentMinKey: "NasdaqRecent60MinPremium"
 };
 
 function getNasdaqPremiumHistory_(cached, props, cfg) {
@@ -384,10 +386,14 @@ function updateNasdaqPremiumHistory_(props, cfg, kstDateOnly, premiumPercent) {
   return trimmed;
 }
 
-function buildNasdaqMarketState_(premiumPercent, history, cfg) {
+function buildNasdaqMarketState_(premiumPercent, history, cfg, recentMinOverride) {
   const recentValues = history.map(row => Number(row.dist)).filter(v => Number.isFinite(v));
   if (Number.isFinite(premiumPercent)) recentValues.push(premiumPercent);
-  const recentMinDist = recentValues.length ? Math.min.apply(null, recentValues.slice(-(cfg.lookbackDays || 60))) : null;
+  const historyMinDist = recentValues.length ? Math.min.apply(null, recentValues.slice(-(cfg.lookbackDays || 60))) : null;
+  let recentMinDist = Number.isFinite(Number(recentMinOverride)) ? Number(recentMinOverride) : historyMinDist;
+  if (Number.isFinite(premiumPercent) && recentMinDist !== null) {
+    recentMinDist = Math.min(recentMinDist, premiumPercent);
+  }
   const isRecoveryMarket = recentMinDist !== null && recentMinDist <= cfg.recoveryMinDist && premiumPercent >= 0;
   const buyBlockMax = isRecoveryMarket ? cfg.recoveryBuyBlockMax : cfg.normalBuyBlockMax;
   return {
@@ -404,13 +410,68 @@ function getNasdaqBuyBlockMax_(ixicDist, allProperties) {
   const cfg = NASDAQ_PEAK_SIGNAL_CONFIG;
   const props = PropertiesService.getScriptProperties();
   const history = getNasdaqPremiumHistory_(allProperties, props, cfg);
-  return buildNasdaqMarketState_(ixicDist, history, cfg).buyBlockMax;
+  const recentMinFromProps = Number((allProperties && allProperties[cfg.latestRecentMinKey]) || props.getProperty(cfg.latestRecentMinKey));
+  return buildNasdaqMarketState_(ixicDist, history, cfg, recentMinFromProps).buyBlockMax;
 }
 
 function readOptionalNumberCell_(sheet, cellRef) {
   if (!cellRef) return null;
   const value = Number(sheet.getRange(cellRef).getValue());
   return Number.isFinite(value) && value !== 0 ? value : null;
+}
+
+function readNumberCell_(sheet, cellRef) {
+  if (!cellRef) return null;
+  const raw = sheet.getRange(cellRef).getValue();
+  if (raw === "" || raw === null || raw === undefined) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
+/**
+ * AY1 셀에서 쓰는 회복장 판정용 QQQ 최근 60거래일 최저 MA200 이격도.
+ * 시트에는 =getQQQRecent60MinPremium() 형태로 넣으면 된다.
+ *
+ * @customfunction
+ */
+function getQQQRecent60MinPremium(lookbackDays) {
+  const lookback = Number(lookbackDays) > 0 ? Number(lookbackDays) : 60;
+  try {
+    const closes = typeof _fetchUSChartCloses === "function"
+      ? _fetchUSChartCloses("QQQ", "2y", "1d", "US_QQQ_RECENT_MA200_MIN")
+      : fetchQQQClosesForRecentMin_("QQQ", "2y", "1d");
+    const valid = closes.filter(v => Number.isFinite(Number(v))).map(Number);
+    const distances = [];
+    for (let i = 199; i < valid.length; i++) {
+      const ma200 = valid.slice(i - 199, i + 1).reduce((a, b) => a + b, 0) / 200;
+      if (ma200 > 0) {
+        distances.push((valid[i] / ma200 - 1) * 100);
+      }
+    }
+    if (distances.length === 0) return "데이터 부족";
+    const recent = distances.slice(-lookback);
+    const minDist = Math.min.apply(null, recent);
+    return Math.round(minDist * 100) / 100;
+  } catch (e) {
+    return "오류";
+  }
+}
+
+function fetchQQQClosesForRecentMin_(symbol, range, interval) {
+  const url = "https://query1.finance.yahoo.com/v8/finance/chart/" + symbol +
+    "?range=" + range + "&interval=" + interval;
+  const response = UrlFetchApp.fetch(url, {
+    muteHttpExceptions: true,
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+      "Accept": "application/json",
+      "Cache-Control": "no-cache"
+    }
+  });
+  const data = JSON.parse(response.getContentText());
+  const result = ((((data || {}).chart || {}).result || [])[0] || {});
+  const quote = ((result.indicators || {}).quote || [])[0] || {};
+  return quote.close || [];
 }
 
 function getNasdaqPeakSignalState_(targetSheet, allProperties) {
@@ -433,6 +494,7 @@ function getNasdaqPeakSignalState_(targetSheet, allProperties) {
   const qqqWeeklyRsi = Number(targetSheet.getRange(cfg.weeklyRsiCell).getValue()) || 0;
   const qqqDailyRsi = Number(targetSheet.getRange(cfg.dailyRsiCell).getValue()) || 0;
   const qqqDailyRsiPrev = Number(targetSheet.getRange(cfg.dailyRsiPrevCell).getValue()) || 0;
+  const recentMinPremiumFromCell = readNumberCell_(targetSheet, cfg.recentMinPremiumCell);
   const qqqMacdHist = readOptionalNumberCell_(targetSheet, cfg.macdHistCell);
   const qqqMacdHistD1 = readOptionalNumberCell_(targetSheet, cfg.macdHistD1Cell);
   const qqqMacdHistD2 = readOptionalNumberCell_(targetSheet, cfg.macdHistD2Cell);
@@ -465,7 +527,10 @@ function getNasdaqPeakSignalState_(targetSheet, allProperties) {
 
   const premiumPercent = (currentPrice / nasdaqMA200 - 1) * 100;
   const history = updateNasdaqPremiumHistory_(props, cfg, kstDateOnly, premiumPercent);
-  const marketState = buildNasdaqMarketState_(premiumPercent, history, cfg);
+  const marketState = buildNasdaqMarketState_(premiumPercent, history, cfg, recentMinPremiumFromCell);
+  if (Number.isFinite(Number(marketState.recent60MinPremiumPercent))) {
+    props.setProperty(cfg.latestRecentMinKey, String(marketState.recent60MinPremiumPercent));
+  }
   const vixChangePercent = vixYesterday !== 0 ? ((vixToday / vixYesterday - 1) * 100) : 0;
   const isRsiConditionMet =
     qqqWeeklyRsi >= cfg.rsiThreshold &&

@@ -507,10 +507,12 @@ function clearExitReason(stockName) {
  * E: MA200 위 + BB스퀴즈 + 저가%B≤50                       (히스테리시스 + 찐바닥 허용)
  * F: MA200 위 + 저가%B≤5                                   (히스테리시스 + 찐바닥 허용)
  */
-function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding = false, holdingStrategyType = null, allProperties = null) {
+function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding = false, holdingStrategyType = null, allProperties = null, nasdaqBuyBlockMax = null) {
   const S            = CONSTANTS.STRATEGY;
   const vixThreshold = isHolding ? S.VIX_RELEASE : S.VIX_MIN;
-  const buyBlockMax = typeof getNasdaqBuyBlockMax_ === "function" ? getNasdaqBuyBlockMax_(ixicDist, allProperties) : S.NASDAQ_BUY_BLOCK_MAX;
+  const buyBlockMax = Number.isFinite(Number(nasdaqBuyBlockMax))
+    ? Number(nasdaqBuyBlockMax)
+    : (typeof getNasdaqBuyBlockMax_ === "function" ? getNasdaqBuyBlockMax_(ixicDist, allProperties) : S.NASDAQ_BUY_BLOCK_MAX);
   const nasdaqBelowBuyBlock = Number.isFinite(ixicDist) && ixicDist <= buyBlockMax;
 
   const nasdaqAllowsStrictMomentum = nasdaqBelowBuyBlock && !ixicFilterActive && ixicDist >= S.NASDAQ_DIST_UPPER;
@@ -766,7 +768,7 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
     }
 
     const isHolding = saved.price > 0;
-    const buy  = evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding, isHolding ? saved.strategyType : null, allProperties);
+    const buy  = evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding, isHolding ? saved.strategyType : null, allProperties, marketData.nasdaqBuyBlockMax);
 
     if (saved.price > 0) {
       // ENTRY_ 키가 source of truth — 시트와 불일치하면 ENTRY_ 키 값으로 덮어씀
@@ -836,7 +838,7 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
       }
       activeSlots = activeSlots.filter(slot => slot.id !== promotedSlot.id);
 
-      const promotedBuy = evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, true, promotedSlot.strategy, allProperties);
+      const promotedBuy = evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, true, promotedSlot.strategy, allProperties, marketData.nasdaqBuyBlockMax);
       saved = { price: promotedSlot.price, date: promotedSlot.date, strategyType: promotedSlot.strategy };
       newEntryPrice = promotedSlot.price;
       newEntryDate = promotedSlot.date;
