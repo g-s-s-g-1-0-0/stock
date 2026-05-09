@@ -939,6 +939,15 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
+  background-color: var(--sheet-bg);
+  background-image: linear-gradient(
+    to bottom,
+    var(--sheet-head) 0,
+    var(--sheet-head) 42px,
+    var(--sheet-bg) 42px,
+    var(--sheet-bg) 100%
+  );
 }
 
 .value-analysis-table {
