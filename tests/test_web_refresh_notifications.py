@@ -74,6 +74,55 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("관망", changes[0]["from"])
         self.assertEqual("매수", changes[0]["to"])
 
+    def test_opinion_changes_detects_all_valid_transitions(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+
+            previous.write_text(
+                json.dumps({
+                    "rows": [
+                        {"ticker": "BW", "name": "Buy To Watch", "opinion": "매수"},
+                        {"ticker": "BS", "name": "Buy To Sell", "opinion": "매수"},
+                        {"ticker": "WB", "name": "Watch To Buy", "opinion": "관망"},
+                        {"ticker": "WS", "name": "Watch To Sell", "opinion": "관망"},
+                        {"ticker": "SB", "name": "Sell To Buy", "opinion": "매도"},
+                        {"ticker": "SW", "name": "Sell To Watch", "opinion": "매도"},
+                    ]
+                }),
+                encoding="utf-8",
+            )
+            current.write_text(
+                json.dumps({
+                    "rows": [
+                        {"ticker": "BW", "name": "Buy To Watch", "opinion": "관망"},
+                        {"ticker": "BS", "name": "Buy To Sell", "opinion": "매도"},
+                        {"ticker": "WB", "name": "Watch To Buy", "opinion": "매수"},
+                        {"ticker": "WS", "name": "Watch To Sell", "opinion": "매도"},
+                        {"ticker": "SB", "name": "Sell To Buy", "opinion": "매수"},
+                        {"ticker": "SW", "name": "Sell To Watch", "opinion": "관망"},
+                    ]
+                }),
+                encoding="utf-8",
+            )
+            technical.write_text(json.dumps({"rows": {}}), encoding="utf-8")
+
+            changes = self.notifications.opinion_changes(previous, current, technical)
+
+        transitions = {(change["from"], change["to"]) for change in changes}
+        self.assertEqual(
+            {
+                ("매수", "관망"),
+                ("매수", "매도"),
+                ("관망", "매수"),
+                ("관망", "매도"),
+                ("매도", "매수"),
+                ("매도", "관망"),
+            },
+            transitions,
+        )
+
     def test_refresh_to_opinion_change_sends_email_end_to_end(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
         original_load_recipients = self.notifications.load_recipients
@@ -114,6 +163,10 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("MP Materials", sent_messages[0][2])
         self.assertIn("관망", sent_messages[0][2])
         self.assertIn("매수", sent_messages[0][2])
+        self.assertIn("이유:", sent_messages[0][2])
+        self.assertIn("현재 매수 의견 종목:", sent_messages[0][2])
+        self.assertIn("발송 시각 (한국):", sent_messages[0][2])
+        self.assertIn("발송 시각 (미 동부):", sent_messages[0][2])
 
     def test_trade_exit_change_sends_sell_email_end_to_end(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
@@ -150,10 +203,12 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
         self.assertEqual(1, sent)
         self.assertEqual("user@example.com", sent_messages[0][0])
-        self.assertEqual("보유 종목 매도 전환 알림 (MP)", sent_messages[0][1])
+        self.assertEqual("투자의견 변경 알림 (MP)", sent_messages[0][1])
         self.assertIn("MP Materials", sent_messages[0][2])
         self.assertIn("매도", sent_messages[0][2])
         self.assertIn("목표 수익 달성 즉시 매도", sent_messages[0][2])
+        self.assertIn("이유:", sent_messages[0][2])
+        self.assertNotIn("매도 사유", sent_messages[0][2])
 
 
     def test_nasdaq_peak_reset_writes_unsent_state(self) -> None:

@@ -260,9 +260,24 @@ def check_live_email_notifications() -> None:
             previous_trades = temp_path / "trade.before.json"
             current_trades = temp_path / "trade.after.json"
 
-            write_json(previous_stocks, {"rows": [{"ticker": "SMOKEMAILBUY", "name": "Smoke Mail Buy", "opinion": "관망"}]})
-            write_json(current_stocks, {"rows": [{"ticker": "SMOKEMAILBUY", "name": "Smoke Mail Buy", "opinion": "매수", "currentPrice": "$100.00", "valuation": "-", "industry": "-", "strategies": ["D. 200일선 상방 & 상승 흐름 강화"]}]})
-            write_json(technical, {"rows": {"SMOKEMAILBUY": {"conditionSummary": "[LIVE SMOKE] 매수 조건 알림 경로 검증"}}})
+            write_json(previous_stocks, {"rows": [
+                {"ticker": "SMOKEMAILBUY", "name": "Smoke Mail Buy", "opinion": "관망"},
+                {"ticker": "SMOKEMAILWATCH1", "name": "Smoke Mail Buy To Watch", "opinion": "매수"},
+                {"ticker": "SMOKEMAILWATCH2", "name": "Smoke Mail Sell To Watch", "opinion": "매도"},
+                {"ticker": "SMOKEMAILSELLSTATE", "name": "Smoke Mail Watch To Sell", "opinion": "관망"},
+            ]})
+            write_json(current_stocks, {"rows": [
+                {"ticker": "SMOKEMAILBUY", "name": "Smoke Mail Buy", "opinion": "매수", "currentPrice": "$100.00", "valuation": "-", "industry": "-", "strategies": ["D. 200일선 상방 & 상승 흐름 강화"]},
+                {"ticker": "SMOKEMAILWATCH1", "name": "Smoke Mail Buy To Watch", "opinion": "관망", "currentPrice": "$98.00", "valuation": "-", "industry": "-"},
+                {"ticker": "SMOKEMAILWATCH2", "name": "Smoke Mail Sell To Watch", "opinion": "관망", "currentPrice": "$97.00", "valuation": "-", "industry": "-"},
+                {"ticker": "SMOKEMAILSELLSTATE", "name": "Smoke Mail Watch To Sell", "opinion": "매도", "currentPrice": "$90.00", "valuation": "-", "industry": "-"},
+            ]})
+            write_json(technical, {"rows": {
+                "SMOKEMAILBUY": {"conditionSummary": "[LIVE SMOKE] 관망→매수 알림 경로 검증"},
+                "SMOKEMAILWATCH1": {"conditionSummary": "[LIVE SMOKE] 매수→관망 알림 경로 검증"},
+                "SMOKEMAILWATCH2": {"conditionSummary": "[LIVE SMOKE] 매도→관망 알림 경로 검증"},
+                "SMOKEMAILSELLSTATE": {"conditionSummary": "[LIVE SMOKE] 관망→매도 알림 경로 검증"},
+            }})
             write_json(previous_trades, {"rows": [{"slotId": "smoke-exit-slot", "ticker": "SMOKEMAILSELL", "name": "Smoke Mail Sell", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": trade_date(8), "buyPrice": "$100.00", "status": "보유 중"}]})
             write_json(current_trades, {"rows": [{"slotId": "smoke-exit-slot", "ticker": "SMOKEMAILSELL", "name": "Smoke Mail Sell", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": trade_date(8), "buyPrice": "$100.00", "sellDate": trade_date(), "sellPrice": "$115.00", "returnPct": 15.0, "status": "익절", "exitReason": "[LIVE SMOKE] 매도 전환 알림 경로 검증"}]})
 

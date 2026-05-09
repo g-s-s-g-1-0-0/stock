@@ -53,6 +53,8 @@ DEFAULT_CURRENT_TRADE_LOGS = ROOT_DIR / "web" / "public" / "api" / "trade-logs.j
 NOTIFICATION_STATE = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
 KST = ZoneInfo("Asia/Seoul")
 ET = ZoneInfo("America/New_York")
+VALID_OPINIONS = {"매수", "관망", "매도"}
+DEFAULT_EMAIL_LOGO_PATH = "/favicon.svg"
 
 
 @dataclass(frozen=True)
@@ -107,8 +109,8 @@ def write_json(path: Path, payload: Any) -> None:
 def now_labels() -> tuple[str, str]:
     now = datetime.now().astimezone()
     return (
-        now.astimezone(KST).strftime("%Y.%m.%d %H:%M"),
-        now.astimezone(ET).strftime("%m/%d %H:%M ET"),
+        now.astimezone(KST).strftime("%Y. %m. %d, %H:%M:%S"),
+        now.astimezone(ET).strftime("%-m/%-d/%Y, %-I:%M:%S %p"),
     )
 
 
@@ -159,6 +161,35 @@ def trade_key(row: dict[str, Any]) -> tuple[str, str, str]:
     )
 
 
+def display_stock(row: dict[str, Any], ticker: str | None = None) -> str:
+    symbol = str(ticker or row.get("ticker") or "").strip().upper()
+    name = str(row.get("name") or symbol or "-").strip()
+    return f"{name} ({symbol})" if symbol and symbol not in name else name
+
+
+def opinion_groups(current_path: Path, trade_logs_path: Path = DEFAULT_CURRENT_TRADE_LOGS) -> tuple[list[str], list[str], list[str]]:
+    current = stock_rows_by_ticker(current_path)
+    open_trade_tickers = {
+        str(row.get("ticker") or "").strip().upper()
+        for row in trade_rows(trade_logs_path)
+        if str(row.get("status") or "") == "보유 중"
+    }
+    buy_opinions: list[str] = []
+    watch_holding_opinions: list[str] = []
+    sell_opinions: list[str] = []
+    for ticker, stock in current.items():
+        normalized_ticker = str(ticker).strip().upper()
+        opinion = str(stock.get("opinion") or "").strip()
+        label = display_stock(stock, normalized_ticker)
+        if opinion == "매수":
+            buy_opinions.append(label)
+        elif opinion == "관망" and normalized_ticker in open_trade_tickers:
+            watch_holding_opinions.append(label)
+        elif opinion == "매도":
+            sell_opinions.append(label)
+    return buy_opinions, watch_holding_opinions, sell_opinions
+
+
 def opinion_changes(previous_path: Path, current_path: Path, technical_path: Path = DEFAULT_TECHNICAL) -> list[dict[str, Any]]:
     previous = stock_rows_by_ticker(previous_path)
     current = stock_rows_by_ticker(current_path)
@@ -172,6 +203,8 @@ def opinion_changes(previous_path: Path, current_path: Path, technical_path: Pat
         old_opinion = str(previous_stock.get("opinion") or "").strip()
         new_opinion = str(current_stock.get("opinion") or "").strip()
         if not old_opinion or not new_opinion or old_opinion == new_opinion:
+            continue
+        if old_opinion not in VALID_OPINIONS or new_opinion not in VALID_OPINIONS:
             continue
         technical_row = technical_rows.get(ticker, {})
         changes.append({
@@ -203,16 +236,24 @@ def trade_exit_changes(previous_path: Path, current_path: Path) -> list[dict[str
         current_status = str(current.get("status") or "").strip()
         if current_status == "보유 중":
             continue
+        result = current.get("returnPct", 0)
+        try:
+            result_text = f"{float(result):+.2f}%"
+        except (TypeError, ValueError):
+            result_text = str(result or "-")
+        buy_price = current.get("buyPrice") or previous_trade.get("buyPrice") or "-"
+        buy_date = current.get("buyDate") or previous_trade.get("buyDate") or "-"
         changes.append({
             "ticker": current.get("ticker") or key[0],
             "name": current.get("name") or previous_trade.get("name") or key[0],
             "from": "보유 중",
             "to": "매도",
             "price": current.get("sellPrice") or current.get("currentPrice") or "-",
-            "buyPrice": current.get("buyPrice") or previous_trade.get("buyPrice") or "-",
+            "buyPrice": buy_price,
             "returnPct": current.get("returnPct", 0),
             "strategy": current.get("strategy") or previous_trade.get("strategy") or "-",
             "reason": current.get("exitReason") or current_status or "시스템 매도",
+            "entryNote": f"진입가 {buy_price} ({buy_date}) · 수익률 {result_text}",
             "status": current_status,
         })
     return changes
@@ -496,87 +537,94 @@ def append_notification_footer(html_body: str, recipient: Recipient, preference_
     """
 
 
-def opinion_email_body(changes: list[dict[str, Any]]) -> str:
+def email_logo_url() -> str:
+    base_url = web_app_url()
+    if not base_url:
+        return ""
+    path = os.environ.get("EMAIL_LOGO_PATH", DEFAULT_EMAIL_LOGO_PATH).strip() or DEFAULT_EMAIL_LOGO_PATH
+    return urllib.parse.urljoin(base_url.rstrip("/") + "/", path.lstrip("/"))
+
+
+def brand_header_html() -> str:
+    logo_url = email_logo_url()
+    if not logo_url:
+        return ""
+    return f"""
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <img src="{html.escape(logo_url)}" alt="공수성가 로고" width="32" height="32" style="display:block;width:32px;height:32px;border-radius:8px;">
+        <strong style="font-size:15px;color:#333;">공수성가</strong>
+      </div>
+    """
+
+
+def list_text(values: list[str]) -> str:
+    return ", ".join(values) if values else "없음"
+
+
+def change_reason_html(reason: Any) -> str:
+    text = str(reason or "-")
+    return "<br>".join(
+        html.escape(part.strip())
+        for part in text.replace("\n", " | ").split(" | ")
+        if part.strip()
+    ) or "-"
+
+
+def opinion_email_body(
+    changes: list[dict[str, Any]],
+    buy_opinions: list[str] | None = None,
+    watch_holding_opinions: list[str] | None = None,
+    sell_opinions: list[str] | None = None,
+) -> str:
     changed_html = []
     for index, change in enumerate(changes, start=1):
         is_buy = change["to"] == "매수"
         is_sell = change["to"] == "매도"
         border = "#2ecc71" if is_buy else "#e74c3c" if is_sell else "#95a5a6"
         color = "#27ae60" if is_buy else "#c0392b" if is_sell else "#7f8c8d"
-        strategies = change.get("strategies") if isinstance(change.get("strategies"), list) else []
-        strategy_text = ", ".join(str(item) for item in strategies) if strategies else "-"
-        reason = str(change.get("reason") or "-")
-        reason_html = "<br>".join(
-            html.escape(part.strip())
-            for part in reason.replace("\n", " | ").split(" | ")
-            if part.strip()
-        ) or "-"
+        entry_note = str(change.get("entryNote") or "").strip()
+        entry_note_html = ""
+        if entry_note:
+            note_color = "#2980b9" if entry_note == "신규 진입" else "#e67e22" if entry_note.startswith("재진입") else "#7f8c8d"
+            entry_note_html = f'<br><span style="font-size:12px;color:{note_color};">{change_reason_html(entry_note)}</span>'
+        industry = str(change.get("industry") or "").strip()
+        trend_badge = str(change.get("trendBadge") or "").strip()
         changed_html.append(
             f"""
             <div style="margin-bottom:8px;padding:8px;background:#f9f9f9;border-left:3px solid {border};">
-              {index}. <strong>{html.escape(str(change['name']))}</strong>
-              <span style="color:#aaa;">({html.escape(str(change['ticker']))})</span>
+              {index}. <strong>{html.escape(display_stock(change))}</strong>
               &nbsp;<span style="color:#888;">'{html.escape(str(change['from']))}'</span>
               → <strong style="color:{color};">{html.escape(str(change['to']))}</strong><br>
-              <span style="font-size:13px;">현재가: <strong>{html.escape(str(change['price']))}</strong></span><br>
-              <span style="font-size:13px;">가치판단: {html.escape(str(change['valuation']))}</span><br>
-              <span style="font-size:12px;color:#666;">산업: {html.escape(str(change['industry']))}</span><br>
-              <span style="font-size:12px;color:#e67e22;">전략: {html.escape(strategy_text)}</span><br>
-              <div style="margin-top:6px;padding:6px 8px;background:#fff;border:1px solid #eee;color:#555;font-size:12px;line-height:1.5;">
-                <strong style="color:#333;">판단 근거</strong><br>{reason_html}
-              </div>
+              <span style="font-size:13px;">이유: {change_reason_html(change.get('reason'))}</span><br>
+              <span style="font-size:13px;">현재가: <strong>{html.escape(str(change.get('price') or '-'))}</strong></span>
+              {entry_note_html}
+              {f'<br><span style="font-size:12px;color:#666;">산업: {html.escape(industry)}</span>' if industry and industry != '-' else ''}
+              {f'<br><span style="font-size:12px;color:#e67e22;">{html.escape(trend_badge)}</span>' if trend_badge else ''}
             </div>
             """
         )
 
-    now = datetime.now().astimezone()
+    kst_label, et_label = now_labels()
     return f"""
     <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
+      {brand_header_html()}
       <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
         투자의견이 변경된 종목이 있습니다.
       </p>
       <div>{''.join(changed_html)}</div>
-      <p style="color:#888;font-size:12px;">발송 시각: {html.escape(now.strftime('%Y.%m.%d %H:%M'))}</p>
+      <p style="margin:0;"><strong>현재 매수 의견 종목:</strong> {html.escape(list_text(buy_opinions or []))}</p>
+      <p style="margin:0;"><strong>보유 중 관망 종목:</strong> {html.escape(list_text(watch_holding_opinions or []))}</p>
+      <p style="margin:0;"><strong>현재 매도 의견 종목:</strong> {html.escape(list_text(sell_opinions or []))}</p><br>
+      <p style="color:#888;font-size:12px;">
+        발송 시각 (한국): {html.escape(kst_label)}<br>
+        발송 시각 (미 동부): {html.escape(et_label)}
+      </p>
     </div>
     """
 
 
 def trade_exit_email_body(changes: list[dict[str, Any]]) -> str:
-    changed_html = []
-    for index, change in enumerate(changes, start=1):
-        result = change.get("returnPct", 0)
-        try:
-            result_text = f"{float(result):+.2f}%"
-        except (TypeError, ValueError):
-            result_text = str(result or "-")
-        changed_html.append(
-            f"""
-            <div style="margin-bottom:8px;padding:8px;background:#fff8f8;border-left:3px solid #e74c3c;">
-              {index}. <strong>{html.escape(str(change['name']))}</strong>
-              <span style="color:#aaa;">({html.escape(str(change['ticker']))})</span>
-              &nbsp;<span style="color:#888;">보유 중</span>
-              → <strong style="color:#c0392b;">매도</strong><br>
-              <span style="font-size:13px;">매도가: <strong>{html.escape(str(change['price']))}</strong></span>
-              <span style="font-size:13px;color:#666;"> / 매수가: {html.escape(str(change.get('buyPrice') or '-'))}</span><br>
-              <span style="font-size:13px;">수익률: <strong>{html.escape(result_text)}</strong></span><br>
-              <span style="font-size:12px;color:#e67e22;">전략: {html.escape(str(change.get('strategy') or '-'))}</span><br>
-              <div style="margin-top:6px;padding:6px 8px;background:#fff;border:1px solid #eee;color:#555;font-size:12px;line-height:1.5;">
-                <strong style="color:#333;">매도 사유</strong><br>{html.escape(str(change.get('reason') or '-'))}
-              </div>
-            </div>
-            """
-        )
-
-    now = datetime.now().astimezone()
-    return f"""
-    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
-      <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
-        보유 종목이 매도 조건을 충족했습니다.
-      </p>
-      <div>{''.join(changed_html)}</div>
-      <p style="color:#888;font-size:12px;">발송 시각: {html.escape(now.strftime('%Y.%m.%d %H:%M'))}</p>
-    </div>
-    """
+    return opinion_email_body(changes)
 
 
 def admin_failure_body(message: str) -> str:
@@ -908,7 +956,7 @@ def send_opinion_notifications(
     previous: Path,
     current: Path,
 ) -> int:
-    changes = opinion_changes(previous, current)
+    changes = opinion_changes(previous, current, DEFAULT_TECHNICAL)
     if not changes:
         print("No opinion changes.")
         return 0
@@ -923,7 +971,7 @@ def send_opinion_notifications(
         return 0
 
     subject = "투자의견 변경 알림 (" + ", ".join(change["ticker"] for change in changes[:8]) + ")"
-    body = opinion_email_body(changes)
+    body = opinion_email_body(changes, *opinion_groups(current))
     sent = 0
     for recipient in recipients:
         send_email(recipient.email, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
@@ -950,8 +998,8 @@ def send_trade_exit_notifications(
         print("No recipients for trade exit notifications.")
         return 0
 
-    subject = "보유 종목 매도 전환 알림 (" + ", ".join(str(change["ticker"]) for change in changes[:8]) + ")"
-    body = trade_exit_email_body(changes)
+    subject = "투자의견 변경 알림 (" + ", ".join(str(change["ticker"]) for change in changes[:8]) + ")"
+    body = opinion_email_body(changes, *opinion_groups(DEFAULT_CURRENT_STOCKS, current))
     sent = 0
     for recipient in recipients:
         send_email(recipient.email, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
