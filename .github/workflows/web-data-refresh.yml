@@ -27,6 +27,14 @@ on:
         options:
           - "true"
           - "false"
+      notification_smoke_test:
+        description: "Send an admin-only synthetic opinion email"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 permissions:
   contents: write
@@ -83,6 +91,7 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ]; then
             TASKS="technical"
             SEND_NOTIFICATIONS="true"
+            NOTIFICATION_SMOKE_TEST="false"
           else
             case "${{ inputs.refresh_scope }}" in
               all) TASKS="valuation technical market-trends market-events" ;;
@@ -94,11 +103,14 @@ jobs:
               *) TASKS="valuation technical market-trends market-events" ;;
             esac
             SEND_NOTIFICATIONS="${{ inputs.send_notifications || 'true' }}"
+            NOTIFICATION_SMOKE_TEST="${{ inputs.notification_smoke_test || 'false' }}"
           fi
           echo "REFRESH_TASKS=$TASKS" >> "$GITHUB_ENV"
           echo "SEND_NOTIFICATIONS=$SEND_NOTIFICATIONS" >> "$GITHUB_ENV"
+          echo "NOTIFICATION_SMOKE_TEST=$NOTIFICATION_SMOKE_TEST" >> "$GITHUB_ENV"
           echo "Resolved refresh tasks: $TASKS"
           echo "Send notifications: $SEND_NOTIFICATIONS"
+          echo "Notification smoke test: $NOTIFICATION_SMOKE_TEST"
 
       - name: Skip fresh scheduled refresh
         if: ${{ github.event_name == 'schedule' }}
@@ -154,6 +166,10 @@ jobs:
       - name: Send weekly trend report emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
         run: python scripts/web_refresh_notifications.py weekly-trend
+
+      - name: Send notification smoke test email
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && env.NOTIFICATION_SMOKE_TEST == 'true' }}
+        run: python scripts/web_refresh_notifications.py smoke-opinion
 
       - name: Commit refreshed caches and notification state
         if: ${{ env.SKIP_REFRESH != 'true' }}
