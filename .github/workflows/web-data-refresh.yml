@@ -27,19 +27,6 @@ on:
         options:
           - "true"
           - "false"
-      live_smoke_test:
-        description: "Run safe live smoke test only (uses real email, temp cache files)"
-        required: true
-        default: "false"
-        type: choice
-        options:
-          - "false"
-          - "true"
-      live_smoke_email_to:
-        description: "Optional smoke test email recipient; defaults to first ADMIN_EMAILS"
-        required: false
-        default: ""
-        type: string
 
 permissions:
   contents: write
@@ -113,14 +100,6 @@ jobs:
           echo "SEND_NOTIFICATIONS=$SEND_NOTIFICATIONS" >> "$GITHUB_ENV"
           echo "Resolved refresh tasks: $TASKS"
           echo "Send notifications: $SEND_NOTIFICATIONS"
-
-      - name: Run safe live smoke test
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.live_smoke_test == 'true' }}
-        env:
-          LIVE_SMOKE_EMAIL_TO: ${{ inputs.live_smoke_email_to }}
-        run: |
-          python scripts/live_web_smoke_test.py
-          echo "SKIP_REFRESH=true" >> "$GITHUB_ENV"
 
       - name: Skip fresh scheduled refresh
         if: ${{ github.event_name == 'schedule' }}

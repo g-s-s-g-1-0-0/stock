@@ -6,8 +6,7 @@ without paid infrastructure. It reads:
 - current stocks cache after refresh
 - Supabase user_settings/profiles for notification preferences
 
-Email is sent through Gmail SMTP. Sender is the Gmail/Workspace account whose
-app password is stored in GitHub Secrets.
+Email is sent through either SMTP or Brevo, selected by EMAIL_PROVIDER.
 """
 
 from __future__ import annotations
@@ -215,7 +214,7 @@ def opinion_changes(previous_path: Path, current_path: Path, technical_path: Pat
             "valuation": current_stock.get("valuation") or "-",
             "industry": current_stock.get("industry") or "-",
             "strategies": current_stock.get("strategies") or [],
-            "reason": technical_row.get("conditionSummary") or technical_row.get("decisionLog") or "-",
+            "reason": concise_opinion_reason(old_opinion, new_opinion, previous_stock, current_stock, technical_row),
         })
     return changes
 
@@ -540,13 +539,92 @@ def list_text(values: list[str]) -> str:
     return ", ".join(values) if values else "없음"
 
 
+def first_text(*values: Any) -> str:
+    for value in values:
+        if isinstance(value, list) and value:
+            value = value[0]
+        text = str(value or "").strip()
+        if text and text != "-":
+            return text
+    return "-"
+
+
+def tech_text(row: dict[str, Any], *keys: str) -> str:
+    return first_text(*(row.get(key) for key in keys))
+
+
+def strategy_code(value: Any) -> str:
+    text = str(value or "").strip()
+    return text[:1] if text[:1] in {"A", "B", "C", "D", "E", "F"} else ""
+
+
+def buy_reason(stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
+    strategy = first_text(
+        stock.get("strategies"),
+        technical_row.get("진입 전략"),
+        technical_row.get("entryStrategy"),
+        technical_row.get("entrySignals"),
+    )
+    code = strategy_code(strategy)
+    price = first_text(stock.get("currentPrice"), technical_row.get("현재가"))
+    ma200 = tech_text(technical_row, "200일 이동평균선", "MA200", "ma200")
+    pct_b = tech_text(technical_row, "볼린저밴드 %B (종가)", "%B", "pctB")
+    pct_b_low = tech_text(technical_row, "볼린저밴드 %B (저가)", "저가%B", "pctBLow")
+    rsi = tech_text(technical_row, "RSI (D)", "RSI")
+    macd_hist = tech_text(technical_row, "MACD Histogram (D)", "MACD Hist", "macdHist")
+    plus_di = tech_text(technical_row, "+DI (DMI, 14)", "+DI")
+    minus_di = tech_text(technical_row, "-DI (DMI, 14)", "-DI")
+    adx = tech_text(technical_row, "ADX (14, D)", "ADX")
+    bb_width = tech_text(technical_row, "볼린저밴드 폭 (D)", "BB폭")
+    bb_width_avg = tech_text(technical_row, "지난 60일 볼린저밴드 폭 평균", "60일 BB폭")
+    vol_ratio = tech_text(technical_row, "거래량비", "Volume Ratio")
+
+    if code == "A":
+        detail = f"현재가 {price} / MA200 {ma200} | 종가 %B {pct_b} | RSI {rsi} | MACD Hist {macd_hist}"
+    elif code == "B":
+        detail = f"현재가 {price} / MA200 {ma200} | RSI {rsi}"
+    elif code == "C":
+        detail = f"현재가 {price} / MA200 {ma200} | BB폭 {bb_width} / 60일 {bb_width_avg} | 거래량비 {vol_ratio} | 종가 %B {pct_b} | MACD Hist {macd_hist}"
+    elif code == "D":
+        detail = f"현재가 {price} / MA200 {ma200} | +DI {plus_di} / -DI {minus_di} | ADX {adx} | 종가 %B {pct_b} | MACD Hist {macd_hist}"
+    elif code == "E":
+        detail = f"현재가 {price} / MA200 {ma200} | BB폭 {bb_width} / 60일평균 {bb_width_avg} | 저가 %B {pct_b_low}"
+    elif code == "F":
+        detail = f"현재가 {price} / MA200 {ma200} | 저가 %B {pct_b_low}"
+    else:
+        detail = f"현재가 {price} / MA200 {ma200}"
+    return f"{strategy} — {detail}" if strategy != "-" else f"매수 조건 충족 — {detail}"
+
+
+def watch_reason(old_opinion: str, previous_stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
+    if old_opinion == "매수":
+        strategy = first_text(previous_stock.get("strategies"), technical_row.get("진입 전략"))
+        suffix = f" ({strategy})" if strategy != "-" else ""
+        return f"매수 조건 해제{suffix} — 보유 포지션 유지, 매도 조건 계속 추적"
+    if old_opinion == "매도":
+        return "매도 후 대기 완료 → 관망 전환"
+    return "매수 조건 미충족"
+
+
+def concise_opinion_reason(
+    old_opinion: str,
+    new_opinion: str,
+    previous_stock: dict[str, Any],
+    current_stock: dict[str, Any],
+    technical_row: dict[str, Any],
+) -> str:
+    if new_opinion == "매수":
+        return buy_reason(current_stock, technical_row)
+    if new_opinion == "매도":
+        return first_text(technical_row.get("exitReason"), technical_row.get("매도 사유"), "매도 조건 충족")
+    if new_opinion == "관망":
+        return watch_reason(old_opinion, previous_stock, technical_row)
+    return "-"
+
+
 def change_reason_html(reason: Any) -> str:
     text = str(reason or "-")
-    return "<br>".join(
-        html.escape(part.strip())
-        for part in text.replace("\n", " | ").split(" | ")
-        if part.strip()
-    ) or "-"
+    return html.escape(text).replace("\n", "<br>") or "-"
 
 
 def opinion_email_body(

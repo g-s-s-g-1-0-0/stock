@@ -236,8 +236,17 @@ function readStoredOperatorWatchlist() {
 }
 
 const APP_DATA_CACHE_STORAGE_KEY = 'gssg-app-data-cache-v1'
+const APP_DATA_AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000
 
 type GssgAppData = AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>
+type AppDataMetas = {
+  stocks?: RuntimeMeta
+  valuation?: RuntimeMeta
+  technical?: RuntimeMeta
+  marketEvents?: RuntimeMeta
+  marketTrends?: RuntimeMeta
+  tradeLogs?: RuntimeMeta
+}
 
 function readCachedAppData() {
   try {
@@ -263,6 +272,17 @@ function wait(ms: number) {
 
 function runtimeMetaChanged(current: RuntimeMeta | undefined, previous: RuntimeMeta | undefined) {
   return Boolean(current?.updatedAt && current.updatedAt !== previous?.updatedAt)
+}
+
+function appDataMetaChanged(data: GssgAppData, previousMetas: AppDataMetas) {
+  return (
+    runtimeMetaChanged(data.stocks?.meta, previousMetas.stocks)
+    || runtimeMetaChanged(data.valuation?.meta, previousMetas.valuation)
+    || runtimeMetaChanged(data.technical?.meta, previousMetas.technical)
+    || runtimeMetaChanged(data.marketEvents?.meta, previousMetas.marketEvents)
+    || runtimeMetaChanged(data.marketTrends?.meta, previousMetas.marketTrends)
+    || runtimeMetaChanged(data.tradeLogs?.meta, previousMetas.tradeLogs)
+  )
 }
 
 function readStoredViewMode() {
@@ -3276,6 +3296,7 @@ function App() {
     technical: cachedAppData?.technical?.meta,
     marketEvents: cachedAppData?.marketEvents?.meta,
     marketTrends: cachedAppData?.marketTrends?.meta,
+    tradeLogs: cachedAppData?.tradeLogs?.meta,
   }))
   const [marketEventsMeta, setMarketEventsMeta] = useState<RuntimeMeta | undefined>()
   const [isSavingMarketEvents, setIsSavingMarketEvents] = useState(false)
@@ -3292,6 +3313,7 @@ function App() {
   const addStockButtonRef = useRef<HTMLButtonElement | null>(null)
   const inlineAddRef = useRef<HTMLDivElement | null>(null)
   const watchlistSortMenuRef = useRef<HTMLDivElement | null>(null)
+  const apiMetasRef = useRef<AppDataMetas>(apiMetas)
 
   const applyLoadedData = (data: GssgAppData) => {
     storeCachedAppData(data)
@@ -3301,6 +3323,7 @@ function App() {
       technical: data.technical?.meta,
       marketEvents: data.marketEvents?.meta,
       marketTrends: data.marketTrends?.meta,
+      tradeLogs: data.tradeLogs?.meta,
     })
     if (data.stocks?.rows && data.stocks.rows.length > 0) {
       const stocks = data.stocks.rows.map(withDisplayStockName)
@@ -3335,6 +3358,10 @@ function App() {
       setSystemTradeLogs(data.tradeLogs.rows)
     }
   }
+
+  useEffect(() => {
+    apiMetasRef.current = apiMetas
+  }, [apiMetas])
 
   async function ensureProfile(session: UserSession) {
     if (!supabase) return
@@ -3697,19 +3724,41 @@ function App() {
 
   useEffect(() => {
     let isMounted = true
+    let isCheckingLatestData = false
 
-    const loadLatestData = () => {
-      fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>().then((data) => {
+    const loadLatestData = async (forceApply = false) => {
+      if (isCheckingLatestData) return
+      isCheckingLatestData = true
+      try {
+        const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>()
         if (!isMounted) return
-        applyLoadedData(data)
-      })
+        if (forceApply || appDataMetaChanged(data, apiMetasRef.current)) {
+          applyLoadedData(data)
+        }
+      } finally {
+        isCheckingLatestData = false
+      }
     }
 
-    const refreshTimer = window.setTimeout(loadLatestData, cachedAppData ? 900 : 0)
+    const loadLatestDataWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void loadLatestData()
+      }
+    }
+
+    const refreshTimer = window.setTimeout(() => {
+      void loadLatestData(true)
+    }, cachedAppData ? 900 : 0)
+    const refreshInterval = window.setInterval(loadLatestDataWhenVisible, APP_DATA_AUTO_REFRESH_INTERVAL_MS)
+    window.addEventListener('focus', loadLatestDataWhenVisible)
+    document.addEventListener('visibilitychange', loadLatestDataWhenVisible)
 
     return () => {
       isMounted = false
       window.clearTimeout(refreshTimer)
+      window.clearInterval(refreshInterval)
+      window.removeEventListener('focus', loadLatestDataWhenVisible)
+      document.removeEventListener('visibilitychange', loadLatestDataWhenVisible)
     }
   }, [])
 
@@ -4287,13 +4336,7 @@ function App() {
         for (let attempt = 1; attempt <= 40; attempt += 1) {
           await wait(attempt <= 3 ? 8000 : 15000)
           const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>()
-          const isRefreshed = (
-            runtimeMetaChanged(data.stocks?.meta, previousMetas.stocks)
-            || runtimeMetaChanged(data.valuation?.meta, previousMetas.valuation)
-            || runtimeMetaChanged(data.technical?.meta, previousMetas.technical)
-            || runtimeMetaChanged(data.marketEvents?.meta, previousMetas.marketEvents)
-            || runtimeMetaChanged(data.marketTrends?.meta, previousMetas.marketTrends)
-          )
+          const isRefreshed = appDataMetaChanged(data, previousMetas)
           if (isRefreshed) {
             applyLoadedData(data)
             const rowCount = data.stocks?.rows?.length ?? result.refreshedTickers.length
@@ -4547,7 +4590,7 @@ function App() {
       {showViewModeHint && <button className="view-mode-scrim" type="button" aria-label="안내 닫기" onClick={markViewModeHintSeen} />}
       <header className={`app-header ${showViewModeHint ? 'onboarding-header' : ''}`}>
         <div className="brand">
-          <img alt="공수성가 로고" className="brand-logo" src="/favicon.svg" />
+          <img alt="공수성가 로고" className="brand-logo" src="/gongsu-logo.png" />
           <span>공수성가</span>
         </div>
         <nav className="gnb-menu" aria-label="주요 메뉴">

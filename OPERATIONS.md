@@ -24,7 +24,6 @@ Watch these values before public traffic spikes:
 - Pushing to the GitHub repository deploys the web app automatically through Vercel.
 - The workflow's `Deploy refreshed web` step can remain skipped when `VERCEL_TOKEN` is empty, as long as the GitHub-to-Vercel integration is active.
 - Admin market-event edits are saved by `web/api/admin/market-events.js`, which commits both `web/public/api/market-events.json` and `data/cache/market-events.json` through the GitHub API. Set `GITHUB_ACTIONS_TOKEN` with Actions and contents write access, `GITHUB_REPO`, and `GITHUB_REFRESH_REF` in Vercel.
-- To verify the live notification path without touching production caches, run the `web-data-refresh` workflow manually with `live_smoke_test=true`. It writes synthetic trade-log/cache data only under the Actions temp directory, sends live smoke emails to `live_smoke_email_to` or the first `ADMIN_EMAILS` address, and then skips the normal refresh/commit steps.
 
 ## Email Notifications
 
