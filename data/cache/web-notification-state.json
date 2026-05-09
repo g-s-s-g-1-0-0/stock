@@ -2,12 +2,5 @@
   "nasdaqPeak": {
     "resetAt": "2026-05-09T17:26:05.612178Z",
     "sent": false
-  },
-  "runtimeReset": {
-    "createdAt": "2026-05-09T17:26:05.612178Z",
-    "opinionBaseline": "관망",
-    "reason": "manual runtime state reset after live smoke tests",
-    "resetApiLogs": true,
-    "seedNextRefresh": true
   }
 }

@@ -2,8 +2,8 @@
   "meta": {
     "kind": "valuation",
     "schedule": "0 0 * * *",
-    "updatedAt": "2026-05-09T17:15:28+00:00",
-    "lastSuccessfulRun": "2026-05-09T17:15:28+00:00",
+    "updatedAt": "2026-05-09T17:33:19+00:00",
+    "lastSuccessfulRun": "2026-05-09T17:33:19+00:00",
     "failedReason": null,
     "successfulRows": 34
   },
@@ -52,7 +52,7 @@
       "epsTtm": "₩6,566",
       "epsNextYear": "₩41,546",
       "epsQoq": "60.63%",
-      "earningsDate": "-",
+      "earningsDate": "2026-04-07 (D+32)",
       "industry": "반도체, 메모리·파운드리, 스마트폰, 소비자 가전",
       "ruleOf40": "36.89%"
     },
@@ -220,7 +220,7 @@
       "epsTtm": "₩9,099",
       "epsNextYear": "₩16,290",
       "epsQoq": "1.34%",
-      "earningsDate": "-",
+      "earningsDate": "2026-04-30 (D+9)",
       "industry": "MLCC, 패키지기판, 카메라 모듈",
       "ruleOf40": "24.51%"
     },
@@ -244,7 +244,7 @@
       "epsTtm": "₩14,419",
       "epsNextYear": "₩31,770",
       "epsQoq": "5.88%",
-      "earningsDate": "-",
+      "earningsDate": "2026-04-27 (D+12)",
       "industry": "카메라 모듈, 기판소재, 자동차 전장, AI 반도체 기판",
       "ruleOf40": "17.87%"
     },
@@ -268,7 +268,7 @@
       "epsTtm": "₩8,625",
       "epsNextYear": "₩9,398",
       "epsQoq": "62.56%",
-      "earningsDate": "-",
+      "earningsDate": "2026-04-30 (D+9)",
       "industry": "건설, 플랜트(EPC), 토목·주택",
       "ruleOf40": "-25.24%"
     },
@@ -340,7 +340,7 @@
       "epsTtm": "₩11,516",
       "epsNextYear": "₩16,638",
       "epsQoq": "-92.17%",
-      "earningsDate": "-",
+      "earningsDate": "2026-05-07 (D+2)",
       "industry": "방산, 유도무기, 레이더, 방산 수출",
       "ruleOf40": "27.71%"
     },

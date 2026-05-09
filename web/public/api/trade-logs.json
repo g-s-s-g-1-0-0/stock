@@ -1,14 +1,74 @@
 {
   "meta": {
     "kind": "trade-logs",
-    "schedule": "manual-reset",
-    "updatedAt": "2026-05-09T17:26:05.612178Z",
-    "lastSuccessfulRun": "2026-05-09T17:26:05.612178Z",
+    "schedule": "auto",
+    "updatedAt": "2026-05-09T17:34:15.027558Z",
+    "lastSuccessfulRun": "2026-05-09T17:34:15.027565Z",
     "failedReason": null,
-    "appendedOpenTrades": 0,
+    "appendedOpenTrades": 4,
     "closedTrades": 0,
-    "nasdaqPeakLiquidation": false,
-    "resetAt": "2026-05-09T17:26:05.612178Z"
+    "nasdaqPeakLiquidation": false
   },
-  "rows": []
+  "rows": [
+    {
+      "slotId": "375500_E_20260510_1",
+      "ticker": "375500",
+      "name": "DL이앤씨",
+      "market": "KR",
+      "currentPrice": "₩95,400",
+      "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+      "buyDate": "2026.05.10",
+      "buyPrice": "₩95,400",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중"
+    },
+    {
+      "slotId": "079550_E_20260510_1",
+      "ticker": "079550",
+      "name": "LIG디펜스앤에어로스페이스",
+      "market": "KR",
+      "currentPrice": "₩840,000",
+      "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+      "buyDate": "2026.05.10",
+      "buyPrice": "₩840,000",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중"
+    },
+    {
+      "slotId": "079550_F_20260510_1",
+      "ticker": "079550",
+      "name": "LIG디펜스앤에어로스페이스",
+      "market": "KR",
+      "currentPrice": "₩840,000",
+      "strategy": "F. 200일선 상방 & BB 극단 저점",
+      "buyDate": "2026.05.10",
+      "buyPrice": "₩840,000",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중"
+    },
+    {
+      "slotId": "MP_D_20260510_1",
+      "ticker": "MP",
+      "name": "MP Materials Corp.",
+      "market": "US",
+      "currentPrice": "$67.43",
+      "strategy": "D. 200일선 상방 & 상승 흐름 강화",
+      "buyDate": "2026.05.10",
+      "buyPrice": "$67.43",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중"
+    }
+  ]
 }
