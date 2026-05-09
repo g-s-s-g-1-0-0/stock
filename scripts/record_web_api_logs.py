@@ -12,10 +12,13 @@ from urllib.error import HTTPError, URLError
 from pathlib import Path
 from typing import Any
 
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 from calculator.rules import IndicatorRow, evaluate_exit_condition, strategy_display_name
 
 
-ROOT_DIR = Path(__file__).resolve().parents[1]
 API_DIR = ROOT_DIR / "web" / "public" / "api"
 PREVIOUS_STOCKS_PATH = Path(
     os.environ.get("PREVIOUS_STOCKS_PATH", str(ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"))
