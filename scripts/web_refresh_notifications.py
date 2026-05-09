@@ -54,7 +54,6 @@ NOTIFICATION_STATE = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
 KST = ZoneInfo("Asia/Seoul")
 ET = ZoneInfo("America/New_York")
 VALID_OPINIONS = {"매수", "관망", "매도"}
-DEFAULT_EMAIL_LOGO_PATH = "/favicon.svg"
 
 
 @dataclass(frozen=True)
@@ -537,26 +536,6 @@ def append_notification_footer(html_body: str, recipient: Recipient, preference_
     """
 
 
-def email_logo_url() -> str:
-    base_url = web_app_url()
-    if not base_url:
-        return ""
-    path = os.environ.get("EMAIL_LOGO_PATH", DEFAULT_EMAIL_LOGO_PATH).strip() or DEFAULT_EMAIL_LOGO_PATH
-    return urllib.parse.urljoin(base_url.rstrip("/") + "/", path.lstrip("/"))
-
-
-def brand_header_html() -> str:
-    logo_url = email_logo_url()
-    if not logo_url:
-        return ""
-    return f"""
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <img src="{html.escape(logo_url)}" alt="공수성가 로고" width="32" height="32" style="display:block;width:32px;height:32px;border-radius:8px;">
-        <strong style="font-size:15px;color:#333;">공수성가</strong>
-      </div>
-    """
-
-
 def list_text(values: list[str]) -> str:
     return ", ".join(values) if values else "없음"
 
@@ -607,7 +586,6 @@ def opinion_email_body(
     kst_label, et_label = now_labels()
     return f"""
     <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
-      {brand_header_html()}
       <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
         투자의견이 변경된 종목이 있습니다.
       </p>
