@@ -27,6 +27,19 @@ on:
         options:
           - "true"
           - "false"
+      live_smoke_test:
+        description: "Run safe live smoke test only (uses real email, temp cache files)"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      live_smoke_email_to:
+        description: "Optional smoke test email recipient; defaults to first ADMIN_EMAILS"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: write
@@ -74,9 +87,10 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Snapshot previous stocks cache
+      - name: Snapshot previous web caches
         run: |
           cp web/public/api/stocks.json "$RUNNER_TEMP/stocks.before-refresh.json" 2>/dev/null || echo '{"rows":[]}' > "$RUNNER_TEMP/stocks.before-refresh.json"
+          cp web/public/api/trade-logs.json "$RUNNER_TEMP/trade-logs.before-refresh.json" 2>/dev/null || echo '{"rows":[]}' > "$RUNNER_TEMP/trade-logs.before-refresh.json"
 
       - name: Resolve refresh tasks
         run: |
@@ -99,6 +113,14 @@ jobs:
           echo "SEND_NOTIFICATIONS=$SEND_NOTIFICATIONS" >> "$GITHUB_ENV"
           echo "Resolved refresh tasks: $TASKS"
           echo "Send notifications: $SEND_NOTIFICATIONS"
+
+      - name: Run safe live smoke test
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.live_smoke_test == 'true' }}
+        env:
+          LIVE_SMOKE_EMAIL_TO: ${{ inputs.live_smoke_email_to }}
+        run: |
+          python scripts/live_web_smoke_test.py
+          echo "SKIP_REFRESH=true" >> "$GITHUB_ENV"
 
       - name: Skip fresh scheduled refresh
         if: ${{ github.event_name == 'schedule' }}
@@ -132,6 +154,8 @@ jobs:
       - name: Record stock-level operation logs
         if: ${{ env.SKIP_REFRESH != 'true' }}
         continue-on-error: true
+        env:
+          PREVIOUS_STOCKS_PATH: ${{ runner.temp }}/stocks.before-refresh.json
         run: python scripts/record_web_api_logs.py $REFRESH_TASKS
 
       - name: Report operational scale metrics
@@ -142,6 +166,10 @@ jobs:
       - name: Send opinion change emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         run: python scripts/web_refresh_notifications.py opinion --previous "$RUNNER_TEMP/stocks.before-refresh.json"
+
+      - name: Send trade exit emails
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
+        run: python scripts/web_refresh_notifications.py trade-exit --previous "$RUNNER_TEMP/trade-logs.before-refresh.json"
 
       - name: Send Nasdaq peak emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}

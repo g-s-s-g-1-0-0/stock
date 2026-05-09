@@ -48,6 +48,8 @@ DEFAULT_CURRENT_STOCKS = ROOT_DIR / "web" / "public" / "api" / "stocks.json"
 DEFAULT_TECHNICAL = ROOT_DIR / "web" / "public" / "api" / "technical.json"
 DEFAULT_VALUATION = ROOT_DIR / "web" / "public" / "api" / "valuation.json"
 DEFAULT_MARKET_TRENDS = ROOT_DIR / "web" / "public" / "api" / "market-trends.json"
+DEFAULT_PREVIOUS_TRADE_LOGS = ROOT_DIR / "data" / "cache" / "trade-logs.before-refresh.json"
+DEFAULT_CURRENT_TRADE_LOGS = ROOT_DIR / "web" / "public" / "api" / "trade-logs.json"
 NOTIFICATION_STATE = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
 KST = ZoneInfo("Asia/Seoul")
 ET = ZoneInfo("America/New_York")
@@ -136,6 +138,27 @@ def technical_rows_by_ticker(path: Path = DEFAULT_TECHNICAL) -> dict[str, dict[s
     return rows if isinstance(rows, dict) else {}
 
 
+def trade_rows(path: Path) -> list[dict[str, Any]]:
+    payload = read_json(path)
+    rows = payload.get("rows") if isinstance(payload, dict) else []
+    return [row for row in rows if isinstance(row, dict)]
+
+
+def trade_key(row: dict[str, Any]) -> tuple[str, str, str]:
+    slot_id = str(row.get("slotId") or "").strip()
+    if slot_id:
+        return (
+            str(row.get("ticker") or "").strip().upper(),
+            slot_id,
+            str(row.get("strategy") or "").strip(),
+        )
+    return (
+        str(row.get("ticker") or "").strip().upper(),
+        str(row.get("buyDate") or "").strip(),
+        str(row.get("strategy") or "").strip(),
+    )
+
+
 def opinion_changes(previous_path: Path, current_path: Path, technical_path: Path = DEFAULT_TECHNICAL) -> list[dict[str, Any]]:
     previous = stock_rows_by_ticker(previous_path)
     current = stock_rows_by_ticker(current_path)
@@ -161,6 +184,36 @@ def opinion_changes(previous_path: Path, current_path: Path, technical_path: Pat
             "industry": current_stock.get("industry") or "-",
             "strategies": current_stock.get("strategies") or [],
             "reason": technical_row.get("conditionSummary") or technical_row.get("decisionLog") or "-",
+        })
+    return changes
+
+
+def trade_exit_changes(previous_path: Path, current_path: Path) -> list[dict[str, Any]]:
+    previous = {
+        trade_key(row): row
+        for row in trade_rows(previous_path)
+        if str(row.get("status") or "") == "보유 중"
+    }
+    changes: list[dict[str, Any]] = []
+    for current in trade_rows(current_path):
+        key = trade_key(current)
+        previous_trade = previous.get(key)
+        if not previous_trade:
+            continue
+        current_status = str(current.get("status") or "").strip()
+        if current_status == "보유 중":
+            continue
+        changes.append({
+            "ticker": current.get("ticker") or key[0],
+            "name": current.get("name") or previous_trade.get("name") or key[0],
+            "from": "보유 중",
+            "to": "매도",
+            "price": current.get("sellPrice") or current.get("currentPrice") or "-",
+            "buyPrice": current.get("buyPrice") or previous_trade.get("buyPrice") or "-",
+            "returnPct": current.get("returnPct", 0),
+            "strategy": current.get("strategy") or previous_trade.get("strategy") or "-",
+            "reason": current.get("exitReason") or current_status or "시스템 매도",
+            "status": current_status,
         })
     return changes
 
@@ -481,6 +534,44 @@ def opinion_email_body(changes: list[dict[str, Any]]) -> str:
     <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
       <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
         투자의견이 변경된 종목이 있습니다.
+      </p>
+      <div>{''.join(changed_html)}</div>
+      <p style="color:#888;font-size:12px;">발송 시각: {html.escape(now.strftime('%Y.%m.%d %H:%M'))}</p>
+    </div>
+    """
+
+
+def trade_exit_email_body(changes: list[dict[str, Any]]) -> str:
+    changed_html = []
+    for index, change in enumerate(changes, start=1):
+        result = change.get("returnPct", 0)
+        try:
+            result_text = f"{float(result):+.2f}%"
+        except (TypeError, ValueError):
+            result_text = str(result or "-")
+        changed_html.append(
+            f"""
+            <div style="margin-bottom:8px;padding:8px;background:#fff8f8;border-left:3px solid #e74c3c;">
+              {index}. <strong>{html.escape(str(change['name']))}</strong>
+              <span style="color:#aaa;">({html.escape(str(change['ticker']))})</span>
+              &nbsp;<span style="color:#888;">보유 중</span>
+              → <strong style="color:#c0392b;">매도</strong><br>
+              <span style="font-size:13px;">매도가: <strong>{html.escape(str(change['price']))}</strong></span>
+              <span style="font-size:13px;color:#666;"> / 매수가: {html.escape(str(change.get('buyPrice') or '-'))}</span><br>
+              <span style="font-size:13px;">수익률: <strong>{html.escape(result_text)}</strong></span><br>
+              <span style="font-size:12px;color:#e67e22;">전략: {html.escape(str(change.get('strategy') or '-'))}</span><br>
+              <div style="margin-top:6px;padding:6px 8px;background:#fff;border:1px solid #eee;color:#555;font-size:12px;line-height:1.5;">
+                <strong style="color:#333;">매도 사유</strong><br>{html.escape(str(change.get('reason') or '-'))}
+              </div>
+            </div>
+            """
+        )
+
+    now = datetime.now().astimezone()
+    return f"""
+    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
+      <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
+        보유 종목이 매도 조건을 충족했습니다.
       </p>
       <div>{''.join(changed_html)}</div>
       <p style="color:#888;font-size:12px;">발송 시각: {html.escape(now.strftime('%Y.%m.%d %H:%M'))}</p>
@@ -841,6 +932,34 @@ def send_opinion_notifications(
     return sent
 
 
+def send_trade_exit_notifications(
+    previous: Path,
+    current: Path,
+) -> int:
+    changes = trade_exit_changes(previous, current)
+    if not changes:
+        print("No trade exit changes.")
+        return 0
+
+    recipients = [
+        recipient
+        for recipient in load_recipients()
+        if enabled(recipient, "opinionChangeEmail")
+    ]
+    if not recipients:
+        print("No recipients for trade exit notifications.")
+        return 0
+
+    subject = "보유 종목 매도 전환 알림 (" + ", ".join(str(change["ticker"]) for change in changes[:8]) + ")"
+    body = trade_exit_email_body(changes)
+    sent = 0
+    for recipient in recipients:
+        send_email(recipient.email, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
+        sent += 1
+    print(f"Sent trade exit notifications: {sent}")
+    return sent
+
+
 def send_admin_failure(message: str) -> int:
     recipients = [
         recipient
@@ -871,6 +990,10 @@ def main() -> int:
     opinion_parser.add_argument("--previous", type=Path, default=DEFAULT_PREVIOUS_STOCKS)
     opinion_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
 
+    trade_exit_parser = subparsers.add_parser("trade-exit")
+    trade_exit_parser.add_argument("--previous", type=Path, default=DEFAULT_PREVIOUS_TRADE_LOGS)
+    trade_exit_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_TRADE_LOGS)
+
     earnings_parser = subparsers.add_parser("earnings")
     earnings_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
     earnings_parser.add_argument("--valuation", type=Path, default=DEFAULT_VALUATION)
@@ -884,6 +1007,9 @@ def main() -> int:
     args = parser.parse_args()
     if args.command == "opinion":
         send_opinion_notifications(args.previous, args.current)
+        return 0
+    if args.command == "trade-exit":
+        send_trade_exit_notifications(args.previous, args.current)
         return 0
     if args.command == "earnings":
         send_earnings_notifications(args.current, args.valuation)

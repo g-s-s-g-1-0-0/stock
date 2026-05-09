@@ -15,6 +15,10 @@ if str(ROOT_DIR) not in sys.path:
 from calculator.pipeline import read_search_universe, run
 
 VALID_TASKS = {"valuation", "technical", "stocks", "market-trends", "market-events"}
+TRADE_LOG_PATHS = [
+    ROOT_DIR / "web" / "public" / "api" / "trade-logs.json",
+    ROOT_DIR / "data" / "cache" / "trade-logs.json",
+]
 
 
 def supabase_request(path: str) -> list[dict]:
@@ -47,6 +51,36 @@ def load_watchlist_tickers() -> list[str]:
             ticker = str(value or "").strip().upper()
             if ticker and ticker not in tickers:
                 tickers.append(ticker)
+    return tickers
+
+
+def append_unique(tickers: list[str], value: object) -> None:
+    ticker = str(value or "").strip().upper()
+    if ticker and ticker not in tickers:
+        tickers.append(ticker)
+
+
+def load_open_trade_tickers() -> list[str]:
+    for path in TRADE_LOG_PATHS:
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        rows = payload.get("rows") if isinstance(payload, dict) else []
+        tickers: list[str] = []
+        for row in rows if isinstance(rows, list) else []:
+            if isinstance(row, dict) and str(row.get("status") or "") == "보유 중":
+                append_unique(tickers, row.get("ticker"))
+        return tickers
+    return []
+
+
+def refresh_tickers() -> list[str]:
+    tickers = load_watchlist_tickers()
+    for ticker in load_open_trade_tickers():
+        append_unique(tickers, ticker)
     return tickers
 
 
@@ -95,7 +129,7 @@ def parse_tasks(argv: list[str]) -> list[str]:
 
 def main() -> None:
     tasks = parse_tasks(sys.argv[1:])
-    tickers = load_watchlist_tickers()
+    tickers = refresh_tickers()
     universe = universe_for_tickers(tickers)
     print(f"refresh universe size: {len(universe)}")
     print(f"refresh tasks: {', '.join(tasks)}")

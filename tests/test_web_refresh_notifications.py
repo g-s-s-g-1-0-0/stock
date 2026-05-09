@@ -16,8 +16,17 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
         self.assertIn('"$RUNNER_TEMP/stocks.before-refresh.json"', workflow)
+        self.assertIn('"$RUNNER_TEMP/trade-logs.before-refresh.json"', workflow)
         self.assertIn(
             'python scripts/web_refresh_notifications.py opinion --previous "$RUNNER_TEMP/stocks.before-refresh.json"',
+            workflow,
+        )
+        self.assertIn(
+            'python scripts/web_refresh_notifications.py trade-exit --previous "$RUNNER_TEMP/trade-logs.before-refresh.json"',
+            workflow,
+        )
+        self.assertIn(
+            "PREVIOUS_STOCKS_PATH: ${{ runner.temp }}/stocks.before-refresh.json",
             workflow,
         )
         self.assertNotIn("data/cache/stocks.before-refresh.json", workflow)
@@ -105,6 +114,47 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("MP Materials", sent_messages[0][2])
         self.assertIn("관망", sent_messages[0][2])
         self.assertIn("매수", sent_messages[0][2])
+
+    def test_trade_exit_change_sends_sell_email_end_to_end(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        original_load_recipients = self.notifications.load_recipients
+        original_send_email = self.notifications.send_email
+        self.notifications.load_recipients = lambda: [
+            self.notifications.Recipient(
+                owner_id="user-1",
+                email="user@example.com",
+                is_admin=False,
+                preferences={"opinionChangeEmail": True},
+            )
+        ]
+        self.notifications.send_email = lambda email, subject, body: sent_messages.append((email, subject, body))
+
+        try:
+            with TemporaryDirectory() as temp_dir:
+                previous = Path(temp_dir) / "trade-logs.before-refresh.json"
+                current = Path(temp_dir) / "trade-logs.json"
+
+                previous.write_text(
+                    json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.09", "buyPrice": "$67.43", "status": "보유 중"}]}),
+                    encoding="utf-8",
+                )
+                current.write_text(
+                    json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.09", "buyPrice": "$67.43", "sellPrice": "$75.00", "returnPct": 11.23, "status": "익절", "exitReason": "목표 수익 달성 즉시 매도"}]}),
+                    encoding="utf-8",
+                )
+
+                sent = self.notifications.send_trade_exit_notifications(previous, current)
+        finally:
+            self.notifications.load_recipients = original_load_recipients
+            self.notifications.send_email = original_send_email
+
+        self.assertEqual(1, sent)
+        self.assertEqual("user@example.com", sent_messages[0][0])
+        self.assertEqual("보유 종목 매도 전환 알림 (MP)", sent_messages[0][1])
+        self.assertIn("MP Materials", sent_messages[0][2])
+        self.assertIn("매도", sent_messages[0][2])
+        self.assertIn("목표 수익 달성 즉시 매도", sent_messages[0][2])
+
 
     def test_nasdaq_peak_reset_writes_unsent_state(self) -> None:
         with TemporaryDirectory() as temp_dir:

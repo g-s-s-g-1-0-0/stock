@@ -96,7 +96,7 @@ export async function fetchStockSearchData<TStock>() {
 export async function saveMarketEvents<TGroup>(
   groups: TGroup[],
   meta?: RuntimeMeta,
-  options?: { yearLabel?: string; months?: string[] },
+  options?: { yearLabel?: string; months?: string[]; accessToken?: string },
 ) {
   const payload = {
     meta: {
@@ -117,7 +117,10 @@ export async function saveMarketEvents<TGroup>(
     try {
       const response = await fetch(endpoint, {
         method: 'PUT',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(options?.accessToken ? { authorization: `Bearer ${options.accessToken}` } : {}),
+        },
         body: JSON.stringify(payload),
       })
       if (response.ok) {

@@ -4237,9 +4237,11 @@ function App() {
     const normalizedGroups = normalizeMarketEventDdays(apiMarketEventGroups)
     setIsSavingMarketEvents(true)
     try {
+      const { data: authData } = supabase ? await supabase.auth.getSession() : { data: { session: null } }
       const saved = await saveMarketEvents(normalizedGroups, marketEventsMeta, {
         yearLabel: marketEventYearLabel,
         months: marketEventMonths,
+        accessToken: authData.session?.access_token,
       })
       setApiMarketEventGroups(saved.groups)
       setMarketEventsMeta(saved.meta)
@@ -4289,6 +4291,8 @@ function App() {
             runtimeMetaChanged(data.stocks?.meta, previousMetas.stocks)
             || runtimeMetaChanged(data.valuation?.meta, previousMetas.valuation)
             || runtimeMetaChanged(data.technical?.meta, previousMetas.technical)
+            || runtimeMetaChanged(data.marketEvents?.meta, previousMetas.marketEvents)
+            || runtimeMetaChanged(data.marketTrends?.meta, previousMetas.marketTrends)
           )
           if (isRefreshed) {
             applyLoadedData(data)

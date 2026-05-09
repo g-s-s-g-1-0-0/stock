@@ -17,12 +17,20 @@ from calculator.rules import IndicatorRow, evaluate_exit_condition, strategy_dis
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 API_DIR = ROOT_DIR / "web" / "public" / "api"
-PREVIOUS_STOCKS_PATH = ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"
+PREVIOUS_STOCKS_PATH = Path(
+    os.environ.get("PREVIOUS_STOCKS_PATH", str(ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"))
+)
 TRADE_LOG_CACHE_PATH = ROOT_DIR / "data" / "cache" / "trade-logs.json"
 TRADE_LOG_PUBLIC_PATH = API_DIR / "trade-logs.json"
 MAX_LOG_ROWS = 80
 VALID_TASKS = {"value-analysis", "technical-analysis", "market-trends"}
 KST = ZoneInfo("Asia/Seoul")
+SELL_HOLD_DAYS = 2
+REENTRY_DAYS = 10
+REENTRY_DROP = 0.03
+HOLD_RESTORE_DROP = 0.03
+HOLD_RESTORE_MIN_TRADING_DAYS = 3
+MAX_OPEN_PER_STRATEGY = 2
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -112,6 +120,13 @@ def kst_trade_date() -> str:
 
 
 def trade_key(trade: dict[str, Any]) -> tuple[str, str, str]:
+    slot_id = str(trade.get("slotId") or "").strip()
+    if slot_id:
+        return (
+            str(trade.get("ticker") or "").strip().upper(),
+            slot_id,
+            strategy_code(trade.get("strategy")),
+        )
     return (
         str(trade.get("ticker") or "").strip().upper(),
         str(trade.get("buyDate") or "").strip(),
@@ -128,6 +143,36 @@ def open_trade_slots(trades: list[dict[str, Any]]) -> set[tuple[str, str]]:
         for trade in trades
         if str(trade.get("status") or "") == "보유 중"
     }
+
+
+def open_trade_counts(trades: list[dict[str, Any]]) -> dict[tuple[str, str], int]:
+    counts: dict[tuple[str, str], int] = {}
+    for trade in trades:
+        if str(trade.get("status") or "") != "보유 중":
+            continue
+        key = (
+            str(trade.get("ticker") or "").strip().upper(),
+            strategy_code(trade.get("strategy")),
+        )
+        if not key[0] or not key[1]:
+            continue
+        counts[key] = counts.get(key, 0) + 1
+    return counts
+
+
+def open_trades_by_slot(trades: list[dict[str, Any]]) -> dict[tuple[str, str], list[dict[str, Any]]]:
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for trade in trades:
+        if str(trade.get("status") or "") != "보유 중":
+            continue
+        key = (
+            str(trade.get("ticker") or "").strip().upper(),
+            strategy_code(trade.get("strategy")),
+        )
+        if not key[0] or not key[1]:
+            continue
+        grouped.setdefault(key, []).append(trade)
+    return grouped
 
 
 def parse_price(value: Any) -> float | None:
@@ -181,6 +226,20 @@ def parse_trade_date(value: Any) -> date | None:
     return None
 
 
+def parse_trade_datetime(value: Any) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=KST)
+    except ValueError:
+        parsed_date = parse_trade_date(text)
+        if parsed_date is None:
+            return None
+        return datetime.combine(parsed_date, datetime.min.time(), tzinfo=KST)
+
+
 def trading_days_since(start: Any, end: date) -> int:
     start_date = parse_trade_date(start)
     if start_date is None or start_date >= end:
@@ -192,6 +251,56 @@ def trading_days_since(start: Any, end: date) -> int:
             days += 1
         current += timedelta(days=1)
     return days
+
+
+def latest_closed_trade(trades: list[dict[str, Any]], ticker: str, strategy: str) -> dict[str, Any] | None:
+    matches = [
+        trade
+        for trade in trades
+        if str(trade.get("status") or "") != "보유 중"
+        and str(trade.get("ticker") or "").strip().upper() == ticker
+        and strategy_code(trade.get("strategy")) == strategy
+        and parse_trade_date(trade.get("sellDate")) is not None
+    ]
+    if not matches:
+        return None
+    return max(matches, key=lambda trade: parse_trade_date(trade.get("sellDate")) or date.min)
+
+
+def sell_reentry_allowed(closed_trade: dict[str, Any] | None, current_price: float | None, today_date: date) -> bool:
+    if not closed_trade:
+        return True
+    sell_date = parse_trade_date(closed_trade.get("sellDate"))
+    if sell_date is None:
+        return True
+    sell_time = parse_trade_datetime(closed_trade.get("sellTimestamp")) or parse_trade_datetime(closed_trade.get("sellDate"))
+    now = datetime.now(timezone.utc).astimezone(KST)
+    if sell_time and (now - sell_time.astimezone(KST)).total_seconds() < SELL_HOLD_DAYS * 24 * 60 * 60:
+        return False
+    sell_price = parse_price(closed_trade.get("sellPrice"))
+    if trading_days_since(closed_trade.get("sellDate"), today_date) <= REENTRY_DAYS:
+        return bool(sell_price and current_price is not None and current_price <= sell_price * (1 - REENTRY_DROP))
+    return True
+
+
+def mark_restore_watch(trade: dict[str, Any], today: str) -> None:
+    trade.setdefault("restoreWatchDate", today)
+
+
+def hold_restore_allowed(trade: dict[str, Any], current_price: float | None, today_date: date) -> bool:
+    watch_date = parse_trade_date(trade.get("restoreWatchDate"))
+    if watch_date is None:
+        return False
+    entry_price = parse_price(trade.get("buyPrice"))
+    drop_ok = bool(entry_price and current_price is not None and current_price <= entry_price * (1 - HOLD_RESTORE_DROP))
+    days_ok = trading_days_since(trade.get("restoreWatchDate"), today_date) >= HOLD_RESTORE_MIN_TRADING_DAYS
+    return drop_ok or days_ok
+
+
+def next_slot_id(ticker: str, strategy: str, trades: list[dict[str, Any]], today: str) -> str:
+    prefix = f"{ticker}_{strategy}_{today.replace('.', '')}_"
+    count = sum(1 for trade in trades if str(trade.get("slotId") or "").startswith(prefix))
+    return f"{prefix}{count + 1}"
 
 
 def indicator_from_trade(row: dict[str, Any], trade: dict[str, Any], current_price: Any) -> IndicatorRow | None:
@@ -230,12 +339,14 @@ def close_trade(
 ) -> None:
     result = return_pct(trade.get("buyPrice"), sell_price)
     trade["sellDate"] = today
+    trade["sellTimestamp"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     trade["sellPrice"] = sell_price or "-"
     trade["returnPct"] = result
     trade["holdingDays"] = "-"
     trade["status"] = "익절" if result > 0 else "손절"
     trade["exitReason"] = reason
     trade.pop("upperExitArmedDate", None)
+    trade.pop("restoreWatchDate", None)
 
 
 def write_trade_logs(payload: dict[str, Any]) -> None:
@@ -271,11 +382,12 @@ def update_trade_logs(
             trade["currentPrice"] = stock.get("currentPrice") or trade.get("currentPrice") or "-"
         if str(trade.get("status") or "") != "보유 중":
             continue
-        sell_price = stock.get("currentPrice") or "-"
+        sell_price = stock.get("currentPrice") or trade.get("currentPrice") or "-"
         row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
         ind = indicator_from_trade(row, trade, sell_price) if isinstance(row, dict) else None
         if ind is None and not nasdaq_peak_alert:
             continue
+        entry_codes = set(entry_signal_codes(row)) if isinstance(row, dict) else set()
         armed_date = parse_trade_date(trade.get("upperExitArmedDate"))
         upper_wait_days = trading_days_since(armed_date.strftime("%Y.%m.%d"), today_date) if armed_date else None
         exit_result = evaluate_exit_condition(
@@ -294,8 +406,11 @@ def update_trade_logs(
         current_price = parse_price(sell_price)
         if strategy in {"E", "F"} and buy_price and current_price and current_price >= buy_price * 1.20:
             trade.setdefault("upperExitArmedDate", today)
+        if strategy and strategy not in entry_codes:
+            mark_restore_watch(trade, today)
 
-    current_open = open_trade_slots(trades)
+    current_open_counts = open_trade_counts(trades)
+    current_open_trades = open_trades_by_slot(trades)
 
     for stock in stocks:
         ticker = str(stock.get("ticker") or "").strip().upper()
@@ -307,11 +422,20 @@ def update_trade_logs(
             continue
         if current_opinion != "매수" or nasdaq_peak_alert:
             continue
+        current_price = parse_price(stock.get("currentPrice") or tech_value(row, "현재가"))
         for code in entry_signal_codes(row):
             slot_key = (ticker, code)
-            if slot_key in current_open:
+            open_count = current_open_counts.get(slot_key, 0)
+            if open_count >= MAX_OPEN_PER_STRATEGY:
+                continue
+            if open_count > 0:
+                if not any(hold_restore_allowed(trade, current_price, today_date) for trade in current_open_trades.get(slot_key, [])):
+                    continue
+            closed_trade = latest_closed_trade(trades, ticker, code)
+            if not sell_reentry_allowed(closed_trade, current_price, today_date):
                 continue
             trades.append({
+                "slotId": next_slot_id(ticker, code, trades, today),
                 "ticker": ticker,
                 "name": stock.get("name") or ticker,
                 "market": stock.get("market") or "-",
@@ -325,7 +449,8 @@ def update_trade_logs(
                 "holdingDays": "-",
                 "status": "보유 중",
             })
-            current_open.add(slot_key)
+            current_open_counts[slot_key] = open_count + 1
+            current_open_trades.setdefault(slot_key, []).append(trades[-1])
             appended += 1
 
     deduped = list({trade_key(trade): trade for trade in trades}.values())
