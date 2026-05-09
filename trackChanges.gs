@@ -11,15 +11,16 @@ function trackChanges() {
   const allProperties     = props.getProperties();
   const currentGlobalData = Utils.getGlobalData(targetSheet, allProperties);
   const Sg                = Utils.STRATEGY;
-  const buyBlockActive    = Number.isFinite(currentGlobalData.ixicDist) && currentGlobalData.ixicDist > Sg.NASDAQ_BUY_BLOCK_MAX;
+  const buyBlockMax       = currentGlobalData.nasdaqBuyBlockMax || Sg.NASDAQ_BUY_BLOCK_MAX;
+  const buyBlockActive    = Number.isFinite(currentGlobalData.ixicDist) && currentGlobalData.ixicDist > buyBlockMax;
   const lastValues        = Utils.getLastValues();
   let currentValidOpinions = { ...lastValues.lastValidOpinions };
 
   console.log(
     `[글로벌] 이벤트: "${currentGlobalData.event}", VIX: ${currentGlobalData.vixToday}, QQQ 이격도(현재): ${currentGlobalData.ixicDist.toFixed(2)}%, ` +
     `하락장 필터(A/C/D/E/F 차단, 데스존 ${Sg.NASDAQ_DIST_LOWER}%~${Sg.NASDAQ_DIST_UPPER}%): ${currentGlobalData.ixicFilterActive ? "활성" : "비활성"}, ` +
-    `상단 매수 차단(신규/재진입만, >${Sg.NASDAQ_BUY_BLOCK_MAX}%): ${buyBlockActive ? "활성" : "비활성"}, ` +
-    `고점 청산/강제매도(>14%+RSI): ${currentGlobalData.nasdaqPeakAlert ? "활성" : "비활성"}`
+    `상단 매수 차단(신규/재진입만, >${buyBlockMax}%): ${buyBlockActive ? "활성" : "비활성"}, ` +
+    `고점 청산/강제매도(${currentGlobalData.nasdaqPeakReason || "국면별 기준"}): ${currentGlobalData.nasdaqPeakAlert ? "활성" : "비활성"}`
   );
 
   if (Utils.isInitialRun(lastValues, targetSheet, currentGlobalData)) { console.log("[초기 실행 감지] 종료"); return; }
@@ -346,12 +347,71 @@ var NASDAQ_PEAK_SIGNAL_CONFIG = {
   weeklyRsiCell: "AS1",
   dailyRsiCell: "AU1",
   dailyRsiPrevCell: "AW1",
-  multiplier: 1.14,
+  macdHistCell: "P26",
+  macdHistD1Cell: "Q26",
+  macdHistD2Cell: "R26",
+  normalBuyBlockMax: 9,
+  recoveryBuyBlockMax: 18,
+  lookbackDays: 60,
+  recoveryMinDist: -5,
+  normalPeakDirectDist: 16,
+  normalPeakConfirmDist: 14,
+  recoveryPeakDirectDist: 22,
+  recoveryPeakConfirmDist: 18,
   rsiThreshold: 65,
   stateKey: "NasdaqPeakSellState",
   dailyReachedKey: "NasdaqPeakReachedToday",
-  lastResetDateKey: "NasdaqPeakLastResetDate"
+  lastResetDateKey: "NasdaqPeakLastResetDate",
+  premiumHistoryKey: "NasdaqPremiumHistory"
 };
+
+function getNasdaqPremiumHistory_(cached, props, cfg) {
+  const raw = (cached && cached[cfg.premiumHistoryKey]) || props.getProperty(cfg.premiumHistoryKey) || "[]";
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(row => row && typeof row.date === "string" && Number.isFinite(Number(row.dist))) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function updateNasdaqPremiumHistory_(props, cfg, kstDateOnly, premiumPercent) {
+  const history = getNasdaqPremiumHistory_(props.getProperties(), props, cfg)
+    .filter(row => row.date !== kstDateOnly);
+  history.push({ date: kstDateOnly, dist: premiumPercent });
+  const trimmed = history.slice(-(cfg.lookbackDays || 60));
+  props.setProperty(cfg.premiumHistoryKey, JSON.stringify(trimmed));
+  return trimmed;
+}
+
+function buildNasdaqMarketState_(premiumPercent, history, cfg) {
+  const recentValues = history.map(row => Number(row.dist)).filter(v => Number.isFinite(v));
+  if (Number.isFinite(premiumPercent)) recentValues.push(premiumPercent);
+  const recentMinDist = recentValues.length ? Math.min.apply(null, recentValues.slice(-(cfg.lookbackDays || 60))) : null;
+  const isRecoveryMarket = recentMinDist !== null && recentMinDist <= cfg.recoveryMinDist && premiumPercent >= 0;
+  const buyBlockMax = isRecoveryMarket ? cfg.recoveryBuyBlockMax : cfg.normalBuyBlockMax;
+  return {
+    recent60MinPremiumPercent: recentMinDist,
+    isRecoveryMarket,
+    regimeLabel: isRecoveryMarket ? "급락 후 회복장" : "비회복장/고점 횡보장",
+    buyBlockMax,
+    peakDirectDist: isRecoveryMarket ? cfg.recoveryPeakDirectDist : cfg.normalPeakDirectDist,
+    peakConfirmDist: isRecoveryMarket ? cfg.recoveryPeakConfirmDist : cfg.normalPeakConfirmDist
+  };
+}
+
+function getNasdaqBuyBlockMax_(ixicDist, allProperties) {
+  const cfg = NASDAQ_PEAK_SIGNAL_CONFIG;
+  const props = PropertiesService.getScriptProperties();
+  const history = getNasdaqPremiumHistory_(allProperties, props, cfg);
+  return buildNasdaqMarketState_(ixicDist, history, cfg).buyBlockMax;
+}
+
+function readOptionalNumberCell_(sheet, cellRef) {
+  if (!cellRef) return null;
+  const value = Number(sheet.getRange(cellRef).getValue());
+  return Number.isFinite(value) && value !== 0 ? value : null;
+}
 
 function getNasdaqPeakSignalState_(targetSheet, allProperties) {
   const cfg = NASDAQ_PEAK_SIGNAL_CONFIG;
@@ -373,6 +433,9 @@ function getNasdaqPeakSignalState_(targetSheet, allProperties) {
   const qqqWeeklyRsi = Number(targetSheet.getRange(cfg.weeklyRsiCell).getValue()) || 0;
   const qqqDailyRsi = Number(targetSheet.getRange(cfg.dailyRsiCell).getValue()) || 0;
   const qqqDailyRsiPrev = Number(targetSheet.getRange(cfg.dailyRsiPrevCell).getValue()) || 0;
+  const qqqMacdHist = readOptionalNumberCell_(targetSheet, cfg.macdHistCell);
+  const qqqMacdHistD1 = readOptionalNumberCell_(targetSheet, cfg.macdHistD1Cell);
+  const qqqMacdHistD2 = readOptionalNumberCell_(targetSheet, cfg.macdHistD2Cell);
 
   if (!(currentPrice > 0) || !(nasdaqMA200 > 0) ||
       !(qqqWeeklyRsi > 0) || !(qqqDailyRsi > 0) || !(qqqDailyRsiPrev > 0)) {
@@ -391,28 +454,48 @@ function getNasdaqPeakSignalState_(targetSheet, allProperties) {
       qqqDailyRsiPrev,
       isPeakReachedToday: false,
       isVixConditionMet: false,
-      isRsiConditionMet: false
+      isRsiConditionMet: false,
+      isRecoveryMarket: false,
+      buyBlockMax: cfg.normalBuyBlockMax,
+      peakDirectDist: cfg.normalPeakDirectDist,
+      peakConfirmDist: cfg.normalPeakConfirmDist,
+      peakReason: "데이터 부족"
     };
   }
 
-  const thresholdPrice = nasdaqMA200 * cfg.multiplier;
   const premiumPercent = (currentPrice / nasdaqMA200 - 1) * 100;
+  const history = updateNasdaqPremiumHistory_(props, cfg, kstDateOnly, premiumPercent);
+  const marketState = buildNasdaqMarketState_(premiumPercent, history, cfg);
   const vixChangePercent = vixYesterday !== 0 ? ((vixToday / vixYesterday - 1) * 100) : 0;
   const isRsiConditionMet =
     qqqWeeklyRsi >= cfg.rsiThreshold &&
     qqqDailyRsi >= cfg.rsiThreshold &&
     qqqDailyRsi < qqqDailyRsiPrev;
+  const isMacdSlowing =
+    qqqMacdHist !== null && qqqMacdHistD1 !== null && qqqMacdHistD2 !== null &&
+    qqqMacdHist < qqqMacdHistD1 && qqqMacdHistD1 < qqqMacdHistD2;
 
   let peakReachedToday = (cached[cfg.dailyReachedKey] || props.getProperty(cfg.dailyReachedKey)) === "TRUE";
-  if (currentPrice > thresholdPrice && !peakReachedToday) {
+  if (premiumPercent > marketState.peakDirectDist && !peakReachedToday) {
     props.setProperty(cfg.dailyReachedKey, "TRUE");
     peakReachedToday = true;
   }
 
-  const isPeakTriggered = currentPrice > thresholdPrice && isRsiConditionMet;
+  const isPeakTriggered = marketState.isRecoveryMarket
+    ? (
+      premiumPercent > marketState.peakDirectDist ||
+      (premiumPercent > marketState.peakConfirmDist && isRsiConditionMet && isMacdSlowing)
+    )
+    : (
+      isRsiConditionMet &&
+      (
+        premiumPercent > marketState.peakDirectDist ||
+        (premiumPercent > marketState.peakConfirmDist && isMacdSlowing)
+      )
+    );
   if (isPeakTriggered) {
     props.setProperty(cfg.stateKey, "TRUE");
-  } else if (currentPrice <= thresholdPrice) {
+  } else if (premiumPercent <= marketState.peakConfirmDist) {
     props.setProperty(cfg.stateKey, "FALSE");
   }
 
@@ -420,7 +503,7 @@ function getNasdaqPeakSignalState_(targetSheet, allProperties) {
     nasdaqPeakAlert: props.getProperty(cfg.stateKey) === "TRUE",
     currentPrice,
     nasdaqMA200,
-    thresholdPrice,
+    thresholdPrice: nasdaqMA200 * (1 + marketState.peakConfirmDist / 100),
     premiumPercent,
     vixToday,
     vixYesterday,
@@ -428,9 +511,22 @@ function getNasdaqPeakSignalState_(targetSheet, allProperties) {
     qqqWeeklyRsi,
     qqqDailyRsi,
     qqqDailyRsiPrev,
+    qqqMacdHist,
+    qqqMacdHistD1,
+    qqqMacdHistD2,
     isPeakReachedToday: peakReachedToday,
     isVixConditionMet: false,
-    isRsiConditionMet
+    isRsiConditionMet,
+    isMacdSlowing,
+    recent60MinPremiumPercent: marketState.recent60MinPremiumPercent,
+    isRecoveryMarket: marketState.isRecoveryMarket,
+    regimeLabel: marketState.regimeLabel,
+    buyBlockMax: marketState.buyBlockMax,
+    peakDirectDist: marketState.peakDirectDist,
+    peakConfirmDist: marketState.peakConfirmDist,
+    peakReason: marketState.isRecoveryMarket
+      ? `회복장: >${marketState.peakDirectDist}% 또는 >${marketState.peakConfirmDist}%+RSI하락+MACD둔화`
+      : `비회복장: >${marketState.peakDirectDist}%+RSI하락 또는 >${marketState.peakConfirmDist}%+RSI하락+MACD둔화`
   };
 }
 
@@ -504,10 +600,17 @@ const Utils = {
     SELL_HOLD_HOURS:   48,
     REENTRY_DAYS:      10,
     REENTRY_DROP:      0.03,
-    NASDAQ_BUY_BLOCK_MAX: 10,
+    NASDAQ_BUY_BLOCK_MAX: 9,
+    NASDAQ_RECOVERY_BUY_BLOCK_MAX: 18,
     NASDAQ_DIST_UPPER:   -3,
     NASDAQ_DIST_LOWER:   -12,
     NASDAQ_DIST_RELEASE: -2.5,
+    QQQ_RECOVERY_MIN_DIST: -5,
+    QQQ_NORMAL_PEAK_DIRECT_DIST: 16,
+    QQQ_NORMAL_PEAK_CONFIRM_DIST: 14,
+    QQQ_RECOVERY_PEAK_DIRECT_DIST: 22,
+    QQQ_RECOVERY_PEAK_CONFIRM_DIST: 18,
+    QQQ_PEAK_RSI_THRESHOLD: 65,
     UPPER_EXIT_MAX_WAIT_DAYS:       5,
     HOLD_RESTORE_DROP:              0.03,
     HOLD_RESTORE_MIN_TRADING_DAYS:  3
@@ -719,13 +822,20 @@ const Utils = {
       : ixicDist < Utils.STRATEGY.NASDAQ_DIST_UPPER && ixicDist > Utils.STRATEGY.NASDAQ_DIST_LOWER;
     const peakState = getNasdaqPeakSignalState_(targetSheet, allProperties);
     const nasdaqPeakAlert = peakState.nasdaqPeakAlert;
+    const nasdaqBuyBlockMax = peakState.buyBlockMax || Utils.STRATEGY.NASDAQ_BUY_BLOCK_MAX;
     const macroRisk = {
       highRate:     us10y >= 4.2,
       strongDollar: dxy >= 103,
       highVix:      vixToday >= 20,
       techWeak:     ixicPrice > 0 && ixicMa60 > 0 ? ixicPrice < ixicMa60 : false
     };
-    return { vixToday, event, ixicPrice, ixicMa60, ixicDist, ixicFilterActive, nasdaqPeakAlert, us10y, dxy, macroRisk };
+    return {
+      vixToday, event, ixicPrice, ixicMa60, ixicDist, ixicFilterActive, nasdaqPeakAlert,
+      nasdaqBuyBlockMax,
+      nasdaqPeakReason: peakState.peakReason,
+      qqqRegimeLabel: peakState.regimeLabel,
+      us10y, dxy, macroRisk
+    };
   },
 
   buildMacroContextHtml(globalData) {
@@ -970,7 +1080,8 @@ const Utils = {
     const currentOpinion  = String(row[C.opinion]).trim();
     const isEventWatch    = globalData.event !== "당분간 없음";
     const nasdaqPeakAlert = globalData.nasdaqPeakAlert;
-    const nasdaqBelowBuyBlock = Number.isFinite(ixicDist) && ixicDist <= S.NASDAQ_BUY_BLOCK_MAX;
+    const buyBlockMax = globalData.nasdaqBuyBlockMax || (typeof getNasdaqBuyBlockMax_ === "function" ? getNasdaqBuyBlockMax_(ixicDist, allProperties) : S.NASDAQ_BUY_BLOCK_MAX);
+    const nasdaqBelowBuyBlock = Number.isFinite(ixicDist) && ixicDist <= buyBlockMax;
 
     const saved         = Utils.loadEntryInfoFrom(stockName, allProperties);
     const entryPrice    = saved.price > 0 ? saved.price : (Utils.toNum(row[C.entryPrice]) || 0);
@@ -1057,7 +1168,7 @@ const Utils = {
         buyTriggered = fCond1 && !ixicFilterActive && nasdaqBelowBuyBlock && pctBLow !== null && fCond2;
       }
 
-      if (nasdaqPeakAlert) return { opinion: "매도", reason: "나스닥 고점 청산/강제매도 — QQQ > MA200×1.14 + RSI65 하락", strategyType: savedStrategy };
+      if (nasdaqPeakAlert) return { opinion: "매도", reason: `나스닥 고점 청산/강제매도 — ${globalData.nasdaqPeakReason || "국면별 QQQ 과열 기준 충족"}`, strategyType: savedStrategy };
 
       const cp          = currentPrice !== null ? currentPrice : 0;
       const returnPct   = (cp - entryPrice) / entryPrice;
@@ -1207,6 +1318,7 @@ const Utils = {
     const ixicFilterActive = currentGlobalData.ixicFilterActive !== undefined
       ? currentGlobalData.ixicFilterActive
       : (typeof computeNasdaqABFilterActive === "function" ? computeNasdaqABFilterActive(ixicDist) : ixicDist < S.NASDAQ_DIST_UPPER && ixicDist > S.NASDAQ_DIST_LOWER);
+    const buyBlockMax = currentGlobalData.nasdaqBuyBlockMax || (typeof getNasdaqBuyBlockMax_ === "function" ? getNasdaqBuyBlockMax_(ixicDist, allProperties) : S.NASDAQ_BUY_BLOCK_MAX);
     const fmt          = v => Number(v).toFixed(2);
     const fmtP         = v => Utils.fmtPrice(v, stockName);
 
@@ -1217,8 +1329,9 @@ const Utils = {
     const cond3Released = (hasRsi || hasCci) && !rsiOk && !cciOk;
 
     const bbPairOk = bbWidth !== null && bbWidthAvg60 !== null && bbWidthAvg60 > 0;
-    const nasdaqAllowsStrictMomentum = !ixicFilterActive && ixicDist >= S.NASDAQ_DIST_UPPER;
-    const nasdaqAllowsBottomBuy = !ixicFilterActive;
+    const nasdaqBelowBuyBlock = Number.isFinite(ixicDist) && ixicDist <= buyBlockMax;
+    const nasdaqAllowsStrictMomentum = nasdaqBelowBuyBlock && !ixicFilterActive && ixicDist >= S.NASDAQ_DIST_UPPER;
+    const nasdaqAllowsBottomBuy = nasdaqBelowBuyBlock && !ixicFilterActive;
 
     // 그룹 재감지 (현재 지표 기준)
     const aCond1 = currentPrice !== null && ma200 !== null && currentPrice > ma200;
@@ -1314,8 +1427,8 @@ const Utils = {
         const rawDeath = ixicDist > S.NASDAQ_DIST_LOWER && ixicDist < S.NASDAQ_DIST_UPPER;
         let releaseDetail;
 
-        if (Number.isFinite(ixicDist) && ixicDist > S.NASDAQ_BUY_BLOCK_MAX) {
-          releaseDetail = `나스닥 상단 과열 (QQQ 이격도 ${ixicDist.toFixed(1)}% > ${S.NASDAQ_BUY_BLOCK_MAX}%)`;
+        if (Number.isFinite(ixicDist) && ixicDist > buyBlockMax) {
+          releaseDetail = `나스닥 상단 과열 (QQQ 이격도 ${ixicDist.toFixed(1)}% > ${buyBlockMax}%)`;
         } else if ((stratType === "E" || stratType === "F") && ixicFilterActive) {
           releaseDetail = rawDeath
             ? `나스닥 하락장 필터 진입 (QQQ 이격도 ${ixicDist.toFixed(1)}% → 데스존 ${S.NASDAQ_DIST_UPPER}% ~ ${S.NASDAQ_DIST_LOWER}%)`
@@ -1666,7 +1779,8 @@ const Utils = {
     const adxD1        = C.adxD1     >= 0 ? Utils.toNum(row[C.adxD1])     : null;
     const { ixicFilterActive, ixicDist, nasdaqPeakAlert, vixToday } = globalData;
     const isEventWatch = globalData.event !== "당분간 없음";
-    const nasdaqBelowBuyBlock = Number.isFinite(ixicDist) && ixicDist <= S.NASDAQ_BUY_BLOCK_MAX;
+    const buyBlockMax = globalData.nasdaqBuyBlockMax || (typeof getNasdaqBuyBlockMax_ === "function" ? getNasdaqBuyBlockMax_(ixicDist, allProperties) : S.NASDAQ_BUY_BLOCK_MAX);
+    const nasdaqBelowBuyBlock = Number.isFinite(ixicDist) && ixicDist <= buyBlockMax;
 
     if (!currentPrice || !ma200) return false;
     if (nasdaqPeakAlert || isEventWatch) return false;
@@ -1761,7 +1875,7 @@ const Utils = {
     const isEfStrategy = strategy === "E" || strategy === "F";
     let upperExitArmDate = isEfStrategy ? Utils.loadSlotUpperExitArm(stockName, strategy, allProperties) : null;
 
-    if (globalData.nasdaqPeakAlert)              return { reason: `나스닥 고점 청산/강제매도 — QQQ > MA200×1.14 + RSI65 하락 [${label}]` };
+    if (globalData.nasdaqPeakAlert)              return { reason: `나스닥 고점 청산/강제매도 — ${globalData.nasdaqPeakReason || "국면별 QQQ 과열 기준 충족"} [${label}]` };
     if (returnPct <= -circuitPct)                return { reason: `손절 기준 도달 -${Math.abs(returnPct * 100).toFixed(2)}% [${label}]` };
 
     if (isEfStrategy && returnPct >= targetPct && !upperExitArmDate) {
