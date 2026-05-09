@@ -76,8 +76,7 @@ jobs:
 
       - name: Snapshot previous stocks cache
         run: |
-          mkdir -p data/cache
-          cp web/public/api/stocks.json data/cache/stocks.before-refresh.json 2>/dev/null || echo '{"rows":[]}' > data/cache/stocks.before-refresh.json
+          cp web/public/api/stocks.json "$RUNNER_TEMP/stocks.before-refresh.json" 2>/dev/null || echo '{"rows":[]}' > "$RUNNER_TEMP/stocks.before-refresh.json"
 
       - name: Resolve refresh tasks
         run: |
@@ -140,10 +139,25 @@ jobs:
         continue-on-error: true
         run: python scripts/report_operational_scale.py
 
-      - name: Commit refreshed caches
+      - name: Send opinion change emails
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
+        run: python scripts/web_refresh_notifications.py opinion --previous "$RUNNER_TEMP/stocks.before-refresh.json"
+
+      - name: Send Nasdaq peak emails
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
+        run: python scripts/web_refresh_notifications.py nasdaq-peak
+
+      - name: Send earnings D-1 emails
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'valuation') }}
+        run: python scripts/web_refresh_notifications.py earnings
+
+      - name: Send weekly trend report emails
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
+        run: python scripts/web_refresh_notifications.py weekly-trend
+
+      - name: Commit refreshed caches and notification state
         if: ${{ env.SKIP_REFRESH != 'true' }}
         run: |
-          rm -f data/cache/stocks.before-refresh.json
           if git diff --quiet -- data/cache web/public/api; then
             echo "No cache changes."
             exit 0
@@ -158,22 +172,6 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' }}
         working-directory: web
         run: npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
-
-      - name: Send opinion change emails
-        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
-        run: python scripts/web_refresh_notifications.py opinion
-
-      - name: Send Nasdaq peak emails
-        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
-        run: python scripts/web_refresh_notifications.py nasdaq-peak
-
-      - name: Send earnings D-1 emails
-        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'valuation') }}
-        run: python scripts/web_refresh_notifications.py earnings
-
-      - name: Send weekly trend report emails
-        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
-        run: python scripts/web_refresh_notifications.py weekly-trend
 
       - name: Notify admins on failure
         if: failure()

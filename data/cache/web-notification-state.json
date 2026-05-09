@@ -1,7 +1,7 @@
 {
   "nasdaqPeak": {
-    "sent": true,
-    "sentAt": "2026-05-08T04:46:08.514016+00:00",
+    "resetAt": "2026-05-09T04:52:00+00:00",
+    "sent": false,
     "snapshot": {
       "currentPrice": 694.9400024414062,
       "dailyRsi": 78.78,
