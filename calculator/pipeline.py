@@ -453,6 +453,11 @@ def latest_technical_row(
         nasdaq_buy_block_max=nasdaq_buy_block_max,
     )
     strategy = buy["strategyName"] if buy["entryTriggered"] else "-"
+    entry_signal_codes = [
+        group
+        for group in ("A", "B", "C", "D", "E", "F")
+        if all(buy["conditions"].get(group, []))
+    ]
     buy_block_label = f"나스닥 상단 차단 아님(≤{float(nasdaq_buy_block_max):.0f}%)" if nasdaq_buy_block_max is not None else "나스닥 상단 차단 아님"
     strategy_labels = {
         "A": ["현재가 > MA200", "MACD 골든크로스", "종가%B > 80", "RSI > 70", "나스닥 강세 필터"],
@@ -488,6 +493,8 @@ def latest_technical_row(
         "currentPrice": fmt_price(price, stock["market"]),
         "opinion": "매수" if buy["entryTriggered"] else "관망",
         "entryStrategy": strategy,
+        "entrySignalCodes": ",".join(entry_signal_codes),
+        "entrySignals": ", ".join(strategy_display_name(code) for code in entry_signal_codes),
         "decisionLog": decision_log,
         "conditionSummary": " | ".join(condition_summaries),
         "RSI (D)": fmt_number(row["rsi"]),
@@ -599,6 +606,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
             "successfulRows": successful_rows,
         },
         "marketSnapshot": market_snapshot,
+        "qqqMarketState": qqq_market_state,
         "rows": rows,
         "errors": errors,
     }

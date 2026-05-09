@@ -6,11 +6,13 @@ import json
 import os
 import sys
 import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from urllib.error import HTTPError, URLError
 from pathlib import Path
 from typing import Any
+
+from calculator.rules import IndicatorRow, evaluate_exit_condition, strategy_display_name
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -109,13 +111,20 @@ def kst_trade_date() -> str:
     return datetime.now(timezone.utc).astimezone(KST).strftime("%Y.%m.%d")
 
 
-def trade_key(trade: dict[str, Any]) -> tuple[str, str]:
-    return (str(trade.get("ticker") or "").strip().upper(), str(trade.get("buyDate") or "").strip())
+def trade_key(trade: dict[str, Any]) -> tuple[str, str, str]:
+    return (
+        str(trade.get("ticker") or "").strip().upper(),
+        str(trade.get("buyDate") or "").strip(),
+        strategy_code(trade.get("strategy")),
+    )
 
 
-def open_trade_tickers(trades: list[dict[str, Any]]) -> set[str]:
+def open_trade_slots(trades: list[dict[str, Any]]) -> set[tuple[str, str]]:
     return {
-        str(trade.get("ticker") or "").strip().upper()
+        (
+            str(trade.get("ticker") or "").strip().upper(),
+            strategy_code(trade.get("strategy")),
+        )
         for trade in trades
         if str(trade.get("status") or "") == "보유 중"
     }
@@ -137,6 +146,98 @@ def return_pct(buy_price: Any, sell_price: Any) -> float:
     return round(((sell - buy) / buy) * 100, 2)
 
 
+def strategy_code(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    first = text.split(".", 1)[0].strip().upper()
+    if first in {"A", "B", "C", "D", "E", "F"}:
+        return first
+    upper = text.upper()
+    return upper[0] if upper[:1] in {"A", "B", "C", "D", "E", "F"} else ""
+
+
+def entry_signal_codes(row: dict[str, Any]) -> list[str]:
+    raw = row.get("entrySignalCodes")
+    if isinstance(raw, list):
+        values = raw
+    else:
+        values = str(raw or row.get("entryStrategy") or "").replace("/", ",").split(",")
+    codes: list[str] = []
+    for value in values:
+        code = strategy_code(value)
+        if code and code not in codes:
+            codes.append(code)
+    return codes
+
+
+def parse_trade_date(value: Any) -> date | None:
+    text = str(value or "").strip()
+    for fmt in ("%Y.%m.%d", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def trading_days_since(start: Any, end: date) -> int:
+    start_date = parse_trade_date(start)
+    if start_date is None or start_date >= end:
+        return 0
+    days = 0
+    current = start_date + timedelta(days=1)
+    while current <= end:
+        if current.weekday() < 5:
+            days += 1
+        current += timedelta(days=1)
+    return days
+
+
+def indicator_from_trade(row: dict[str, Any], trade: dict[str, Any], current_price: Any) -> IndicatorRow | None:
+    price = parse_price(current_price) or parse_price(row.get("현재가")) or parse_price(row.get("C - Close"))
+    entry_price = parse_price(trade.get("buyPrice"))
+    if price is None or entry_price is None:
+        return None
+    return IndicatorRow(
+        stock_name=str(trade.get("ticker") or row.get("ticker") or ""),
+        current_price=price,
+        ma200=parse_price(row.get("200일 이동평균선")),
+        rsi=parse_price(row.get("RSI (D)")),
+        cci=parse_price(row.get("CCI (D)")),
+        macd_hist=parse_price(row.get("MACD Histogram (D)")),
+        macd_hist_d1=parse_price(row.get("M - H (D-1)")),
+        macd_hist_d2=parse_price(row.get("M - H (D-2)")),
+        pct_b=parse_price(row.get("볼린저밴드 %B (종가)")),
+        pct_b_low=parse_price(row.get("볼린저밴드 %B (저가)")),
+        bb_width=parse_price(row.get("볼린저밴드 폭 (D)")),
+        bb_width_d1=parse_price(row.get("볼린저밴드 폭 (D-1)")),
+        bb_width_avg60=parse_price(row.get("지난 60일 볼린저밴드 폭 평균")),
+        plus_di=parse_price(row.get("+DI (DMI, 14)")),
+        minus_di=parse_price(row.get("-DI (DMI, 14)")),
+        adx=parse_price(row.get("ADX (14, D)")),
+        adx_d1=parse_price(row.get("ADX (14, D-1)")),
+        entry_price=entry_price,
+    )
+
+
+def close_trade(
+    trade: dict[str, Any],
+    *,
+    sell_price: Any,
+    today: str,
+    reason: str,
+) -> None:
+    result = return_pct(trade.get("buyPrice"), sell_price)
+    trade["sellDate"] = today
+    trade["sellPrice"] = sell_price or "-"
+    trade["returnPct"] = result
+    trade["holdingDays"] = "-"
+    trade["status"] = "익절" if result > 0 else "손절"
+    trade["exitReason"] = reason
+    trade.pop("upperExitArmedDate", None)
+
+
 def write_trade_logs(payload: dict[str, Any]) -> None:
     for path in (TRADE_LOG_CACHE_PATH, TRADE_LOG_PUBLIC_PATH):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -147,12 +248,15 @@ def update_trade_logs(
     stocks: list[dict[str, Any]],
     previous_stocks: dict[str, dict[str, Any]],
     technical: dict[str, Any],
+    qqq_market_state: dict[str, Any] | None = None,
 ) -> None:
     existing = load_json(TRADE_LOG_PUBLIC_PATH, load_json(TRADE_LOG_CACHE_PATH, {"rows": []}))
     rows = existing.get("rows", []) if isinstance(existing, dict) else []
     trades = [row for row in rows if isinstance(row, dict)]
     stocks_by_symbol = stocks_by_ticker(stocks)
     today = kst_trade_date()
+    today_date = parse_trade_date(today) or datetime.now(timezone.utc).astimezone(KST).date()
+    nasdaq_peak_alert = bool((qqq_market_state or {}).get("peakTriggered"))
     appended = 0
     closed = 0
 
@@ -167,46 +271,62 @@ def update_trade_logs(
             trade["currentPrice"] = stock.get("currentPrice") or trade.get("currentPrice") or "-"
         if str(trade.get("status") or "") != "보유 중":
             continue
-        if str(stock.get("opinion") or "").strip() != "매도":
-            continue
         sell_price = stock.get("currentPrice") or "-"
-        result = return_pct(trade.get("buyPrice"), sell_price)
-        trade["sellDate"] = today
-        trade["sellPrice"] = sell_price
-        trade["returnPct"] = result
-        trade["holdingDays"] = "-"
-        trade["status"] = "익절" if result > 0 else "손절"
-        closed += 1
+        row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
+        ind = indicator_from_trade(row, trade, sell_price) if isinstance(row, dict) else None
+        if ind is None and not nasdaq_peak_alert:
+            continue
+        armed_date = parse_trade_date(trade.get("upperExitArmedDate"))
+        upper_wait_days = trading_days_since(armed_date.strftime("%Y.%m.%d"), today_date) if armed_date else None
+        exit_result = evaluate_exit_condition(
+            ind or IndicatorRow(stock_name=ticker, current_price=parse_price(sell_price) or 0, entry_price=parse_price(trade.get("buyPrice"))),
+            strategy_type=strategy_code(trade.get("strategy")) or "A",
+            nasdaq_peak_alert=nasdaq_peak_alert,
+            trading_days=trading_days_since(trade.get("buyDate"), today_date),
+            upper_exit_wait_days=upper_wait_days,
+        )
+        if exit_result["shouldExit"]:
+            close_trade(trade, sell_price=sell_price, today=today, reason=str(exit_result.get("reason") or "시스템 매도"))
+            closed += 1
+            continue
+        strategy = strategy_code(trade.get("strategy"))
+        buy_price = parse_price(trade.get("buyPrice"))
+        current_price = parse_price(sell_price)
+        if strategy in {"E", "F"} and buy_price and current_price and current_price >= buy_price * 1.20:
+            trade.setdefault("upperExitArmedDate", today)
 
-    current_open = open_trade_tickers(trades)
+    current_open = open_trade_slots(trades)
 
     for stock in stocks:
         ticker = str(stock.get("ticker") or "").strip().upper()
-        if not ticker or ticker in current_open:
+        if not ticker:
             continue
-        previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "").strip()
         current_opinion = str(stock.get("opinion") or "").strip()
-        if not previous_opinion or previous_opinion == "매수" or current_opinion != "매수":
-            continue
         row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
-        strategies = stock.get("strategies")
-        strategy = ", ".join(str(v) for v in strategies) if isinstance(strategies, list) and strategies else tech_value(row, "진입 전략")
-        trades.append({
-            "ticker": ticker,
-            "name": stock.get("name") or ticker,
-            "market": stock.get("market") or "-",
-            "currentPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
-            "strategy": strategy if strategy and strategy != "-" else "시스템 매수 신호",
-            "buyDate": today,
-            "buyPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
-            "sellDate": "보유 중",
-            "sellPrice": "-",
-            "returnPct": 0,
-            "holdingDays": "-",
-            "status": "보유 중",
-        })
-        current_open.add(ticker)
-        appended += 1
+        if not isinstance(row, dict):
+            continue
+        if current_opinion != "매수" or nasdaq_peak_alert:
+            continue
+        for code in entry_signal_codes(row):
+            slot_key = (ticker, code)
+            if slot_key in current_open:
+                continue
+            trades.append({
+                "ticker": ticker,
+                "name": stock.get("name") or ticker,
+                "market": stock.get("market") or "-",
+                "currentPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
+                "strategy": strategy_display_name(code),
+                "buyDate": today,
+                "buyPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            })
+            current_open.add(slot_key)
+            appended += 1
 
     deduped = list({trade_key(trade): trade for trade in trades}.values())
     payload = {
@@ -218,6 +338,7 @@ def update_trade_logs(
             "failedReason": None,
             "appendedOpenTrades": appended,
             "closedTrades": closed,
+            "nasdaqPeakLiquidation": nasdaq_peak_alert,
         },
         "rows": deduped,
     }
@@ -352,6 +473,7 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
     previous_stocks = stocks_by_ticker(previous_stocks_list)
     valuation = valuation_payload.get("rows", {}) if isinstance(valuation_payload, dict) else {}
     technical = technical_payload.get("rows", {}) if isinstance(technical_payload, dict) else {}
+    qqq_market_state = technical_payload.get("qqqMarketState", {}) if isinstance(technical_payload, dict) else {}
     market_trends = trends_payload.get("rows", []) if isinstance(trends_payload, dict) else []
     tickers = set(load_watchlist_tickers(stocks))
     base = {
@@ -364,7 +486,7 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
     technical_rows = technical_log_rows(stocks, previous_stocks, technical, tickers)
     trend_rows = market_trend_log_rows(market_trends)
     if "technical-analysis" in enabled_tasks:
-        update_trade_logs(stocks, previous_stocks, technical)
+        update_trade_logs(stocks, previous_stocks, technical, qqq_market_state)
 
     logs = [
         {
