@@ -4552,7 +4552,7 @@ function App() {
     [apiSearchStocks, apiStocks, operatorWatchlist, watchlist],
   )
   const isOperatorImportSelectionFull = operatorImportTickers.length >= personalRemainingSlots
-  const canOpenOperatorImport = Boolean(userSession) && effectiveViewMode === 'personal' && isAddingStock
+  const canShowOperatorImport = Boolean(userSession) && effectiveViewMode === 'personal' && canEditCurrentWatchlist
   const toggleOperatorImportTicker = (ticker: string) => {
     setOperatorImportTickers((current) => {
       if (current.includes(ticker)) return current.filter((item) => item !== ticker)
@@ -4610,6 +4610,18 @@ function App() {
   const currentWatchlistSortOption = watchlistSortOptions.find((option) => option.value === watchlistSortSettings.primary) ?? watchlistSortOptions[0]
   const addStockInlineControl = isAddingStock && canEditCurrentWatchlist && !isCurrentWatchlistFull ? (
     <div className="inline-add analysis-inline-add" ref={inlineAddRef}>
+      {canShowOperatorImport && (
+        <div className="inline-add-toolbar">
+          <span>종목명이나 티커로 직접 추가하거나 공수성가 목록에서 골라 가져올 수 있습니다.</span>
+          <button
+            className="import-operator-button"
+            type="button"
+            onClick={() => setIsOperatorImportOpen(true)}
+          >
+            공수성가 종목 가져오기
+          </button>
+        </div>
+      )}
       <input
         autoFocus
         value={query}
@@ -4965,7 +4977,7 @@ function App() {
                         제거
                       </button>
                     )}
-                    {canOpenOperatorImport && (
+                    {canShowOperatorImport && (
                       <button
                         className="import-operator-button"
                         type="button"

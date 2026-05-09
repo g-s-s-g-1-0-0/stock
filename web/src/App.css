@@ -290,6 +290,24 @@
   padding: 10px;
 }
 
+.inline-add-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.inline-add-toolbar span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.inline-add-toolbar .import-operator-button {
+  flex: none;
+}
+
 .inline-results {
   display: grid;
   overflow-y: auto;
