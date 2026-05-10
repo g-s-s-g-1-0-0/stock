@@ -2315,7 +2315,7 @@ function MarketEventsPage({
           <p>금리, 고용, 물가, 리밸런싱 등 시장 변동성을 키울 수 있는 주요 이벤트 일정을 확인합니다. 모든 날짜는 한국 시간 기준입니다.</p>
           <p className="page-warning">※ 이벤트 일정은 미국 정부 상황에 따라 유동적으로 달라져 간혹 맞지 않을 수 있습니다.</p>
         </div>
-        <span className="section-heading-meta">{formatCurrentDateLabel()} <b>|</b> 매일 00:00 확인</span>
+        <span className="section-heading-meta">{formatCurrentDateLabel()} <b>|</b> D-day 자동 계산 <b>|</b> 일정은 수동 확인</span>
       </div>
       {isAdmin && (
         <div className="admin-event-toolbar">
