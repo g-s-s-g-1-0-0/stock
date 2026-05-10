@@ -968,7 +968,15 @@ function preventVerticalScrollBounce(event: WheelEvent<HTMLElement>) {
   const isAtTop = container.scrollTop <= 0
   const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight
   if ((event.deltaY < 0 && isAtTop) || (event.deltaY > 0 && isAtBottom)) {
-    event.preventDefault()
+    const page = document.scrollingElement ?? document.documentElement
+    const maxPageScrollTop = page.scrollHeight - page.clientHeight
+    const canPageScroll = event.deltaY < 0
+      ? page.scrollTop > 0
+      : page.scrollTop < maxPageScrollTop
+
+    if (!canPageScroll) {
+      event.preventDefault()
+    }
   }
 }
 

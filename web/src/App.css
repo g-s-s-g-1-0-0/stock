@@ -1256,7 +1256,6 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  overscroll-behavior: none;
 }
 
 .market-events-table {
@@ -1422,7 +1421,6 @@
   min-height: 0;
   height: auto;
   overflow: auto;
-  overscroll-behavior: none;
 }
 
 .market-trends-table {
