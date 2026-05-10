@@ -35,6 +35,30 @@ REENTRY_DROP = 0.03
 HOLD_RESTORE_DROP = 0.03
 HOLD_RESTORE_MIN_TRADING_DAYS = 3
 MAX_OPEN_PER_STRATEGY = 2
+VALUATION_LOG_FIELDS = [
+    ("marketCap", "시가총액"),
+    ("sales", "매출"),
+    ("salesQoq", "매출 Q/Q"),
+    ("salesYoyTtm", "매출 Y/Y(TTM)"),
+    ("salesPastYears", "매출 3/5년"),
+    ("currentRatio", "유동비율"),
+    ("debtToEquity", "부채비율"),
+    ("priceToFreeCashFlow", "P/FCF"),
+    ("priceToSales", "P/S"),
+    ("per", "PER"),
+    ("pbr", "PBR"),
+    ("roe", "ROE"),
+    ("peg", "PEG"),
+    ("sharesOutstanding", "상장주식수"),
+    ("grossMargin", "매출총이익률"),
+    ("operatingMargin", "영업이익률"),
+    ("epsTtm", "EPS(TTM)"),
+    ("epsNextYear", "EPS Next Y"),
+    ("epsQoq", "EPS Q/Q"),
+    ("ruleOf40", "Rule of 40"),
+    ("earningsDate", "실적발표일"),
+    ("valuationIndustry", "가치분석 산업"),
+]
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -526,6 +550,36 @@ def parse_log_tasks(argv: list[str]) -> set[str]:
     return tasks or set(VALID_TASKS)
 
 
+def value_log_text(row: dict[str, Any]) -> str:
+    header_parts = [
+        f"{row.get('ticker') or '-'}",
+        str(row.get("name") or "-"),
+        str(row.get("market") or "-"),
+    ]
+    if row.get("industry"):
+        header_parts.append(str(row["industry"]))
+
+    metric_lines = [
+        f"  {label}: {row.get(key) or '-'}"
+        for key, label in VALUATION_LOG_FIELDS
+    ]
+
+    return "\n".join([
+        f"====== {' | '.join(header_parts)} ======",
+        "[요약]",
+        f"  현재가: {row.get('currentPrice') or '-'}",
+        f"  적정 주가 범위: {row.get('fairPrice') or '-'}",
+        f"  가치 평가: {row.get('valuation') or '-'}",
+        f"  투자의견: {row.get('opinion') or '-'}",
+        f"  종목 분류: {row.get('category') or '-'}",
+        f"  갱신: {row.get('updatedAt') or '-'}",
+        "[가치 지표]",
+        *metric_lines,
+        "[원본 추출값]",
+        "  " + ",".join(str(row.get(key) or "-") for key, _ in VALUATION_LOG_FIELDS),
+    ])
+
+
 def value_log_rows(stocks: list[dict[str, Any]], valuation: dict[str, Any], tickers: set[str]) -> list[dict[str, Any]]:
     rows = []
     for stock in stocks:
@@ -533,20 +587,23 @@ def value_log_rows(stocks: list[dict[str, Any]], valuation: dict[str, Any], tick
         if ticker not in tickers:
             continue
         metric = valuation.get(ticker, {}) if isinstance(valuation, dict) else {}
-        rows.append({
+        log_row = {
             "ticker": ticker,
             "name": stock.get("name") or "-",
             "market": stock.get("market") or "-",
             "industry": stock.get("industry") or "-",
+            "category": stock.get("category") or "-",
             "currentPrice": stock.get("currentPrice") or "-",
             "fairPrice": stock.get("fairPrice") or "-",
+            "fairPriceReason": stock.get("fairPriceReason") or "-",
             "valuation": stock.get("valuation") or "-",
             "opinion": "-" if stock.get("fairPriceReason") == "loss_making" else stock.get("opinion", "-"),
-            "per": metric.get("per", "-"),
-            "epsTtm": metric.get("epsTtm", "-"),
-            "roe": metric.get("roe", "-"),
             "updatedAt": stock.get("updatedAt") or "-",
-        })
+            **{key: metric.get(key, "-") for key, _ in VALUATION_LOG_FIELDS if key != "valuationIndustry"},
+            "valuationIndustry": metric.get("industry", "-"),
+        }
+        log_row["logText"] = value_log_text(log_row)
+        rows.append(log_row)
     return rows[:MAX_LOG_ROWS]
 
 
@@ -668,7 +725,6 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
 
     value_rows = value_log_rows(stocks, valuation, tickers)
     technical_rows = technical_log_rows(stocks, previous_stocks, technical, tickers)
-    technical_copy_text = "\n\n".join(str(row.get("logText") or "") for row in technical_rows if row.get("logText"))
     trend_rows = market_trend_log_rows(market_trends)
     if "technical-analysis" in enabled_tasks:
         update_trade_logs(stocks, previous_stocks, technical, qqq_market_state)
@@ -681,19 +737,17 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
             "metadata": {
                 **base,
                 "task": "value-analysis",
-                "summary": "GitHub Actions 갱신 후 종목별 가치분석 스냅샷입니다.",
+                "summary": "GitHub Actions 갱신 후 종목별 가치분석 전체 지표 로그입니다.",
                 "total": len(value_rows),
+                "view": "logText",
                 "columns": [
                     {"key": "ticker", "label": "종목"},
                     {"key": "name", "label": "종목명"},
+                    {"key": "market", "label": "시장"},
                     {"key": "currentPrice", "label": "현재가"},
                     {"key": "fairPrice", "label": "적정 주가 범위"},
                     {"key": "valuation", "label": "판단"},
                     {"key": "opinion", "label": "투자의견"},
-                    {"key": "per", "label": "PER"},
-                    {"key": "epsTtm", "label": "EPS(TTM)"},
-                    {"key": "roe", "label": "ROE"},
-                    {"key": "industry", "label": "산업"},
                 ],
                 "rows": value_rows,
             },
@@ -708,7 +762,6 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
                 "summary": "GitHub Actions 갱신 후 종목별 매매 기준 판단 로그입니다.",
                 "total": len(technical_rows),
                 "view": "logText",
-                "copyText": technical_copy_text,
                 "columns": [
                     {"key": "ticker", "label": "종목"},
                     {"key": "name", "label": "종목명"},
