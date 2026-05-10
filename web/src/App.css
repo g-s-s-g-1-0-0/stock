@@ -2386,7 +2386,8 @@
 }
 
 .watchlist-table .strategy-item,
-.holding-table .strategy-item {
+.holding-table .strategy-item,
+.technical-strategy-cell .strategy-item {
   display: inline-flex;
   width: auto;
   max-width: none;
@@ -2394,7 +2395,8 @@
 }
 
 .watchlist-table .strategy-data-cell,
-.holding-table td:nth-child(5) {
+.holding-table td:nth-child(5),
+.technical-strategy-cell {
   overflow-x: auto;
   max-width: 270px;
   white-space: nowrap;

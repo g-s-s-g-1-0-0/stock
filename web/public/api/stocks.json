@@ -2,7 +2,7 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-10T07:00:43+00:00",
+    "updatedAt": "2026-05-10T17:01:07+09:00",
     "lastSuccessfulRun": "2026-05-10T07:00:43+00:00",
     "failedReason": null
   },
@@ -201,7 +201,8 @@
       "valuation": "고평가",
       "opinion": "매수",
       "strategies": [
-        "E. 200일선 상방 & 스퀴즈 저점"
+        "E. 200일선 상방 & 스퀴즈 저점",
+        "F. 200일선 상방 & BB 극단 저점"
       ],
       "category": "성장주",
       "industry": "방산, 유도무기, 레이더, 방산 수출",

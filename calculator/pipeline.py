@@ -686,19 +686,60 @@ def build_stock_search_cache() -> dict[str, Any]:
     }
 
 
+def strategy_codes_from_technical(technical: dict[str, Any]) -> list[str]:
+    raw = technical.get("entrySignalCodes") or technical.get("entrySignals") or technical.get("entryStrategy") or technical.get("진입 전략")
+    if isinstance(raw, list):
+        values = raw
+    else:
+        values = str(raw or "").replace("/", ",").split(",")
+
+    codes: list[str] = []
+    for value in values:
+        code = str(value or "").split(".", 1)[0].strip().upper()
+        if code in {"A", "B", "C", "D", "E", "F"} and code not in codes:
+            codes.append(code)
+    return codes
+
+
+def stock_strategies_from_technical(technical: dict[str, Any]) -> list[str]:
+    codes = strategy_codes_from_technical(technical)
+    if codes:
+        return [strategy_display_name(code) for code in codes]
+
+    entry_strategy = technical.get("진입 전략") or technical.get("entryStrategy")
+    return [entry_strategy] if entry_strategy not in (None, "-") else []
+
+
+def sync_existing_stock_strategies(rows: list[Any], technical_rows: dict[str, Any]) -> list[Any]:
+    synced_rows = []
+    for row in rows:
+        if not isinstance(row, dict):
+            synced_rows.append(row)
+            continue
+        ticker = str(row.get("ticker", "")).strip().upper()
+        technical = technical_rows.get(ticker, {})
+        if isinstance(technical, dict) and technical:
+            synced_rows.append({**row, "strategies": stock_strategies_from_technical(technical)})
+        else:
+            synced_rows.append(row)
+    return synced_rows
+
+
 def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str, Any]:
     existing = read_cache("stocks")
     existing_rows = existing.get("rows", []) if isinstance(existing, dict) else []
     source_universe = universe if universe is not None else read_universe()
     if not source_universe and existing_rows:
+        technical_rows = read_cache("technical").get("rows", {})
         return {
             **existing,
             "meta": {
                 **(existing.get("meta", {}) if isinstance(existing, dict) else {}),
                 "kind": "stocks",
                 "updatedAt": now_iso(),
-                "failedReason": "refresh universe is empty; preserved existing stocks cache",
+                "failedReason": None,
             },
+            "rows": sync_existing_stock_strategies(existing_rows, technical_rows if isinstance(technical_rows, dict) else {}),
         }
     technical_rows = read_cache("technical").get("rows", {})
     valuation_rows = read_cache("valuation").get("rows", {})
@@ -729,7 +770,7 @@ def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str
             "currentPrice": current_price,
             "valuation": valuation_from_price_range(current_price, fair_price),
             "opinion": technical.get("opinion", "관망"),
-            "strategies": [technical["진입 전략"]] if technical.get("진입 전략") not in (None, "-") else [],
+            "strategies": stock_strategies_from_technical(technical),
             "category": stock_category(stock),
             "industry": stock_industry(stock, valuation),
             "updatedAt": technical.get("updatedAt", now_iso()),

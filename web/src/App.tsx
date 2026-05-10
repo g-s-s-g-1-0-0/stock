@@ -1757,6 +1757,16 @@ function openTradesForStock(stock: Stock, targetTrades: TradeLog[]) {
   return targetTrades.filter((trade) => trade.ticker === stock.ticker && trade.status === '보유 중')
 }
 
+function openTradeStrategiesForStock(stock: Stock, targetTrades: TradeLog[]) {
+  const strategies = openTradesForStock(stock, targetTrades).map((trade) => trade.strategy).filter(Boolean)
+  return Array.from(new Set(strategies))
+}
+
+function displayStrategiesForStock(stock: Stock, targetTrades: TradeLog[] = []) {
+  const openTradeStrategies = openTradeStrategiesForStock(stock, targetTrades)
+  return openTradeStrategies.length > 0 ? openTradeStrategies : stock.strategies
+}
+
 function joinTradeValues(targetTrades: TradeLog[], value: (trade: TradeLog) => string) {
   const values = Array.from(new Set(targetTrades.map(value).filter(Boolean)))
   return values.length > 0 ? values.join(', ') : '-'
@@ -1771,7 +1781,8 @@ function technicalEntryDate(stock: Stock, targetTrades: TradeLog[] = []) {
 }
 
 function technicalEntryStrategy(stock: Stock, targetTrades: TradeLog[] = []) {
-  return joinTradeValues(openTradesForStock(stock, targetTrades), (trade) => trade.strategy)
+  const strategies = displayStrategiesForStock(stock, targetTrades)
+  return strategies.length > 0 ? strategies.join(', ') : '-'
 }
 
 const technicalMetricColumns: TechnicalColumn[] = [
@@ -2134,12 +2145,13 @@ function TechnicalAnalysisPage({
                   <td><span className={`status-badge ${statusClass(displayStockOpinion(stock))}`}>{displayStockOpinion(stock)}</span></td>
                   {technicalMetricColumns.map((column) => {
                     const apiKey = column.key ?? column.label
+                    const entryStrategies = apiKey === '진입 전략' ? displayStrategiesForStock(stock, tradeLogs) : []
                     const value = apiKey === '진입가'
                       ? technicalEntryPrice(stock, tradeLogs)
                       : apiKey === '진입일'
                         ? technicalEntryDate(stock, tradeLogs)
                         : apiKey === '진입 전략'
-                          ? technicalEntryStrategy(stock, tradeLogs)
+                          ? (entryStrategies.length > 0 ? entryStrategies.join(', ') : '-')
                           : apiRow?.[apiKey] ?? '-'
                     const isEntryStrategy = apiKey === '진입 전략'
                     const isEarningsDate = apiKey.startsWith('실적발표일')
@@ -2151,13 +2163,14 @@ function TechnicalAnalysisPage({
 
                     return (
                       <td className={cellClassName} key={column.label}>
-                        {isEntryStrategy && value !== '-' ? (
+                        {isEntryStrategy && entryStrategies.length > 0 ? entryStrategies.map((strategy) => (
                           <StrategyTag
+                            key={strategy}
                             onTooltipClose={onTooltipClose}
                             onTooltipOpen={onTooltipOpen}
-                            strategy={value}
+                            strategy={strategy}
                           />
-                        ) : value}
+                        )) : value}
                       </td>
                     )
                   })}
@@ -4470,7 +4483,7 @@ function App() {
     <div className="inline-add analysis-inline-add" ref={inlineAddRef}>
       {canShowOperatorImport && (
         <div className="inline-add-toolbar">
-          <span>직접 검색하거나 공수성가 목록에서 가져오세요.</span>
+          <span>직접 검색하거나 공수성가 목록에서 가져올 수 있습니다.</span>
           <button
             className="import-operator-button"
             type="button"
@@ -4960,6 +4973,8 @@ function App() {
                     {tableStocks.map((stock, index) => {
                       const displayValuation = displayStockValuation(stock)
                       const displayOpinion = displayStockOpinion(stock)
+                      const isHolding = isSystemHolding(stock.ticker, scopedTrades)
+                      const buyStrategies = displayStrategiesForStock(stock, scopedTrades)
 
                       return (
                       <tr key={stock.ticker}>
@@ -4999,10 +5014,10 @@ function App() {
                         <td><span className={`status-badge ${valuationBadgeClass(displayValuation)}`}>{displayValuation}</span></td>
                         <td><span className={`status-badge ${statusClass(displayOpinion)}`}>{displayOpinion}</span></td>
                         <td>
-                          {isSystemHolding(stock.ticker, scopedTrades) ? '보유 중' : '미보유'}
+                          {isHolding ? '보유 중' : '미보유'}
                         </td>
-                        <td className={isSystemHolding(stock.ticker, scopedTrades) ? 'strategy-data-cell' : 'strategy-data-cell dash-cell'}>
-                          {isSystemHolding(stock.ticker, scopedTrades) ? stock.strategies.map((strategy) => (
+                        <td className={isHolding ? 'strategy-data-cell' : 'strategy-data-cell dash-cell'}>
+                          {isHolding && buyStrategies.length > 0 ? buyStrategies.map((strategy) => (
                             <StrategyTag
                               key={strategy}
                               onTooltipClose={() => setActiveTooltip(null)}
