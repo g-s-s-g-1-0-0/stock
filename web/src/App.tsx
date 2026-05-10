@@ -961,13 +961,25 @@ function stockSearchRank(stock: Stock, normalizedQuery: string) {
   return 99
 }
 
-function preventVerticalScrollBounce(event: WheelEvent<HTMLElement>) {
+function preventScrollBounce(event: WheelEvent<HTMLElement>) {
   const container = event.currentTarget
-  if (Math.abs(event.deltaY) < Math.abs(event.deltaX) || container.scrollHeight <= container.clientHeight) return
+  const hasHorizontalScroll = container.scrollWidth > container.clientWidth
+  const isHorizontalScroll = Math.abs(event.deltaX) > Math.abs(event.deltaY) || (event.shiftKey && hasHorizontalScroll)
+  const delta = isHorizontalScroll ? event.deltaX || event.deltaY : event.deltaY
+  if (delta === 0) return
 
-  const isAtTop = container.scrollTop <= 0
-  const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight
-  if ((event.deltaY < 0 && isAtTop) || (event.deltaY > 0 && isAtBottom)) {
+  const scrollPosition = isHorizontalScroll ? container.scrollLeft : container.scrollTop
+  const clientSize = isHorizontalScroll ? container.clientWidth : container.clientHeight
+  const scrollSize = isHorizontalScroll ? container.scrollWidth : container.scrollHeight
+
+  if (scrollSize <= clientSize) {
+    event.preventDefault()
+    return
+  }
+
+  const isAtStart = scrollPosition <= 0
+  const isAtEnd = Math.ceil(scrollPosition + clientSize) >= scrollSize
+  if ((delta < 0 && isAtStart) || (delta > 0 && isAtEnd)) {
     event.preventDefault()
   }
 }
@@ -1929,7 +1941,7 @@ function ValueAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet" onWheel={preventVerticalScrollBounce}>
+        <div className="sheet-wrap value-analysis-sheet" onWheel={preventScrollBounce}>
           <table className="sheet-table value-analysis-table">
           <thead>
             <tr>
@@ -2109,7 +2121,7 @@ function TechnicalAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet" onWheel={preventVerticalScrollBounce}>
+        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet" onWheel={preventScrollBounce}>
           <table className="sheet-table value-analysis-table technical-analysis-table">
             <thead>
               <tr>
@@ -2328,7 +2340,7 @@ function MarketEventsPage({
         </div>
       )}
 
-      <div className="sheet-wrap market-events-sheet">
+      <div className="sheet-wrap market-events-sheet" onWheel={preventScrollBounce}>
         <table className="sheet-table market-events-table">
           <thead>
             <tr>
@@ -2443,7 +2455,7 @@ function MarketTrendsPage({ rows, updateLabel }: { rows: MarketTrendRow[]; updat
         <span className="section-heading-meta">총 {rows.length}개 <b>|</b> {updateLabel}</span>
       </div>
 
-      <div className="sheet-wrap market-trends-sheet">
+      <div className="sheet-wrap market-trends-sheet" onWheel={preventScrollBounce}>
         <table className="sheet-table market-trends-table">
           <thead>
             <tr>
@@ -2795,7 +2807,7 @@ function AdminLogsPage({
         <span>{activeTab.description}</span>
       </div>
 
-      <div className={`sheet-wrap admin-logs-sheet ${filteredLogs.length === 0 ? 'admin-logs-sheet-empty' : ''}`}>
+      <div className={`sheet-wrap admin-logs-sheet ${filteredLogs.length === 0 ? 'admin-logs-sheet-empty' : ''}`} onWheel={preventScrollBounce}>
         {filteredLogs.length === 0 ? (
           <div className="board-empty-state admin-log-empty-state">
             <strong>아직 이 작업의 실행 로그가 없습니다.</strong>
@@ -4716,7 +4728,7 @@ function App() {
             </div>
           </div>
 
-          <div className="sheet-wrap trading-log-scroll">
+          <div className="sheet-wrap trading-log-scroll" onWheel={preventScrollBounce}>
             <table className="sheet-table trading-log-table">
               <thead>
                 <tr>
@@ -4918,7 +4930,7 @@ function App() {
 
             {addStockInlineControl}
 
-            <div className="sheet-wrap watchlist-sheet">
+            <div className="sheet-wrap watchlist-sheet" onWheel={preventScrollBounce}>
               {tableStocks.length === 0 ? (
                 <div className="watchlist-empty-panel">
                   <div className="empty-watchlist">
@@ -5074,7 +5086,7 @@ function App() {
               </div>
             </div>
 
-            <div className="sheet-wrap holding-sheet">
+            <div className="sheet-wrap holding-sheet" onWheel={preventScrollBounce}>
               <table className={`sheet-table holding-table ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}>
                 <thead>
                   <tr>

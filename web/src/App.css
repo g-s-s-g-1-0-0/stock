@@ -870,6 +870,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: none;
   border: 1px solid var(--sheet-border);
   border-radius: 8px;
   background: var(--sheet-bg);
@@ -1418,7 +1419,7 @@
   height: auto;
   overflow-x: auto;
   overflow-y: visible;
-  overscroll-behavior-x: contain;
+  overscroll-behavior: none;
 }
 
 .market-trends-table {
