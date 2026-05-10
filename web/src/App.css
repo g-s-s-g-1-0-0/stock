@@ -871,7 +871,7 @@
   min-height: 0;
   overflow: auto;
   overscroll-behavior-x: contain;
-  overscroll-behavior-y: auto;
+  overscroll-behavior-y: contain;
   border: 1px solid var(--sheet-border);
   border-radius: 8px;
   background: var(--sheet-bg);
@@ -3533,6 +3533,7 @@
 
 .admin-log-detail-table-wrap {
   overflow: auto;
+  overscroll-behavior: contain;
   border: 1px solid #dbe4ef;
   border-radius: 12px;
   background: #ffffff;

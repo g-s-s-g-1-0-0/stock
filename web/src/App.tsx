@@ -2728,7 +2728,7 @@ function ApiLogMetadataDetail({
       {plainText ? (
         <pre className="admin-log-pretty-text">{plainText}</pre>
       ) : rows.length > 0 && columns.length > 0 ? (
-        <div className="admin-log-detail-table-wrap">
+        <div className="admin-log-detail-table-wrap" onWheel={handleSheetWheel}>
           <table className="admin-log-detail-table">
             <thead>
               <tr>
