@@ -4470,7 +4470,7 @@ function App() {
     <div className="inline-add analysis-inline-add" ref={inlineAddRef}>
       {canShowOperatorImport && (
         <div className="inline-add-toolbar">
-          <span>종목명이나 티커로 직접 추가하거나 공수성가 목록에서 골라 가져올 수 있습니다.</span>
+          <span>직접 검색하거나 공수성가 목록에서 가져오세요.</span>
           <button
             className="import-operator-button"
             type="button"
@@ -4532,8 +4532,7 @@ function App() {
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={closeOperatorImportModal}>×</button>
             <h3 id="operator-import-title">공수성가 종목 가져오기</h3>
             <p>
-              공수성가가 현재 보고 있는 종목 중 내 관심종목에 없는 종목만 가져올 수 있습니다.
-              남은 슬롯은 {personalRemainingSlots}개입니다.
+              내 관심종목에 없는 공수성가 종목만 가져옵니다. 남은 슬롯 {personalRemainingSlots}개.
             </p>
             <div className="operator-import-status">
               <strong>{operatorImportTickers.length}개 선택</strong>
@@ -4833,15 +4832,6 @@ function App() {
                     {selectedTickers.length > 0 && (
                       <button className="remove-selected-button" type="button" onClick={removeSelectedStocks}>
                         제거
-                      </button>
-                    )}
-                    {canShowOperatorImport && isAddingStock && (
-                      <button
-                        className="import-operator-button"
-                        type="button"
-                        onClick={() => setIsOperatorImportOpen(true)}
-                      >
-                        공수성가 종목 가져오기
                       </button>
                     )}
                     <button
