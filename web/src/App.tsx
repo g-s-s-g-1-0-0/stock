@@ -925,12 +925,6 @@ function displayStockName(name: string) {
   let value = name.trim()
   if (!value) return '-'
 
-  const trailingCountryPattern = /\s+\((Ireland|United Kingdom|Netherlands|Luxembourg|Canada|Israel|China|Cayman Islands|Bermuda|Jersey|Guernsey|Switzerland|Antigua\/Barbudo)\)\s*$/i
-  value = value
-    .replace(/\s+-\s*\([^)]+\)\s*$/, '')
-    .replace(trailingCountryPattern, '')
-    .replace(/\s+-\s*$/, '')
-
   for (const marker of [' American Depositary', ' Depositary Shares', ' ADS']) {
     if (value.includes(marker)) {
       value = value.split(marker, 1)[0].trim()
@@ -967,34 +961,14 @@ function stockSearchRank(stock: Stock, normalizedQuery: string) {
   return 99
 }
 
-function handleSheetWheel(event: WheelEvent<HTMLElement>) {
+function preventVerticalScrollBounce(event: WheelEvent<HTMLElement>) {
   const container = event.currentTarget
-  const verticalDelta = Math.abs(event.deltaY)
-  const horizontalIntent = Math.abs(event.deltaX) > verticalDelta
-  if (horizontalIntent && container.scrollWidth > container.clientWidth) {
-    const isAtLeft = container.scrollLeft <= 0
-    const isAtRight = Math.ceil(container.scrollLeft + container.clientWidth) >= container.scrollWidth
-    if (verticalDelta <= 1 && ((event.deltaX < 0 && isAtLeft) || (event.deltaX > 0 && isAtRight))) {
-      event.preventDefault()
-    }
-    return
-  }
-
-  if (container.scrollHeight <= container.clientHeight) return
+  if (Math.abs(event.deltaY) < Math.abs(event.deltaX) || container.scrollHeight <= container.clientHeight) return
 
   const isAtTop = container.scrollTop <= 0
   const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight
   if ((event.deltaY < 0 && isAtTop) || (event.deltaY > 0 && isAtBottom)) {
-    const page = document.scrollingElement ?? document.documentElement
-    const maxPageScrollTop = page.scrollHeight - page.clientHeight
-    const canPageScroll = event.deltaY < 0
-      ? page.scrollTop > 0
-      : page.scrollTop < maxPageScrollTop
-
     event.preventDefault()
-    if (canPageScroll) {
-      page.scrollTop = Math.min(maxPageScrollTop, Math.max(0, page.scrollTop + event.deltaY))
-    }
   }
 }
 
@@ -1955,7 +1929,7 @@ function ValueAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet" onWheel={handleSheetWheel}>
+        <div className="sheet-wrap value-analysis-sheet" onWheel={preventVerticalScrollBounce}>
           <table className="sheet-table value-analysis-table">
           <thead>
             <tr>
@@ -2135,7 +2109,7 @@ function TechnicalAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet" onWheel={handleSheetWheel}>
+        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet" onWheel={preventVerticalScrollBounce}>
           <table className="sheet-table value-analysis-table technical-analysis-table">
             <thead>
               <tr>
@@ -2354,7 +2328,7 @@ function MarketEventsPage({
         </div>
       )}
 
-      <div className="sheet-wrap market-events-sheet" onWheel={handleSheetWheel}>
+      <div className="sheet-wrap market-events-sheet">
         <table className="sheet-table market-events-table">
           <thead>
             <tr>
@@ -2469,7 +2443,7 @@ function MarketTrendsPage({ rows, updateLabel }: { rows: MarketTrendRow[]; updat
         <span className="section-heading-meta">총 {rows.length}개 <b>|</b> {updateLabel}</span>
       </div>
 
-      <div className="sheet-wrap market-trends-sheet" onWheel={handleSheetWheel}>
+      <div className="sheet-wrap market-trends-sheet">
         <table className="sheet-table market-trends-table">
           <thead>
             <tr>
@@ -2728,7 +2702,7 @@ function ApiLogMetadataDetail({
       {plainText ? (
         <pre className="admin-log-pretty-text">{plainText}</pre>
       ) : rows.length > 0 && columns.length > 0 ? (
-        <div className="admin-log-detail-table-wrap" onWheel={handleSheetWheel}>
+        <div className="admin-log-detail-table-wrap">
           <table className="admin-log-detail-table">
             <thead>
               <tr>
@@ -2821,7 +2795,7 @@ function AdminLogsPage({
         <span>{activeTab.description}</span>
       </div>
 
-      <div className={`sheet-wrap admin-logs-sheet ${filteredLogs.length === 0 ? 'admin-logs-sheet-empty' : ''}`} onWheel={handleSheetWheel}>
+      <div className={`sheet-wrap admin-logs-sheet ${filteredLogs.length === 0 ? 'admin-logs-sheet-empty' : ''}`}>
         {filteredLogs.length === 0 ? (
           <div className="board-empty-state admin-log-empty-state">
             <strong>아직 이 작업의 실행 로그가 없습니다.</strong>
@@ -4742,7 +4716,7 @@ function App() {
             </div>
           </div>
 
-          <div className="sheet-wrap trading-log-scroll" onWheel={handleSheetWheel}>
+          <div className="sheet-wrap trading-log-scroll">
             <table className="sheet-table trading-log-table">
               <thead>
                 <tr>
@@ -4944,7 +4918,7 @@ function App() {
 
             {addStockInlineControl}
 
-            <div className="sheet-wrap watchlist-sheet" onWheel={handleSheetWheel}>
+            <div className="sheet-wrap watchlist-sheet">
               {tableStocks.length === 0 ? (
                 <div className="watchlist-empty-panel">
                   <div className="empty-watchlist">
@@ -5100,7 +5074,7 @@ function App() {
               </div>
             </div>
 
-            <div className="sheet-wrap holding-sheet" onWheel={handleSheetWheel}>
+            <div className="sheet-wrap holding-sheet">
               <table className={`sheet-table holding-table ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}>
                 <thead>
                   <tr>

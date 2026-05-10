@@ -870,8 +870,6 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  overscroll-behavior-x: contain;
-  overscroll-behavior-y: contain;
   border: 1px solid var(--sheet-border);
   border-radius: 8px;
   background: var(--sheet-bg);
@@ -976,6 +974,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: none;
   background-color: var(--sheet-bg);
 }
 
@@ -1254,9 +1253,7 @@
 }
 
 .market-events-sheet {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
+  height: 616px;
 }
 
 .market-events-table {
@@ -1418,10 +1415,10 @@
 }
 
 .market-trends-sheet {
-  flex: 1;
-  min-height: 0;
   height: auto;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-x: contain;
 }
 
 .market-trends-table {
@@ -2133,19 +2130,10 @@
 
 .name-cell {
   display: flex;
-  width: 100%;
-  min-width: 0;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
   text-align: left;
-}
-
-.name-cell > span:last-child {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .ticker-cell,
@@ -2176,7 +2164,6 @@
 
 .market-flag {
   display: inline-flex;
-  flex: 0 0 18px;
   width: 18px;
   justify-content: center;
   font-size: 14px;
@@ -3533,7 +3520,6 @@
 
 .admin-log-detail-table-wrap {
   overflow: auto;
-  overscroll-behavior: contain;
   border: 1px solid #dbe4ef;
   border-radius: 12px;
   background: #ffffff;
