@@ -17,8 +17,10 @@ import urllib.request
 from datetime import datetime, timedelta
 from html import unescape
 from typing import Any
+from zoneinfo import ZoneInfo
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+KST = ZoneInfo("Asia/Seoul")
 
 
 def fetch_text(url: str, *, encoding: str = "utf-8") -> str:
@@ -348,6 +350,10 @@ def format_d_day(target: datetime, today: datetime) -> str:
     return f"D{'+' if diff_days < 0 else '-'}{abs(diff_days)}"
 
 
+def kst_now() -> datetime:
+    return datetime.now(KST)
+
+
 def process_us_earnings_date(raw: str) -> str:
     value = re.sub(r"\s+", " ", raw or "").strip()
     match = re.search(r"\b([A-Z][a-z]{2})\s+(\d{1,2})(?:\s+(BMO|AMC))?\b", value)
@@ -355,7 +361,7 @@ def process_us_earnings_date(raw: str) -> str:
         return "-"
 
     month_name, day, session = match.groups()
-    today = datetime.now()
+    today = kst_now()
     try:
         parsed = datetime.strptime(f"{today.year} {month_name} {day}", "%Y %b %d")
     except ValueError:
@@ -403,7 +409,7 @@ def process_korean_earnings_date(raw: str) -> str:
         parsed = datetime(year, month, day)
     except (TypeError, ValueError):
         return "-"
-    return f"{parsed:%Y-%m-%d} ({format_d_day(parsed, datetime.now())})"
+    return f"{parsed:%Y-%m-%d} ({format_d_day(parsed, kst_now())})"
 
 
 def extract_row_values(table_html: str, row_label: str) -> list[float | None]:
