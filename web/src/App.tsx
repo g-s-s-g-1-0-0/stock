@@ -3915,8 +3915,7 @@ function App() {
     }
   }, [isAdminUser, userSession?.id])
 
-  const canAdminUsePersonalMode = isAdminUser && canUseAccountSwitch
-  const effectiveViewMode = isAdminUser && !canAdminUsePersonalMode ? 'operator' : viewMode
+  const effectiveViewMode = isAdminUser ? 'operator' : viewMode
   const isOperatorDataMode = effectiveViewMode === 'operator'
   const scopedTrades = isOperatorDataMode ? systemTradeLogs : personalTradeLogs
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
@@ -4772,8 +4771,8 @@ function App() {
         <div className={`segmented-tabs global-tabs view-mode-tabs ${showViewModeHint ? 'view-mode-tabs-highlight' : ''}`} aria-label="화면 기준">
           <button
             className={effectiveViewMode === 'personal' ? 'active' : ''}
-            disabled={isAdminUser && !canAdminUsePersonalMode}
-            title={isAdminUser && !canAdminUsePersonalMode ? '어드민 계정은 공수성가 탭만 사용할 수 있습니다.' : undefined}
+            disabled={isAdminUser}
+            title={isAdminUser ? '어드민 계정은 공수성가 탭만 사용할 수 있습니다.' : undefined}
             type="button"
             onClick={() => changeViewMode('personal')}
           >
@@ -4977,7 +4976,7 @@ function App() {
                         제거
                       </button>
                     )}
-                    {canShowOperatorImport && (
+                    {canShowOperatorImport && isAddingStock && (
                       <button
                         className="import-operator-button"
                         type="button"
@@ -5190,7 +5189,7 @@ function App() {
           <section className={`panel ${isCurrentWatchlistEmpty ? 'dimmed-panel' : ''}`}>
             <div className="section-heading">
               <div className="section-title-inline">
-                <h2>보유중인 종목</h2>
+                <h2>보유중인 종목 (전략 단위)</h2>
                 <span>총 {scopedOpenTrades.length}개</span>
               </div>
               <div className="heading-actions">
