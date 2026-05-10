@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
@@ -27,6 +28,7 @@ TRADE_LOG_CACHE_PATH = ROOT_DIR / "data" / "cache" / "trade-logs.json"
 TRADE_LOG_PUBLIC_PATH = API_DIR / "trade-logs.json"
 RUNTIME_STATE_PATH = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
 MAX_LOG_ROWS = 80
+OPERATION_LOG_RETENTION_DAYS = int(os.environ.get("OPERATION_LOG_RETENTION_DAYS", "7"))
 VALID_TASKS = {"value-analysis", "technical-analysis", "market-trends"}
 KST = ZoneInfo("Asia/Seoul")
 SELL_HOLD_DAYS = 2
@@ -104,7 +106,7 @@ def supabase_request(path: str, method: str = "GET", payload: Any | None = None)
 
 
 def clean_old_logs() -> None:
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=21)).isoformat().replace("+00:00", "Z")
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=OPERATION_LOG_RETENTION_DAYS)).isoformat().replace("+00:00", "Z")
     try:
         supabase_request(f"/rest/v1/api_logs?created_at=lt.{cutoff}", method="DELETE")
     except (HTTPError, URLError, TimeoutError) as error:
@@ -550,6 +552,18 @@ def parse_log_tasks(argv: list[str]) -> set[str]:
     return tasks or set(VALID_TASKS)
 
 
+def meaningful_log_value(value: Any) -> bool:
+    return str(value or "").strip() not in {"", "-"}
+
+
+def log_mark(passed: bool) -> str:
+    return "✅" if passed else "❌"
+
+
+def checked_value(value: Any) -> str:
+    return f"{log_mark(meaningful_log_value(value))} {value or '-'}"
+
+
 def value_log_text(row: dict[str, Any]) -> str:
     header_parts = [
         f"{row.get('ticker') or '-'}",
@@ -560,9 +574,10 @@ def value_log_text(row: dict[str, Any]) -> str:
         header_parts.append(str(row["industry"]))
 
     metric_lines = [
-        f"  {label}: {row.get(key) or '-'}"
+        f"  {label}: {checked_value(row.get(key))}"
         for key, label in VALUATION_LOG_FIELDS
     ]
+    can_judge = row.get("fairPriceReason") != "loss_making" and meaningful_log_value(row.get("fairPrice"))
 
     return "\n".join([
         f"====== {' | '.join(header_parts)} ======",
@@ -573,6 +588,10 @@ def value_log_text(row: dict[str, Any]) -> str:
         f"  투자의견: {row.get('opinion') or '-'}",
         f"  종목 분류: {row.get('category') or '-'}",
         f"  갱신: {row.get('updatedAt') or '-'}",
+        "[판단]",
+        f"  적정가 산정 가능: {log_mark(can_judge)}",
+        f"  저평가 여부: {log_mark(row.get('valuation') == '저평가')} {row.get('valuation') or '-'}",
+        f"  매수 의견 여부: {log_mark(row.get('opinion') == '매수')} {row.get('opinion') or '-'}",
         "[가치 지표]",
         *metric_lines,
         "[원본 추출값]",
@@ -617,6 +636,55 @@ def tech_value(row: dict[str, Any], *candidates: str) -> Any:
     return "-"
 
 
+TECHNICAL_GROUP_TITLES = {
+    "A": "200일선 상방 & 모멘텀 재가속 (나스닥 ≥-3%)",
+    "B": "200일선 하방 & 공황 저점 (나스닥 필터 미적용)",
+    "C": "200일선 상방 & 스퀴즈 거래량 돌파 (나스닥 ≥-3%)",
+    "D": "200일선 상방 & 상승 흐름 강화 (나스닥 ≥-3%)",
+    "E": "200일선 상방 & 스퀴즈 저점 (히스테리시스+찐바닥 허용)",
+    "F": "200일선 상방 & BB 극단 저점 (히스테리시스+찐바닥 허용)",
+}
+CIRCLED_NUMBERS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨"]
+
+
+def numbered_condition(index: int, detail: str) -> str:
+    label, _, raw_status = detail.partition(":")
+    passed = raw_status.strip() == "통과"
+    prefix = CIRCLED_NUMBERS[index - 1] if index <= len(CIRCLED_NUMBERS) else str(index)
+    return f"  {prefix} {label.strip()}: {log_mark(passed)}"
+
+
+def formatted_technical_decision(decision: str, signal_codes: list[str]) -> list[str]:
+    lines: list[str] = []
+    final_label = ", ".join(signal_codes) if signal_codes else "-"
+
+    for raw_line in str(decision or "-").splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("시장 국면:"):
+            lines.extend(["[시장]", f"  {line.removeprefix('시장 국면:').strip()}"])
+            continue
+
+        group_match = re.match(r"^([A-F])그룹\s+([0-9]+/[0-9]+)\s+-\s+(.+)$", line)
+        if group_match:
+            group, _score, details = group_match.groups()
+            title = TECHNICAL_GROUP_TITLES.get(group, "전략 조건")
+            lines.append(f"[{group}그룹: {title}]")
+            for index, detail in enumerate(details.split(" / "), start=1):
+                lines.append(numbered_condition(index, detail))
+            continue
+
+        if "최종 판단:" in line:
+            continue
+        if line.startswith("진입 전략:"):
+            continue
+        lines.append(f"  {line}")
+
+    lines.append(f"→ 최종 매수 신호: {log_mark(bool(signal_codes))} {'충족' if signal_codes else '미충족'} [{final_label}]")
+    return lines
+
+
 def technical_log_text(row: dict[str, Any]) -> str:
     header_parts = [
         f"{row.get('ticker') or '-'}",
@@ -626,14 +694,20 @@ def technical_log_text(row: dict[str, Any]) -> str:
     if row.get("industry"):
         header_parts.append(str(row["industry"]))
 
+    signal_codes = row.get("entrySignalCodes")
+    signal_code_list = signal_codes if isinstance(signal_codes, list) else [
+        code.strip()
+        for code in str(signal_codes or "").split(",")
+        if code.strip()
+    ]
+
     return "\n".join([
         f"====== {' | '.join(header_parts)} ======",
         "[요약]",
         f"  변경: {row.get('change') or '-'}",
         f"  투자의견: {row.get('opinion') or '-'}",
         f"  진입 전략: {row.get('strategy') or '-'}",
-        "[판단]",
-        *[f"  {line}" for line in str(row.get("decision") or "-").splitlines()],
+        *formatted_technical_decision(str(row.get("decision") or "-"), signal_code_list),
         "[핵심 지표]",
         f"  현재가: {row.get('currentPrice') or '-'}",
         f"  RSI: {row.get('rsi') or '-'}",
@@ -666,6 +740,7 @@ def technical_log_rows(
             "change": "변경" if previous_opinion != current_opinion else "유지",
             "opinion": f"{previous_opinion} -> {current_opinion}",
             "strategy": ", ".join(str(v) for v in strategies) if isinstance(strategies, list) and strategies else tech_value(row, "진입 전략"),
+            "entrySignalCodes": row.get("entrySignalCodes") or "",
             "decision": row.get("decisionLog") or row.get("conditionSummary") or "-",
             "currentPrice": tech_value(row, "현재가") or stock.get("currentPrice") or "-",
             "rsi": tech_value(row, "RSI"),
