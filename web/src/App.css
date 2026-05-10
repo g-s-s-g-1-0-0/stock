@@ -3603,6 +3603,15 @@
   white-space: pre-wrap;
 }
 
+.admin-log-detail-row pre.admin-log-pretty-text {
+  max-height: 560px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
 .admin-log-detail-empty {
   color: #64748b;
   font-size: 12px;

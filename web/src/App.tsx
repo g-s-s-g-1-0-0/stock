@@ -77,6 +77,7 @@ type UserSession = {
 }
 
 type TechnicalColumn = {
+  key?: string
   label: string
   tooltip: string
   value: (stock: Stock, index: number) => string
@@ -644,207 +645,6 @@ function mergeStocks(primary: Stock[], secondary: Stock[]) {
 }
 
 const initialWatchlist: string[] = []
-
-const trades: TradeLog[] = [
-  {
-    ticker: 'AAPL',
-    strategy: 'C. 200일선 상방 & 스퀴즈 거래량 돌파',
-    buyDate: '2026.03.18',
-    buyPrice: '$195.42',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 3.4,
-    holdingDays: 44,
-    status: '보유 중',
-  },
-  {
-    ticker: 'NVDA',
-    strategy: 'A. 200일선 상방 & 모멘텀 재가속',
-    buyDate: '2026.02.04',
-    buyPrice: '$109.88',
-    sellDate: '2026.03.26',
-    sellPrice: '$121.20',
-    returnPct: 10.3,
-    holdingDays: 50,
-    status: '익절',
-  },
-  {
-    ticker: 'TSLA',
-    strategy: 'F. 200일선 상방 & BB 극단 저점',
-    buyDate: '2026.01.12',
-    buyPrice: '$265.30',
-    sellDate: '2026.02.19',
-    sellPrice: '$248.90',
-    returnPct: -6.2,
-    holdingDays: 38,
-    status: '손절',
-  },
-  {
-    ticker: '035420',
-    strategy: 'E. 200일선 상방 & 스퀴즈 저점',
-    buyDate: '2026.04.12',
-    buyPrice: '₩209,500',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 1.9,
-    holdingDays: 19,
-    status: '보유 중',
-  },
-  {
-    ticker: '005930',
-    strategy: 'D. 200일선 상방 & 상승 흐름 강화',
-    buyDate: '2026.04.05',
-    buyPrice: '₩84,200',
-    sellDate: '2026.04.18',
-    sellPrice: '₩88,500',
-    returnPct: 5.1,
-    holdingDays: 13,
-    status: '익절',
-  },
-  {
-    ticker: 'ONON',
-    strategy: 'B. 200일선 하방 & 공황 저점',
-    buyDate: '2026.03.02',
-    buyPrice: '$38.30',
-    sellDate: '2026.03.20',
-    sellPrice: '$44.55',
-    returnPct: 16.3,
-    holdingDays: 18,
-    status: '익절',
-  },
-  {
-    ticker: 'BE',
-    strategy: 'F. 200일선 상방 & BB 극단 저점',
-    buyDate: '2026.02.21',
-    buyPrice: '$20.70',
-    sellDate: '2026.03.04',
-    sellPrice: '$19.30',
-    returnPct: -6.8,
-    holdingDays: 11,
-    status: '손절',
-  },
-  {
-    ticker: 'LRCX',
-    strategy: 'D. 200일선 상방 & 상승 흐름 강화',
-    buyDate: '2026.01.28',
-    buyPrice: '$95.20',
-    sellDate: '2026.02.27',
-    sellPrice: '$105.41',
-    returnPct: 10.7,
-    holdingDays: 30,
-    status: '실패 익절',
-  },
-  {
-    ticker: '042700',
-    strategy: 'D. 200일선 상방 & 상승 흐름 강화',
-    buyDate: '2026.04.24',
-    buyPrice: '₩169,400',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 0,
-    holdingDays: '-',
-    status: '보유 중',
-  },
-  {
-    ticker: '247540',
-    strategy: 'E. 200일선 상방 & 스퀴즈 저점',
-    buyDate: '2026.04.22',
-    buyPrice: '₩151,800',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 0,
-    holdingDays: '-',
-    status: '보유 중',
-  },
-  {
-    ticker: 'ONON',
-    strategy: 'B. 200일선 하방 & 공황 저점',
-    buyDate: '2026.04.19',
-    buyPrice: '$38.30',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 0,
-    holdingDays: '-',
-    status: '보유 중',
-  },
-  {
-    ticker: 'BE',
-    strategy: 'F. 200일선 상방 & BB 극단 저점',
-    buyDate: '2026.04.18',
-    buyPrice: '$20.70',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 0,
-    holdingDays: '-',
-    status: '보유 중',
-  },
-  {
-    ticker: 'LRCX',
-    strategy: 'D. 200일선 상방 & 상승 흐름 강화',
-    buyDate: '2026.04.16',
-    buyPrice: '$95.20',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 0,
-    holdingDays: '-',
-    status: '보유 중',
-  },
-  {
-    ticker: 'SNDK',
-    strategy: 'A. 200일선 상방 & 모멘텀 재가속',
-    buyDate: '2026.04.15',
-    buyPrice: '$57.40',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 0,
-    holdingDays: '-',
-    status: '보유 중',
-  },
-  {
-    ticker: 'TSLA',
-    strategy: 'F. 200일선 상방 & BB 극단 저점',
-    buyDate: '2026.04.13',
-    buyPrice: '$265.30',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 0,
-    holdingDays: '-',
-    status: '보유 중',
-  },
-  {
-    ticker: '005930',
-    strategy: 'D. 200일선 상방 & 상승 흐름 강화',
-    buyDate: '2026.04.11',
-    buyPrice: '₩84,200',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 0,
-    holdingDays: '-',
-    status: '보유 중',
-  },
-  {
-    ticker: 'MSFT',
-    strategy: 'C. 200일선 상방 & 스퀴즈 거래량 돌파',
-    buyDate: '2026.04.09',
-    buyPrice: '$485.90',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 0,
-    holdingDays: '-',
-    status: '보유 중',
-  },
-  {
-    ticker: 'NVDA',
-    strategy: 'A. 200일선 상방 & 모멘텀 재가속',
-    buyDate: '2026.04.07',
-    buyPrice: '$109.88',
-    sellDate: '보유 중',
-    sellPrice: '-',
-    returnPct: 0,
-    holdingDays: '-',
-    status: '보유 중',
-  },
-]
 
 const operatorTickers: string[] = []
 const strategyFilters = ['A', 'B', 'C', 'D', 'E', 'F']
@@ -1953,62 +1753,68 @@ function technicalEarningsDate(stock: Stock) {
   return valuationMetrics[stock.ticker]?.earningsDate ?? '-'
 }
 
-function technicalEntryPrice(stock: Stock) {
-  const holdingTrade = trades.find((trade) => trade.ticker === stock.ticker && trade.status === '보유 중')
-  return holdingTrade?.buyPrice ?? '-'
+function openTradesForStock(stock: Stock, targetTrades: TradeLog[]) {
+  return targetTrades.filter((trade) => trade.ticker === stock.ticker && trade.status === '보유 중')
 }
 
-function technicalEntryDate(stock: Stock) {
-  const holdingTrade = trades.find((trade) => trade.ticker === stock.ticker && trade.status === '보유 중')
-  return holdingTrade?.buyDate.replaceAll('.', '-') ?? '-'
+function joinTradeValues(targetTrades: TradeLog[], value: (trade: TradeLog) => string) {
+  const values = Array.from(new Set(targetTrades.map(value).filter(Boolean)))
+  return values.length > 0 ? values.join(', ') : '-'
 }
 
-function technicalEntryStrategy(stock: Stock) {
-  const holdingTrade = trades.find((trade) => trade.ticker === stock.ticker && trade.status === '보유 중')
-  return holdingTrade?.strategy ?? '-'
+function technicalEntryPrice(stock: Stock, targetTrades: TradeLog[] = []) {
+  return joinTradeValues(openTradesForStock(stock, targetTrades), (trade) => trade.buyPrice)
+}
+
+function technicalEntryDate(stock: Stock, targetTrades: TradeLog[] = []) {
+  return joinTradeValues(openTradesForStock(stock, targetTrades), (trade) => trade.buyDate.replaceAll('.', '-'))
+}
+
+function technicalEntryStrategy(stock: Stock, targetTrades: TradeLog[] = []) {
+  return joinTradeValues(openTradesForStock(stock, targetTrades), (trade) => trade.strategy)
 }
 
 const technicalMetricColumns: TechnicalColumn[] = [
   { label: 'RSI (D)', tooltip: '최근 14일 기준으로 주가가 얼마나 강하게 올랐는지 봅니다. 70 이상은 과열, 30 이하는 과매도에 가깝습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 1, 29, 58), 2) },
   { label: 'RSI (D-1)', tooltip: '어제 기준 RSI입니다. 오늘 값과 비교해 매수세가 더 강해졌는지 약해졌는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 2, 28, 57), 2) },
-  { label: 'RSI Signal', tooltip: 'RSI의 움직임을 부드럽게 만든 비교선입니다. RSI가 이 선 위면 단기 흐름이 강하고, 아래면 힘이 약해질 수 있습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 3, 32, 48), 2) },
-  { label: 'RSI 기울기', tooltip: '오늘 RSI가 어제보다 얼마나 변했는지 봅니다. 플러스면 힘이 강해지고, 마이너스면 힘이 약해지는 흐름입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 4, -9, 16), 2) },
-  { label: 'CCI (D)', tooltip: '현재 가격이 평소 범위보다 얼마나 벗어났는지 봅니다. +100 이상은 강세, -100 이하는 약세나 과매도에 가깝습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 5, -130, 280), 2) },
-  { label: 'CCI (D-1)', tooltip: '어제 기준 CCI입니다. 오늘 값과 비교해 강세나 약세가 이어지는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 6, -125, 270), 2) },
-  { label: 'CCI Signal', tooltip: 'CCI의 움직임을 부드럽게 만든 비교선입니다. CCI가 이 선 위로 올라서면 단기 반등 힘이 붙었다고 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 7, -90, 240), 2) },
-  { label: 'CCI 기울기', tooltip: '오늘 CCI가 어제보다 얼마나 변했는지 봅니다. 크게 오르면 반등 시도, 크게 내리면 힘이 약해진 흐름입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 8, -58, 136), 2) },
+  { key: 'RSI Signal', label: 'RSI EMA(9)', tooltip: 'RSI 값들을 9일 EMA로 부드럽게 만든 비교선입니다. RSI가 이 선 위면 단기 힘이 유지되는 쪽으로 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 3, 32, 48), 2) },
+  { key: 'RSI 기울기', label: 'RSI 변화(D-D-1)', tooltip: '오늘 RSI에서 어제 RSI를 뺀 값입니다. 플러스면 매수세가 강해지고, 마이너스면 힘이 약해지는 흐름입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 4, -9, 16), 2) },
+  { label: 'CCI (D)', tooltip: '최근 14일 고가·저가·종가의 typical price 기준 CCI입니다. +100 이상은 강세, -100 이하는 약세나 과매도에 가깝습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 5, -130, 280), 2) },
+  { label: 'CCI (D-1)', tooltip: '어제 기준 14일 CCI입니다. 오늘 값과 비교해 강세나 약세가 이어지는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 6, -125, 270), 2) },
+  { key: 'CCI Signal', label: 'CCI EMA(9)', tooltip: '14일 CCI 값들을 9일 EMA로 부드럽게 만든 비교선입니다. CCI가 이 선 위로 올라서면 단기 반등 힘이 붙었다고 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 7, -90, 240), 2) },
+  { key: 'CCI 기울기', label: 'CCI 변화(D-D-1)', tooltip: '오늘 CCI에서 어제 CCI를 뺀 값입니다. 크게 오르면 반등 시도, 크게 내리면 힘이 약해진 흐름입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 8, -58, 136), 2) },
   { label: 'MACD (12, 26, D)', tooltip: '짧은 평균가격과 긴 평균가격의 차이입니다. 0보다 높으면 상승 흐름, 낮으면 하락 흐름이 우세합니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 9, -900, 12000), 2) },
   { label: 'MACD (12, 26, D-1)', tooltip: '어제 기준 MACD입니다. 오늘 값과 비교해 추세가 강해졌는지 약해졌는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 10, -850, 11200), 2) },
-  { label: 'MACD Signal', tooltip: 'MACD의 비교선입니다. MACD가 이 선 위면 상승 힘이 있고, 아래면 힘이 약해질 수 있습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 11, -700, 9800), 2) },
-  { label: 'MACD Histogram (D)', tooltip: 'MACD와 비교선의 차이입니다. 값이 커지면 추세가 강해지고, 작아지면 힘이 약해질 수 있습니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 12, -4200, 7600), 2) },
-  { label: 'M - H (D-1)', tooltip: '어제 기준 MACD 차이값입니다. 오늘 값과 비교해 방향 전환이 이어지는지 봅니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 13, -2400, 5000), 2) },
-  { label: 'M - H (D-2)', tooltip: '2거래일 전 MACD 차이값입니다. 최근 3일 흐름을 같이 봐서 일시적인 신호를 줄입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 14, -2100, 4600), 2) },
-  { label: 'MACD 기울기', tooltip: 'MACD 차이값이 얼마나 변했는지 봅니다. 플러스면 힘이 강해지고, 마이너스면 상승 힘이 약해질 수 있습니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 15, -620, 1360), 2) },
+  { key: 'MACD Signal', label: 'MACD Signal EMA(9)', tooltip: 'MACD 값들을 9일 EMA로 부드럽게 만든 비교선입니다. MACD가 이 선 위면 상승 힘이 있고, 아래면 힘이 약해질 수 있습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 11, -700, 9800), 2) },
+  { key: 'MACD Histogram (D)', label: 'MACD Hist(D)', tooltip: 'MACD에서 Signal을 뺀 값입니다. 값이 커지면 추세가 강해지고, 작아지면 힘이 약해질 수 있습니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 12, -4200, 7600), 2) },
+  { key: 'M - H (D-1)', label: 'MACD Hist(D-1)', tooltip: '어제 기준 MACD Histogram입니다. 오늘 값과 비교해 모멘텀이 이어지는지 봅니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 13, -2400, 5000), 2) },
+  { key: 'M - H (D-2)', label: 'MACD Hist(D-2)', tooltip: '2거래일 전 MACD Histogram입니다. 최근 3일 흐름을 같이 봐서 일시적인 신호를 줄입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 14, -2100, 4600), 2) },
+  { key: 'MACD 기울기', label: 'MACD 기울기', tooltip: '오늘 MACD 값에서 어제 MACD 값을 뺀 값입니다. 플러스면 MACD 추세가 개선되고, 마이너스면 상승 힘이 약해질 수 있습니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 15, -620, 1360), 2) },
   { label: '+DI (DMI, 14)', tooltip: '상승 힘을 보여주는 지표입니다. +DI가 -DI보다 높으면 매수세가 더 강하다고 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 16, 12, 52), 2) },
   { label: '-DI (DMI, 14)', tooltip: '하락 힘을 보여주는 지표입니다. -DI가 +DI보다 높으면 매도 압력이 더 강하다고 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 17, 9, 48), 2) },
   { label: 'ADX (14, D)', tooltip: '상승이든 하락이든 추세가 얼마나 강한지 봅니다. 20 이상이면 추세가 생겼고, 40 이상이면 강한 편입니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 18, 14, 58), 2) },
   { label: 'ADX (14, D-1)', tooltip: '어제 기준 ADX입니다. 오늘 값과 비교해 추세의 힘이 커졌는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 19, 13, 57), 2) },
   { label: 'ADX (14, D-2)', tooltip: '2거래일 전 ADX입니다. 최근 3일 동안 추세의 힘이 강해지는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 20, 13, 55), 2) },
-  { label: 'ADX 기울기', tooltip: 'ADX가 얼마나 변했는지 봅니다. 오르면 추세가 강해지고, 내리면 횡보 가능성이 커집니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 21, -6, 12), 2) },
-  { label: 'Candle Open', tooltip: '오늘 장이 시작된 가격입니다. 종가와 비교해 장중에 매수세가 강했는지 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 22, 0.965, 0.07, 4)) },
-  { label: 'C - High', tooltip: '오늘 가장 높게 거래된 가격입니다. 종가가 고가에 가까우면 매수세가 끝까지 강했다고 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 23, 1.005, 0.06, 4)) },
-  { label: 'C - Low', tooltip: '오늘 가장 낮게 거래된 가격입니다. 저가에서 얼마나 회복했는지로 반등 힘을 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 24, 0.925, 0.065, 4)) },
-  { label: 'C - Close', tooltip: '오늘 마감 가격입니다. 대부분의 기술 지표가 이 가격을 기준으로 계산됩니다.', value: (stock) => stock.currentPrice },
-  { label: 'C - Volume', tooltip: '오늘 거래된 주식 수입니다. 가격 움직임에 거래량이 같이 붙으면 신뢰도가 높아집니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 25) },
-  { label: '아래꼬리 길이', tooltip: '장중 저점에서 다시 올라온 폭입니다. 길수록 저점 매수세가 들어왔다고 볼 수 있습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 26, 0, 18), 2) },
-  { label: '위꼬리 길이', tooltip: '장중 고점에서 밀려 내려온 폭입니다. 길수록 위에서 매물이 많이 나왔다고 볼 수 있습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 27, 0, 16), 2) },
-  { label: '몸통 길이', tooltip: '시작 가격과 마감 가격의 차이입니다. 클수록 그날 방향성이 뚜렷합니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 28, 0.2, 22), 2) },
-  { label: '거래량 (D)', tooltip: '오늘 거래량입니다. 돌파나 반등이 거래량 증가와 함께 나왔는지 확인합니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 29) },
-  { label: '거래량 (D-1)', tooltip: '어제 거래량입니다. 오늘 거래량과 비교해 관심이 늘었는지 봅니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 30) },
+  { key: 'ADX 기울기', label: 'ADX 변화(D-D-1)', tooltip: '오늘 ADX에서 어제 ADX를 뺀 값입니다. 오르면 추세가 강해지고, 내리면 횡보 가능성이 커집니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 21, -6, 12), 2) },
+  { key: 'Candle Open', label: '시가(D)', tooltip: '오늘 장이 시작된 가격입니다. 종가와 비교해 장중에 매수세가 강했는지 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 22, 0.965, 0.07, 4)) },
+  { key: 'C - High', label: '고가(D)', tooltip: '오늘 가장 높게 거래된 가격입니다. 종가가 고가에 가까우면 매수세가 끝까지 강했다고 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 23, 1.005, 0.06, 4)) },
+  { key: 'C - Low', label: '저가(D)', tooltip: '오늘 가장 낮게 거래된 가격입니다. 저가에서 얼마나 회복했는지로 반등 힘을 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 24, 0.925, 0.065, 4)) },
+  { key: 'C - Close', label: '종가(D)', tooltip: '오늘 마감 가격입니다. 대부분의 기술 지표가 이 가격을 기준으로 계산됩니다.', value: (stock) => stock.currentPrice },
+  { key: 'C - Volume', label: '캔들 거래량(D)', tooltip: '오늘 캔들 데이터의 실제 거래량입니다. 가격 움직임에 거래량이 같이 붙으면 신뢰도가 높아집니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 25) },
+  { label: '아래꼬리 길이', tooltip: '시가와 종가 중 낮은 값에서 저가를 뺀 폭입니다. 길수록 저점 매수세가 들어왔다고 볼 수 있습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 26, 0, 18), 2) },
+  { label: '위꼬리 길이', tooltip: '고가에서 시가와 종가 중 높은 값을 뺀 폭입니다. 길수록 위에서 매물이 많이 나왔다고 볼 수 있습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 27, 0, 16), 2) },
+  { label: '몸통 길이', tooltip: '시가와 종가의 차이입니다. 클수록 그날 방향성이 뚜렷합니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 28, 0.2, 22), 2) },
+  { key: '거래량 (D)', label: '5일 평균 대비 거래량(D)', tooltip: '오늘 실제 거래량을 최근 5일 평균 거래량으로 나눈 비율입니다. 100% 이상이면 최근 5일 평균보다 거래가 많습니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 29) },
+  { key: '거래량 (D-1)', label: '전일 5일 평균 대비 거래량(D-1)', tooltip: '어제 실제 거래량을 어제 기준 직전 5일 평균 거래량으로 나눈 비율입니다. 오늘 비율과 비교해 관심이 늘었는지 확인합니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 30) },
   { label: '20일 평균 대비 거래량 (D)', tooltip: '최근 20일 평균보다 오늘 거래가 얼마나 많은지 봅니다. 100% 이상이면 평소보다 활발합니다.', value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 31, 45, 165), 0)}%` },
-  { label: '절대 거래량 (D)', tooltip: '실제로 거래가 충분히 되는지 보는 값입니다. 거래가 너무 적으면 신호가 좋아도 매매가 어려울 수 있습니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 32) },
+  { key: '절대 거래량 (D)', label: '실제 거래량(D)', tooltip: '오늘 실제 거래된 주식 수입니다. 거래가 너무 적으면 신호가 좋아도 매매가 어려울 수 있습니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 32) },
   { label: '볼린저밴드 %B (종가)', tooltip: '종가가 가격 범위 안에서 위쪽인지 아래쪽인지 봅니다. 80 이상은 상단, 20 이하는 하단에 가깝습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 33, 5, 112), 2) },
   { label: '볼린저밴드 %B (저가)', tooltip: '오늘 저가가 가격 범위 안에서 어디였는지 봅니다. 장중에 아래쪽을 찍고 회복했는지 확인합니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 34, 0, 105), 2) },
-  { label: '볼린저밴드 Peak (D)', tooltip: '최근 가격 범위 안에서 가장 높았던 위치입니다. 과열 후 힘이 약해지는지 볼 때 씁니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 35, 20, 95), 2) },
-  { label: '볼린저밴드 Peak (D-1)', tooltip: '어제 기준 가격 범위의 고점 위치입니다. 오늘과 비교해 과열이 이어지는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 36, 18, 92), 2) },
+  { key: '볼린저밴드 Peak (D)', label: '볼린저밴드 %B (고가)', tooltip: '오늘 고가가 볼린저밴드 안에서 어디까지 올라갔는지 보는 값입니다. 과열 후 힘이 약해지는지 볼 때 씁니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 35, 20, 95), 2) },
+  { key: '볼린저밴드 Peak (D-1)', label: '전일 볼린저밴드 %B (고가)', tooltip: '어제 고가 기준 볼린저밴드 %B입니다. 오늘 고가 위치와 비교해 과열이 이어지는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 36, 18, 92), 2) },
   { label: '볼린저밴드 폭 (D)', tooltip: '가격이 움직이는 범위의 넓이입니다. 좁으면 조용한 구간, 넓으면 크게 움직이는 구간입니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 37, 8, 48), 2) },
   { label: '볼린저밴드 폭 (D-1)', tooltip: '어제 기준 가격 범위의 넓이입니다. 오늘과 비교해 움직임이 커졌는지 작아졌는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 38, 8, 46), 2) },
-  { label: '지난 60일 볼린저밴드 폭 평균', tooltip: '최근 60일 동안의 평균 가격 범위입니다. 현재 범위가 평소보다 좁은지 넓은지 비교합니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 39, 12, 42), 2) },
+  { key: '지난 60일 볼린저밴드 폭 평균', label: '볼린저밴드 폭 60일 평균', tooltip: '최근 60거래일 동안의 볼린저밴드 폭 평균입니다. 현재 폭이 평소보다 좁은지 넓은지 비교합니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 39, 12, 42), 2) },
   { label: '현재가', tooltip: '가장 최근 가격입니다. 평균선, 가격 범위, 진입가와 비교해 현재 위치를 봅니다.', value: (stock) => stock.currentPrice },
   { label: '5일 이동평균선', tooltip: '최근 5일 평균 가격입니다. 현재가가 이 선 위면 단기 흐름이 강한 편입니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 40, 0.965, 0.07, 4)) },
   { label: '20일 이동평균선', tooltip: '최근 20일 평균 가격입니다. 이 선 위에 있으면 단기 상승 흐름이 유지된다고 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 41, 0.92, 0.13, 4)) },
@@ -2198,6 +2004,7 @@ function TechnicalAnalysisPage({
   stocks,
   viewMode,
   technicalRows,
+  tradeLogs,
   marketSnapshot,
   updateLabel,
   addStockControl,
@@ -2208,6 +2015,7 @@ function TechnicalAnalysisPage({
   stocks: Stock[]
   viewMode: 'personal' | 'operator'
   technicalRows: Record<string, Record<string, string>>
+  tradeLogs: TradeLog[]
   marketSnapshot: string[][]
   updateLabel: string
   addStockControl?: ReactNode
@@ -2325,9 +2133,16 @@ function TechnicalAnalysisPage({
                   <td className="ticker-cell">{stock.ticker}</td>
                   <td><span className={`status-badge ${statusClass(displayStockOpinion(stock))}`}>{displayStockOpinion(stock)}</span></td>
                   {technicalMetricColumns.map((column) => {
-                    const value = apiRow?.[column.label] ?? '-'
-                    const isEntryStrategy = column.label === '진입 전략'
-                    const isEarningsDate = column.label.startsWith('실적발표일')
+                    const apiKey = column.key ?? column.label
+                    const value = apiKey === '진입가'
+                      ? technicalEntryPrice(stock, tradeLogs)
+                      : apiKey === '진입일'
+                        ? technicalEntryDate(stock, tradeLogs)
+                        : apiKey === '진입 전략'
+                          ? technicalEntryStrategy(stock, tradeLogs)
+                          : apiRow?.[apiKey] ?? '-'
+                    const isEntryStrategy = apiKey === '진입 전략'
+                    const isEarningsDate = apiKey.startsWith('실적발표일')
                     const cellClassName = value === '-'
                       ? 'dash-cell'
                       : isEntryStrategy
@@ -2774,6 +2589,44 @@ function formatApiLogValue(value: unknown) {
   return String(value)
 }
 
+function apiLogPlainText(metadata?: Record<string, unknown>) {
+  if (typeof metadata?.copyText === 'string' && metadata.copyText.trim()) return metadata.copyText.trim()
+  const rows = apiLogDetailRows(metadata)
+  const rowTexts = rows
+    .map((row) => {
+      if (typeof row.logText === 'string' && row.logText.trim()) return row.logText.trim()
+      if (typeof row.decision !== 'string' || !row.decision.trim()) return ''
+
+      const title = [row.ticker, row.name, row.market, row.industry].map(formatApiLogValue).filter((value) => value !== '-').join(' | ')
+      const lines = [
+        `====== ${title || '기술분석 로그'} ======`,
+        '[요약]',
+        `  변경: ${formatApiLogValue(row.change)}`,
+        `  투자의견: ${formatApiLogValue(row.opinion)}`,
+        `  진입 전략: ${formatApiLogValue(row.strategy)}`,
+        '[판단]',
+        ...row.decision.split('\n').map((line) => `  ${line}`),
+      ]
+
+      const metrics = [
+        ['현재가', row.currentPrice],
+        ['RSI', row.rsi],
+        ['종가%B', row.pctB],
+        ['MA200', row.ma200],
+        ['갱신', row.updatedAt],
+      ].filter(([, value]) => formatApiLogValue(value) !== '-')
+
+      if (metrics.length > 0) {
+        lines.push('[핵심 지표]')
+        metrics.forEach(([label, value]) => lines.push(`  ${label}: ${formatApiLogValue(value)}`))
+      }
+
+      return lines.join('\n')
+    })
+    .filter(Boolean)
+  return rowTexts.length > 0 ? rowTexts.join('\n\n') : ''
+}
+
 function apiLogColumnClass(column: ApiLogDetailColumn) {
   const width = column.width ?? (
     column.key === 'decision' || column.key === 'summary' ? 'xl'
@@ -2785,6 +2638,9 @@ function apiLogColumnClass(column: ApiLogDetailColumn) {
 }
 
 function apiLogCopyText(log: ApiLog) {
+  const plainText = apiLogPlainText(log.metadata)
+  if (plainText) return plainText
+
   return JSON.stringify({
     createdAt: log.createdAt,
     triggerName: log.triggerName,
@@ -2816,6 +2672,7 @@ function ApiLogMetadataDetail({
 
   const rows = apiLogDetailRows(metadata)
   const columns = apiLogDetailColumns(metadata, rows)
+  const plainText = apiLogPlainText(metadata)
   const summary = typeof metadata.summary === 'string' ? metadata.summary : ''
   const actionUrl = typeof metadata.actionsUrl === 'string' ? metadata.actionsUrl : ''
 
@@ -2828,7 +2685,9 @@ function ApiLogMetadataDetail({
         <button className="admin-log-copy-button" type="button" onClick={onCopy}>{copied ? '복사됨' : '로그 전체 복사'}</button>
       </div>
 
-      {rows.length > 0 && columns.length > 0 ? (
+      {plainText ? (
+        <pre className="admin-log-pretty-text">{plainText}</pre>
+      ) : rows.length > 0 && columns.length > 0 ? (
         <div className="admin-log-detail-table-wrap">
           <table className="admin-log-detail-table">
             <thead>
@@ -5371,6 +5230,7 @@ function App() {
           viewMode={effectiveViewMode}
           marketSnapshot={apiMarketSnapshot}
           technicalRows={apiTechnicalRows}
+          tradeLogs={systemTradeLogs}
           updateLabel={formatUpdateLabel(apiMetas.technical)}
           addStockControl={addStockInlineControl}
           onTooltipClose={() => setActiveTooltip(null)}

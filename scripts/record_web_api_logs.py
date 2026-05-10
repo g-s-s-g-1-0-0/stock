@@ -560,6 +560,32 @@ def tech_value(row: dict[str, Any], *candidates: str) -> Any:
     return "-"
 
 
+def technical_log_text(row: dict[str, Any]) -> str:
+    header_parts = [
+        f"{row.get('ticker') or '-'}",
+        str(row.get("name") or "-"),
+        str(row.get("market") or "-"),
+    ]
+    if row.get("industry"):
+        header_parts.append(str(row["industry"]))
+
+    return "\n".join([
+        f"====== {' | '.join(header_parts)} ======",
+        "[요약]",
+        f"  변경: {row.get('change') or '-'}",
+        f"  투자의견: {row.get('opinion') or '-'}",
+        f"  진입 전략: {row.get('strategy') or '-'}",
+        "[판단]",
+        *[f"  {line}" for line in str(row.get("decision") or "-").splitlines()],
+        "[핵심 지표]",
+        f"  현재가: {row.get('currentPrice') or '-'}",
+        f"  RSI: {row.get('rsi') or '-'}",
+        f"  종가%B: {row.get('pctB') or '-'}",
+        f"  MA200: {row.get('ma200') or '-'}",
+        f"  갱신: {row.get('updatedAt') or '-'}",
+    ])
+
+
 def technical_log_rows(
     stocks: list[dict[str, Any]],
     previous_stocks: dict[str, dict[str, Any]],
@@ -575,7 +601,7 @@ def technical_log_rows(
         previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "-")
         current_opinion = str(stock.get("opinion") or "-")
         strategies = stock.get("strategies")
-        rows.append({
+        log_row = {
             "ticker": ticker,
             "name": stock.get("name") or row.get("name") or "-",
             "market": stock.get("market") or "-",
@@ -589,7 +615,9 @@ def technical_log_rows(
             "pctB": tech_value(row, "%B"),
             "ma200": tech_value(row, "MA200", "200일선"),
             "updatedAt": stock.get("updatedAt") or "-",
-        })
+        }
+        log_row["logText"] = technical_log_text(log_row)
+        rows.append(log_row)
     return rows[:MAX_LOG_ROWS]
 
 
@@ -640,6 +668,7 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
 
     value_rows = value_log_rows(stocks, valuation, tickers)
     technical_rows = technical_log_rows(stocks, previous_stocks, technical, tickers)
+    technical_copy_text = "\n\n".join(str(row.get("logText") or "") for row in technical_rows if row.get("logText"))
     trend_rows = market_trend_log_rows(market_trends)
     if "technical-analysis" in enabled_tasks:
         update_trade_logs(stocks, previous_stocks, technical, qqq_market_state)
@@ -676,22 +705,18 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
             "metadata": {
                 **base,
                 "task": "technical-analysis",
-                "summary": "GitHub Actions 갱신 후 종목별 기술분석 핵심 지표입니다.",
+                "summary": "GitHub Actions 갱신 후 종목별 매매 기준 판단 로그입니다.",
                 "total": len(technical_rows),
+                "view": "logText",
+                "copyText": technical_copy_text,
                 "columns": [
                     {"key": "ticker", "label": "종목"},
                     {"key": "name", "label": "종목명"},
                     {"key": "market", "label": "시장"},
-                    {"key": "industry", "label": "산업"},
                     {"key": "change", "label": "변경"},
                     {"key": "opinion", "label": "투자의견"},
                     {"key": "strategy", "label": "진입 전략"},
                     {"key": "decision", "label": "판단 로그"},
-                    {"key": "currentPrice", "label": "현재가"},
-                    {"key": "rsi", "label": "RSI"},
-                    {"key": "pctB", "label": "%B"},
-                    {"key": "ma200", "label": "MA200"},
-                    {"key": "updatedAt", "label": "갱신"},
                 ],
                 "rows": technical_rows,
             },

@@ -270,7 +270,7 @@ def calc_technical_row(ticker: str) -> dict[str, float]:
     rows = fetch_ohlcv(ticker)
     closes = [row["close"] for row in rows]
     rsi_values = calc_rsi(closes)
-    cci_values = calc_cci(rows)
+    cci_values = calc_cci(rows, period=14)
     macd = calc_macd(closes)
     bb = calc_bollinger(rows)
     adx = calc_adx(rows)
@@ -281,6 +281,9 @@ def calc_technical_row(ticker: str) -> dict[str, float]:
     high = latest["high"]
     low = latest["low"]
     close = latest["close"]
+    avg_volume_5 = sum(row["volume"] for row in rows[-5:]) / 5
+    prev_avg_volume_5 = sum(row["volume"] for row in rows[-6:-1]) / 5
+    avg_volume_20 = sum(row["volume"] for row in rows[-20:]) / 20
     return {
         "open": open_,
         "high": high,
@@ -296,8 +299,8 @@ def calc_technical_row(ticker: str) -> dict[str, float]:
         "lowerTail": min(open_, close) - low,
         "upperTail": high - max(open_, close),
         "bodyLength": abs(close - open_),
-        "volRatio20": round(latest["volume"] / (sum(row["volume"] for row in rows[-20:]) / 20), 2),
-        "tradeValue": latest["volume"] * close,
+        "volRatio20": round(latest["volume"] / avg_volume_20, 2),
+        "prevVolRatio": round(prev["volume"] / prev_avg_volume_5, 2),
         "rsi": round(rsi_values[-1], 2),
         "rsiD1": round(rsi_values[-2], 2),
         "rsiSignal": round(ema_latest(rsi_values, 9), 2),
@@ -306,7 +309,8 @@ def calc_technical_row(ticker: str) -> dict[str, float]:
         "cciD1": round(cci_values[-2], 2),
         "cciSignal": round(ema_latest(cci_values, 9), 2),
         "cciSlope": round(cci_values[-1] - cci_values[-2], 2),
-        "volRatio": round(latest["volume"] / (sum(row["volume"] for row in rows[-5:]) / 5), 2),
+        "macdSlope": round(macd["macd"] - macd["macdD1"], 2),
+        "volRatio": round(latest["volume"] / avg_volume_5, 2),
         **macd,
         **bb,
         **adx,
