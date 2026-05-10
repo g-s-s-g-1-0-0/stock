@@ -870,7 +870,6 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  overscroll-behavior: none;
   border: 1px solid var(--sheet-border);
   border-radius: 8px;
   background: var(--sheet-bg);
@@ -1254,7 +1253,10 @@
 }
 
 .market-events-sheet {
-  height: 616px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: none;
 }
 
 .market-events-table {
@@ -1416,9 +1418,10 @@
 }
 
 .market-trends-sheet {
+  flex: 1;
+  min-height: 0;
   height: auto;
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow: auto;
   overscroll-behavior: none;
 }
 
