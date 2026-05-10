@@ -2219,7 +2219,8 @@ function marketEventDday(entry: MarketEventEntry) {
   const today = new Date()
   const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate())
   const msPerDay = 24 * 60 * 60 * 1000
-  return String(Math.round((todayDate.getTime() - eventDate.getTime()) / msPerDay))
+  const daysFromEvent = Math.round((todayDate.getTime() - eventDate.getTime()) / msPerDay)
+  return daysFromEvent > 0 ? `+${daysFromEvent}` : String(daysFromEvent)
 }
 
 function normalizeMarketEventDdays(groups: MarketEventGroup[]) {
