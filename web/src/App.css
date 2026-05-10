@@ -870,6 +870,8 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
   border: 1px solid var(--sheet-border);
   border-radius: 8px;
   background: var(--sheet-bg);
@@ -974,7 +976,6 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  overscroll-behavior: none;
   background-color: var(--sheet-bg);
 }
 
@@ -2132,10 +2133,19 @@
 
 .name-cell {
   display: flex;
+  width: 100%;
+  min-width: 0;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
   text-align: left;
+}
+
+.name-cell > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ticker-cell,
@@ -2166,6 +2176,7 @@
 
 .market-flag {
   display: inline-flex;
+  flex: 0 0 18px;
   width: 18px;
   justify-content: center;
   font-size: 14px;
