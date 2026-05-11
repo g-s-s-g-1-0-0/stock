@@ -226,13 +226,13 @@ const investmentProfileOptions: Array<{
 }> = [
   {
     value: 'long_term',
-    title: '천천히 모아가는 투자자',
+    title: '천천히 모아가는 투자자 (가치 투자)',
     description: '좋은 매수 시점과 보유 흐름을 중심으로 보고 싶어요.',
     bullets: ['매수/관망 신호만 보기', '매도 관련 정보는 숨김', '보유 종목 수익률 중심'],
   },
   {
     value: 'swing',
-    title: '빠르게 사고파는 투자자',
+    title: '빠르게 사고파는 투자자 (스윙 투자)',
     description: '타이밍을 보며 수익 기회를 빠르게 잡고 싶어요.',
     bullets: ['매수/관망/매도 신호 모두 보기', '수익 실현과 손절 기준 확인', '거래 기록으로 성과 확인'],
   },
@@ -3380,6 +3380,9 @@ function App() {
   const addStockButtonRef = useRef<HTMLButtonElement | null>(null)
   const inlineAddRef = useRef<HTMLDivElement | null>(null)
   const watchlistSortMenuRef = useRef<HTMLDivElement | null>(null)
+  const tradingLogScrollRef = useRef<HTMLDivElement | null>(null)
+  const watchlistSheetRef = useRef<HTMLDivElement | null>(null)
+  const holdingSheetRef = useRef<HTMLDivElement | null>(null)
   const apiMetasRef = useRef<AppDataMetas>(apiMetas)
 
   const applyLoadedData = (data: GssgAppData) => {
@@ -4029,6 +4032,11 @@ function App() {
   const investingDays = daysFromFirstTrade(scopedTrades)
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = !isAdminUser && (activePage === 'board' || activePage === 'admin-logs') ? 'home' : activePage
+  useEffect(() => {
+    for (const sheet of [tradingLogScrollRef.current, watchlistSheetRef.current, holdingSheetRef.current]) {
+      if (sheet) sheet.scrollLeft = 0
+    }
+  }, [currentActivePage, displayedInvestmentType, effectiveViewMode, userSession?.id])
   const isLoginEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedLoginEmail)
   const shouldShowEmailValidation = loginEmail.trim().length > 0 && !isLoginEmailValid
   const shouldShowPasswordValidation = loginPassword.trim().length > 0 && loginPassword.trim().length < 8
@@ -5059,7 +5067,7 @@ function App() {
             </div>
           </div>
 
-          <div className="sheet-wrap trading-log-scroll">
+          <div className="sheet-wrap trading-log-scroll" ref={tradingLogScrollRef}>
             <table className={`sheet-table trading-log-table ${isLongTermInvestor ? 'long-term-trading-log-table' : ''}`}>
               <thead>
                 <tr>
@@ -5259,7 +5267,7 @@ function App() {
 
             {addStockInlineControl}
 
-            <div className="sheet-wrap watchlist-sheet">
+            <div className="sheet-wrap watchlist-sheet" ref={watchlistSheetRef}>
               {tableStocks.length === 0 ? (
                 <div className="watchlist-empty-panel">
                   <div className="empty-watchlist">
@@ -5430,8 +5438,8 @@ function App() {
 
             <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다</p>
 
-            <div className="sheet-wrap holding-sheet">
-              <table className={`sheet-table holding-table ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}>
+            <div className="sheet-wrap holding-sheet" ref={holdingSheetRef}>
+              <table className={`sheet-table holding-table ${isLongTermInvestor ? 'long-term-holding-table' : ''} ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}>
                 <thead>
                   <tr>
                     {effectiveViewMode === 'personal' && <th>선택</th>}
@@ -5630,7 +5638,7 @@ function App() {
             <div className="investment-profile-header">
               <span>첫 설정</span>
               <h3>투자성향을 선택해 주세요</h3>
-              <p>원하는 성향을 선택한 뒤 확인을 눌러 주세요. 닫으면 기본값인 천천히 모아가는 투자자로 시작합니다.</p>
+              <p>원하는 성향을 선택한 뒤 확인을 눌러 주세요. 닫으면 기본값인 천천히 모아가는 투자자 (가치 투자)로 시작합니다.</p>
             </div>
             <div className="investment-option-grid">
               {investmentProfileOptions.map((option) => (
