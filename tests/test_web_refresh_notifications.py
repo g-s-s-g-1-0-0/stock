@@ -74,6 +74,41 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("관망", changes[0]["from"])
         self.assertEqual("매수", changes[0]["to"])
 
+    def test_opinion_changes_treats_new_buy_signal_as_watch_to_buy(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+
+            previous.write_text(json.dumps({"rows": []}), encoding="utf-8")
+            current.write_text(
+                json.dumps({
+                    "rows": [
+                        {
+                            "ticker": "012450",
+                            "name": "한화에어로스페이스",
+                            "opinion": "매수",
+                            "currentPrice": "₩1,307,000",
+                            "strategies": ["F. 200일선 상방 & BB 극단 저점"],
+                        },
+                        {"ticker": "WATCH", "name": "New Watch", "opinion": "관망"},
+                    ]
+                }),
+                encoding="utf-8",
+            )
+            technical.write_text(
+                json.dumps({"rows": {"012450": {"entrySignalCodes": "F", "저가%B": "2.50"}}}),
+                encoding="utf-8",
+            )
+
+            changes = self.notifications.opinion_changes(previous, current, technical)
+
+        self.assertEqual(1, len(changes))
+        self.assertEqual("012450", changes[0]["ticker"])
+        self.assertEqual("관망", changes[0]["from"])
+        self.assertEqual("매수", changes[0]["to"])
+        self.assertEqual("신규 편입 후 매수", changes[0]["entryNote"])
+
     def test_opinion_changes_detects_all_valid_transitions(self) -> None:
         with TemporaryDirectory() as temp_dir:
             previous = Path(temp_dir) / "previous.json"

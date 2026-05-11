@@ -216,18 +216,22 @@ def opinion_changes(previous_path: Path, current_path: Path, technical_path: Pat
 
     for ticker, current_stock in current.items():
         previous_stock = previous.get(ticker)
+        new_opinion = str(current_stock.get("opinion") or "").strip()
+        is_new_buy_signal = False
         if reset and forced_baseline in VALID_OPINIONS:
             previous_stock = {**current_stock, "opinion": forced_baseline}
+        elif not previous_stock and new_opinion == "매수":
+            previous_stock = {**current_stock, "opinion": "관망"}
+            is_new_buy_signal = True
         if not previous_stock:
             continue
         old_opinion = str(previous_stock.get("opinion") or "").strip()
-        new_opinion = str(current_stock.get("opinion") or "").strip()
         if not old_opinion or not new_opinion or old_opinion == new_opinion:
             continue
         if old_opinion not in VALID_OPINIONS or new_opinion not in VALID_OPINIONS:
             continue
         technical_row = technical_rows.get(ticker, {})
-        changes.append({
+        change = {
             "ticker": ticker,
             "name": current_stock.get("name") or ticker,
             "from": old_opinion,
@@ -237,7 +241,10 @@ def opinion_changes(previous_path: Path, current_path: Path, technical_path: Pat
             "industry": current_stock.get("industry") or "-",
             "strategies": current_stock.get("strategies") or [],
             "reason": concise_opinion_reason(old_opinion, new_opinion, previous_stock, current_stock, technical_row),
-        })
+        }
+        if is_new_buy_signal:
+            change["entryNote"] = "신규 편입 후 매수"
+        changes.append(change)
     return changes
 
 
