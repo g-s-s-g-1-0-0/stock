@@ -211,6 +211,7 @@ const DEFAULT_USER_SETTINGS: StoredUserSettings = {
   notificationPreferences: DEFAULT_NOTIFICATION_PREFERENCES,
   investmentType: null,
 }
+const DEFAULT_INVESTMENT_TYPE: InvestmentType = 'long_term'
 const TEST_USER_SESSION: UserSession = {
   id: 'local-test-user',
   email: 'test@gongsu.local',
@@ -224,16 +225,16 @@ const investmentProfileOptions: Array<{
   bullets: string[]
 }> = [
   {
+    value: 'long_term',
+    title: '천천히 모아가는 투자자',
+    description: '좋은 매수 시점과 보유 흐름을 중심으로 보고 싶어요.',
+    bullets: ['매수/관망 신호만 보기', '매도 관련 정보는 숨김', '보유 종목 수익률 중심'],
+  },
+  {
     value: 'swing',
     title: '빠르게 사고파는 투자자',
     description: '타이밍을 보며 수익 기회를 빠르게 잡고 싶어요.',
     bullets: ['매수/관망/매도 신호 모두 보기', '수익 실현과 손절 기준 확인', '거래 기록으로 성과 확인'],
-  },
-  {
-    value: 'long_term',
-    title: '천천히 모아가는 투자자',
-    description: '좋은 매수 시점과 보유 흐름을 중심으로 보고 싶어요.',
-    bullets: ['매수/관망 신호만 보기', '매도 관련 정보는 숨김', '보유 종목의 누적 수익률 중심'],
   },
 ]
 
@@ -4000,7 +4001,8 @@ function App() {
 
   const effectiveViewMode = isAdminUser ? 'operator' : viewMode
   const isOperatorDataMode = effectiveViewMode === 'operator'
-  const isLongTermInvestor = investmentType === 'long_term' && effectiveViewMode === 'personal'
+  const displayedInvestmentType = investmentType ?? DEFAULT_INVESTMENT_TYPE
+  const isLongTermInvestor = displayedInvestmentType === 'long_term' && effectiveViewMode === 'personal'
   const scopedTrades = isOperatorDataMode ? systemTradeLogs : personalTradeLogs
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const filteredTrades = scopedTrades
@@ -4224,6 +4226,10 @@ function App() {
   const selectInvestmentType = (nextInvestmentType: InvestmentType) => {
     setInvestmentType(nextInvestmentType)
     void persistUserSettings(watchlistSortSettings, notificationPreferences, nextInvestmentType)
+  }
+
+  const closeInvestmentProfileOnboarding = () => {
+    selectInvestmentType(DEFAULT_INVESTMENT_TYPE)
   }
 
   const resetSystemRecords = async () => {
@@ -5613,15 +5619,18 @@ function App() {
       {shouldShowInvestmentProfileOnboarding && (
         <div className="modal-backdrop" role="presentation">
           <section aria-modal="true" className="confirm-modal investment-profile-modal" role="dialog">
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={closeInvestmentProfileOnboarding}>
+              ×
+            </button>
             <div className="investment-profile-header">
               <span>첫 설정</span>
               <h3>투자성향을 선택해 주세요</h3>
-              <p>처음 한 번만 고르면 됩니다. 선택한 성향에 맞춰 신호와 로그 화면을 다르게 보여드릴게요.</p>
+              <p>처음 한 번만 고르면 됩니다. 닫으면 기본값인 천천히 모아가는 투자자로 시작합니다.</p>
             </div>
             <div className="investment-option-grid">
               {investmentProfileOptions.map((option) => (
                 <button
-                  className="investment-option-card"
+                  className={`investment-option-card ${displayedInvestmentType === option.value ? 'active' : ''}`}
                   key={option.value}
                   type="button"
                   onClick={() => selectInvestmentType(option.value)}
@@ -5631,6 +5640,7 @@ function App() {
                   <ul>
                     {option.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
                   </ul>
+                  {displayedInvestmentType === option.value && <b aria-hidden="true">선택됨</b>}
                 </button>
               ))}
             </div>
@@ -5696,14 +5706,14 @@ function App() {
                     <div className="investment-option-grid compact">
                       {investmentProfileOptions.map((option) => (
                         <button
-                          className={`investment-option-card ${investmentType === option.value ? 'active' : ''}`}
+                          className={`investment-option-card ${displayedInvestmentType === option.value ? 'active' : ''}`}
                           key={option.value}
                           type="button"
                           onClick={() => selectInvestmentType(option.value)}
                         >
                           <strong>{option.title}</strong>
                           <span>{option.description}</span>
-                          {investmentType === option.value && <b aria-hidden="true">선택됨</b>}
+                          {displayedInvestmentType === option.value && <b aria-hidden="true">선택됨</b>}
                         </button>
                       ))}
                     </div>
