@@ -13,6 +13,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from calculator.pipeline import read_search_universe, run
+from scripts.record_signal_snapshots import record_daily_signal_snapshots
 
 VALID_TASKS = {"valuation", "technical", "stocks", "market-trends", "market-events"}
 TRADE_LOG_PATHS = [
@@ -137,6 +138,7 @@ def main() -> None:
         run("valuation", universe=universe)
     if "technical" in tasks:
         run("technical", universe=universe)
+        record_daily_signal_snapshots()
     if "stocks" in tasks:
         run("stocks", universe=universe)
     if "market-trends" in tasks:
