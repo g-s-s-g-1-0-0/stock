@@ -926,12 +926,16 @@
   min-width: 1180px;
 }
 
+.long-term-trading-log-table {
+  min-width: 840px;
+}
+
 .watchlist-table {
   min-width: 1220px;
 }
 
 .holding-table {
-  min-width: 780px;
+  min-width: 980px;
   height: 100%;
 }
 
@@ -2171,14 +2175,15 @@
   font-variant-numeric: tabular-nums;
 }
 
-.trading-log-table td:nth-child(2),
+.trading-log-table .name-data-cell,
 .watchlist-table .name-data-cell,
-.holding-table td:nth-child(3) {
+.holding-table .name-data-cell {
   text-align: left;
 }
 
 .watchlist-table .strategy-data-cell,
-.holding-table td:nth-child(5) {
+.trading-log-table .strategy-data-cell,
+.holding-table .strategy-data-cell {
   text-align: left;
 }
 
@@ -2423,7 +2428,8 @@
 }
 
 .watchlist-table .strategy-data-cell,
-.holding-table td:nth-child(5),
+.trading-log-table .strategy-data-cell,
+.holding-table .strategy-data-cell,
 .technical-strategy-cell {
   overflow-x: auto;
   max-width: 270px;

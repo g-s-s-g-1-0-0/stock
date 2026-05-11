@@ -5045,7 +5045,7 @@ function App() {
           </div>
 
           <div className="sheet-wrap trading-log-scroll">
-            <table className="sheet-table trading-log-table">
+            <table className={`sheet-table trading-log-table ${isLongTermInvestor ? 'long-term-trading-log-table' : ''}`}>
               <thead>
                 <tr>
                   <th>No</th>
@@ -5074,7 +5074,7 @@ function App() {
                 {showEmptyTradeExample && exampleStock && (
                   <tr className="example-row">
                     <td className="numbering-cell">예시</td>
-                    <td>
+                    <td className="name-data-cell">
                       <div className="name-cell">
                         <span className="market-flag" aria-hidden="true">{marketFlag(exampleStock.market)}</span>
                         <span>{exampleStock.name}</span>
@@ -5099,7 +5099,7 @@ function App() {
                   return (
                     <tr key={`${trade.ticker}-${trade.buyDate}`}>
                       <td className="numbering-cell">{index + 1}</td>
-                      <td>
+                      <td className="name-data-cell">
                         <div className="name-cell">
                           <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>
                           <span>{tradeName(trade)}</span>
@@ -5110,7 +5110,7 @@ function App() {
                       <td className="number-cell">{trade.buyPrice}</td>
                       {!isLongTermInvestor && <td>{trade.sellDate}</td>}
                       {!isLongTermInvestor && <td className={trade.sellPrice === '-' ? 'dash-cell' : 'number-cell'}>{trade.sellPrice}</td>}
-                      <td>
+                      <td className="strategy-data-cell">
                         <StrategyTag
                           onTooltipClose={() => setActiveTooltip(null)}
                           onTooltipOpen={setActiveTooltip}
@@ -5448,7 +5448,7 @@ function App() {
                       {effectiveViewMode === 'personal' && <td></td>}
                       <td className="numbering-cell">예시</td>
                       <td className="ticker-cell">{exampleStock.ticker}</td>
-                      <td>
+                      <td className="name-data-cell">
                         <div className="name-cell">
                           <span className="market-flag" aria-hidden="true">{marketFlag(exampleStock.market)}</span>
                           <span>{exampleStock.name}</span>
@@ -5479,7 +5479,7 @@ function App() {
                         )}
                         <td className="numbering-cell">{index + 1}</td>
                         <td className="ticker-cell">{trade.ticker}</td>
-                        <td>
+                        <td className="name-data-cell">
                           <div className="name-cell">
                             <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>
                             <span>{tradeName(trade)}</span>
@@ -5487,7 +5487,7 @@ function App() {
                         </td>
                         <td>{trade.buyDate}</td>
                         <td className="number-cell">{trade.buyPrice}</td>
-                        <td>
+                        <td className="strategy-data-cell">
                           <StrategyTag
                             onTooltipClose={() => setActiveTooltip(null)}
                             onTooltipOpen={setActiveTooltip}
