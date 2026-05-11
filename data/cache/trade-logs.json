@@ -2,8 +2,8 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-05-11T15:01:00.776847Z",
-    "lastSuccessfulRun": "2026-05-11T15:01:00.776856Z",
+    "updatedAt": "2026-05-11T17:00:52.163165Z",
+    "lastSuccessfulRun": "2026-05-11T17:00:52.163174Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
     "closedTrades": 0,
@@ -60,7 +60,7 @@
       "ticker": "MP",
       "name": "MP Materials Corp.",
       "market": "US",
-      "currentPrice": "$67.76",
+      "currentPrice": "$68.75",
       "strategy": "D. 200일선 상방 & 상승 흐름 강화",
       "buyDate": "2026.05.10",
       "buyPrice": "$67.43",
@@ -76,7 +76,7 @@
       "ticker": "ANET",
       "name": "Arista Networks, Inc.",
       "market": "US",
-      "currentPrice": "$140.71",
+      "currentPrice": "$137.47",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.11",
       "buyPrice": "$141.77",
@@ -84,7 +84,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.12"
     },
     {
       "slotId": "012450_F_20260511_1",
