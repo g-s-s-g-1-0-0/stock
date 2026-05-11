@@ -2,8 +2,8 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-05-10T23:00:48.124278Z",
-    "lastSuccessfulRun": "2026-05-10T23:00:48.124287Z",
+    "updatedAt": "2026-05-11T01:00:47.602414Z",
+    "lastSuccessfulRun": "2026-05-11T01:00:47.602422Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
     "closedTrades": 0,
@@ -15,7 +15,7 @@
       "ticker": "375500",
       "name": "DL이앤씨",
       "market": "KR",
-      "currentPrice": "₩95,400",
+      "currentPrice": "₩92,900",
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",
       "buyDate": "2026.05.10",
       "buyPrice": "₩95,400",
@@ -30,7 +30,7 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "currentPrice": "₩840,000",
+      "currentPrice": "₩850,000",
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",
       "buyDate": "2026.05.10",
       "buyPrice": "₩840,000",
@@ -45,7 +45,7 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "currentPrice": "₩840,000",
+      "currentPrice": "₩850,000",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.10",
       "buyPrice": "₩840,000",
@@ -90,7 +90,7 @@
       "ticker": "012450",
       "name": "한화에어로스페이스",
       "market": "KR",
-      "currentPrice": "₩1,307,000",
+      "currentPrice": "₩1,342,000",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.11",
       "buyPrice": "₩1,307,000",
@@ -98,7 +98,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.11"
     }
   ]
 }
