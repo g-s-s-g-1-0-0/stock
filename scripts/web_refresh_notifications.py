@@ -709,6 +709,24 @@ def change_reason_html(reason: Any) -> str:
     return html.escape(text).replace("\n", "<br>") or "-"
 
 
+def change_display_from(change: dict[str, Any]) -> str:
+    from_label = str(change.get("fromLabel") or "").strip()
+    if from_label:
+        return from_label
+    if change.get("from") == "매수" and change.get("to") == "매수":
+        return "매수(보유중)"
+    return str(change.get("from") or "-")
+
+
+def change_display_to(change: dict[str, Any]) -> str:
+    to_label = str(change.get("toLabel") or "").strip()
+    if to_label:
+        return to_label
+    if change.get("from") == "매수" and change.get("to") == "매수":
+        return "추가 매수"
+    return str(change.get("to") or "-")
+
+
 def opinion_email_body(
     changes: list[dict[str, Any]],
     buy_opinions: list[str] | None = None,
@@ -717,8 +735,10 @@ def opinion_email_body(
 ) -> str:
     changed_html = []
     for index, change in enumerate(changes, start=1):
-        is_buy = change["to"] == "매수"
-        is_sell = change["to"] == "매도"
+        from_label = change_display_from(change)
+        to_label = change_display_to(change)
+        is_buy = change["to"] == "매수" or "매수" in to_label
+        is_sell = change["to"] == "매도" or "매도" in to_label
         border = "#2ecc71" if is_buy else "#e74c3c" if is_sell else "#95a5a6"
         color = "#27ae60" if is_buy else "#c0392b" if is_sell else "#7f8c8d"
         entry_note = str(change.get("entryNote") or "").strip()
@@ -732,8 +752,8 @@ def opinion_email_body(
             f"""
             <div style="margin-bottom:8px;padding:8px;background:#f9f9f9;border-left:3px solid {border};">
               {index}. <strong>{html.escape(display_stock(change))}</strong>
-              &nbsp;<span style="color:#888;">'{html.escape(str(change['from']))}'</span>
-              → <strong style="color:{color};">{html.escape(str(change['to']))}</strong><br>
+              &nbsp;<span style="color:#888;">'{html.escape(from_label)}'</span>
+              → <strong style="color:{color};">{html.escape(to_label)}</strong><br>
               <span style="font-size:13px;">이유: {change_reason_html(change.get('reason'))}</span><br>
               <span style="font-size:13px;">현재가: <strong>{html.escape(str(change.get('price') or '-'))}</strong></span>
               {entry_note_html}

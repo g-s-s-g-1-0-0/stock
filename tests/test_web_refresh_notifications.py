@@ -109,6 +109,24 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("매수", changes[0]["to"])
         self.assertEqual("신규 편입 후 매수", changes[0]["entryNote"])
 
+    def test_opinion_email_body_labels_additional_buy(self) -> None:
+        body = self.notifications.opinion_email_body([
+            {
+                "ticker": "375500",
+                "name": "DL이앤씨",
+                "from": "매수",
+                "to": "매수",
+                "price": "₩92,300",
+                "reason": "F. 200일선 상방 & BB 극단 저점",
+                "entryNote": "재진입 1회차 — 최초 진입가 ₩95,400",
+            }
+        ])
+
+        self.assertIn("매수(보유중)", body)
+        self.assertIn("추가 매수", body)
+        self.assertNotIn("'매수'</span>", body)
+        self.assertNotIn(">매수</strong><br>", body)
+
     def test_opinion_changes_detects_all_valid_transitions(self) -> None:
         with TemporaryDirectory() as temp_dir:
             previous = Path(temp_dir) / "previous.json"

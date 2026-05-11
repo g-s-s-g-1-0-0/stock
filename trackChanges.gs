@@ -201,6 +201,9 @@ function processMultiSlots(stockName, row, globalData, now, allProperties, kstDa
       stock: displayName, ticker: stockName,
       from:  currentOpinion,
       to:    "매수",
+      fromLabel: "매수(보유중)",
+      toLabel: "추가 매수",
+      eventType: "additional_buy",
       reason, price: fmtP, entryNote, stopLoss: ""
     });
 
@@ -2083,10 +2086,14 @@ const Utils = {
 
   sendEmailAlert(recipientEmail, changes, buyOpinions, watchHoldingOpinions, sellOpinions, kstDate, estString, globalData, trendData = null) {
     const stockSymbols = changes.map(c => c.ticker).join(", ");
-    const hasBuyTransition = changes.some(c => c.to === "매수" && c.from !== "매수");
+    const displayFrom = c => c.fromLabel || ((c.from === "매수" && c.to === "매수") ? "매수(보유중)" : c.from);
+    const displayTo   = c => c.toLabel   || ((c.from === "매수" && c.to === "매수") ? "추가 매수" : c.to);
+    const hasBuyTransition = changes.some(c => c.to === "매수" && (c.from !== "매수" || displayTo(c).includes("추가 매수")));
     const changesHtml  = changes.map((c, i) => {
-      const isBuySignal  = c.to === "매수" || c.to.includes("매수");
-      const isSellSignal = c.to === "매도" || c.to.includes("매도");
+      const fromLabel    = displayFrom(c);
+      const toLabel      = displayTo(c);
+      const isBuySignal  = c.to === "매수" || toLabel.includes("매수");
+      const isSellSignal = c.to === "매도" || toLabel.includes("매도");
       const borderColor = isBuySignal ? "#2ecc71" : isSellSignal ? "#e74c3c" : "#95a5a6";
       const toColor     = isBuySignal ? "#27ae60" : isSellSignal ? "#c0392b" : "#7f8c8d";
       let entryNoteHtml = "";
@@ -2098,7 +2105,7 @@ const Utils = {
       }
       return (
         `<div style="margin-bottom:8px;padding:8px;background:#f9f9f9;border-left:3px solid ${borderColor};">` +
-        `${i + 1}. <strong>${c.stock}</strong> &nbsp;<span style="color:#888;">'${c.from}'</span> → <strong style="color:${toColor};">${c.to}</strong><br>` +
+        `${i + 1}. <strong>${c.stock}</strong> &nbsp;<span style="color:#888;">'${fromLabel}'</span> → <strong style="color:${toColor};">${toLabel}</strong><br>` +
         `<span style="font-size:13px;">이유: ${c.reason}</span><br>` +
         `<span style="font-size:13px;">현재가: <strong>${c.price}</strong></span>` +
         entryNoteHtml +
