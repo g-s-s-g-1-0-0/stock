@@ -4011,6 +4011,10 @@ function App() {
       const bTime = new Date(b.buyDate.replaceAll('.', '-')).getTime()
       return sortDirection === 'desc' ? bTime - aTime : aTime - bTime
     })
+  const displayedTradeRows = filteredTrades.map((trade, index) => ({
+    trade,
+    rowNumber: index + 1,
+  }))
   const visibleWinRates = [
     formatWinRate('통합', scopedTrades),
     ...strategyFilters
@@ -5092,13 +5096,13 @@ function App() {
                     {!isLongTermInvestor && <td><span className="example-note">예시</span></td>}
                   </tr>
                 )}
-                {filteredTrades.map((trade, index) => {
+                {displayedTradeRows.map(({ trade, rowNumber }) => {
                   const profileReturnPct = displayedTradeReturnPct(trade, apiStocks)
                   const returnPriceText = tradeReturnPriceText(trade, apiStocks)
 
                   return (
                     <tr key={`${trade.ticker}-${trade.buyDate}`}>
-                      <td className="numbering-cell">{index + 1}</td>
+                      <td className="numbering-cell">{rowNumber}</td>
                       <td className="name-data-cell">
                         <div className="name-cell">
                           <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>

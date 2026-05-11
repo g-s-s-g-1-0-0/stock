@@ -87,6 +87,20 @@ def read_cache(name: str) -> dict[str, Any]:
         return {}
 
 
+def has_value(value: Any) -> bool:
+    return str(value or "").strip() not in ("", "-")
+
+
+def preserve_existing_values(new_row: dict[str, str], existing_row: dict[str, Any]) -> dict[str, str]:
+    if not existing_row:
+        return new_row
+    merged: dict[str, str] = {}
+    for key, value in new_row.items():
+        previous_value = existing_row.get(key)
+        merged[key] = str(previous_value if not has_value(value) and has_value(previous_value) else value)
+    return merged
+
+
 def read_universe() -> list[dict[str, str]]:
     path = ROOT_DIR / "data" / "universe.json"
     if not path.exists():
@@ -641,6 +655,7 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
         try:
             values = fetch_valuation(stock["ticker"])
             metric = dict(zip(columns, values))
+            metric = preserve_existing_values(metric, existing_rows.get(stock["ticker"], {}))
             metric["industry"] = stock_industry(stock, metric)
             metric["ruleOf40"] = rule_of_40(metric)
             metric["earningsDate"] = metric.get("earningsDate") or "-"
