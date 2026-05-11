@@ -3369,6 +3369,7 @@ function App() {
   const [watchlistSortSettings, setWatchlistSortSettings] = useState<WatchlistSortSettings>(() => readStoredUserSettings().watchlistSort)
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(() => readStoredUserSettings().notificationPreferences)
   const [investmentType, setInvestmentType] = useState<InvestmentType | null>(() => readStoredUserSettings().investmentType)
+  const [onboardingInvestmentType, setOnboardingInvestmentType] = useState<InvestmentType>(DEFAULT_INVESTMENT_TYPE)
   const [isWatchlistSortOpen, setIsWatchlistSortOpen] = useState(false)
   const [isOperatorImportOpen, setIsOperatorImportOpen] = useState(false)
   const [operatorImportTickers, setOperatorImportTickers] = useState<string[]>([])
@@ -4226,6 +4227,10 @@ function App() {
   const selectInvestmentType = (nextInvestmentType: InvestmentType) => {
     setInvestmentType(nextInvestmentType)
     void persistUserSettings(watchlistSortSettings, notificationPreferences, nextInvestmentType)
+  }
+
+  const confirmInvestmentProfileOnboarding = () => {
+    selectInvestmentType(onboardingInvestmentType)
   }
 
   const closeInvestmentProfileOnboarding = () => {
@@ -5625,24 +5630,29 @@ function App() {
             <div className="investment-profile-header">
               <span>첫 설정</span>
               <h3>투자성향을 선택해 주세요</h3>
-              <p>처음 한 번만 고르면 됩니다. 닫으면 기본값인 천천히 모아가는 투자자로 시작합니다.</p>
+              <p>원하는 성향을 선택한 뒤 확인을 눌러 주세요. 닫으면 기본값인 천천히 모아가는 투자자로 시작합니다.</p>
             </div>
             <div className="investment-option-grid">
               {investmentProfileOptions.map((option) => (
                 <button
-                  className={`investment-option-card ${displayedInvestmentType === option.value ? 'active' : ''}`}
+                  className={`investment-option-card ${onboardingInvestmentType === option.value ? 'active' : ''}`}
                   key={option.value}
                   type="button"
-                  onClick={() => selectInvestmentType(option.value)}
+                  onClick={() => setOnboardingInvestmentType(option.value)}
                 >
                   <strong>{option.title}</strong>
                   <span>{option.description}</span>
                   <ul>
                     {option.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
                   </ul>
-                  {displayedInvestmentType === option.value && <b aria-hidden="true">선택됨</b>}
+                  {onboardingInvestmentType === option.value && <b aria-hidden="true">선택됨</b>}
                 </button>
               ))}
+            </div>
+            <div className="modal-actions investment-profile-actions">
+              <button className="modal-confirm" type="button" onClick={confirmInvestmentProfileOnboarding}>
+                확인
+              </button>
             </div>
           </section>
         </div>

@@ -2702,6 +2702,11 @@
   grid-template-columns: 1fr;
 }
 
+.investment-profile-actions .modal-confirm {
+  min-height: 38px;
+  min-width: 110px;
+}
+
 .investment-option-card {
   position: relative;
   display: grid;
