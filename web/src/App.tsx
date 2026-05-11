@@ -1,5 +1,5 @@
 import './App.css'
-import { Fragment, type FormEvent, type ReactNode, type WheelEvent, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, type FormEvent, type ReactNode, type WheelEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, type AppData, type RuntimeMeta } from './api'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
@@ -3385,6 +3385,18 @@ function App() {
   const holdingSheetRef = useRef<HTMLDivElement | null>(null)
   const apiMetasRef = useRef<AppDataMetas>(apiMetas)
 
+  const resetHomeSheetScroll = () => {
+    const reset = () => {
+      for (const sheet of [tradingLogScrollRef.current, watchlistSheetRef.current, holdingSheetRef.current]) {
+        if (sheet) sheet.scrollLeft = 0
+      }
+    }
+
+    reset()
+    window.requestAnimationFrame(reset)
+    window.setTimeout(reset, 80)
+  }
+
   const applyLoadedData = (data: GssgAppData) => {
     storeCachedAppData(data)
     setApiMetas({
@@ -4032,10 +4044,9 @@ function App() {
   const investingDays = daysFromFirstTrade(scopedTrades)
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = !isAdminUser && (activePage === 'board' || activePage === 'admin-logs') ? 'home' : activePage
-  useEffect(() => {
-    for (const sheet of [tradingLogScrollRef.current, watchlistSheetRef.current, holdingSheetRef.current]) {
-      if (sheet) sheet.scrollLeft = 0
-    }
+  const homeSheetResetKey = `${currentActivePage}-${effectiveViewMode}-${displayedInvestmentType}-${userSession?.id ?? 'guest'}`
+  useLayoutEffect(() => {
+    resetHomeSheetScroll()
   }, [currentActivePage, displayedInvestmentType, effectiveViewMode, userSession?.id])
   const isLoginEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedLoginEmail)
   const shouldShowEmailValidation = loginEmail.trim().length > 0 && !isLoginEmailValid
@@ -4070,6 +4081,7 @@ function App() {
     setSelectedTickers([])
     setSelectedHoldingTradeKeys([])
     markViewModeHintSeen()
+    resetHomeSheetScroll()
   }
 
   const openLoginForAddStock = () => {
@@ -4235,6 +4247,7 @@ function App() {
   const selectInvestmentType = (nextInvestmentType: InvestmentType) => {
     setInvestmentType(nextInvestmentType)
     void persistUserSettings(watchlistSortSettings, notificationPreferences, nextInvestmentType)
+    resetHomeSheetScroll()
   }
 
   const confirmInvestmentProfileOnboarding = () => {
@@ -4449,6 +4462,7 @@ function App() {
     closeHoldingLiquidationModal()
     localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode === 'admin' ? 'operator' : 'personal')
     setViewMode(mode === 'admin' ? 'operator' : 'personal')
+    resetHomeSheetScroll()
     clearAuthForm()
     setAuthMode('login')
     closeLoginModalAfterAccountSwitch()
@@ -5067,7 +5081,7 @@ function App() {
             </div>
           </div>
 
-          <div className="sheet-wrap trading-log-scroll" ref={tradingLogScrollRef}>
+          <div className="sheet-wrap trading-log-scroll" key={`trades-${homeSheetResetKey}`} ref={tradingLogScrollRef}>
             <table className={`sheet-table trading-log-table ${isLongTermInvestor ? 'long-term-trading-log-table' : ''}`}>
               <thead>
                 <tr>
@@ -5267,7 +5281,7 @@ function App() {
 
             {addStockInlineControl}
 
-            <div className="sheet-wrap watchlist-sheet" ref={watchlistSheetRef}>
+            <div className="sheet-wrap watchlist-sheet" key={`watchlist-${homeSheetResetKey}`} ref={watchlistSheetRef}>
               {tableStocks.length === 0 ? (
                 <div className="watchlist-empty-panel">
                   <div className="empty-watchlist">
@@ -5438,7 +5452,7 @@ function App() {
 
             <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다</p>
 
-            <div className="sheet-wrap holding-sheet" ref={holdingSheetRef}>
+            <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetRef}>
               <table className={`sheet-table holding-table ${isLongTermInvestor ? 'long-term-holding-table' : ''} ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}>
                 <thead>
                   <tr>
