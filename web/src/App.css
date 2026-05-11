@@ -207,6 +207,7 @@
 .refresh-data-button,
 .reset-button,
 .remove-selected-button,
+.liquidation-selected-button,
 .numbering-cell button,
 .sort-button,
 .text-button {
@@ -377,6 +378,15 @@
   font-size: 13px;
 }
 
+.section-note {
+  margin: -6px 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .section-heading-meta {
   display: inline-flex;
   align-items: center;
@@ -487,6 +497,7 @@
 .refresh-data-button,
 .reset-button,
 .remove-selected-button,
+.liquidation-selected-button,
 .sort-button {
   border: 1px solid var(--border);
   border-radius: 9px;
@@ -820,6 +831,18 @@
   background: #fee2e2;
 }
 
+.liquidation-selected-button {
+  border-color: rgba(245, 158, 11, 0.32);
+  background: #fff7ed;
+  color: #b45309;
+  font-weight: 900;
+}
+
+.liquidation-selected-button:hover {
+  border-color: rgba(245, 158, 11, 0.48);
+  background: #ffedd5;
+}
+
 .reserved-action-button {
   pointer-events: none;
   visibility: hidden;
@@ -908,7 +931,7 @@
 }
 
 .holding-table {
-  min-width: 660px;
+  min-width: 780px;
   height: 100%;
 }
 
@@ -974,7 +997,8 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  overscroll-behavior: none;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
   background-color: var(--sheet-bg);
 }
 
@@ -1257,7 +1281,7 @@
 }
 
 .market-events-table {
-  --event-divider: #d8e1ec;
+  --event-divider: var(--sheet-border);
   --event-upcoming-bg: #fff7d6;
   --event-upcoming-text: #5f4308;
   --event-today-bg: #d9ecff;
@@ -1281,6 +1305,7 @@
   min-width: 104px;
   max-width: 104px;
   background: var(--sheet-bg);
+  border-right: 0;
 }
 
 .market-events-table .event-period-head::after,
@@ -1291,7 +1316,7 @@
   bottom: 0;
   z-index: 1;
   width: 1px;
-  background: var(--event-divider);
+  background: #cbd5e1;
   content: '';
   pointer-events: none;
 }
@@ -1305,6 +1330,7 @@
   min-width: 88px;
   max-width: 88px;
   background: var(--sheet-bg);
+  border-right: 0;
 }
 
 .market-events-table .event-month-head::after,
@@ -1315,19 +1341,20 @@
   bottom: 0;
   z-index: 1;
   width: 2px;
-  background: #526172;
+  background: #64748b;
   content: '';
   pointer-events: none;
 }
 
 .market-events-table .event-period-head,
 .market-events-table .event-month-head {
-  z-index: 6;
+  z-index: 8;
   background: var(--sheet-head);
 }
 
 .market-events-table thead tr:nth-child(2) th {
   top: 42px;
+  z-index: 6;
 }
 
 .market-events-table .event-group-header {
@@ -1335,6 +1362,7 @@
   background: linear-gradient(180deg, #f8fbff 0%, var(--sheet-head) 100%);
   color: var(--sheet-head-text);
   font-weight: 800;
+  z-index: 7;
 }
 
 .market-events-table .event-group-start {
@@ -2258,7 +2286,7 @@
 
 .analysis-empty-panel {
   flex: 1;
-  min-height: 560px;
+  min-height: 0;
   border: 1px solid var(--sheet-border);
   border-radius: 12px;
   overflow: hidden;
@@ -2628,6 +2656,228 @@
 .login-modal {
   position: relative;
   width: min(420px, 100%);
+}
+
+.account-modal {
+  box-sizing: border-box;
+  width: min(920px, calc(100vw - 48px));
+  max-height: calc(100svh - 48px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.investment-profile-modal {
+  width: min(760px, 100%);
+}
+
+.investment-profile-header {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.investment-profile-header > span {
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.investment-profile-header h3 {
+  margin-bottom: 0;
+}
+
+.investment-option-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.investment-option-grid.compact {
+  grid-template-columns: 1fr;
+}
+
+.investment-option-card {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: #ffffff;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  padding: 14px;
+  text-align: left;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.investment-option-card:hover,
+.investment-option-card:focus-visible {
+  border-color: rgba(34, 136, 238, 0.46);
+  box-shadow: 0 10px 24px rgba(34, 136, 238, 0.12);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.investment-option-card.active {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(34, 136, 238, 0.16), rgba(34, 136, 238, 0.05));
+  box-shadow: inset 0 0 0 1px rgba(34, 136, 238, 0.16), 0 10px 24px rgba(34, 136, 238, 0.13);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.investment-option-card.active::after {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-grid;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #ffffff;
+  content: '✓';
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 20px;
+  place-items: center;
+}
+
+.investment-option-card small {
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.investment-option-card strong {
+  color: var(--text-h);
+  font-size: 16px;
+}
+
+.investment-option-card span,
+.investment-option-card li,
+.investment-option-card b {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.investment-option-card b {
+  color: var(--accent-strong);
+  font-weight: 900;
+}
+
+.investment-option-card > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.investment-option-card ul {
+  display: grid;
+  gap: 4px;
+  margin: 2px 0 0;
+  padding-left: 18px;
+}
+
+.holding-liquidation-modal {
+  position: relative;
+  width: min(760px, 100%);
+}
+
+.holding-liquidation-list {
+  display: grid;
+  gap: 10px;
+  max-height: min(52vh, 460px);
+  margin-top: 14px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.holding-liquidation-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.2fr) repeat(3, minmax(110px, 1fr)) minmax(92px, auto);
+  gap: 8px;
+  align-items: end;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--subtle);
+  padding: 12px;
+}
+
+.holding-liquidation-title {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.holding-liquidation-title strong {
+  overflow: hidden;
+  color: var(--text-h);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.holding-liquidation-title span,
+.holding-liquidation-row label span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.holding-liquidation-row label {
+  display: grid;
+  gap: 5px;
+}
+
+.holding-liquidation-row input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--input-bg);
+  color: var(--text-h);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+  padding: 9px 10px;
+}
+
+.holding-liquidation-row input:focus {
+  border-color: #94a3b8;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2);
+}
+
+.holding-liquidation-return {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 36px;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #ffffff;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  padding: 9px 10px;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .investment-option-grid,
+  .holding-liquidation-row {
+    grid-template-columns: 1fr;
+  }
+
+  .holding-liquidation-return {
+    justify-content: flex-start;
+  }
 }
 
 
@@ -3676,16 +3926,70 @@
 
 .account-settings-stack {
   display: grid;
+  grid-template-columns: minmax(280px, 0.92fr) minmax(360px, 1.08fr);
   gap: 10px;
+  align-items: start;
+}
+
+.account-settings-stack .login-account-card {
+  grid-column: 1 / -1;
+}
+
+.investment-settings-card {
+  min-height: 0;
 }
 
 .account-alert-card {
   display: grid;
+  align-content: start;
   gap: 4px;
   border: 1px solid var(--border);
   border-radius: 13px;
   background: #ffffff;
   padding: 6px 12px;
+}
+
+.investment-settings-card .account-alert-header {
+  display: grid;
+  gap: 4px;
+  justify-content: stretch;
+}
+
+.investment-settings-card .account-alert-header small {
+  text-align: left;
+}
+
+.investment-settings-card .investment-option-grid {
+  margin-top: 8px;
+}
+
+.account-integration-placeholder {
+  display: grid;
+  gap: 8px;
+  margin-top: 28px;
+  border: 1px dashed rgba(148, 163, 184, 0.7);
+  border-radius: 12px;
+  background: var(--subtle);
+  padding: 12px;
+}
+
+.account-integration-placeholder span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.account-integration-placeholder button {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--muted);
+  cursor: not-allowed;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 36px;
+  opacity: 0.72;
 }
 
 .account-alert-header {
@@ -3856,5 +4160,14 @@
 
   .account-alert-header small {
     text-align: left;
+  }
+
+  .account-modal,
+  .account-settings-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .account-settings-stack .login-account-card {
+    grid-column: auto;
   }
 }

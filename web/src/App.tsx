@@ -24,6 +24,14 @@ type NotificationPreferences = {
   recipientEmail: string
 }
 
+type InvestmentType = 'swing' | 'long_term'
+
+type StoredUserSettings = {
+  watchlistSort: WatchlistSortSettings
+  notificationPreferences: NotificationPreferences
+  investmentType: InvestmentType | null
+}
+
 type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
 
 type Stock = {
@@ -74,6 +82,16 @@ type UserSession = {
   email: string
   name: string
   loggedInAt: string
+}
+
+type HoldingLiquidationDraft = {
+  key: string
+  ticker: string
+  name: string
+  buyDate: string
+  buyPrice: string
+  sellDate: string
+  sellPrice: string
 }
 
 type TechnicalColumn = {
@@ -165,6 +183,7 @@ const MAX_WATCHLIST_ITEMS = 50
 const LEGACY_AUTH_SESSION_STORAGE_KEY = 'gongsu-user-session'
 const WATCHLIST_STORAGE_KEY = 'gongsu-watchlist'
 const OPERATOR_WATCHLIST_STORAGE_KEY = 'gongsu-operator-watchlist'
+const PERSONAL_TRADES_STORAGE_KEY = 'gongsu-personal-trades'
 const VIEW_MODE_STORAGE_KEY = 'gongsu-view-mode'
 const VIEW_MODE_HINT_STORAGE_KEY = 'gongsu-view-mode-hint-seen'
 const USER_SETTINGS_STORAGE_KEY = 'gongsu-user-settings'
@@ -187,12 +206,36 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   adminAutoUpdateFailureEmail: true,
   recipientEmail: '',
 }
+const DEFAULT_USER_SETTINGS: StoredUserSettings = {
+  watchlistSort: DEFAULT_WATCHLIST_SORT,
+  notificationPreferences: DEFAULT_NOTIFICATION_PREFERENCES,
+  investmentType: null,
+}
 const TEST_USER_SESSION: UserSession = {
   id: 'local-test-user',
   email: 'test@gongsu.local',
   name: '테스트',
   loggedInAt: '',
 }
+const investmentProfileOptions: Array<{
+  value: InvestmentType
+  title: string
+  description: string
+  bullets: string[]
+}> = [
+  {
+    value: 'swing',
+    title: '빠르게 사고파는 투자자',
+    description: '타이밍을 보며 수익 기회를 빠르게 잡고 싶어요.',
+    bullets: ['매수/관망/매도 신호 모두 보기', '수익 실현과 손절 기준 확인', '거래 기록으로 성과 확인'],
+  },
+  {
+    value: 'long_term',
+    title: '천천히 모아가는 투자자',
+    description: '좋은 매수 시점과 보유 흐름을 중심으로 보고 싶어요.',
+    bullets: ['매수/관망 신호만 보기', '매도 관련 정보는 숨김', '보유 종목의 누적 수익률 중심'],
+  },
+]
 
 function configuredAdminEmails() {
   return (import.meta.env.VITE_ADMIN_EMAILS ?? DEFAULT_ADMIN_EMAILS.join(','))
@@ -333,6 +376,10 @@ function userSettingsStorageKey(session: UserSession | null = null) {
   return `${USER_SETTINGS_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
 }
 
+function personalTradeLogsStorageKey(session: UserSession | null = null) {
+  return `${PERSONAL_TRADES_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
+}
+
 function normalizeWatchlistSortSettings(value: unknown): WatchlistSortSettings {
   const allowed: WatchlistSortKey[] = [
     'registered',
@@ -365,10 +412,51 @@ function normalizeNotificationPreferences(value: unknown): NotificationPreferenc
   }
 }
 
-function readStoredUserSettings(session: UserSession | null = null) {
+function normalizeInvestmentType(value: unknown): InvestmentType | null {
+  return value === 'swing' || value === 'long_term' ? value : null
+}
+
+function normalizeTradeLog(value: unknown): TradeLog | null {
+  const candidate = value as Partial<TradeLog> | null
+  if (!candidate || typeof candidate.ticker !== 'string' || typeof candidate.buyDate !== 'string') return null
+
+  return {
+    ticker: candidate.ticker,
+    name: typeof candidate.name === 'string' ? candidate.name : undefined,
+    market: candidate.market === 'KR' || candidate.market === 'US' ? candidate.market : undefined,
+    currentPrice: typeof candidate.currentPrice === 'string' ? candidate.currentPrice : undefined,
+    strategy: typeof candidate.strategy === 'string' ? candidate.strategy : '-',
+    buyDate: candidate.buyDate,
+    buyPrice: typeof candidate.buyPrice === 'string' ? candidate.buyPrice : '-',
+    sellDate: typeof candidate.sellDate === 'string' ? candidate.sellDate : '-',
+    sellPrice: typeof candidate.sellPrice === 'string' ? candidate.sellPrice : '-',
+    returnPct: typeof candidate.returnPct === 'number' && Number.isFinite(candidate.returnPct) ? candidate.returnPct : 0,
+    holdingDays: typeof candidate.holdingDays === 'number' || candidate.holdingDays === '-' ? candidate.holdingDays : '-',
+    status: ['익절', '손절', '실패 익절', '보유 중'].includes(String(candidate.status)) ? candidate.status as TradeStatus : '보유 중',
+  }
+}
+
+function readStoredPersonalTradeLogs(session: UserSession | null = null) {
+  const stored = localStorage.getItem(personalTradeLogsStorageKey(session))
+  if (!stored) return personalTrades
+
+  try {
+    const parsed = JSON.parse(stored)
+    return Array.isArray(parsed) ? parsed.map(normalizeTradeLog).filter((trade): trade is TradeLog => Boolean(trade)) : personalTrades
+  } catch {
+    localStorage.removeItem(personalTradeLogsStorageKey(session))
+    return personalTrades
+  }
+}
+
+function storePersonalTradeLogs(session: UserSession | null, trades: TradeLog[]) {
+  localStorage.setItem(personalTradeLogsStorageKey(session), JSON.stringify(trades))
+}
+
+function readStoredUserSettings(session: UserSession | null = null): StoredUserSettings {
   const stored = localStorage.getItem(userSettingsStorageKey(session)) ?? localStorage.getItem(USER_SETTINGS_STORAGE_KEY)
   if (!stored) {
-    return { watchlistSort: DEFAULT_WATCHLIST_SORT, notificationPreferences: DEFAULT_NOTIFICATION_PREFERENCES }
+    return DEFAULT_USER_SETTINGS
   }
 
   try {
@@ -376,10 +464,11 @@ function readStoredUserSettings(session: UserSession | null = null) {
     return {
       watchlistSort: normalizeWatchlistSortSettings(parsed.watchlistSort),
       notificationPreferences: normalizeNotificationPreferences(parsed.notificationPreferences),
+      investmentType: normalizeInvestmentType(parsed.investmentType),
     }
   } catch {
     localStorage.removeItem(userSettingsStorageKey(session))
-    return { watchlistSort: DEFAULT_WATCHLIST_SORT, notificationPreferences: DEFAULT_NOTIFICATION_PREFERENCES }
+    return DEFAULT_USER_SETTINGS
   }
 }
 
@@ -387,8 +476,9 @@ function storeUserSettings(
   session: UserSession | null,
   watchlistSort: WatchlistSortSettings,
   notificationPreferences: NotificationPreferences,
+  investmentType: InvestmentType | null,
 ) {
-  localStorage.setItem(userSettingsStorageKey(session), JSON.stringify({ watchlistSort, notificationPreferences }))
+  localStorage.setItem(userSettingsStorageKey(session), JSON.stringify({ watchlistSort, notificationPreferences, investmentType }))
 }
 
 function readStoredApiLogs() {
@@ -649,6 +739,51 @@ const initialWatchlist: string[] = []
 const operatorTickers: string[] = []
 const strategyFilters = ['A', 'B', 'C', 'D', 'E', 'F']
 const personalTrades: TradeLog[] = []
+const localTestWatchlist = ['NVDA', 'MSFT', '005930']
+const localTestPersonalTrades: TradeLog[] = [
+  {
+    ticker: 'NVDA',
+    name: 'NVIDIA',
+    market: 'US',
+    currentPrice: '$118.40',
+    strategy: 'D. 200일선 상방 & 상승 흐름 강화',
+    buyDate: '2026.04.15',
+    buyPrice: '$104.20',
+    sellDate: '-',
+    sellPrice: '-',
+    returnPct: 0,
+    holdingDays: '-',
+    status: '보유 중',
+  },
+  {
+    ticker: 'MSFT',
+    name: 'Microsoft',
+    market: 'US',
+    currentPrice: '$485.90',
+    strategy: 'C. 200일선 상방 & 스퀴즈 거래량 돌파',
+    buyDate: '2026.04.22',
+    buyPrice: '$461.30',
+    sellDate: '-',
+    sellPrice: '-',
+    returnPct: 0,
+    holdingDays: '-',
+    status: '보유 중',
+  },
+  {
+    ticker: '005930',
+    name: '삼성전자',
+    market: 'KR',
+    currentPrice: '₩78,300',
+    strategy: 'A. 200일선 상방 & 모멘텀 재가속',
+    buyDate: '2026.05.02',
+    buyPrice: '₩75,100',
+    sellDate: '-',
+    sellPrice: '-',
+    returnPct: 0,
+    holdingDays: '-',
+    status: '보유 중',
+  },
+]
 const operatorTrades: TradeLog[] = []
 const valuationMetrics: Record<string, ValuationMetric> = {
   '005930': {
@@ -961,14 +1096,19 @@ function stockSearchRank(stock: Stock, normalizedQuery: string) {
   return 99
 }
 
-function preventVerticalScrollBounce(event: WheelEvent<HTMLElement>) {
+function releaseVerticalScrollAtEdge(event: WheelEvent<HTMLElement>) {
   const container = event.currentTarget
   if (Math.abs(event.deltaY) < Math.abs(event.deltaX) || container.scrollHeight <= container.clientHeight) return
 
   const isAtTop = container.scrollTop <= 0
   const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight
   if ((event.deltaY < 0 && isAtTop) || (event.deltaY > 0 && isAtBottom)) {
+    const activeElement = document.activeElement
+    if (activeElement instanceof HTMLElement && container.contains(activeElement)) {
+      activeElement.blur()
+    }
     event.preventDefault()
+    window.scrollBy({ top: event.deltaY, behavior: 'auto' })
   }
 }
 
@@ -1242,6 +1382,22 @@ function parseTradeDate(value: string) {
   return new Date(value.replaceAll('.', '-')).getTime()
 }
 
+function todayTradeDateString() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}.${month}.${day}`
+}
+
+function tradeDateInputValue(value: string) {
+  return value.replaceAll('.', '-')
+}
+
+function normalizeTradeDateInput(value: string) {
+  return value.trim().replaceAll('-', '.')
+}
+
 function holdingPeriodDays(trade: TradeLog) {
   const endTime = trade.status === '보유 중' ? Date.now() : parseTradeDate(trade.sellDate)
   return Math.max(0, Math.ceil((endTime - parseTradeDate(trade.buyDate)) / 86_400_000))
@@ -1258,6 +1414,23 @@ function currentReturnPct(trade: TradeLog, stocks: Stock[] = searchUniverse) {
 
   if (!buyPrice || currentPrice === null) return null
   return ((currentPrice - buyPrice) / buyPrice) * 100
+}
+
+function tradeCurrentPriceText(trade: TradeLog, stocks: Stock[] = searchUniverse) {
+  return trade.currentPrice || stocks.find((stock) => stock.ticker === trade.ticker)?.currentPrice || '-'
+}
+
+function displayedTradeReturnPct(trade: TradeLog, stocks: Stock[] = searchUniverse) {
+  return trade.status === '보유 중' ? currentReturnPct(trade, stocks) : trade.returnPct
+}
+
+function tradeReturnPriceText(trade: TradeLog, stocks: Stock[] = searchUniverse) {
+  return trade.status === '보유 중' ? tradeCurrentPriceText(trade, stocks) : trade.sellPrice || '-'
+}
+
+function formatPriceWithReturn(price: string, returnPct: number | null) {
+  if (returnPct === null) return `${price} (-)`
+  return `${price} (${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(1)}%)`
 }
 
 function valuationFromPriceRange(currentPrice: string, fairPrice: string): Valuation | null {
@@ -1929,7 +2102,7 @@ function ValueAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet" onWheel={preventVerticalScrollBounce}>
+        <div className="sheet-wrap value-analysis-sheet" onWheel={releaseVerticalScrollAtEdge}>
           <table className="sheet-table value-analysis-table">
           <thead>
             <tr>
@@ -2016,6 +2189,7 @@ function TechnicalAnalysisPage({
   viewMode,
   technicalRows,
   tradeLogs,
+  hideSellSignals,
   marketSnapshot,
   updateLabel,
   addStockControl,
@@ -2027,6 +2201,7 @@ function TechnicalAnalysisPage({
   viewMode: 'personal' | 'operator'
   technicalRows: Record<string, Record<string, string>>
   tradeLogs: TradeLog[]
+  hideSellSignals: boolean
   marketSnapshot: string[][]
   updateLabel: string
   addStockControl?: ReactNode
@@ -2109,7 +2284,7 @@ function TechnicalAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet" onWheel={preventVerticalScrollBounce}>
+        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet" onWheel={releaseVerticalScrollAtEdge}>
           <table className="sheet-table value-analysis-table technical-analysis-table">
             <thead>
               <tr>
@@ -2132,6 +2307,7 @@ function TechnicalAnalysisPage({
             <tbody>
               {visibleStocks.map((stock) => {
                 const apiRow = technicalRows[stock.ticker]
+                const displayedOpinion = hideSellSignals && stock.opinion === '매도' ? '관망' : displayStockOpinion(stock)
 
                 return (
                 <tr key={stock.ticker}>
@@ -2142,7 +2318,7 @@ function TechnicalAnalysisPage({
                     </div>
                   </td>
                   <td className="ticker-cell">{stock.ticker}</td>
-                  <td><span className={`status-badge ${statusClass(displayStockOpinion(stock))}`}>{displayStockOpinion(stock)}</span></td>
+                  <td><span className={`status-badge ${statusClass(displayedOpinion)}`}>{displayedOpinion}</span></td>
                   {technicalMetricColumns.map((column) => {
                     const apiKey = column.key ?? column.label
                     const entryStrategies = apiKey === '진입 전략' ? displayStrategiesForStock(stock, tradeLogs) : []
@@ -3131,7 +3307,7 @@ function App() {
   const [query, setQuery] = useState('')
   const [watchlist, setWatchlist] = useState<string[]>(() => readStoredWatchlist())
   const [operatorWatchlist, setOperatorWatchlist] = useState<string[]>(() => readStoredOperatorWatchlist())
-  const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(personalTrades)
+  const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(() => readStoredPersonalTradeLogs())
   const [systemTradeLogs, setSystemTradeLogs] = useState<TradeLog[]>(() => cachedAppData?.tradeLogs?.rows ?? operatorTrades)
   const [isAddingStock, setIsAddingStock] = useState(false)
   const [viewMode, setViewMode] = useState<'personal' | 'operator'>(() => readStoredViewMode())
@@ -3143,6 +3319,8 @@ function App() {
   const [selectedHoldingTradeKeys, setSelectedHoldingTradeKeys] = useState<string[]>([])
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false)
   const [isHoldingDeleteConfirmOpen, setIsHoldingDeleteConfirmOpen] = useState(false)
+  const [isHoldingLiquidationOpen, setIsHoldingLiquidationOpen] = useState(false)
+  const [holdingLiquidationDrafts, setHoldingLiquidationDrafts] = useState<HoldingLiquidationDraft[]>([])
   const [isLoginOpen, setIsLoginOpen] = useState(() => Boolean(notificationSettingsDeepLinkMessage()))
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [loginEmail, setLoginEmail] = useState('')
@@ -3189,13 +3367,14 @@ function App() {
   const [refreshDataMessage, setRefreshDataMessage] = useState('')
   const [watchlistSortSettings, setWatchlistSortSettings] = useState<WatchlistSortSettings>(() => readStoredUserSettings().watchlistSort)
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(() => readStoredUserSettings().notificationPreferences)
+  const [investmentType, setInvestmentType] = useState<InvestmentType | null>(() => readStoredUserSettings().investmentType)
   const [isWatchlistSortOpen, setIsWatchlistSortOpen] = useState(false)
   const [isOperatorImportOpen, setIsOperatorImportOpen] = useState(false)
   const [operatorImportTickers, setOperatorImportTickers] = useState<string[]>([])
   const [apiLogs, setApiLogs] = useState<ApiLog[]>(() => readStoredApiLogs())
   const [isLoadingApiLogs, setIsLoadingApiLogs] = useState(false)
   const [activePage, setActivePage] = useState<ActivePage>(() => readInitialActivePage())
-  const [areHomeColumnsPinned, setAreHomeColumnsPinned] = useState(true)
+  const [areHomeColumnsPinned, setAreHomeColumnsPinned] = useState(false)
   const addStockButtonRef = useRef<HTMLButtonElement | null>(null)
   const inlineAddRef = useRef<HTMLDivElement | null>(null)
   const watchlistSortMenuRef = useRef<HTMLDivElement | null>(null)
@@ -3272,30 +3451,59 @@ function App() {
   async function loadUserSettings(session: UserSession | null) {
     if (!session || !supabase) return readStoredUserSettings(session)
 
+    const storedSettings = readStoredUserSettings(session)
     const { data, error } = await supabase
       .from('user_settings')
-      .select('watchlist_sort, notification_preferences')
+      .select('watchlist_sort, notification_preferences, investment_type')
       .eq('owner_id', session.id)
       .maybeSingle()
 
-    if (error) return readStoredUserSettings(session)
+    if (error) {
+      const fallback = await supabase
+        .from('user_settings')
+        .select('watchlist_sort, notification_preferences')
+        .eq('owner_id', session.id)
+        .maybeSingle()
+
+      if (fallback.error) return storedSettings
+      const nextSettings = {
+        watchlistSort: normalizeWatchlistSortSettings(fallback.data?.watchlist_sort),
+        notificationPreferences: normalizeNotificationPreferences(fallback.data?.notification_preferences),
+        investmentType: storedSettings.investmentType,
+      }
+      storeUserSettings(session, nextSettings.watchlistSort, nextSettings.notificationPreferences, nextSettings.investmentType)
+      return nextSettings
+    }
+
     const nextSettings = {
       watchlistSort: normalizeWatchlistSortSettings(data?.watchlist_sort),
       notificationPreferences: normalizeNotificationPreferences(data?.notification_preferences),
+      investmentType: normalizeInvestmentType(data?.investment_type),
     }
-    storeUserSettings(session, nextSettings.watchlistSort, nextSettings.notificationPreferences)
+    storeUserSettings(session, nextSettings.watchlistSort, nextSettings.notificationPreferences, nextSettings.investmentType)
     return nextSettings
   }
 
   async function persistUserSettings(
     watchlistSort: WatchlistSortSettings,
     notificationPreferences: NotificationPreferences,
+    nextInvestmentType = investmentType,
     session = userSession,
   ) {
-    storeUserSettings(session, watchlistSort, notificationPreferences)
+    storeUserSettings(session, watchlistSort, notificationPreferences, nextInvestmentType)
     if (!supabase || !session) return
 
     try {
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({
+          owner_id: session.id,
+          watchlist_sort: watchlistSort,
+          notification_preferences: notificationPreferences,
+          investment_type: nextInvestmentType,
+        })
+      if (!error) return
+
       await supabase
         .from('user_settings')
         .upsert({
@@ -3591,6 +3799,8 @@ function App() {
       ])
       setWatchlistSortSettings(loadedSettings.watchlistSort)
       setNotificationPreferences(loadedSettings.notificationPreferences)
+      setInvestmentType(loadedSettings.investmentType)
+      setPersonalTradeLogs(readStoredPersonalTradeLogs(session))
       await loadBoardPosts()
       const legacyTickers = session ? readLegacyWatchlist(session) : null
       const nextPersonalTickers = personalTickers && personalTickers.length > 0
@@ -3790,6 +4000,7 @@ function App() {
 
   const effectiveViewMode = isAdminUser ? 'operator' : viewMode
   const isOperatorDataMode = effectiveViewMode === 'operator'
+  const isLongTermInvestor = investmentType === 'long_term' && effectiveViewMode === 'personal'
   const scopedTrades = isOperatorDataMode ? systemTradeLogs : personalTradeLogs
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const filteredTrades = scopedTrades
@@ -3805,7 +4016,9 @@ function App() {
     ...strategyFilters
       .map((code) => formatWinRate(code, scopedTrades.filter((trade) => strategyCode(trade.strategy) === code))),
   ].join(', ')
-  const strategyCriteriaLine = 'A/B/C(+20% 즉시, -30%), D(+12%, -25%, 최대 30일), E/F(+20% 후 MACD 둔화·5일 대기, -30%)'
+  const strategyCriteriaLine = isLongTermInvestor
+    ? '장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 보유 종목에서 직접 처리합니다.'
+    : 'A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%) ※ 장기 보유: 60일 수익/120일 최대'
   const investingDays = daysFromFirstTrade(scopedTrades)
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = !isAdminUser && (activePage === 'board' || activePage === 'admin-logs') ? 'home' : activePage
@@ -3827,6 +4040,8 @@ function App() {
     : !isRemoteDataReady
       ? '계정 데이터를 불러오는 중입니다.'
       : ''
+  const canUseLocalAuthBypass = import.meta.env.DEV
+  const shouldShowInvestmentProfileOnboarding = Boolean(userSession && !isAdminUser && !investmentType && !isLoginOpen)
 
   const markViewModeHintSeen = () => {
     localStorage.setItem(VIEW_MODE_HINT_STORAGE_KEY, 'true')
@@ -3922,10 +4137,89 @@ function App() {
     ))
   }
 
+  const commitPersonalTradeLogs = (updater: (current: TradeLog[]) => TradeLog[]) => {
+    setPersonalTradeLogs((current) => {
+      const next = updater(current)
+      storePersonalTradeLogs(userSession, next)
+      return next
+    })
+  }
+
   const removeSelectedHoldingTrades = () => {
-    setPersonalTradeLogs((current) => current.filter((trade) => !selectedHoldingTradeKeys.includes(tradeKey(trade))))
+    commitPersonalTradeLogs((current) => current.filter((trade) => !selectedHoldingTradeKeys.includes(tradeKey(trade))))
     setSelectedHoldingTradeKeys([])
     setIsHoldingDeleteConfirmOpen(false)
+  }
+
+  const openHoldingLiquidationModal = () => {
+    const targetTrades = personalTradeLogs.filter((trade) => (
+      trade.status === '보유 중' && selectedHoldingTradeKeys.includes(tradeKey(trade))
+    ))
+    if (targetTrades.length === 0) return
+
+    setHoldingLiquidationDrafts(targetTrades.map((trade) => {
+      const fallbackStock = apiStocks.find((stock) => stock.ticker === trade.ticker)
+      return {
+        key: tradeKey(trade),
+        ticker: trade.ticker,
+        name: tradeName(trade),
+        buyDate: trade.buyDate,
+        buyPrice: trade.buyPrice === '-' ? '' : trade.buyPrice,
+        sellDate: todayTradeDateString(),
+        sellPrice: trade.currentPrice || fallbackStock?.currentPrice || '',
+      }
+    }))
+    setIsHoldingLiquidationOpen(true)
+  }
+
+  const closeHoldingLiquidationModal = () => {
+    setIsHoldingLiquidationOpen(false)
+    setHoldingLiquidationDrafts([])
+  }
+
+  const updateHoldingLiquidationDraft = (key: string, field: 'buyPrice' | 'sellDate' | 'sellPrice', value: string) => {
+    setHoldingLiquidationDrafts((current) => current.map((draft) => (
+      draft.key === key ? { ...draft, [field]: value } : draft
+    )))
+  }
+
+  const isHoldingLiquidationReady = holdingLiquidationDrafts.length > 0 && holdingLiquidationDrafts.every((draft) => (
+    parsePriceValue(draft.buyPrice) !== null
+    && parsePriceValue(draft.sellPrice) !== null
+    && !Number.isNaN(parseTradeDate(draft.sellDate))
+  ))
+
+  const confirmHoldingLiquidation = () => {
+    if (!isHoldingLiquidationReady) return
+
+    const draftMap = new Map(holdingLiquidationDrafts.map((draft) => [draft.key, draft]))
+    commitPersonalTradeLogs((current) => current.map((trade) => {
+      const draft = draftMap.get(tradeKey(trade))
+      if (!draft) return trade
+
+      const buyPrice = parsePriceValue(draft.buyPrice) ?? 0
+      const sellPrice = parsePriceValue(draft.sellPrice) ?? 0
+      const returnPct = buyPrice > 0 ? ((sellPrice - buyPrice) / buyPrice) * 100 : 0
+      const sellDate = normalizeTradeDateInput(draft.sellDate)
+      const holdingDays = Math.max(0, Math.ceil((parseTradeDate(sellDate) - parseTradeDate(trade.buyDate)) / 86_400_000))
+
+      return {
+        ...trade,
+        buyPrice: draft.buyPrice,
+        sellDate,
+        sellPrice: draft.sellPrice,
+        returnPct,
+        holdingDays,
+        status: returnPct >= 0 ? '익절' : '손절',
+      }
+    }))
+    setSelectedHoldingTradeKeys([])
+    closeHoldingLiquidationModal()
+  }
+
+  const selectInvestmentType = (nextInvestmentType: InvestmentType) => {
+    setInvestmentType(nextInvestmentType)
+    void persistUserSettings(watchlistSortSettings, notificationPreferences, nextInvestmentType)
   }
 
   const resetSystemRecords = async () => {
@@ -3935,7 +4229,7 @@ function App() {
     } else {
       setWatchlist([])
       await persistWatchlist('personal', [])
-      setPersonalTradeLogs([])
+      commitPersonalTradeLogs(() => [])
     }
     setSelectedTickers([])
     setSelectedHoldingTradeKeys([])
@@ -3944,6 +4238,7 @@ function App() {
     setSelectedStrategy('전체')
     setIsResetConfirmOpen(false)
     setIsHoldingDeleteConfirmOpen(false)
+    setIsHoldingLiquidationOpen(false)
   }
 
   const clearAuthForm = () => {
@@ -4074,8 +4369,11 @@ function App() {
     setUserSession(null)
     setCanUseAccountSwitch(false)
     setWatchlist(readStoredWatchlist(null))
+    setPersonalTradeLogs(readStoredPersonalTradeLogs(null))
+    setInvestmentType(readStoredUserSettings(null).investmentType)
     setSelectedTickers([])
     setSelectedHoldingTradeKeys([])
+    closeHoldingLiquidationModal()
     clearAuthForm()
     setAuthMode('login')
     setIsLoginOpen(false)
@@ -4103,9 +4401,29 @@ function App() {
 
     setUserSession(nextSession)
     setCanUseAccountSwitch(true)
-    setWatchlist(readStoredWatchlist(nextSession))
+    const storedWatchlist = readStoredWatchlist(nextSession)
+    const nextWatchlist = mode === 'user' && storedWatchlist.length === 0 ? localTestWatchlist : storedWatchlist
+    setWatchlist(nextWatchlist)
+    if (mode === 'user' && storedWatchlist.length === 0) {
+      localStorage.setItem(personalWatchlistStorageKey(nextSession), JSON.stringify(nextWatchlist))
+    }
+    const storedPersonalTrades = readStoredPersonalTradeLogs(nextSession)
+    const nextPersonalTrades = mode === 'user' && storedPersonalTrades.length === 0 ? localTestPersonalTrades : storedPersonalTrades
+    setPersonalTradeLogs(nextPersonalTrades)
+    if (mode === 'user' && storedPersonalTrades.length === 0) {
+      storePersonalTradeLogs(nextSession, nextPersonalTrades)
+    }
+    const nextSettings = readStoredUserSettings(nextSession)
+    setWatchlistSortSettings(nextSettings.watchlistSort)
+    setNotificationPreferences(nextSettings.notificationPreferences)
+    const nextInvestmentType = mode === 'user' ? nextSettings.investmentType ?? 'long_term' : nextSettings.investmentType
+    setInvestmentType(nextInvestmentType)
+    if (mode === 'user' && !nextSettings.investmentType) {
+      storeUserSettings(nextSession, nextSettings.watchlistSort, nextSettings.notificationPreferences, nextInvestmentType)
+    }
     setSelectedTickers([])
     setSelectedHoldingTradeKeys([])
+    closeHoldingLiquidationModal()
     localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode === 'admin' ? 'operator' : 'personal')
     setViewMode(mode === 'admin' ? 'operator' : 'personal')
     clearAuthForm()
@@ -4479,7 +4797,10 @@ function App() {
   const tradeBlankRows = Math.max(3, 22 - filteredTrades.length - (showEmptyTradeExample ? 1 : 0))
   const watchlistBlankRows = Math.max(0, 10 - tableStocks.length)
   const holdingBlankRows = Math.max(0, 10 - scopedOpenTrades.length - (showEmptyHoldingExample ? 1 : 0))
-  const currentWatchlistSortOption = watchlistSortOptions.find((option) => option.value === watchlistSortSettings.primary) ?? watchlistSortOptions[0]
+  const visibleWatchlistSortOptions = isLongTermInvestor
+    ? watchlistSortOptions.filter((option) => option.value !== 'opinion_sell_first')
+    : watchlistSortOptions
+  const currentWatchlistSortOption = visibleWatchlistSortOptions.find((option) => option.value === watchlistSortSettings.primary) ?? visibleWatchlistSortOptions[0]
   const addStockInlineControl = isAddingStock && canEditCurrentWatchlist && !isCurrentWatchlistFull ? (
     <div className="inline-add analysis-inline-add" ref={inlineAddRef}>
       {canShowOperatorImport && (
@@ -4702,7 +5023,14 @@ function App() {
             </div>
             <div className="log-sub-row">
               <div className="log-meta">
-                <p>총 투자 기간 {investingDays}일 <span>|</span> 승률: {visibleWinRates}</p>
+                <p>
+                  총 투자 기간 {investingDays}일
+                  {!isLongTermInvestor && (
+                    <>
+                      <span>|</span> 승률: {visibleWinRates}
+                    </>
+                  )}
+                </p>
                 <p>성공/실패 기준: {strategyCriteriaLine}</p>
               </div>
               <button
@@ -4725,8 +5053,8 @@ function App() {
                   <th>티커</th>
                   <th>매수 신호일</th>
                   <th>매수 신호 가격</th>
-                  <th>매도 신호일</th>
-                  <th>매도 신호 가격</th>
+                  {!isLongTermInvestor && <th>매도 신호일</th>}
+                  {!isLongTermInvestor && <th>매도 신호 가격</th>}
                   <th>전략</th>
                   <th>
                     <MetricValue
@@ -4737,9 +5065,9 @@ function App() {
                       메가 트렌드
                     </MetricValue>
                   </th>
-                  <th>수익률</th>
+                  <th>{isLongTermInvestor ? '현재가(수익률)' : '가격(수익률)'}</th>
                   <th>보유 기간</th>
-                  <th>결과</th>
+                  {!isLongTermInvestor && <th>결과</th>}
                 </tr>
               </thead>
               <tbody>
@@ -4755,70 +5083,68 @@ function App() {
                     <td className="ticker-cell">{exampleStock.ticker}</td>
                     <td>신호 발생 시</td>
                     <td className="number-cell">{displayCurrentPriceText(exampleStock)}</td>
-                    <td className="dash-cell">-</td>
-                    <td className="dash-cell">-</td>
+                    {!isLongTermInvestor && <td className="dash-cell">-</td>}
+                    {!isLongTermInvestor && <td className="dash-cell">-</td>}
                     <td><span className="example-note">매수 시그널 충족 시 기록됩니다.</span></td>
                     <td className="dash-cell">미충족</td>
                     <td className="dash-cell">-</td>
                     <td className="dash-cell">-</td>
-                    <td><span className="example-note">예시</span></td>
+                    {!isLongTermInvestor && <td><span className="example-note">예시</span></td>}
                   </tr>
                 )}
-                {filteredTrades.map((trade, index) => (
-                  <tr key={`${trade.ticker}-${trade.buyDate}`}>
-                    <td className="numbering-cell">{index + 1}</td>
-                    <td>
-                      <div className="name-cell">
-                        <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>
-                        <span>{tradeName(trade)}</span>
-                      </div>
-                    </td>
-                    <td className="ticker-cell">{trade.ticker}</td>
-                    <td>{trade.buyDate}</td>
-                    <td className="number-cell">{trade.buyPrice}</td>
-                    <td>{trade.sellDate}</td>
-                    <td className={trade.sellPrice === '-' ? 'dash-cell' : 'number-cell'}>{trade.sellPrice}</td>
-                    <td>
-                      <StrategyTag
-                        onTooltipClose={() => setActiveTooltip(null)}
-                        onTooltipOpen={setActiveTooltip}
-                        strategy={trade.strategy}
-                      />
-                    </td>
-                    <td className={megaTrendStatus(trade).startsWith('충족') ? 'mega-trend-cell positive' : 'mega-trend-cell neutral'}>
-                      {megaTrendStatus(trade)}
-                    </td>
-                    {trade.status === '보유 중' ? (
-                      <td className="dash-cell">-</td>
-                    ) : (
-                      <td className={`number-cell ${returnClass(trade.returnPct)}`}>
-                        {trade.returnPct >= 0 ? '+' : ''}{trade.returnPct.toFixed(1)}%
+                {filteredTrades.map((trade, index) => {
+                  const profileReturnPct = displayedTradeReturnPct(trade, apiStocks)
+                  const returnPriceText = tradeReturnPriceText(trade, apiStocks)
+
+                  return (
+                    <tr key={`${trade.ticker}-${trade.buyDate}`}>
+                      <td className="numbering-cell">{index + 1}</td>
+                      <td>
+                        <div className="name-cell">
+                          <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>
+                          <span>{tradeName(trade)}</span>
+                        </div>
                       </td>
-                    )}
-                    <td>{holdingPeriodDays(trade)}</td>
-                    <td>
-                      <ResultBadge
-                        onTooltipClose={() => setActiveTooltip(null)}
-                        onTooltipOpen={setActiveTooltip}
-                        trade={trade}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                      <td className="ticker-cell">{trade.ticker}</td>
+                      <td>{trade.buyDate}</td>
+                      <td className="number-cell">{trade.buyPrice}</td>
+                      {!isLongTermInvestor && <td>{trade.sellDate}</td>}
+                      {!isLongTermInvestor && <td className={trade.sellPrice === '-' ? 'dash-cell' : 'number-cell'}>{trade.sellPrice}</td>}
+                      <td>
+                        <StrategyTag
+                          onTooltipClose={() => setActiveTooltip(null)}
+                          onTooltipOpen={setActiveTooltip}
+                          strategy={trade.strategy}
+                        />
+                      </td>
+                      <td className={megaTrendStatus(trade).startsWith('충족') ? 'mega-trend-cell positive' : 'mega-trend-cell neutral'}>
+                        {megaTrendStatus(trade)}
+                      </td>
+                      {profileReturnPct === null ? (
+                        <td className={returnPriceText === '-' ? 'dash-cell' : 'number-cell'}>{returnPriceText === '-' ? '-' : formatPriceWithReturn(returnPriceText, null)}</td>
+                      ) : (
+                        <td className={`number-cell ${returnClass(profileReturnPct)}`}>
+                          {formatPriceWithReturn(returnPriceText, profileReturnPct)}
+                        </td>
+                      )}
+                      <td>{holdingPeriodDays(trade)}</td>
+                      {!isLongTermInvestor && (
+                        <td>
+                          <ResultBadge
+                            onTooltipClose={() => setActiveTooltip(null)}
+                            onTooltipOpen={setActiveTooltip}
+                            trade={trade}
+                          />
+                        </td>
+                      )}
+                    </tr>
+                  )
+                })}
                 {Array.from({ length: tradeBlankRows }).map((_, index) => (
                   <tr className="blank-row" key={`trade-blank-${index}`}>
-                    <td className="numbering-cell">&nbsp;</td>
-                    <td>&nbsp;</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
+                    {Array.from({ length: isLongTermInvestor ? 9 : 12 }).map((_, cellIndex) => (
+                      <td className={cellIndex === 0 ? 'numbering-cell' : undefined} key={`trade-blank-${index}-${cellIndex}`}>{cellIndex === 0 ? '\u00a0' : ''}</td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
@@ -4895,7 +5221,7 @@ function App() {
                         <span>지금 보고 싶은 기준 하나만 선택하세요.</span>
                       </div>
                       <div className="watchlist-sort-options">
-                        {watchlistSortOptions.map((option) => (
+                        {visibleWatchlistSortOptions.map((option) => (
                           <button
                             className={watchlistSortSettings.primary === option.value ? 'active' : ''}
                             key={option.value}
@@ -4973,7 +5299,7 @@ function App() {
                   <tbody>
                     {tableStocks.map((stock, index) => {
                       const displayValuation = displayStockValuation(stock)
-                      const displayOpinion = displayStockOpinion(stock)
+                      const displayOpinion = isLongTermInvestor && stock.opinion === '매도' ? '관망' : displayStockOpinion(stock)
                       const isHolding = isSystemHolding(stock.ticker, scopedTrades)
                       const buyStrategies = displayStrategiesForStock(stock, scopedTrades)
 
@@ -5059,20 +5385,35 @@ function App() {
               </div>
               <div className="heading-actions">
                 {effectiveViewMode === 'personal' && (
-                  <button
-                    aria-hidden={selectedHoldingTradeKeys.length === 0}
-                    className={`remove-selected-button ${selectedHoldingTradeKeys.length === 0 ? 'reserved-action-button' : ''}`}
-                    tabIndex={selectedHoldingTradeKeys.length === 0 ? -1 : 0}
-                    type="button"
-                    onClick={() => {
-                      if (selectedHoldingTradeKeys.length > 0) setIsHoldingDeleteConfirmOpen(true)
-                    }}
-                  >
-                    제거
-                  </button>
+                  <>
+                    <button
+                      aria-hidden={selectedHoldingTradeKeys.length === 0}
+                      className={`liquidation-selected-button ${selectedHoldingTradeKeys.length === 0 ? 'reserved-action-button' : ''}`}
+                      tabIndex={selectedHoldingTradeKeys.length === 0 ? -1 : 0}
+                      type="button"
+                      onClick={() => {
+                        if (selectedHoldingTradeKeys.length > 0) openHoldingLiquidationModal()
+                      }}
+                    >
+                      청산
+                    </button>
+                    <button
+                      aria-hidden={selectedHoldingTradeKeys.length === 0}
+                      className={`remove-selected-button ${selectedHoldingTradeKeys.length === 0 ? 'reserved-action-button' : ''}`}
+                      tabIndex={selectedHoldingTradeKeys.length === 0 ? -1 : 0}
+                      type="button"
+                      onClick={() => {
+                        if (selectedHoldingTradeKeys.length > 0) setIsHoldingDeleteConfirmOpen(true)
+                      }}
+                    >
+                      삭제
+                    </button>
+                  </>
                 )}
               </div>
             </div>
+
+            <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다</p>
 
             <div className="sheet-wrap holding-sheet">
               <table className={`sheet-table holding-table ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}>
@@ -5094,9 +5435,10 @@ function App() {
                         <span aria-hidden="true">📌</span>
                       </button>
                     </th>
-                    <th>신호일</th>
+                    <th>매수 신호일</th>
+                    <th>매수 신호 가격</th>
                     <th>매수 전략</th>
-                    <th>현재 수익률</th>
+                    <th>현재가(수익률)</th>
                     <th>보유 기간</th>
                   </tr>
                 </thead>
@@ -5113,54 +5455,62 @@ function App() {
                         </div>
                       </td>
                       <td>신호 발생 시</td>
+                      <td className="number-cell">{displayCurrentPriceText(exampleStock)}</td>
                       <td className="holding-example-note-cell"><span className="example-note">보유 전환 시 표시됩니다.</span></td>
                       <td className="dash-cell">-</td>
                       <td className="dash-cell">-</td>
                     </tr>
                   )}
-                  {scopedOpenTrades.map((trade, index) => (
-                    <tr key={`open-${tradeKey(trade)}`}>
-                      {effectiveViewMode === 'personal' && (
-                        <td className="checkbox-cell">
-                          <input
-                            aria-label={`${tradeName(trade)} 보유 항목 선택`}
-                            checked={selectedHoldingTradeKeys.includes(tradeKey(trade))}
-                            onChange={() => toggleSelectedHoldingTrade(tradeKey(trade))}
-                            type="checkbox"
+                  {scopedOpenTrades.map((trade, index) => {
+                    const openReturnPct = currentReturnPct(trade, apiStocks)
+                    const currentPriceText = tradeCurrentPriceText(trade, apiStocks)
+
+                    return (
+                      <tr key={`open-${tradeKey(trade)}`}>
+                        {effectiveViewMode === 'personal' && (
+                          <td className="checkbox-cell">
+                            <input
+                              aria-label={`${tradeName(trade)} 보유 항목 선택`}
+                              checked={selectedHoldingTradeKeys.includes(tradeKey(trade))}
+                              onChange={() => toggleSelectedHoldingTrade(tradeKey(trade))}
+                              type="checkbox"
+                            />
+                          </td>
+                        )}
+                        <td className="numbering-cell">{index + 1}</td>
+                        <td className="ticker-cell">{trade.ticker}</td>
+                        <td>
+                          <div className="name-cell">
+                            <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>
+                            <span>{tradeName(trade)}</span>
+                          </div>
+                        </td>
+                        <td>{trade.buyDate}</td>
+                        <td className="number-cell">{trade.buyPrice}</td>
+                        <td>
+                          <StrategyTag
+                            onTooltipClose={() => setActiveTooltip(null)}
+                            onTooltipOpen={setActiveTooltip}
+                            strategy={trade.strategy}
                           />
                         </td>
-                      )}
-                      <td className="numbering-cell">{index + 1}</td>
-                      <td className="ticker-cell">{trade.ticker}</td>
-                      <td>
-                        <div className="name-cell">
-                          <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>
-                          <span>{tradeName(trade)}</span>
-                        </div>
-                      </td>
-                      <td>{trade.buyDate}</td>
-                      <td>
-                        <StrategyTag
-                          onTooltipClose={() => setActiveTooltip(null)}
-                          onTooltipOpen={setActiveTooltip}
-                          strategy={trade.strategy}
-                        />
-                      </td>
-                      {currentReturnPct(trade, apiStocks) === null ? (
-                        <td className="dash-cell">-</td>
-                      ) : (
-                        <td className={`number-cell ${returnClass(currentReturnPct(trade, apiStocks) ?? 0)}`}>
-                          {(currentReturnPct(trade, apiStocks) ?? 0) >= 0 ? '+' : ''}{(currentReturnPct(trade, apiStocks) ?? 0).toFixed(1)}%
-                        </td>
-                      )}
-                      <td>{holdingPeriodDays(trade)}</td>
-                    </tr>
-                  ))}
+                        {currentPriceText === '-' ? (
+                          <td className="dash-cell">-</td>
+                        ) : (
+                          <td className={`number-cell ${openReturnPct === null ? '' : returnClass(openReturnPct)}`}>
+                            {formatPriceWithReturn(currentPriceText, openReturnPct)}
+                          </td>
+                        )}
+                        <td>{holdingPeriodDays(trade)}</td>
+                      </tr>
+                    )
+                  })}
                   {Array.from({ length: holdingBlankRows }).map((_, index) => (
                     <tr className="blank-row" key={`holding-blank-${index}`}>
                       {effectiveViewMode === 'personal' && <td></td>}
                       <td className="numbering-cell">&nbsp;</td>
                       <td>&nbsp;</td>
+                      <td></td>
                       <td></td>
                       <td></td>
                       <td></td>
@@ -5237,6 +5587,7 @@ function App() {
           marketSnapshot={apiMarketSnapshot}
           technicalRows={apiTechnicalRows}
           tradeLogs={systemTradeLogs}
+          hideSellSignals={isLongTermInvestor}
           updateLabel={formatUpdateLabel(apiMetas.technical)}
           addStockControl={addStockInlineControl}
           onTooltipClose={() => setActiveTooltip(null)}
@@ -5255,9 +5606,41 @@ function App() {
           {activeTooltip.text}
         </div>
       )}
+      {shouldShowInvestmentProfileOnboarding && (
+        <div className="modal-backdrop" role="presentation">
+          <section aria-modal="true" className="confirm-modal investment-profile-modal" role="dialog">
+            <div className="investment-profile-header">
+              <span>첫 설정</span>
+              <h3>투자성향을 선택해 주세요</h3>
+              <p>처음 한 번만 고르면 됩니다. 선택한 성향에 맞춰 신호와 로그 화면을 다르게 보여드릴게요.</p>
+            </div>
+            <div className="investment-option-grid">
+              {investmentProfileOptions.map((option) => (
+                <button
+                  className="investment-option-card"
+                  key={option.value}
+                  type="button"
+                  onClick={() => selectInvestmentType(option.value)}
+                >
+                  <strong>{option.title}</strong>
+                  <span>{option.description}</span>
+                  <ul>
+                    {option.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
+                  </ul>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
       {isLoginOpen && (
         <div className="modal-backdrop" role="presentation">
-          <form aria-modal="true" className="confirm-modal login-modal" role="dialog" onSubmit={submitLogin}>
+          <form
+            aria-modal="true"
+            className={`confirm-modal login-modal ${userSession && authMode !== 'reset' ? 'account-modal' : ''}`}
+            role="dialog"
+            onSubmit={submitLogin}
+          >
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={closeLoginModal}>
               ×
             </button>
@@ -5300,6 +5683,30 @@ function App() {
                         />
                       </label>
                     ))}
+                  </div>
+                  <div className="account-alert-card investment-settings-card">
+                    <div className="account-alert-header">
+                      <span>투자성향</span>
+                      <small>성향에 따라 Home과 기술 분석에서 보여주는 신호가 달라집니다.</small>
+                    </div>
+                    <div className="investment-option-grid compact">
+                      {investmentProfileOptions.map((option) => (
+                        <button
+                          className={`investment-option-card ${investmentType === option.value ? 'active' : ''}`}
+                          key={option.value}
+                          type="button"
+                          onClick={() => selectInvestmentType(option.value)}
+                        >
+                          <strong>{option.title}</strong>
+                          <span>{option.description}</span>
+                          {investmentType === option.value && <b aria-hidden="true">선택됨</b>}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="account-integration-placeholder">
+                      <span>연동 기능 예정</span>
+                      <button disabled type="button">카카오톡/슬랙 연동 준비 중</button>
+                    </div>
                   </div>
                 </div>
                 {canUseAccountSwitch && (
@@ -5358,6 +5765,33 @@ function App() {
                   <div className="recovery-sent-card">
                     <strong>{isSupabaseConfigured ? '계정 동기화 중입니다.' : '서비스 계정 설정이 필요합니다.'}</strong>
                     <span>{serviceStatusMessage}</span>
+                  </div>
+                )}
+                {canUseLocalAuthBypass && authMode !== 'reset' && (
+                  <div className="account-bypass-card">
+                    <span>로컬 테스트 우회</span>
+                    <div className="account-bypass-actions">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          switchTestSession('user')
+                        }}
+                      >
+                        일반 계정으로 입장
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault()
+                          event.stopPropagation()
+                          switchTestSession('admin')
+                        }}
+                      >
+                        어드민 계정으로 입장
+                      </button>
+                    </div>
                   </div>
                 )}
                 {authMode !== 'reset' && (
@@ -5468,6 +5902,69 @@ function App() {
               </button>
               <button className="modal-confirm" type="button" onClick={confirmBoardPostDeletion}>
                 삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isHoldingLiquidationOpen && (
+        <div className="modal-backdrop" role="presentation">
+          <div aria-modal="true" className="confirm-modal holding-liquidation-modal" role="dialog">
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={closeHoldingLiquidationModal}>×</button>
+            <h3>선택한 보유 종목을 청산할까요?</h3>
+            <p>실제 매수가와 매도가를 확인해 수정하면, 해당 거래가 보유 목록에서 빠지고 트레이딩 로그에 반영됩니다.</p>
+            <div className="holding-liquidation-list">
+              {holdingLiquidationDrafts.map((draft) => {
+                const buyPrice = parsePriceValue(draft.buyPrice)
+                const sellPrice = parsePriceValue(draft.sellPrice)
+                const draftReturn = buyPrice && sellPrice !== null ? ((sellPrice - buyPrice) / buyPrice) * 100 : null
+
+                return (
+                  <div className="holding-liquidation-row" key={draft.key}>
+                    <div className="holding-liquidation-title">
+                      <strong>{draft.name}</strong>
+                      <span>{draft.ticker} · 매수 신호일 {draft.buyDate}</span>
+                    </div>
+                    <label>
+                      <span>매수가</span>
+                      <input
+                        inputMode="decimal"
+                        value={draft.buyPrice}
+                        onChange={(event) => updateHoldingLiquidationDraft(draft.key, 'buyPrice', event.target.value)}
+                      />
+                    </label>
+                    <label>
+                      <span>매도일</span>
+                      <input
+                        type="date"
+                        value={tradeDateInputValue(draft.sellDate)}
+                        onChange={(event) => updateHoldingLiquidationDraft(draft.key, 'sellDate', normalizeTradeDateInput(event.target.value))}
+                      />
+                    </label>
+                    <label>
+                      <span>매도가</span>
+                      <input
+                        inputMode="decimal"
+                        value={draft.sellPrice}
+                        onChange={(event) => updateHoldingLiquidationDraft(draft.key, 'sellPrice', event.target.value)}
+                      />
+                    </label>
+                    <label className="holding-liquidation-return-field">
+                      <span>수익률</span>
+                      <output className={`holding-liquidation-return ${draftReturn === null ? '' : returnClass(draftReturn)}`}>
+                        {draftReturn === null ? '-' : `${draftReturn >= 0 ? '+' : ''}${draftReturn.toFixed(1)}%`}
+                      </output>
+                    </label>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="modal-actions">
+              <button className="modal-cancel" type="button" onClick={closeHoldingLiquidationModal}>
+                취소
+              </button>
+              <button className="modal-confirm" disabled={!isHoldingLiquidationReady} type="button" onClick={confirmHoldingLiquidation}>
+                청산 반영
               </button>
             </div>
           </div>
