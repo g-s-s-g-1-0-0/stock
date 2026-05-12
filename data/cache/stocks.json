@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-12T15:00:50+00:00",
-    "lastSuccessfulRun": "2026-05-12T15:00:50+00:00",
+    "updatedAt": "2026-05-12T15:02:13+00:00",
+    "lastSuccessfulRun": "2026-05-12T15:02:13+00:00",
     "failedReason": null
   },
   "rows": [
@@ -596,10 +596,10 @@
       "ticker": "376900",
       "name": "로킷헬스케어",
       "market": "KR",
-      "fairPrice": "-",
-      "fairPriceReason": null,
+      "fairPrice": "적자 상태라 판단 불가",
+      "fairPriceReason": "loss_making",
       "currentPrice": "₩70,500",
-      "valuation": "보통",
+      "valuation": "판단 불가",
       "opinion": "관망",
       "strategies": [],
       "category": "성장주",
@@ -610,10 +610,10 @@
       "ticker": "SGML",
       "name": "Sigma Lithium Corporation - common shares",
       "market": "US",
-      "fairPrice": "-",
-      "fairPriceReason": null,
+      "fairPrice": "적자 상태라 판단 불가",
+      "fairPriceReason": "loss_making",
       "currentPrice": "$20.12",
-      "valuation": "보통",
+      "valuation": "판단 불가",
       "opinion": "매수",
       "strategies": [
         "E. 200일선 상방 & 스퀴즈 저점"
