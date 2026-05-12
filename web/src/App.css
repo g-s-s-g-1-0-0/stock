@@ -4059,6 +4059,12 @@
   cursor: default;
 }
 
+.notification-channel-button.unavailable {
+  background: #f8fafc;
+  color: var(--muted);
+  opacity: 0.68;
+}
+
 .notification-channel-button > span:last-child {
   display: grid;
   gap: 1px;

@@ -258,16 +258,18 @@ const notificationIntegrationOptions: Array<{
   channel: NotificationIntegrationChannel
   shortTitle: string
   logoSrc: string
+  disabled?: boolean
 }> = [
-  {
-    channel: 'kakaoTalk',
-    shortTitle: '카카오톡',
-    logoSrc: 'https://cdn.simpleicons.org/kakaotalk/000000',
-  },
   {
     channel: 'slack',
     shortTitle: '슬랙',
     logoSrc: '',
+  },
+  {
+    channel: 'kakaoTalk',
+    shortTitle: '카카오톡',
+    logoSrc: 'https://cdn.simpleicons.org/kakaotalk/000000',
+    disabled: true,
   },
 ]
 
@@ -5819,6 +5821,7 @@ function App() {
                       {notificationIntegrationOptions.map((option) => {
                         const isConnected = isNotificationIntegrationConnected(option.channel)
                         const isActive = notificationPreferences.notificationChannel === option.channel
+                        const isUnavailable = Boolean(option.disabled)
 
                         return (
                           <div
@@ -5826,8 +5829,8 @@ function App() {
                             key={option.channel}
                           >
                             <button
-                              className={`notification-channel-button ${option.channel === 'kakaoTalk' ? 'kakao-card' : 'slack-card'} ${isActive ? 'active' : ''}`}
-                              disabled={isActive}
+                              className={`notification-channel-button ${option.channel === 'kakaoTalk' ? 'kakao-card' : 'slack-card'} ${isActive ? 'active' : ''} ${isUnavailable ? 'unavailable' : ''}`}
+                              disabled={isActive || isUnavailable}
                               type="button"
                               onClick={() => connectNotificationChannel(option.channel)}
                             >
@@ -5845,10 +5848,10 @@ function App() {
                               </span>
                               <span>
                                 <strong>{option.shortTitle}</strong>
-                                <small>{isActive ? '수신 중' : isConnected ? '연동됨' : '연동'}</small>
+                                <small>{isUnavailable ? '준비중' : isActive ? '수신 중' : isConnected ? '연동됨' : '연동'}</small>
                               </span>
                             </button>
-                            {isConnected && (
+                            {isConnected && !isUnavailable && (
                               <button
                                 className="notification-channel-disconnect"
                                 type="button"
