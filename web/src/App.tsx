@@ -9,6 +9,8 @@ type Valuation = '저평가' | '보통' | '고평가' | '판단 불가'
 type Opinion = '매수' | '관망' | '매도' | '-'
 type TradeStatus = '익절' | '손절' | '실패 익절' | '보유 중'
 type WatchlistSortKey = 'registered' | 'market_kr_first' | 'market_us_first' | 'holding_first' | 'not_holding_first' | 'valuation_low_first' | 'valuation_high_first' | 'opinion_buy_first' | 'opinion_sell_first' | 'name_asc' | 'name_desc'
+type NotificationDeliveryChannel = 'email' | 'kakaoTalk' | 'slack'
+type NotificationIntegrationChannel = Exclude<NotificationDeliveryChannel, 'email'>
 
 type WatchlistSortSettings = {
   primary: WatchlistSortKey
@@ -22,6 +24,11 @@ type NotificationPreferences = {
   earningsDayBefore: boolean
   adminAutoUpdateFailureEmail: boolean
   recipientEmail: string
+  notificationChannel: NotificationDeliveryChannel
+  kakaoTalkConnected: boolean
+  slackConnected: boolean
+  kakaoTalkConnectedAt: string
+  slackConnectedAt: string
 }
 
 type InvestmentType = 'swing' | 'long_term'
@@ -205,6 +212,11 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   earningsDayBefore: true,
   adminAutoUpdateFailureEmail: true,
   recipientEmail: '',
+  notificationChannel: 'email',
+  kakaoTalkConnected: false,
+  slackConnected: false,
+  kakaoTalkConnectedAt: '',
+  slackConnectedAt: '',
 }
 const DEFAULT_USER_SETTINGS: StoredUserSettings = {
   watchlistSort: DEFAULT_WATCHLIST_SORT,
@@ -235,6 +247,27 @@ const investmentProfileOptions: Array<{
     title: '빠르게 사고파는 투자자 (스윙 투자)',
     description: '타이밍을 보며 수익 기회를 빠르게 잡고 싶어요.',
     bullets: ['매수/관망/매도 신호 모두 보기', '수익 실현과 손절 기준 확인', '거래 기록으로 성과 확인'],
+  },
+]
+const notificationChannelLabels: Record<NotificationDeliveryChannel, string> = {
+  email: '이메일',
+  kakaoTalk: '카카오톡',
+  slack: '슬랙',
+}
+const notificationIntegrationOptions: Array<{
+  channel: NotificationIntegrationChannel
+  shortTitle: string
+  logoSrc: string
+}> = [
+  {
+    channel: 'kakaoTalk',
+    shortTitle: '카카오톡',
+    logoSrc: 'https://cdn.simpleicons.org/kakaotalk/000000',
+  },
+  {
+    channel: 'slack',
+    shortTitle: '슬랙',
+    logoSrc: '',
   },
 ]
 
@@ -401,8 +434,21 @@ function normalizeWatchlistSortSettings(value: unknown): WatchlistSortSettings {
   return { primary, secondary }
 }
 
+function normalizeNotificationChannel(value: unknown): NotificationDeliveryChannel {
+  return value === 'kakaoTalk' || value === 'slack' ? value : 'email'
+}
+
 function normalizeNotificationPreferences(value: unknown): NotificationPreferences {
   const candidate = value as Partial<NotificationPreferences> | null
+  const kakaoTalkConnected = typeof candidate?.kakaoTalkConnected === 'boolean' ? candidate.kakaoTalkConnected : DEFAULT_NOTIFICATION_PREFERENCES.kakaoTalkConnected
+  const slackConnected = typeof candidate?.slackConnected === 'boolean' ? candidate.slackConnected : DEFAULT_NOTIFICATION_PREFERENCES.slackConnected
+  const requestedChannel = normalizeNotificationChannel(candidate?.notificationChannel)
+  const notificationChannel = requestedChannel === 'kakaoTalk' && !kakaoTalkConnected
+    ? 'email'
+    : requestedChannel === 'slack' && !slackConnected
+      ? 'email'
+      : requestedChannel
+
   return {
     opinionChangeEmail: typeof candidate?.opinionChangeEmail === 'boolean' ? candidate.opinionChangeEmail : DEFAULT_NOTIFICATION_PREFERENCES.opinionChangeEmail,
     nasdaqPeakEmail: typeof candidate?.nasdaqPeakEmail === 'boolean' ? candidate.nasdaqPeakEmail : DEFAULT_NOTIFICATION_PREFERENCES.nasdaqPeakEmail,
@@ -410,6 +456,11 @@ function normalizeNotificationPreferences(value: unknown): NotificationPreferenc
     earningsDayBefore: typeof candidate?.earningsDayBefore === 'boolean' ? candidate.earningsDayBefore : DEFAULT_NOTIFICATION_PREFERENCES.earningsDayBefore,
     adminAutoUpdateFailureEmail: typeof candidate?.adminAutoUpdateFailureEmail === 'boolean' ? candidate.adminAutoUpdateFailureEmail : DEFAULT_NOTIFICATION_PREFERENCES.adminAutoUpdateFailureEmail,
     recipientEmail: typeof candidate?.recipientEmail === 'string' ? candidate.recipientEmail.trim() : DEFAULT_NOTIFICATION_PREFERENCES.recipientEmail,
+    notificationChannel,
+    kakaoTalkConnected,
+    slackConnected,
+    kakaoTalkConnectedAt: typeof candidate?.kakaoTalkConnectedAt === 'string' ? candidate.kakaoTalkConnectedAt : DEFAULT_NOTIFICATION_PREFERENCES.kakaoTalkConnectedAt,
+    slackConnectedAt: typeof candidate?.slackConnectedAt === 'string' ? candidate.slackConnectedAt : DEFAULT_NOTIFICATION_PREFERENCES.slackConnectedAt,
   }
 }
 
@@ -4527,6 +4578,37 @@ function App() {
     void persistUserSettings(watchlistSortSettings, nextPreferences)
   }
 
+  const selectEmailNotificationChannel = () => {
+    const nextPreferences = { ...notificationPreferences, notificationChannel: 'email' as const }
+    setNotificationPreferences(nextPreferences)
+    void persistUserSettings(watchlistSortSettings, nextPreferences)
+  }
+
+  const connectNotificationChannel = (channel: NotificationIntegrationChannel) => {
+    const connectedAt = new Date().toISOString()
+    const nextPreferences: NotificationPreferences = {
+      ...notificationPreferences,
+      notificationChannel: channel,
+      ...(channel === 'kakaoTalk'
+        ? { kakaoTalkConnected: true, kakaoTalkConnectedAt: connectedAt }
+        : { slackConnected: true, slackConnectedAt: connectedAt }),
+    }
+    setNotificationPreferences(nextPreferences)
+    void persistUserSettings(watchlistSortSettings, nextPreferences)
+  }
+
+  const disconnectNotificationChannel = (channel: NotificationIntegrationChannel) => {
+    const nextPreferences: NotificationPreferences = {
+      ...notificationPreferences,
+      notificationChannel: notificationPreferences.notificationChannel === channel ? 'email' : notificationPreferences.notificationChannel,
+      ...(channel === 'kakaoTalk'
+        ? { kakaoTalkConnected: false, kakaoTalkConnectedAt: '' }
+        : { slackConnected: false, slackConnectedAt: '' }),
+    }
+    setNotificationPreferences(nextPreferences)
+    void persistUserSettings(watchlistSortSettings, nextPreferences)
+  }
+
   const saveMarketEventEntries = async () => {
     if (!isAdminUser || !isMarketEventsDirty) return
     const normalizedGroups = normalizeMarketEventDdays(apiMarketEventGroups)
@@ -4838,6 +4920,15 @@ function App() {
     ? watchlistSortOptions.filter((option) => option.value !== 'opinion_sell_first')
     : watchlistSortOptions
   const currentWatchlistSortOption = visibleWatchlistSortOptions.find((option) => option.value === watchlistSortSettings.primary) ?? visibleWatchlistSortOptions[0]
+  const activeNotificationChannelLabel = notificationChannelLabels[notificationPreferences.notificationChannel]
+  const emailNotificationTarget = notificationPreferences.recipientEmail.trim() || userSession?.email || '가입 이메일'
+  const isEmailNotificationChannel = notificationPreferences.notificationChannel === 'email'
+  const notificationDeliveryCopy = isEmailNotificationChannel
+    ? `${emailNotificationTarget}로 이메일을 발송합니다.`
+    : `이제 메일 대신 ${activeNotificationChannelLabel}으로 발송합니다.`
+  const isNotificationIntegrationConnected = (channel: NotificationIntegrationChannel) => (
+    channel === 'kakaoTalk' ? notificationPreferences.kakaoTalkConnected : notificationPreferences.slackConnected
+  )
   const addStockInlineControl = isAddingStock && canEditCurrentWatchlist && !isCurrentWatchlistFull ? (
     <div className="inline-add analysis-inline-add" ref={inlineAddRef}>
       {canShowOperatorImport && (
@@ -5693,28 +5784,106 @@ function App() {
             <h3>{userSession && authMode !== 'reset' ? '내 계정' : authMode === 'recover' ? '비밀번호 찾기' : authMode === 'reset' ? '비밀번호 변경' : '로그인'}</h3>
             {userSession && authMode !== 'reset' ? (
               <>
-                <p className="account-modal-copy">관심 종목, 게시글, 알림 수신 설정을 계정 단위로 관리합니다.</p>
+                <p className="account-modal-copy">알림 받을 곳만 먼저 바꿔보는 FE 데모입니다.</p>
                 <div className="account-settings-stack">
                   <div className="login-account-card">
                     <span>로그인 계정</span>
                     <strong>{userSession.email}</strong>
                   </div>
+                  <div className="account-alert-card notification-channel-card">
+                    <div className="account-alert-header">
+                      <span>알림 수신처</span>
+                      <small>{notificationDeliveryCopy}</small>
+                    </div>
+                    <div className="notification-channel-summary">
+                      <div>
+                        <strong>{activeNotificationChannelLabel}</strong>
+                        <small>{notificationDeliveryCopy}</small>
+                      </div>
+                    </div>
+                    <div className="notification-channel-options">
+                      <div className="notification-channel-option">
+                        <button
+                          className={`notification-channel-button email-channel-button ${isEmailNotificationChannel ? 'active' : ''}`}
+                          disabled={isEmailNotificationChannel}
+                          type="button"
+                          onClick={selectEmailNotificationChannel}
+                        >
+                          <span className="notification-integration-logo email-logo" aria-hidden="true">@</span>
+                          <span>
+                            <strong>이메일</strong>
+                            <small>{isEmailNotificationChannel ? '수신 중' : '메일로 받기'}</small>
+                          </span>
+                        </button>
+                      </div>
+                      {notificationIntegrationOptions.map((option) => {
+                        const isConnected = isNotificationIntegrationConnected(option.channel)
+                        const isActive = notificationPreferences.notificationChannel === option.channel
+
+                        return (
+                          <div
+                            className="notification-channel-option"
+                            key={option.channel}
+                          >
+                            <button
+                              className={`notification-channel-button ${option.channel === 'kakaoTalk' ? 'kakao-card' : 'slack-card'} ${isActive ? 'active' : ''}`}
+                              disabled={isActive}
+                              type="button"
+                              onClick={() => connectNotificationChannel(option.channel)}
+                            >
+                              <span className="notification-integration-logo" aria-hidden="true">
+                                {option.channel === 'slack' ? (
+                                  <span className="slack-logo-mark">
+                                    <i className="slack-dot slack-dot-green"></i>
+                                    <i className="slack-dot slack-dot-blue"></i>
+                                    <i className="slack-dot slack-dot-yellow"></i>
+                                    <i className="slack-dot slack-dot-red"></i>
+                                  </span>
+                                ) : (
+                                  <img alt="" src={option.logoSrc} />
+                                )}
+                              </span>
+                              <span>
+                                <strong>{option.shortTitle}</strong>
+                                <small>{isActive ? '수신 중' : isConnected ? '연동됨' : '연동'}</small>
+                              </span>
+                            </button>
+                            {isConnected && (
+                              <button
+                                className="notification-channel-disconnect"
+                                type="button"
+                                onClick={() => disconnectNotificationChannel(option.channel)}
+                              >
+                                해제
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <p className="notification-channel-demo-note">지금은 클릭 즉시 저장되는 화면 데모입니다.</p>
+                  </div>
                   <div className="account-alert-card">
                     <div className="account-alert-header">
                       <span>알림 설정</span>
-                      <small>아래 설정에 맞춰 이메일로 발송됩니다.</small>
+                      <small>{notificationDeliveryCopy}</small>
                     </div>
-                    <label className="account-alert-email-field">
-                      <span>알림 받을 이메일</span>
+                    <label className={`account-alert-email-field ${isEmailNotificationChannel ? '' : 'disabled'}`}>
+                      <span>{isEmailNotificationChannel ? '알림 받을 이메일' : '백업 이메일'}</span>
                       <input
                         autoComplete="email"
+                        disabled={!isEmailNotificationChannel}
                         inputMode="email"
                         placeholder={userSession.email}
                         type="email"
                         value={notificationPreferences.recipientEmail}
                         onChange={(event) => updateNotificationRecipientEmail(event.target.value)}
                       />
-                      <small>비워두면 가입한 이메일({userSession.email})로 발송됩니다.</small>
+                      <small>
+                        {isEmailNotificationChannel
+                          ? `비워두면 가입한 이메일(${userSession.email})로 발송됩니다.`
+                          : `${activeNotificationChannelLabel} 연동 중에는 메일 대신 ${activeNotificationChannelLabel}으로 발송됩니다.`}
+                      </small>
                     </label>
                     {[...notificationOptions, ...(isAdminUser ? adminNotificationOptions : [])].map((option) => (
                       <label className="account-alert-toggle" key={option.key}>
@@ -5748,10 +5917,6 @@ function App() {
                           {displayedInvestmentType === option.value && <b aria-hidden="true">선택됨</b>}
                         </button>
                       ))}
-                    </div>
-                    <div className="account-integration-placeholder">
-                      <span>연동 기능 예정</span>
-                      <button disabled type="button">카카오톡/슬랙 연동 준비 중</button>
                     </div>
                   </div>
                 </div>
