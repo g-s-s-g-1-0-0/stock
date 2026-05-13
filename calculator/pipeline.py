@@ -15,10 +15,11 @@ import os
 import re
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from html import unescape
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
@@ -42,6 +43,7 @@ GROQ_MARKET_TREND_MODEL = os.environ.get("GROQ_MARKET_TREND_MODEL", "").strip() 
 CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 FAIR_PRICE_UNAVAILABLE_LABEL = "적자 상태라 판단 불가"
 MAX_REFRESH_UNIVERSE = int(os.environ.get("MAX_REFRESH_UNIVERSE", "200"))
+KST = ZoneInfo("Asia/Seoul")
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
@@ -85,6 +87,39 @@ def read_cache(name: str) -> dict[str, Any]:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return {}
+
+
+def parse_market_event_date(value: Any) -> date | None:
+    match = re.match(r"^(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})$", str(value or "").strip())
+    if not match:
+        return None
+    year, month, day = (int(part) for part in match.groups())
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return None
+
+
+def current_market_event_label(payload: dict[str, Any] | None = None, today: date | None = None) -> str:
+    payload = payload if payload is not None else read_cache("market-events")
+    groups = payload.get("groups") if isinstance(payload, dict) else []
+    if not isinstance(groups, list):
+        return "당분간 없음"
+
+    today = today or datetime.now(KST).date()
+    active_titles: list[str] = []
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        title = str(group.get("title") or "").strip()
+        entries = group.get("entries")
+        if not title or not isinstance(entries, list):
+            continue
+        if any(isinstance(entry, dict) and parse_market_event_date(entry.get("date")) == today for entry in entries):
+            if title not in active_titles:
+                active_titles.append(title)
+
+    return ", ".join(active_titles) if active_titles else "당분간 없음"
 
 
 def has_value(value: Any) -> bool:
@@ -248,8 +283,9 @@ def qqq_market_state_snapshot() -> dict[str, Any]:
 
 
 def build_market_snapshot() -> tuple[list[list[str]], dict[str, Any], float | None]:
+    market_event = current_market_event_label()
     rows = [
-        ["시장 주요 이벤트", "당분간 없음"],
+        ["시장 주요 이벤트", market_event],
     ]
     vix_today: float | None = None
 
@@ -430,6 +466,7 @@ def latest_technical_row(
     *,
     qqq_market_state: dict[str, Any] | None = None,
     vix: float | None = None,
+    market_event: str = "당분간 없음",
 ) -> dict[str, str] | None:
     row = calc_technical_row(stock["ticker"])
     price = float(row["close"])
@@ -466,6 +503,9 @@ def latest_technical_row(
         ixic_filter_active=ixic_filter_active,
         nasdaq_buy_block_max=nasdaq_buy_block_max,
     )
+    event_watch_active = market_event != "당분간 없음"
+    opinion = "관망" if event_watch_active else "매수" if buy["entryTriggered"] else "관망"
+    opinion_reason = f"이벤트 기간 관망 ({market_event})" if event_watch_active else "-"
     strategy = buy["strategyName"] if buy["entryTriggered"] else "-"
     entry_signal_codes = [
         group
@@ -491,10 +531,11 @@ def latest_technical_row(
         f"시장 국면: {qqq_market_state.get('regimeLabel')} / "
         f"QQQ 이격도 {fmt_signed_percent(qqq_market_state.get('premiumPercent'))} / "
         f"최근 60거래일 최저 {fmt_signed_percent(qqq_market_state.get('recent60MinPremiumPercent'))} / "
-        f"매수 차단선 > {fmt_signed_percent(qqq_market_state.get('buyBlockMax'))}"
+        f"매수 차단선 > {fmt_signed_percent(qqq_market_state.get('buyBlockMax'))} / "
+        f"이벤트: {market_event}"
     ) if qqq_market_state else "시장 국면: 데이터 없음"
     decision_log = "\n".join([
-        f"{stock['ticker']} 최종 판단: {'매수' if buy['entryTriggered'] else '관망'}",
+        f"{stock['ticker']} 최종 판단: {opinion}",
         f"진입 전략: {strategy}",
         market_line,
         *condition_summaries,
@@ -505,7 +546,9 @@ def latest_technical_row(
         "market": stock["market"],
         "updatedAt": now_iso(),
         "currentPrice": fmt_price(price, stock["market"]),
-        "opinion": "매수" if buy["entryTriggered"] else "관망",
+        "opinion": opinion,
+        "opinionReason": opinion_reason,
+        "marketEvent": market_event,
         "entryStrategy": strategy,
         "entrySignalCodes": ",".join(entry_signal_codes),
         "entrySignals": ", ".join(strategy_display_name(code) for code in entry_signal_codes),
@@ -592,6 +635,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
     except Exception as exc:  # noqa: BLE001 - external market data should not block refresh
         market_snapshot = [["시장 주요 이벤트", "당분간 없음"]]
         errors.append({"ticker": "CNN_FEAR_GREED", "error": str(exc)})
+    market_event = market_snapshot[0][1] if market_snapshot and len(market_snapshot[0]) > 1 else "당분간 없음"
 
     for stock in source_universe:
         try:
@@ -602,6 +646,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 earnings_date=earnings_date,
                 qqq_market_state=qqq_market_state,
                 vix=vix_today,
+                market_event=market_event,
             )
             if row:
                 rows[stock["ticker"]] = row
@@ -785,6 +830,8 @@ def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str
             "currentPrice": current_price,
             "valuation": valuation_from_price_range(current_price, fair_price),
             "opinion": technical.get("opinion", "관망"),
+            "opinionReason": technical.get("opinionReason", "-"),
+            "marketEvent": technical.get("marketEvent", "당분간 없음"),
             "strategies": stock_strategies_from_technical(technical),
             "category": stock_category(stock),
             "industry": stock_industry(stock, valuation),

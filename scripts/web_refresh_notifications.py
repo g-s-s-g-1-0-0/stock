@@ -18,6 +18,7 @@ import hmac
 import html
 import json
 import os
+import re
 import smtplib
 import ssl
 import sys
@@ -40,6 +41,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from calculator.market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
+from calculator.rules import STRATEGY_RULES
 from calculator.sheet_sources import calc_rsi, calc_technical_row, fetch_us_ohlcv
 
 DEFAULT_PREVIOUS_STOCKS = ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"
@@ -597,6 +599,32 @@ STRATEGY_LABELS = {
 }
 
 
+def parse_metric_number(value: Any) -> float | None:
+    text = str(value or "").strip()
+    if not text or text == "-":
+        return None
+    cleaned = re.sub(r"[^0-9.+\-]", "", text.replace(",", ""))
+    if cleaned in {"", "-", "+", ".", "+.", "-."}:
+        return None
+    try:
+        parsed = float(cleaned)
+    except ValueError:
+        return None
+    return parsed if parsed == parsed else None
+
+
+def metric_number(row: dict[str, Any], *keys: str) -> float | None:
+    for key in keys:
+        parsed = parse_metric_number(row.get(key))
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def metric_label(row: dict[str, Any], *keys: str) -> str:
+    return tech_text(row, *keys)
+
+
 def strategy_values(value: Any) -> list[str]:
     if isinstance(value, list):
         values = value
@@ -678,14 +706,168 @@ def buy_reason(stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
     return "동시 충족 전략 " + str(len(reasons)) + "개\n- " + "\n- ".join(reasons)
 
 
-def watch_reason(old_opinion: str, previous_stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
+def change_strategy_code(previous_stock: dict[str, Any], current_stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
+    values = (
+        strategy_values(previous_stock.get("strategies"))
+        + strategy_values(current_stock.get("strategies"))
+        + strategy_values(technical_row.get("entryStrategy"))
+        + strategy_values(technical_row.get("entrySignals"))
+        + strategy_values(technical_row.get("entrySignalCodes"))
+        + strategy_values(technical_row.get("진입 전략"))
+    )
+    for value in values:
+        code = strategy_code(value)
+        if code:
+            return code
+    return "A"
+
+
+def metric_context(current_stock: dict[str, Any], technical_row: dict[str, Any]) -> dict[str, Any]:
+    current_price = first_text(current_stock.get("currentPrice"), technical_row.get("현재가"), technical_row.get("currentPrice"))
+    context = {
+        "price": current_price,
+        "price_num": parse_metric_number(current_price),
+        "ma200": metric_label(technical_row, "200일 이동평균선", "MA200", "ma200"),
+        "ma200_num": metric_number(technical_row, "200일 이동평균선", "MA200", "ma200"),
+        "rsi": metric_label(technical_row, "RSI (D)", "RSI"),
+        "rsi_num": metric_number(technical_row, "RSI (D)", "RSI"),
+        "cci": metric_label(technical_row, "CCI (D)", "CCI"),
+        "cci_num": metric_number(technical_row, "CCI (D)", "CCI"),
+        "macd": metric_label(technical_row, "MACD Histogram (D)", "MACD Hist", "macdHist"),
+        "macd_num": metric_number(technical_row, "MACD Histogram (D)", "MACD Hist", "macdHist"),
+        "pct_b": metric_label(technical_row, "볼린저밴드 %B (종가)", "%B", "pctB"),
+        "pct_b_num": metric_number(technical_row, "볼린저밴드 %B (종가)", "%B", "pctB"),
+        "pct_b_low": metric_label(technical_row, "볼린저밴드 %B (저가)", "저가%B", "pctBLow"),
+        "pct_b_low_num": metric_number(technical_row, "볼린저밴드 %B (저가)", "저가%B", "pctBLow"),
+        "bb_width": metric_label(technical_row, "볼린저밴드 폭 (D)", "BB폭", "bbWidth"),
+        "bb_width_num": metric_number(technical_row, "볼린저밴드 폭 (D)", "BB폭", "bbWidth"),
+        "bb_width_avg": metric_label(technical_row, "지난 60일 볼린저밴드 폭 평균", "60일 BB폭", "bbWidthAvg60"),
+        "bb_width_avg_num": metric_number(technical_row, "지난 60일 볼린저밴드 폭 평균", "60일 BB폭", "bbWidthAvg60"),
+        "vol_ratio": metric_label(technical_row, "거래량비", "Volume Ratio", "거래량 (D)"),
+        "plus_di": metric_label(technical_row, "+DI (DMI, 14)", "+DI"),
+        "plus_di_num": metric_number(technical_row, "+DI (DMI, 14)", "+DI"),
+        "minus_di": metric_label(technical_row, "-DI (DMI, 14)", "-DI"),
+        "minus_di_num": metric_number(technical_row, "-DI (DMI, 14)", "-DI"),
+        "adx": metric_label(technical_row, "ADX (14, D)", "ADX"),
+        "low": metric_label(technical_row, "C - Low", "저가"),
+        "lr_trendline": metric_label(technical_row, "120일 저가 회귀 추세선", "LR추세선", "lrTrendline"),
+    }
+    return context
+
+
+def market_context(technical_row: dict[str, Any]) -> str:
+    decision_log = str(technical_row.get("decisionLog") or "")
+    for line in decision_log.splitlines():
+        if line.startswith("시장 국면:"):
+            return line
+    return ""
+
+
+def append_market_context(reason: str, technical_row: dict[str, Any]) -> str:
+    context = market_context(technical_row)
+    if not context:
+        return reason
+    return f"{reason} | {context}"
+
+
+def watch_release_detail(strategy: str, current_stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
+    s = STRATEGY_RULES
+    c = metric_context(current_stock, technical_row)
+    price_num = c["price_num"]
+    ma200_num = c["ma200_num"]
+    macd_num = c["macd_num"]
+    pct_b_num = c["pct_b_num"]
+    pct_b_low_num = c["pct_b_low_num"]
+    rsi_num = c["rsi_num"]
+    cci_num = c["cci_num"]
+    plus_di_num = c["plus_di_num"]
+    minus_di_num = c["minus_di_num"]
+    bb_width_num = c["bb_width_num"]
+    bb_width_avg_num = c["bb_width_avg_num"]
+
+    if price_num is not None and ma200_num is not None and price_num <= ma200_num:
+        return f"200일선 하방 이탈 (현재가 {c['price']} / MA200 {c['ma200']})"
+
+    if strategy == "A":
+        if macd_num is not None and macd_num <= 0:
+            return f"MACD 골든크로스 소멸 (Hist {c['macd']} ≤ 0)"
+        return (
+            "모멘텀 재가속 조건 이탈 "
+            f"(종가 %B {c['pct_b']} / 기준 >{s['GOLDEN_CROSS_PCTB_MIN']}, "
+            f"RSI {c['rsi']} / 기준 >{s['GOLDEN_CROSS_RSI_MIN']}, MACD Hist {c['macd']})"
+        )
+
+    if strategy == "B":
+        if price_num is not None and ma200_num is not None and price_num >= ma200_num:
+            return f"주가가 200일선 위로 회복 (현재가 {c['price']} / MA200 {c['ma200']})"
+        oversold_released = (
+            (rsi_num is not None or cci_num is not None)
+            and not (rsi_num is not None and rsi_num < float(s["RSI_MAX"]))
+            and not (cci_num is not None and cci_num < float(s["CCI_MIN"]))
+        )
+        if oversold_released:
+            return f"과매도 해소 (RSI {c['rsi']} / CCI {c['cci']})"
+        return f"공황 저점 조건 이탈 (저가 {c['low']} / LR추세선 {c['lr_trendline']} / RSI {c['rsi']} / CCI {c['cci']})"
+
+    if strategy == "C":
+        if macd_num is not None and macd_num <= 0:
+            return f"MACD 소멸 (Hist {c['macd']} ≤ 0)"
+        return f"스퀴즈 거래량 돌파 조건 이탈 (거래량비 {c['vol_ratio']} / 종가 %B {c['pct_b']} / MACD Hist {c['macd']})"
+
+    if strategy == "D":
+        if plus_di_num is not None and minus_di_num is not None and plus_di_num <= minus_di_num:
+            return f"DMI 방향 전환 (+DI {c['plus_di']} ≤ -DI {c['minus_di']})"
+        if macd_num is not None and macd_num <= 0:
+            return f"MACD 소멸 (Hist {c['macd']} ≤ 0)"
+        return f"상승 흐름 조건 이탈 (+DI {c['plus_di']} / -DI {c['minus_di']} / ADX {c['adx']} / MACD Hist {c['macd']})"
+
+    if strategy == "E":
+        if bb_width_num is not None and bb_width_avg_num is not None and bb_width_avg_num > 0:
+            squeeze_ratio = bb_width_num / bb_width_avg_num
+            if squeeze_ratio >= float(s["SQUEEZE_RATIO"]):
+                return f"BB 스퀴즈 해소 (BB폭 {c['bb_width']} / 60일평균 {c['bb_width_avg']})"
+        if pct_b_low_num is not None and pct_b_low_num > float(s["SQUEEZE_PCT_B_MAX"]):
+            return f"저가 %B 상승 ({c['pct_b_low']} > {s['SQUEEZE_PCT_B_MAX']})"
+        return f"E그룹 저점 조건 이탈 (BB폭 {c['bb_width']} / 60일평균 {c['bb_width_avg']} / 저가 %B {c['pct_b_low']})"
+
+    if pct_b_low_num is not None and pct_b_low_num > float(s["BB_PCT_B_LOW_MAX"]):
+        return f"BB 하단 눌림 해소 (저가 %B {c['pct_b_low']} > {s['BB_PCT_B_LOW_MAX']})"
+    return f"F그룹 눌림 조건 이탈 (현재가 {c['price']} / MA200 {c['ma200']} / 저가 %B {c['pct_b_low']})"
+
+
+def watch_reason(
+    old_opinion: str,
+    previous_stock: dict[str, Any],
+    current_stock: dict[str, Any],
+    technical_row: dict[str, Any],
+) -> str:
     if old_opinion == "매수":
-        strategy = first_text(previous_stock.get("strategies"), technical_row.get("진입 전략"))
-        suffix = f" ({strategy})" if strategy != "-" else ""
-        return f"매수 조건 해제{suffix} — 보유 포지션 유지, 매도 조건 계속 추적"
+        strategy = change_strategy_code(previous_stock, current_stock, technical_row)
+        label = STRATEGY_LABELS.get(strategy, "매수 조건")
+        detail = watch_release_detail(strategy, current_stock, technical_row)
+        return append_market_context(
+            f"매수 조건 해제 ({label}) — {detail} (보유 포지션 유지, 매도 조건 계속 추적)",
+            technical_row,
+        )
     if old_opinion == "매도":
-        return "매도 후 대기 완료 → 관망 전환"
-    return "매수 조건 미충족"
+        return "매도 후 대기 완료 → 관망 전환 (재진입 필터 유지)"
+    detail = buy_reason_detail("", current_stock, technical_row)
+    return f"관망 전환 — 현재 매수/매도 조건 미충족 ({detail})"
+
+
+def sell_reason(current_stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
+    explicit_reason = first_text(
+        current_stock.get("opinionReason"),
+        technical_row.get("exitReason"),
+        technical_row.get("매도 사유"),
+    )
+    if explicit_reason != "-":
+        return explicit_reason
+    c = metric_context(current_stock, technical_row)
+    return append_market_context(
+        f"매도 조건 충족 — 현재가 {c['price']} / MA200 {c['ma200']} | RSI {c['rsi']} | MACD Hist {c['macd']}",
+        technical_row,
+    )
 
 
 def concise_opinion_reason(
@@ -698,9 +880,12 @@ def concise_opinion_reason(
     if new_opinion == "매수":
         return buy_reason(current_stock, technical_row)
     if new_opinion == "매도":
-        return first_text(technical_row.get("exitReason"), technical_row.get("매도 사유"), "매도 조건 충족")
+        return sell_reason(current_stock, technical_row)
     if new_opinion == "관망":
-        return watch_reason(old_opinion, previous_stock, technical_row)
+        explicit_reason = first_text(current_stock.get("opinionReason"), technical_row.get("opinionReason"))
+        if explicit_reason != "-":
+            return explicit_reason
+        return watch_reason(old_opinion, previous_stock, current_stock, technical_row)
     return "-"
 
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import json
 import unittest
+from datetime import date
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -176,6 +177,83 @@ class WebRefreshNotificationsTest(unittest.TestCase):
             transitions,
         )
 
+    def test_opinion_changes_prefers_event_watch_reason(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+
+            previous.write_text(
+                json.dumps({"rows": [{"ticker": "042660", "name": "한화오션", "opinion": "매수"}]}),
+                encoding="utf-8",
+            )
+            current.write_text(
+                json.dumps({
+                    "rows": [
+                        {
+                            "ticker": "042660",
+                            "name": "한화오션",
+                            "opinion": "관망",
+                            "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+                        }
+                    ]
+                }),
+                encoding="utf-8",
+            )
+            technical.write_text(json.dumps({"rows": {}}), encoding="utf-8")
+
+            changes = self.notifications.opinion_changes(previous, current, technical)
+
+        self.assertEqual(1, len(changes))
+        self.assertEqual("매수", changes[0]["from"])
+        self.assertEqual("관망", changes[0]["to"])
+        self.assertEqual("이벤트 기간 관망 (PPI 발표)", changes[0]["reason"])
+
+    def test_opinion_changes_explains_watch_transition_with_core_metrics(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+
+            previous.write_text(
+                json.dumps({
+                    "rows": [
+                        {
+                            "ticker": "MP",
+                            "name": "MP Materials",
+                            "opinion": "매수",
+                            "strategies": ["F. 200일선 상방 & BB 극단 저점"],
+                        }
+                    ]
+                }),
+                encoding="utf-8",
+            )
+            current.write_text(
+                json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "opinion": "관망", "currentPrice": "$75.00"}]}),
+                encoding="utf-8",
+            )
+            technical.write_text(
+                json.dumps({
+                    "rows": {
+                        "MP": {
+                            "200일 이동평균선": "$60.00",
+                            "볼린저밴드 %B (저가)": "8.40",
+                            "decisionLog": "MP 최종 판단: 관망\n시장 국면: 급락 후 회복장 / QQQ 이격도 +7.20% / 이벤트: 당분간 없음",
+                        }
+                    }
+                }),
+                encoding="utf-8",
+            )
+
+            changes = self.notifications.opinion_changes(previous, current, technical)
+
+        self.assertEqual(1, len(changes))
+        self.assertIn("매수 조건 해제", changes[0]["reason"])
+        self.assertIn("F. 200일선 상방 & BB 극단 저점", changes[0]["reason"])
+        self.assertIn("BB 하단 눌림 해소", changes[0]["reason"])
+        self.assertIn("저가 %B 8.40", changes[0]["reason"])
+        self.assertIn("시장 국면: 급락 후 회복장", changes[0]["reason"])
+
     def test_refresh_to_opinion_change_sends_email_end_to_end(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
         original_load_recipients = self.notifications.load_recipients
@@ -337,6 +415,29 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual(1, sent)
         self.assertEqual([("user@example.com", "나스닥 고점 구간 알림 (매도 시그널)")], sent_messages)
         self.assertIs(state["nasdaqPeak"]["sent"], True)
+
+
+class WebMarketEventPipelineTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.pipeline = importlib.import_module("calculator.pipeline")
+
+    def test_current_market_event_label_detects_today_kst_event(self) -> None:
+        payload = {
+            "groups": [
+                {
+                    "title": "CPI 발표",
+                    "entries": [{"date": "2026. 5. 12"}],
+                },
+                {
+                    "title": "PPI 발표",
+                    "entries": [{"date": "2026. 5. 13"}],
+                },
+            ]
+        }
+
+        label = self.pipeline.current_market_event_label(payload, today=date(2026, 5, 13))
+
+        self.assertEqual("PPI 발표", label)
 
 
 if __name__ == "__main__":
