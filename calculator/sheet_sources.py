@@ -324,12 +324,15 @@ def clean_html(value: str) -> str:
 
 def snapshot_value(html: str, label: str) -> str:
     pattern = (
-        r'<div class="snapshot-td-label">(?:<a[^>]*>)?'
+        r'<td[^>]*>\s*<div class="snapshot-td-label">(?:<a[^>]*>)?'
         + re.escape(label)
-        + r"(?:</a>)?</div></td><td[^>]*>[\s\S]*?<b>([\s\S]*?)</b>"
+        + r"(?:</a>)?</div>\s*</td>\s*<td[^>]*>([\s\S]*?)</td>"
     )
     match = re.search(pattern, html)
-    return re.sub(r"<.*?>", "", match.group(1)).strip() if match else "-"
+    if not match:
+        return "-"
+    value_match = re.search(r"<b>([\s\S]*?)</b>", match.group(1))
+    return re.sub(r"<.*?>", "", value_match.group(1)).strip() if value_match else "-"
 
 
 def parse_us_earnings_date_from_html(html: str) -> str:

@@ -126,13 +126,23 @@ def has_value(value: Any) -> bool:
     return str(value or "").strip() not in ("", "-")
 
 
+def is_invalid_cached_value(key: str, value: Any) -> bool:
+    text = str(value or "").strip()
+    return key == "marketCap" and text.endswith("%")
+
+
 def preserve_existing_values(new_row: dict[str, str], existing_row: dict[str, Any]) -> dict[str, str]:
     if not existing_row:
         return new_row
     merged: dict[str, str] = {}
     for key, value in new_row.items():
         previous_value = existing_row.get(key)
-        merged[key] = str(previous_value if not has_value(value) and has_value(previous_value) else value)
+        should_preserve = (
+            not has_value(value)
+            and has_value(previous_value)
+            and not is_invalid_cached_value(key, previous_value)
+        )
+        merged[key] = str(previous_value if should_preserve else value)
     return merged
 
 
