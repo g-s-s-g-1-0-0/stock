@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-13T03:00:47+00:00",
-    "lastSuccessfulRun": "2026-05-13T03:00:47+00:00",
+    "updatedAt": "2026-05-13T05:00:51+00:00",
+    "lastSuccessfulRun": "2026-05-13T05:00:51+00:00",
     "failedReason": null
   },
   "rows": [
@@ -13,13 +13,15 @@
       "market": "KR",
       "fairPrice": "₩2,947,750 ~ ₩4,126,850",
       "fairPriceReason": null,
-      "currentPrice": "₩1,914,000",
+      "currentPrice": "₩1,961,000",
       "valuation": "저평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 메모리, HBM, AI 메모리, DRAM",
-      "updatedAt": "2026-05-13T03:00:32+00:00"
+      "updatedAt": "2026-05-13T05:00:36+00:00"
     },
     {
       "ticker": "005930",
@@ -27,13 +29,15 @@
       "market": "KR",
       "fairPrice": "₩98,490 ~ ₩164,150",
       "fairPriceReason": null,
-      "currentPrice": "₩278,250",
+      "currentPrice": "₩281,500",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체, 메모리·파운드리, 스마트폰, 소비자 가전",
-      "updatedAt": "2026-05-13T03:00:33+00:00"
+      "updatedAt": "2026-05-13T05:00:37+00:00"
     },
     {
       "ticker": "NVDA",
@@ -44,10 +48,12 @@
       "currentPrice": "$220.78",
       "valuation": "저평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, AI GPU, 데이터센터, CUDA",
-      "updatedAt": "2026-05-13T03:00:33+00:00"
+      "updatedAt": "2026-05-13T05:00:37+00:00"
     },
     {
       "ticker": "LITE",
@@ -58,10 +64,12 @@
       "currentPrice": "$992.37",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
-      "updatedAt": "2026-05-13T03:00:33+00:00"
+      "updatedAt": "2026-05-13T05:00:37+00:00"
     },
     {
       "ticker": "SNDK",
@@ -72,10 +80,12 @@
       "currentPrice": "$1,452.02",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
-      "updatedAt": "2026-05-13T03:00:33+00:00"
+      "updatedAt": "2026-05-13T05:00:38+00:00"
     },
     {
       "ticker": "000150",
@@ -83,13 +93,15 @@
       "market": "KR",
       "fairPrice": "₩52,290 ~ ₩69,720",
       "fairPriceReason": null,
-      "currentPrice": "₩1,668,000",
+      "currentPrice": "₩1,661,000",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "동박적층판, 유압기기, 지게차, IT 시스템, 연료전지",
-      "updatedAt": "2026-05-13T03:00:34+00:00"
+      "updatedAt": "2026-05-13T05:00:39+00:00"
     },
     {
       "ticker": "005380",
@@ -97,13 +109,15 @@
       "market": "KR",
       "fairPrice": "₩352,460 ~ ₩528,690",
       "fairPriceReason": null,
-      "currentPrice": "₩699,000",
+      "currentPrice": "₩702,000",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "가치주",
       "industry": "자동차, 전기차, 수소차, 로보틱스",
-      "updatedAt": "2026-05-13T03:00:35+00:00"
+      "updatedAt": "2026-05-13T05:00:39+00:00"
     },
     {
       "ticker": "009150",
@@ -111,13 +125,15 @@
       "market": "KR",
       "fairPrice": "₩136,485 ~ ₩227,475",
       "fairPriceReason": null,
-      "currentPrice": "₩1,036,000",
+      "currentPrice": "₩1,029,000",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "MLCC, 패키지기판, 카메라 모듈",
-      "updatedAt": "2026-05-13T03:00:36+00:00"
+      "updatedAt": "2026-05-13T05:00:40+00:00"
     },
     {
       "ticker": "011070",
@@ -125,13 +141,15 @@
       "market": "KR",
       "fairPrice": "₩288,380 ~ ₩432,570",
       "fairPriceReason": null,
-      "currentPrice": "₩736,000",
+      "currentPrice": "₩740,000",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "카메라 모듈, 기판소재, 자동차 전장, AI 반도체 기판",
-      "updatedAt": "2026-05-13T03:00:37+00:00"
+      "updatedAt": "2026-05-13T05:00:41+00:00"
     },
     {
       "ticker": "375500",
@@ -139,16 +157,18 @@
       "market": "KR",
       "fairPrice": "₩129,375 ~ ₩172,500",
       "fairPriceReason": null,
-      "currentPrice": "₩83,700",
+      "currentPrice": "₩83,200",
       "valuation": "저평가",
-      "opinion": "매수",
+      "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [
         "E. 200일선 상방 & 스퀴즈 저점",
         "F. 200일선 상방 & BB 극단 저점"
       ],
       "category": "성장주",
       "industry": "건설, 플랜트(EPC), 토목·주택",
-      "updatedAt": "2026-05-13T03:00:37+00:00"
+      "updatedAt": "2026-05-13T05:00:42+00:00"
     },
     {
       "ticker": "086280",
@@ -156,13 +176,15 @@
       "market": "KR",
       "fairPrice": "₩346,755 ~ ₩462,340",
       "fairPriceReason": null,
-      "currentPrice": "₩282,750",
+      "currentPrice": "₩286,500",
       "valuation": "저평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "종합물류, 해운, 완성차 운송, 3PL·SCM",
-      "updatedAt": "2026-05-13T03:00:38+00:00"
+      "updatedAt": "2026-05-13T05:00:43+00:00"
     },
     {
       "ticker": "278470",
@@ -173,10 +195,12 @@
       "currentPrice": "₩400,000",
       "valuation": "보통",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "뷰티테크, 화장품·건기식, 홈 뷰티 디바이스, D2C 브랜드",
-      "updatedAt": "2026-05-13T03:00:39+00:00"
+      "updatedAt": "2026-05-13T05:00:44+00:00"
     },
     {
       "ticker": "079550",
@@ -184,15 +208,17 @@
       "market": "KR",
       "fairPrice": "₩345,480 ~ ₩460,640",
       "fairPriceReason": null,
-      "currentPrice": "₩859,000",
+      "currentPrice": "₩866,000",
       "valuation": "고평가",
-      "opinion": "매수",
+      "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [
         "E. 200일선 상방 & 스퀴즈 저점"
       ],
       "category": "성장주",
       "industry": "방산, 유도무기, 레이더, 방산 수출",
-      "updatedAt": "2026-05-13T03:00:40+00:00"
+      "updatedAt": "2026-05-13T05:00:45+00:00"
     },
     {
       "ticker": "GOOGL",
@@ -203,10 +229,12 @@
       "currentPrice": "$387.35",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "AI, 광고, 클라우드, Waymo, TPU",
-      "updatedAt": "2026-05-13T03:00:40+00:00"
+      "updatedAt": "2026-05-13T05:00:45+00:00"
     },
     {
       "ticker": "AVGO",
@@ -217,10 +245,12 @@
       "currentPrice": "$419.30",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체, 네트워크·AI 인프라, ASIC, 광트랜시버",
-      "updatedAt": "2026-05-13T03:00:40+00:00"
+      "updatedAt": "2026-05-13T05:00:45+00:00"
     },
     {
       "ticker": "MU",
@@ -231,10 +261,12 @@
       "currentPrice": "$766.58",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체, 메모리, DRAM, NAND, HBM",
-      "updatedAt": "2026-05-13T03:00:40+00:00"
+      "updatedAt": "2026-05-13T05:00:45+00:00"
     },
     {
       "ticker": "SOXL",
@@ -245,10 +277,12 @@
       "currentPrice": "$172.52",
       "valuation": "보통",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 레버리지 ETF",
-      "updatedAt": "2026-05-13T03:00:40+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "RKLB",
@@ -259,10 +293,12 @@
       "currentPrice": "$117.56",
       "valuation": "판단 불가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 소형 발사체, 위성 배포",
-      "updatedAt": "2026-05-13T03:00:41+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "ASTS",
@@ -273,10 +309,12 @@
       "currentPrice": "$72.96",
       "valuation": "판단 불가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 위성통신, LEO 위성, D2D 통신",
-      "updatedAt": "2026-05-13T03:00:41+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "IONQ",
@@ -287,10 +325,12 @@
       "currentPrice": "$55.87",
       "valuation": "판단 불가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "양자컴퓨팅, 이온트랩, 양자 네트워크",
-      "updatedAt": "2026-05-13T03:00:41+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "BE",
@@ -301,10 +341,12 @@
       "currentPrice": "$280.69",
       "valuation": "판단 불가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 에너지, 연료전지·수소, 데이터센터 전력",
-      "updatedAt": "2026-05-13T03:00:41+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "IREN",
@@ -315,10 +357,12 @@
       "currentPrice": "$56.56",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, GPU 클라우드, HPC",
-      "updatedAt": "2026-05-13T03:00:41+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "NBIS",
@@ -328,13 +372,15 @@
       "fairPriceReason": null,
       "currentPrice": "$179.11",
       "valuation": "고평가",
-      "opinion": "매수",
+      "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [
         "D. 200일선 상방 & 상승 흐름 강화"
       ],
       "category": "성장주",
       "industry": "AI 인프라, AI 클라우드, GPU 클러스터, 데이터센터",
-      "updatedAt": "2026-05-13T03:00:41+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "ASX",
@@ -345,10 +391,12 @@
       "currentPrice": "$34.28",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
-      "updatedAt": "2026-05-13T03:00:41+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "MP",
@@ -359,10 +407,12 @@
       "currentPrice": "$65.59",
       "valuation": "판단 불가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "희토류, EV 모터 소재, 자석 원료",
-      "updatedAt": "2026-05-13T03:00:42+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "INTC",
@@ -373,10 +423,12 @@
       "currentPrice": "$120.61",
       "valuation": "판단 불가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 데이터센터·AI 서버 칩, 파운드리, 네트워크·5G",
-      "updatedAt": "2026-05-13T03:00:42+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "STX",
@@ -384,13 +436,15 @@
       "market": "US",
       "fairPrice": "$316.20 ~ $421.60",
       "fairPriceReason": null,
-      "currentPrice": "$808.79",
+      "currentPrice": "$808.80",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
-      "updatedAt": "2026-05-13T03:00:42+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "GLW",
@@ -401,10 +455,12 @@
       "currentPrice": "$198.24",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "광통신 인프라, 특수유리, 광케이블, AI 데이터센터 광섬유",
-      "updatedAt": "2026-05-13T03:00:42+00:00"
+      "updatedAt": "2026-05-13T05:00:46+00:00"
     },
     {
       "ticker": "CRDO",
@@ -415,10 +471,12 @@
       "currentPrice": "$198.57",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "데이터센터, AI 인프라, 고속 인터커넥트",
-      "updatedAt": "2026-05-13T03:00:42+00:00"
+      "updatedAt": "2026-05-13T05:00:47+00:00"
     },
     {
       "ticker": "COHR",
@@ -429,10 +487,12 @@
       "currentPrice": "$374.01",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "광학·레이저, 광인터커넥트, AI 데이터센터 부품",
-      "updatedAt": "2026-05-13T03:00:42+00:00"
+      "updatedAt": "2026-05-13T05:00:47+00:00"
     },
     {
       "ticker": "AEHR",
@@ -443,10 +503,12 @@
       "currentPrice": "$96.72",
       "valuation": "판단 불가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 반도체 테스트 장비, 후공정 검사",
-      "updatedAt": "2026-05-13T03:00:42+00:00"
+      "updatedAt": "2026-05-13T05:00:47+00:00"
     },
     {
       "ticker": "LRCX",
@@ -457,10 +519,12 @@
       "currentPrice": "$289.24",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체 장비, 식각·증착",
-      "updatedAt": "2026-05-13T03:00:43+00:00"
+      "updatedAt": "2026-05-13T05:00:47+00:00"
     },
     {
       "ticker": "ACLS",
@@ -471,10 +535,12 @@
       "currentPrice": "$161.64",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 장비, 이온주입기",
-      "updatedAt": "2026-05-13T03:00:43+00:00"
+      "updatedAt": "2026-05-13T05:00:47+00:00"
     },
     {
       "ticker": "ANET",
@@ -484,13 +550,15 @@
       "fairPriceReason": null,
       "currentPrice": "$142.54",
       "valuation": "고평가",
-      "opinion": "매수",
+      "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [
         "F. 200일선 상방 & BB 극단 저점"
       ],
       "category": "혼합주",
       "industry": "네트워크, 데이터센터 스위칭, AI 네트워킹, 이더넷 스위치",
-      "updatedAt": "2026-05-13T03:00:43+00:00"
+      "updatedAt": "2026-05-13T05:00:47+00:00"
     },
     {
       "ticker": "277810",
@@ -498,13 +566,15 @@
       "market": "KR",
       "fairPrice": "₩2,960 ~ ₩3,700",
       "fairPriceReason": null,
-      "currentPrice": "₩872,000",
+      "currentPrice": "₩873,000",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
-      "updatedAt": "2026-05-13T03:00:44+00:00"
+      "updatedAt": "2026-05-13T05:00:48+00:00"
     },
     {
       "ticker": "042700",
@@ -512,13 +582,15 @@
       "market": "KR",
       "fairPrice": "₩33,480 ~ ₩44,640",
       "fairPriceReason": null,
-      "currentPrice": "₩389,500",
+      "currentPrice": "₩392,500",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 장비, HBM 패키징, TC본더, 열압착 본딩",
-      "updatedAt": "2026-05-13T03:00:45+00:00"
+      "updatedAt": "2026-05-13T05:00:49+00:00"
     },
     {
       "ticker": "012450",
@@ -526,15 +598,17 @@
       "market": "KR",
       "fairPrice": "₩1,391,400 ~ ₩1,947,960",
       "fairPriceReason": null,
-      "currentPrice": "₩1,262,000",
+      "currentPrice": "₩1,271,000",
       "valuation": "저평가",
-      "opinion": "매수",
+      "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [
         "F. 200일선 상방 & BB 극단 저점"
       ],
       "category": "성장주",
       "industry": "방산, 항공엔진, K-방산, 우주 산업·발사체",
-      "updatedAt": "2026-05-13T03:00:45+00:00"
+      "updatedAt": "2026-05-13T05:00:50+00:00"
     },
     {
       "ticker": "AMD",
@@ -545,10 +619,12 @@
       "currentPrice": "$448.29",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
-      "updatedAt": "2026-05-13T03:00:45+00:00"
+      "updatedAt": "2026-05-13T05:00:50+00:00"
     },
     {
       "ticker": "TSLA",
@@ -559,10 +635,12 @@
       "currentPrice": "$433.45",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "전기차, 에너지, AI, FSD, 로보택시",
-      "updatedAt": "2026-05-13T03:00:45+00:00"
+      "updatedAt": "2026-05-13T05:00:50+00:00"
     },
     {
       "ticker": "PL",
@@ -573,10 +651,12 @@
       "currentPrice": "$40.68",
       "valuation": "판단 불가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 위성 지구관측 데이터, 위성 이미지",
-      "updatedAt": "2026-05-13T03:00:46+00:00"
+      "updatedAt": "2026-05-13T05:00:50+00:00"
     },
     {
       "ticker": "TER",
@@ -587,10 +667,12 @@
       "currentPrice": "$358.45",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체 테스트 장비, 자동화 테스트, 협동로봇",
-      "updatedAt": "2026-05-13T03:00:46+00:00"
+      "updatedAt": "2026-05-13T05:00:50+00:00"
     },
     {
       "ticker": "376900",
@@ -598,13 +680,15 @@
       "market": "KR",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "₩70,000",
+      "currentPrice": "₩70,100",
       "valuation": "판단 불가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "바이오, 3D 바이오프린팅, 재생의료",
-      "updatedAt": "2026-05-13T03:00:47+00:00"
+      "updatedAt": "2026-05-13T05:00:51+00:00"
     },
     {
       "ticker": "SGML",
@@ -614,13 +698,15 @@
       "fairPriceReason": "loss_making",
       "currentPrice": "$20.88",
       "valuation": "판단 불가",
-      "opinion": "매수",
+      "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
+      "marketEvent": "PPI 발표",
       "strategies": [
         "E. 200일선 상방 & 스퀴즈 저점"
       ],
       "category": "성장주",
       "industry": "리튬, 2차전지 원자재, EV 배터리 소재",
-      "updatedAt": "2026-05-13T03:00:47+00:00"
+      "updatedAt": "2026-05-13T05:00:51+00:00"
     }
   ]
 }
