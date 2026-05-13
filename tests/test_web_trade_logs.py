@@ -179,6 +179,78 @@ def test_same_strategy_adds_slot_after_restore_wait(monkeypatch, tmp_path):
     assert updated["meta"]["appendedOpenTrades"] == 1
 
 
+def test_ef_family_blocks_cross_strategy_slot_until_restore_condition(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "ticker": "DL",
+                "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+                "buyDate": "2026.05.01",
+                "buyPrice": "$100.00",
+                "currentPrice": "$99.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+
+    logs.update_trade_logs(
+        [{"ticker": "DL", "name": "DL", "market": "US", "currentPrice": "$99.00", "opinion": "매수"}],
+        {"DL": {"opinion": "매수"}},
+        {"DL": {"entrySignalCodes": "F", "현재가": "$99.00"}},
+        {"peakTriggered": False},
+    )
+
+    updated = logs.load_json(cache_path, {})
+    rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
+    assert len(rows) == 1
+    assert rows[0]["strategy"] == "E. 200일선 상방 & 스퀴즈 저점"
+    assert "restoreWatchDate" in rows[0]
+    assert updated["meta"]["appendedOpenTrades"] == 0
+
+
+def test_ef_family_adds_cross_strategy_slot_after_three_percent_drop(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "ticker": "DL",
+                "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+                "buyDate": "2026.05.01",
+                "buyPrice": "$100.00",
+                "currentPrice": "$97.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+
+    logs.update_trade_logs(
+        [{"ticker": "DL", "name": "DL", "market": "US", "currentPrice": "$97.00", "opinion": "매수"}],
+        {"DL": {"opinion": "매수"}},
+        {"DL": {"entrySignalCodes": "F", "현재가": "$97.00"}},
+        {"peakTriggered": False},
+    )
+
+    updated = logs.load_json(cache_path, {})
+    rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
+    assert [row["strategy"] for row in rows] == [
+        "E. 200일선 상방 & 스퀴즈 저점",
+        "F. 200일선 상방 & BB 극단 저점",
+    ]
+    assert rows[1]["slotId"].startswith("DL_F_")
+    assert updated["meta"]["appendedOpenTrades"] == 1
+
+
 def test_same_day_sell_does_not_reopen_same_strategy(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     public_path.parent.mkdir(parents=True)

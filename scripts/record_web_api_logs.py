@@ -37,6 +37,7 @@ REENTRY_DROP = 0.03
 HOLD_RESTORE_DROP = 0.03
 HOLD_RESTORE_MIN_TRADING_DAYS = 3
 MAX_OPEN_PER_STRATEGY = 2
+RESTORE_FAMILY_STRATEGIES = {"E", "F"}
 VALUATION_LOG_FIELDS = [
     ("marketCap", "시가총액"),
     ("sales", "매출"),
@@ -333,12 +334,28 @@ def mark_restore_watch(trade: dict[str, Any], today: str) -> None:
 
 def hold_restore_allowed(trade: dict[str, Any], current_price: float | None, today_date: date) -> bool:
     watch_date = parse_trade_date(trade.get("restoreWatchDate"))
-    if watch_date is None:
-        return False
     entry_price = parse_price(trade.get("buyPrice"))
     drop_ok = bool(entry_price and current_price is not None and current_price <= entry_price * (1 - HOLD_RESTORE_DROP))
-    days_ok = trading_days_since(trade.get("restoreWatchDate"), today_date) >= HOLD_RESTORE_MIN_TRADING_DAYS
+    days_ok = bool(
+        watch_date
+        and trading_days_since(trade.get("restoreWatchDate"), today_date) >= HOLD_RESTORE_MIN_TRADING_DAYS
+    )
     return drop_ok or days_ok
+
+
+def restore_family_open_trades(
+    current_open_trades: dict[tuple[str, str], list[dict[str, Any]]],
+    ticker: str,
+    strategy: str,
+) -> list[dict[str, Any]]:
+    if strategy not in RESTORE_FAMILY_STRATEGIES:
+        return []
+    trades: list[dict[str, Any]] = []
+    for family_strategy in RESTORE_FAMILY_STRATEGIES:
+        if family_strategy == strategy:
+            continue
+        trades.extend(current_open_trades.get((ticker, family_strategy), []))
+    return trades
 
 
 def next_slot_id(ticker: str, strategy: str, trades: list[dict[str, Any]], today: str) -> str:
@@ -483,8 +500,20 @@ def update_trade_logs(
                 ]
                 if not restore_source_trades:
                     continue
+            family_trades = restore_family_open_trades(current_open_trades, ticker, code)
+            if family_trades:
+                family_restore_source_trades = [
+                    trade
+                    for trade in family_trades
+                    if hold_restore_allowed(trade, current_price, today_date)
+                ]
+                if not family_restore_source_trades:
+                    for trade in family_trades:
+                        mark_restore_watch(trade, today)
+                    continue
+                restore_source_trades.extend(family_restore_source_trades)
             closed_trade = latest_closed_trade(trades, ticker, code)
-            if not seed_after_reset and open_count == 0 and closed_trade is None and previous_opinion == "매수":
+            if not seed_after_reset and open_count == 0 and closed_trade is None and previous_opinion == "매수" and not restore_source_trades:
                 continue
             if not sell_reentry_allowed(closed_trade, current_price, today_date):
                 continue

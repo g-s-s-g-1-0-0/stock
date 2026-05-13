@@ -57,6 +57,7 @@ type Stock = {
 }
 
 type TradeLog = {
+  slotId?: string
   ticker: string
   name?: string
   market?: Market
@@ -475,6 +476,7 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
   if (!candidate || typeof candidate.ticker !== 'string' || typeof candidate.buyDate !== 'string') return null
 
   return {
+    slotId: typeof candidate.slotId === 'string' ? candidate.slotId : undefined,
     ticker: candidate.ticker,
     name: typeof candidate.name === 'string' ? candidate.name : undefined,
     market: candidate.market === 'KR' || candidate.market === 'US' ? candidate.market : undefined,
@@ -1500,7 +1502,7 @@ function valuationFromPriceRange(currentPrice: string, fairPrice: string): Valua
 }
 
 function tradeKey(trade: TradeLog) {
-  return `${trade.ticker}-${trade.buyDate}`
+  return trade.slotId || `${trade.ticker}-${trade.buyDate}-${strategyCode(trade.strategy)}-${trade.buyPrice}`
 }
 
 function displayIndustryLabel(industry?: string) {
@@ -1994,8 +1996,13 @@ function displayStrategiesForStock(stock: Stock, targetTrades: TradeLog[] = []) 
   return openTradeStrategies.length > 0 ? openTradeStrategies : stock.strategies
 }
 
+function technicalEntryStrategiesForStock(stock: Stock, targetTrades: TradeLog[] = []) {
+  const strategies = openTradesForStock(stock, targetTrades).map((trade) => trade.strategy).filter(Boolean)
+  return strategies.length > 0 ? strategies : stock.strategies
+}
+
 function joinTradeValues(targetTrades: TradeLog[], value: (trade: TradeLog) => string) {
-  const values = Array.from(new Set(targetTrades.map(value).filter(Boolean)))
+  const values = targetTrades.map(value).filter(Boolean)
   return values.length > 0 ? values.join(', ') : '-'
 }
 
@@ -2008,7 +2015,7 @@ function technicalEntryDate(stock: Stock, targetTrades: TradeLog[] = []) {
 }
 
 function technicalEntryStrategy(stock: Stock, targetTrades: TradeLog[] = []) {
-  const strategies = displayStrategiesForStock(stock, targetTrades)
+  const strategies = technicalEntryStrategiesForStock(stock, targetTrades)
   return strategies.length > 0 ? strategies.join(', ') : '-'
 }
 
@@ -2375,7 +2382,7 @@ function TechnicalAnalysisPage({
                   <td><span className={`status-badge ${statusClass(displayedOpinion)}`}>{displayedOpinion}</span></td>
                   {technicalMetricColumns.map((column) => {
                     const apiKey = column.key ?? column.label
-                    const entryStrategies = apiKey === '진입 전략' ? displayStrategiesForStock(stock, tradeLogs) : []
+                    const entryStrategies = apiKey === '진입 전략' ? technicalEntryStrategiesForStock(stock, tradeLogs) : []
                     const value = apiKey === '진입가'
                       ? technicalEntryPrice(stock, tradeLogs)
                       : apiKey === '진입일'
@@ -2393,9 +2400,9 @@ function TechnicalAnalysisPage({
 
                     return (
                       <td className={cellClassName} key={column.label}>
-                        {isEntryStrategy && entryStrategies.length > 0 ? entryStrategies.map((strategy) => (
+                        {isEntryStrategy && entryStrategies.length > 0 ? entryStrategies.map((strategy, strategyIndex) => (
                           <StrategyTag
-                            key={strategy}
+                            key={`${strategy}-${strategyIndex}`}
                             onTooltipClose={onTooltipClose}
                             onTooltipOpen={onTooltipOpen}
                             strategy={strategy}
@@ -5227,7 +5234,7 @@ function App() {
                   const returnPriceText = tradeReturnPriceText(trade, apiStocks)
 
                   return (
-                    <tr key={`${trade.ticker}-${trade.buyDate}`}>
+                    <tr key={tradeKey(trade)}>
                       <td className="numbering-cell">{rowNumber}</td>
                       <td className="name-data-cell">
                         <div className="name-cell">
