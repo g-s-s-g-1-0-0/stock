@@ -2,8 +2,8 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-05-13T07:00:55.258918Z",
-    "lastSuccessfulRun": "2026-05-13T07:00:55.258925Z",
+    "updatedAt": "2026-05-13T09:00:49.119524Z",
+    "lastSuccessfulRun": "2026-05-13T09:00:49.119532Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
     "closedTrades": 0,
