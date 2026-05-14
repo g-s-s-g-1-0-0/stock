@@ -2,8 +2,8 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-05-13T23:00:51.790125Z",
-    "lastSuccessfulRun": "2026-05-13T23:00:51.790136Z",
+    "updatedAt": "2026-05-14T01:00:53.645087Z",
+    "lastSuccessfulRun": "2026-05-14T01:00:53.645096Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
     "closedTrades": 0,
@@ -23,14 +23,15 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.14"
     },
     {
       "slotId": "079550_E_20260510_1",
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "currentPrice": "₩873,000",
+      "currentPrice": "₩876,000",
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",
       "buyDate": "2026.05.10",
       "buyPrice": "₩840,000",
@@ -45,7 +46,7 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "currentPrice": "₩873,000",
+      "currentPrice": "₩876,000",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.10",
       "buyPrice": "₩840,000",
@@ -93,7 +94,7 @@
       "ticker": "012450",
       "name": "한화에어로스페이스",
       "market": "KR",
-      "currentPrice": "₩1,286,000",
+      "currentPrice": "₩1,281,000",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.11",
       "buyPrice": "₩1,307,000",
@@ -101,7 +102,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.14"
     },
     {
       "slotId": "NBIS_D_20260513_1",
@@ -140,7 +142,7 @@
       "ticker": "012450",
       "name": "한화에어로스페이스",
       "market": "KR",
-      "currentPrice": "₩1,286,000",
+      "currentPrice": "₩1,281,000",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.13",
       "buyPrice": "₩1,262,000",
@@ -148,7 +150,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.14"
     },
     {
       "slotId": "375500_F_20260514_1",
@@ -231,7 +234,7 @@
       "ticker": "039030",
       "name": "이오테크닉스",
       "market": "KR",
-      "currentPrice": "₩479,500",
+      "currentPrice": "₩468,500",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.14",
       "buyPrice": "₩479,500",
@@ -239,7 +242,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.14"
     }
   ]
 }
