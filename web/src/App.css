@@ -3329,7 +3329,7 @@
 
 .technical-summary-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(166px, 1fr));
   gap: 6px;
   padding: 7px;
 }

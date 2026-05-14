@@ -1928,6 +1928,10 @@ function technicalSummaryDisplayLabel(label: string) {
   return label === 'QQQ MACD Histogram (D/D-1/D-2)' ? 'QQQ MACD Histogram' : label
 }
 
+function shouldShowTechnicalSummaryCard(label: string) {
+  return label !== 'QQQ 매수 차단 기준'
+}
+
 function technicalSeed(stock: Stock, index: number, salt = 0) {
   const base = [...stock.ticker].reduce((sum, char) => sum + char.charCodeAt(0), 0)
   return (base * 17 + index * 31 + salt * 13) % 997
@@ -2317,7 +2321,7 @@ function TechnicalAnalysisPage({
           <em>펼쳐보기</em>
         </summary>
         <div className="technical-summary-strip" aria-label="기술 분석 시장 요약">
-          {marketSnapshot.map(([label, value]) => (
+          {marketSnapshot.filter(([label]) => shouldShowTechnicalSummaryCard(label)).map(([label, value]) => (
             <div className="technical-summary-item" key={label}>
               <span>
                 <MetricValue
