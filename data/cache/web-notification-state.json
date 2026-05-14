@@ -1,31 +1,6 @@
 {
   "nasdaqPeak": {
-    "sent": true,
-    "sentAt": "2026-05-14T15:02:32.996116+00:00",
-    "snapshot": {
-      "buyBlockMax": 18.0,
-      "confirmThreshold": 720.093229711914,
-      "currentPrice": 720.1701049804688,
-      "dailyRsi": 82.75,
-      "dailyRsiPrev": 84.05,
-      "directThreshold": 744.5031697021484,
-      "isRecoveryMarket": true,
-      "ma200": 610.2484997558594,
-      "macdHist": 2.85,
-      "macdHistD1": 3.04,
-      "macdHistD2": 3.33,
-      "macdHistSlowing": true,
-      "peakConfirmDist": 18.0,
-      "peakDirectDist": 22.0,
-      "peakResetDist": 18.0,
-      "peakTriggered": true,
-      "premiumPercent": 18.012597371166894,
-      "recent60MinPremiumPercent": -6.044615423423306,
-      "regimeLabel": "급락 후 회복장",
-      "resetThreshold": 720.093229711914,
-      "rsiHotAndFalling": true,
-      "triggered": true,
-      "weeklyRsi": 78.06
-    }
+    "resetAt": "2026-05-14T20:55:50.998617+00:00",
+    "sent": false
   }
 }
