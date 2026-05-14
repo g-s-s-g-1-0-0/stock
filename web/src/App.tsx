@@ -4662,8 +4662,19 @@ function App() {
     void persistUserSettings(watchlistSortSettings, nextPreferences)
   }
 
+  const selectNotificationIntegrationChannel = (channel: NotificationIntegrationChannel) => {
+    if (!isNotificationIntegrationConnected(channel)) return
+    const nextPreferences = { ...notificationPreferences, notificationChannel: channel }
+    setNotificationPreferences(nextPreferences)
+    void persistUserSettings(watchlistSortSettings, nextPreferences)
+  }
+
   const connectNotificationChannel = async (channel: NotificationIntegrationChannel) => {
     if (channel === 'kakaoTalk') return
+    if (isNotificationIntegrationConnected(channel)) {
+      selectNotificationIntegrationChannel(channel)
+      return
+    }
     if (!userSession || !supabase) {
       setAuthInfoMessage('슬랙 알림을 연동하려면 먼저 로그인해 주세요.')
       setIsLoginOpen(true)
@@ -4671,6 +4682,7 @@ function App() {
     }
 
     setConnectingNotificationChannel(channel)
+    const oauthWindow = window.open('about:blank', '_blank')
     try {
       const { data } = await supabase.auth.getSession()
       const accessToken = data.session?.access_token
@@ -4687,9 +4699,17 @@ function App() {
       if (!response.ok || !payload?.url) {
         throw new Error(payload?.error || 'Slack 연동을 시작하지 못했습니다.')
       }
-      window.location.assign(String(payload.url))
+      if (oauthWindow) {
+        oauthWindow.opener = null
+        oauthWindow.location.assign(String(payload.url))
+      } else {
+        window.open(String(payload.url), '_blank', 'noopener,noreferrer')
+      }
+      setAuthInfoMessage('새 창에서 Slack 연동을 완료해 주세요. 완료 후 알림 설정에서 슬랙을 선택할 수 있습니다.')
     } catch (error) {
+      oauthWindow?.close()
       setAuthInfoMessage(error instanceof Error ? error.message : 'Slack 연동을 시작하지 못했습니다.')
+    } finally {
       setConnectingNotificationChannel(null)
     }
   }
@@ -5901,7 +5921,6 @@ function App() {
                   <ul>
                     {option.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
                   </ul>
-                  {onboardingInvestmentType === option.value && <b aria-hidden="true">선택됨</b>}
                 </button>
               ))}
             </div>
@@ -5967,14 +5986,20 @@ function App() {
 
                         return (
                           <div
-                            className="notification-channel-option"
+                            className={`notification-channel-option ${isConnected && !isUnavailable ? 'connected' : ''}`}
                             key={option.channel}
                           >
                             <button
                               className={`notification-channel-button ${option.channel === 'kakaoTalk' ? 'kakao-card' : 'slack-card'} ${isActive ? 'active' : ''} ${isUnavailable ? 'unavailable' : ''}`}
                               disabled={isActive || isUnavailable || isConnecting}
                               type="button"
-                              onClick={() => connectNotificationChannel(option.channel)}
+                              onClick={() => {
+                                if (isConnected) {
+                                  selectNotificationIntegrationChannel(option.channel)
+                                  return
+                                }
+                                void connectNotificationChannel(option.channel)
+                              }}
                             >
                               <span className="notification-integration-logo" aria-hidden="true">
                                 {option.channel === 'slack' ? (
@@ -5990,7 +6015,7 @@ function App() {
                               </span>
                               <span>
                                 <strong>{option.shortTitle}</strong>
-                                <small>{isUnavailable ? '준비중' : isConnecting ? '연동 중' : isActive ? '수신 중' : isConnected ? '연동됨' : '연동'}</small>
+                                <small>{isUnavailable ? '비용 문제로 당분간 도입 계획 없음' : isConnecting ? '연동 중' : isActive ? '수신 중' : isConnected ? '연동됨' : '연동'}</small>
                               </span>
                             </button>
                             {isConnected && !isUnavailable && (
@@ -6059,7 +6084,6 @@ function App() {
                         >
                           <strong>{option.title}</strong>
                           <span>{option.description}</span>
-                          {displayedInvestmentType === option.value && <b aria-hidden="true">선택됨</b>}
                         </button>
                       ))}
                     </div>

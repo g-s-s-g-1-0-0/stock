@@ -4086,6 +4086,7 @@
 }
 
 .notification-channel-option {
+  position: relative;
   display: flex;
   gap: 6px;
   min-width: 0;
@@ -4111,6 +4112,10 @@
   min-height: 44px;
   padding: 7px 9px;
   text-align: left;
+}
+
+.notification-channel-option.connected .notification-channel-button {
+  padding-right: 48px;
 }
 
 .notification-channel-button.active {
@@ -4148,9 +4153,14 @@
 }
 
 .notification-channel-disconnect {
+  position: absolute;
+  top: 7px;
+  right: 7px;
   flex: none;
-  min-height: 44px;
-  padding: 0 9px;
+  min-height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  padding: 0 8px;
   color: var(--muted);
   font-size: 11px;
 }
