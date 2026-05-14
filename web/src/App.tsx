@@ -1924,6 +1924,10 @@ function mergeMarketSnapshot(snapshot: string[][]): string[][] {
   ]
 }
 
+function technicalSummaryDisplayLabel(label: string) {
+  return label === 'QQQ MACD Histogram (D/D-1/D-2)' ? 'QQQ MACD Histogram' : label
+}
+
 function technicalSeed(stock: Stock, index: number, salt = 0) {
   const base = [...stock.ticker].reduce((sum, char) => sum + char.charCodeAt(0), 0)
   return (base * 17 + index * 31 + salt * 13) % 997
@@ -2321,7 +2325,7 @@ function TechnicalAnalysisPage({
                   onTooltipClose={onTooltipClose}
                   onTooltipOpen={onTooltipOpen}
                 >
-                  {label}
+                  {technicalSummaryDisplayLabel(label)}
                 </MetricValue>
               </span>
               <strong>{value}</strong>
