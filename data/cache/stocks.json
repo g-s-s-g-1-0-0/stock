@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-14T13:00:56+00:00",
-    "lastSuccessfulRun": "2026-05-14T13:00:56+00:00",
+    "updatedAt": "2026-05-14T15:01:42+00:00",
+    "lastSuccessfulRun": "2026-05-14T15:01:42+00:00",
     "failedReason": null
   },
   "rows": [
@@ -708,10 +708,10 @@
       "ticker": "039030",
       "name": "이오테크닉스",
       "market": "KR",
-      "fairPrice": "-",
+      "fairPrice": "₩92,880 ~ ₩139,320",
       "fairPriceReason": null,
       "currentPrice": "₩479,000",
-      "valuation": "보통",
+      "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
