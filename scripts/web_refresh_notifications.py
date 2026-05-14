@@ -162,16 +162,24 @@ def trade_rows(path: Path) -> list[dict[str, Any]]:
     return [row for row in rows if isinstance(row, dict)]
 
 
+def trade_ticker(row: dict[str, Any]) -> str:
+    return str(row.get("ticker") or "").strip().upper()
+
+
+def is_open_trade(row: dict[str, Any]) -> bool:
+    return str(row.get("status") or "").strip() == "보유 중"
+
+
 def trade_key(row: dict[str, Any]) -> tuple[str, str, str]:
     slot_id = str(row.get("slotId") or "").strip()
     if slot_id:
         return (
-            str(row.get("ticker") or "").strip().upper(),
+            trade_ticker(row),
             slot_id,
             str(row.get("strategy") or "").strip(),
         )
     return (
-        str(row.get("ticker") or "").strip().upper(),
+        trade_ticker(row),
         str(row.get("buyDate") or "").strip(),
         str(row.get("strategy") or "").strip(),
     )
@@ -188,9 +196,9 @@ def display_stock(row: dict[str, Any], ticker: str | None = None) -> str:
 def opinion_groups(current_path: Path, trade_logs_path: Path = DEFAULT_CURRENT_TRADE_LOGS) -> tuple[list[str], list[str], list[str]]:
     current = stock_rows_by_ticker(current_path)
     open_trade_tickers = {
-        str(row.get("ticker") or "").strip().upper()
+        trade_ticker(row)
         for row in trade_rows(trade_logs_path)
-        if str(row.get("status") or "") == "보유 중"
+        if is_open_trade(row)
     }
     buy_opinions: list[str] = []
     watch_holding_opinions: list[str] = []
@@ -208,23 +216,109 @@ def opinion_groups(current_path: Path, trade_logs_path: Path = DEFAULT_CURRENT_T
     return buy_opinions, watch_holding_opinions, sell_opinions
 
 
-def opinion_changes(previous_path: Path, current_path: Path, technical_path: Path = DEFAULT_TECHNICAL) -> list[dict[str, Any]]:
+def trades_by_ticker(rows: list[dict[str, Any]], *, open_only: bool = False) -> dict[str, list[dict[str, Any]]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        ticker = trade_ticker(row)
+        if not ticker or (open_only and not is_open_trade(row)):
+            continue
+        grouped.setdefault(ticker, []).append(row)
+    return grouped
+
+
+def added_open_trades(previous_rows: list[dict[str, Any]], current_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    previous_keys = {trade_key(row) for row in previous_rows}
+    return [
+        row
+        for row in current_rows
+        if is_open_trade(row) and trade_key(row) not in previous_keys
+    ]
+
+
+def first_buy_price(rows: list[dict[str, Any]]) -> str:
+    for row in rows:
+        price = str(row.get("buyPrice") or "").strip()
+        if price and price != "-":
+            return price
+    return ""
+
+
+def buy_entry_note(
+    *,
+    old_opinion: str,
+    previous_trade_rows: list[dict[str, Any]],
+    current_trade_rows: list[dict[str, Any]],
+    added_trades: list[dict[str, Any]],
+) -> str:
+    previous_open = [row for row in previous_trade_rows if is_open_trade(row)]
+    current_open = [row for row in current_trade_rows if is_open_trade(row)]
+    closed_history = []
+    closed_keys: set[tuple[str, str, str]] = set()
+    for row in previous_trade_rows + current_trade_rows:
+        key = trade_key(row)
+        if is_open_trade(row) or key in closed_keys:
+            continue
+        closed_keys.add(key)
+        closed_history.append(row)
+
+    if previous_open and not added_trades and old_opinion == "관망":
+        return "보유 중 매수 복원"
+
+    if previous_open or old_opinion == "매수":
+        reentry_count = max(len(previous_open), 1)
+        entry_price = first_buy_price(previous_open + current_open)
+        return (
+            f"재진입 {reentry_count}회차 — 최초 진입가 {entry_price}"
+            if entry_price
+            else f"재진입 {reentry_count}회차"
+        )
+
+    if old_opinion == "매도" or closed_history:
+        reentry_count = max(len(closed_history), 1)
+        entry_price = first_buy_price(current_open + added_trades)
+        return (
+            f"재진입 {reentry_count}회차 — 최초 진입가 {entry_price}"
+            if entry_price
+            else f"재진입 {reentry_count}회차"
+        )
+
+    return "신규 진입"
+
+
+def buy_reason_for_trade(trade: dict[str, Any], stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
+    code = strategy_code(trade.get("strategy"))
+    if not code:
+        return buy_reason(stock, technical_row)
+    return f"{strategy_label(code, stock, technical_row)} — {buy_reason_detail(code, stock, technical_row)}"
+
+
+def opinion_changes(
+    previous_path: Path,
+    current_path: Path,
+    technical_path: Path = DEFAULT_TECHNICAL,
+    previous_trade_logs_path: Path | None = None,
+    current_trade_logs_path: Path | None = None,
+) -> list[dict[str, Any]]:
     previous = stock_rows_by_ticker(previous_path)
     current = stock_rows_by_ticker(current_path)
     technical_rows = technical_rows_by_ticker(technical_path)
+    previous_trade_rows = trade_rows(previous_trade_logs_path) if previous_trade_logs_path else []
+    current_trade_rows = trade_rows(current_trade_logs_path) if current_trade_logs_path else []
+    previous_trades_by_ticker = trades_by_ticker(previous_trade_rows)
+    current_trades_by_ticker = trades_by_ticker(current_trade_rows)
+    added_trades_by_ticker = trades_by_ticker(added_open_trades(previous_trade_rows, current_trade_rows))
     reset = runtime_reset_state()
     forced_baseline = str(reset.get("opinionBaseline") or "관망").strip()
     changes: list[dict[str, Any]] = []
+    buy_transition_tickers: set[str] = set()
 
     for ticker, current_stock in current.items():
         previous_stock = previous.get(ticker)
         new_opinion = str(current_stock.get("opinion") or "").strip()
-        is_new_buy_signal = False
         if reset and forced_baseline in VALID_OPINIONS:
             previous_stock = {**current_stock, "opinion": forced_baseline}
         elif not previous_stock and new_opinion == "매수":
             previous_stock = {**current_stock, "opinion": "관망"}
-            is_new_buy_signal = True
         if not previous_stock:
             continue
         old_opinion = str(previous_stock.get("opinion") or "").strip()
@@ -244,9 +338,49 @@ def opinion_changes(previous_path: Path, current_path: Path, technical_path: Pat
             "strategies": current_stock.get("strategies") or [],
             "reason": concise_opinion_reason(old_opinion, new_opinion, previous_stock, current_stock, technical_row),
         }
-        if is_new_buy_signal:
-            change["entryNote"] = "신규 편입 후 매수"
+        normalized_ticker = str(ticker).strip().upper()
+        if new_opinion == "매수":
+            change["entryNote"] = buy_entry_note(
+                old_opinion=old_opinion,
+                previous_trade_rows=previous_trades_by_ticker.get(normalized_ticker, []),
+                current_trade_rows=current_trades_by_ticker.get(normalized_ticker, []),
+                added_trades=added_trades_by_ticker.get(normalized_ticker, []),
+            )
+            buy_transition_tickers.add(normalized_ticker)
         changes.append(change)
+
+    for trade in added_open_trades(previous_trade_rows, current_trade_rows):
+        ticker = trade_ticker(trade)
+        if not ticker or ticker in buy_transition_tickers:
+            continue
+        current_stock = current.get(ticker)
+        previous_stock = previous.get(ticker)
+        if not current_stock or not previous_stock:
+            continue
+        if str(current_stock.get("opinion") or "").strip() != "매수":
+            continue
+        if str(previous_stock.get("opinion") or "").strip() != "매수":
+            continue
+        technical_row = technical_rows.get(ticker, {})
+        changes.append({
+            "ticker": ticker,
+            "name": current_stock.get("name") or trade.get("name") or ticker,
+            "from": "매수",
+            "to": "매수",
+            "fromLabel": "매수(보유중)",
+            "toLabel": "추가 매수",
+            "price": current_stock.get("currentPrice") or trade.get("currentPrice") or "-",
+            "valuation": current_stock.get("valuation") or "-",
+            "industry": current_stock.get("industry") or "-",
+            "strategies": current_stock.get("strategies") or [],
+            "reason": buy_reason_for_trade(trade, current_stock, technical_row),
+            "entryNote": buy_entry_note(
+                old_opinion="매수",
+                previous_trade_rows=previous_trades_by_ticker.get(ticker, []),
+                current_trade_rows=current_trades_by_ticker.get(ticker, []),
+                added_trades=added_trades_by_ticker.get(ticker, []),
+            ),
+        })
     return changes
 
 
@@ -1298,9 +1432,17 @@ def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuatio
 def send_opinion_notifications(
     previous: Path,
     current: Path,
+    previous_trade_logs: Path | None = None,
+    current_trade_logs: Path | None = None,
 ) -> int:
     reset_active = bool(runtime_reset_state())
-    changes = opinion_changes(previous, current, DEFAULT_TECHNICAL)
+    changes = opinion_changes(
+        previous,
+        current,
+        DEFAULT_TECHNICAL,
+        previous_trade_logs,
+        current_trade_logs,
+    )
     if not changes:
         print("No opinion changes.")
         if reset_active:
@@ -1387,6 +1529,8 @@ def main() -> int:
     opinion_parser = subparsers.add_parser("opinion")
     opinion_parser.add_argument("--previous", type=Path, default=DEFAULT_PREVIOUS_STOCKS)
     opinion_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
+    opinion_parser.add_argument("--previous-trade-logs", type=Path, default=None)
+    opinion_parser.add_argument("--current-trade-logs", type=Path, default=DEFAULT_CURRENT_TRADE_LOGS)
 
     trade_exit_parser = subparsers.add_parser("trade-exit")
     trade_exit_parser.add_argument("--previous", type=Path, default=DEFAULT_PREVIOUS_TRADE_LOGS)
@@ -1404,7 +1548,12 @@ def main() -> int:
 
     args = parser.parse_args()
     if args.command == "opinion":
-        send_opinion_notifications(args.previous, args.current)
+        send_opinion_notifications(
+            args.previous,
+            args.current,
+            args.previous_trade_logs,
+            args.current_trade_logs,
+        )
         return 0
     if args.command == "trade-exit":
         send_trade_exit_notifications(args.previous, args.current)

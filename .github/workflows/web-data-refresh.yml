@@ -144,7 +144,7 @@ jobs:
 
       - name: Send opinion change emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
-        run: python scripts/web_refresh_notifications.py opinion --previous "$RUNNER_TEMP/stocks.before-refresh.json"
+        run: python scripts/web_refresh_notifications.py opinion --previous "$RUNNER_TEMP/stocks.before-refresh.json" --previous-trade-logs "$RUNNER_TEMP/trade-logs.before-refresh.json"
 
       - name: Send trade exit emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}

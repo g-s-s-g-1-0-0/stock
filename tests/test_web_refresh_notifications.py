@@ -74,6 +74,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("MP", changes[0]["ticker"])
         self.assertEqual("관망", changes[0]["from"])
         self.assertEqual("매수", changes[0]["to"])
+        self.assertEqual("신규 진입", changes[0]["entryNote"])
 
     def test_opinion_changes_treats_new_buy_signal_as_watch_to_buy(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -108,7 +109,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("012450", changes[0]["ticker"])
         self.assertEqual("관망", changes[0]["from"])
         self.assertEqual("매수", changes[0]["to"])
-        self.assertEqual("신규 편입 후 매수", changes[0]["entryNote"])
+        self.assertEqual("신규 진입", changes[0]["entryNote"])
 
     def test_opinion_email_body_labels_additional_buy(self) -> None:
         body = self.notifications.opinion_email_body([
@@ -127,6 +128,75 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("추가 매수", body)
         self.assertNotIn("'매수'</span>", body)
         self.assertNotIn(">매수</strong><br>", body)
+
+    def test_opinion_changes_marks_sell_to_buy_as_reentry_with_entry_price(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+            previous_trades = Path(temp_dir) / "trade-logs.before-refresh.json"
+            current_trades = Path(temp_dir) / "trade-logs.json"
+
+            previous.write_text(
+                json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "opinion": "매도"}]}),
+                encoding="utf-8",
+            )
+            current.write_text(
+                json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "opinion": "매수", "currentPrice": "$60.00"}]}),
+                encoding="utf-8",
+            )
+            technical.write_text(json.dumps({"rows": {"MP": {"entrySignalCodes": "D", "현재가": "$60.00"}}}), encoding="utf-8")
+            previous_trades.write_text(
+                json.dumps({"rows": [{"ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.01", "buyPrice": "$67.43", "sellDate": "2026.05.05", "sellPrice": "$70.00", "status": "익절"}]}),
+                encoding="utf-8",
+            )
+            current_trades.write_text(
+                json.dumps({"rows": [
+                    {"ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.01", "buyPrice": "$67.43", "sellDate": "2026.05.05", "sellPrice": "$70.00", "status": "익절"},
+                    {"slotId": "MP_D_20260510_1", "ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.10", "buyPrice": "$60.00", "status": "보유 중"},
+                ]}),
+                encoding="utf-8",
+            )
+
+            changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
+
+        self.assertEqual(1, len(changes))
+        self.assertEqual("재진입 1회차 — 최초 진입가 $60.00", changes[0]["entryNote"])
+
+    def test_opinion_changes_detects_additional_buy_from_new_open_trade(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+            previous_trades = Path(temp_dir) / "trade-logs.before-refresh.json"
+            current_trades = Path(temp_dir) / "trade-logs.json"
+
+            stock = {"ticker": "DL", "name": "DL", "opinion": "매수", "currentPrice": "$97.00", "industry": "건설"}
+            previous.write_text(json.dumps({"rows": [stock]}), encoding="utf-8")
+            current.write_text(json.dumps({"rows": [stock]}), encoding="utf-8")
+            technical.write_text(
+                json.dumps({"rows": {"DL": {"entrySignalCodes": "F", "현재가": "$97.00", "저가%B": "-3.45"}}}),
+                encoding="utf-8",
+            )
+            previous_trades.write_text(
+                json.dumps({"rows": [{"slotId": "DL_E_20260501_1", "ticker": "DL", "strategy": "E. 200일선 상방 & 스퀴즈 저점", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"}]}),
+                encoding="utf-8",
+            )
+            current_trades.write_text(
+                json.dumps({"rows": [
+                    {"slotId": "DL_E_20260501_1", "ticker": "DL", "strategy": "E. 200일선 상방 & 스퀴즈 저점", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"},
+                    {"slotId": "DL_F_20260510_1", "ticker": "DL", "strategy": "F. 200일선 상방 & BB 극단 저점", "buyDate": "2026.05.10", "buyPrice": "$97.00", "status": "보유 중"},
+                ]}),
+                encoding="utf-8",
+            )
+
+            changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
+
+        self.assertEqual(1, len(changes))
+        self.assertEqual("매수(보유중)", changes[0]["fromLabel"])
+        self.assertEqual("추가 매수", changes[0]["toLabel"])
+        self.assertEqual("재진입 1회차 — 최초 진입가 $100.00", changes[0]["entryNote"])
+        self.assertIn("F. 200일선 상방 & BB 극단 저점", changes[0]["reason"])
 
     def test_opinion_changes_detects_all_valid_transitions(self) -> None:
         with TemporaryDirectory() as temp_dir:
