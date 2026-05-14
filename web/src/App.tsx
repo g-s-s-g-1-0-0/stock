@@ -5235,7 +5235,7 @@ function App() {
           })}
         </nav>
         <div className="updated-text">
-          <span>데이터는 2시간 간격으로 정각에 업데이트됩니다.</span>
+          <span>데이터는 분석 별로 정해진 주기에 맞춰 업데이트됩니다.</span>
           <span>공수성가 또한 실제 데이터이며, 참고할 수 있게 제공됩니다.</span>
           <span>단, 모든 투자의 책임은 본인에게 있습니다.</span>
           {isAdminUser && refreshDataMessage && (
