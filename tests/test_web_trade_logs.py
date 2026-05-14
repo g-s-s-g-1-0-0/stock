@@ -143,7 +143,7 @@ def test_same_strategy_does_not_duplicate_while_signal_never_left(monkeypatch, t
     assert updated["meta"]["appendedOpenTrades"] == 0
 
 
-def test_same_strategy_adds_slot_after_restore_wait(monkeypatch, tmp_path):
+def test_same_strategy_does_not_add_restore_slot(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
@@ -173,10 +173,9 @@ def test_same_strategy_adds_slot_after_restore_wait(monkeypatch, tmp_path):
 
     updated = logs.load_json(cache_path, {})
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
-    assert len(rows) == 2
-    assert rows[1]["strategy"] == "D. 200일선 상방 & 상승 흐름 강화"
-    assert rows[1]["slotId"].startswith("MP_D_")
-    assert updated["meta"]["appendedOpenTrades"] == 1
+    assert len(rows) == 1
+    assert rows[0]["strategy"] == "D. 200일선 상방 & 상승 흐름 강화"
+    assert updated["meta"]["appendedOpenTrades"] == 0
 
 
 def test_ef_family_blocks_cross_strategy_slot_until_restore_condition(monkeypatch, tmp_path):

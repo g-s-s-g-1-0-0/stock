@@ -1515,6 +1515,12 @@
   width: 42px;
   min-width: 42px;
   max-width: 42px;
+  border-right: 1px solid var(--sheet-border);
+}
+
+.admin-market-trends-table th:first-child::after,
+.admin-market-trends-table td:first-child::after {
+  content: none;
 }
 
 .admin-market-trends-table th:nth-child(2),
@@ -4037,13 +4043,13 @@
 }
 
 .investment-settings-card .account-alert-header {
-  display: grid;
-  gap: 4px;
-  justify-content: stretch;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
 }
 
 .investment-settings-card .account-alert-header small {
-  text-align: left;
+  text-align: right;
 }
 
 .investment-settings-card .investment-option-grid {
