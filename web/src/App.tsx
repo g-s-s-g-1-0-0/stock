@@ -1,7 +1,7 @@
 import './App.css'
 import { Fragment, type FormEvent, type ReactNode, type WheelEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, type AppData, type RuntimeMeta } from './api'
+import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, type AppData, type RuntimeMeta } from './api'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 
 type Market = 'KR' | 'US'
@@ -2517,6 +2517,10 @@ function formatMarketEventDateFromInput(value: string) {
   return `${year}. ${Number(month)}. ${Number(day)}`
 }
 
+function marketTrendRowKey(row: MarketTrendRow) {
+  return `${row.date}||${row.summary}`
+}
+
 function MarketEventsPage({
   groups,
   yearLabel,
@@ -2660,7 +2664,23 @@ function MarketEventsPage({
   )
 }
 
-function MarketTrendsPage({ rows, updateLabel }: { rows: MarketTrendRow[]; updateLabel: string }) {
+function MarketTrendsPage({
+  rows,
+  updateLabel,
+  isAdmin,
+  selectedRowKeys,
+  isSaving,
+  onToggleRow,
+  onDeleteSelected,
+}: {
+  rows: MarketTrendRow[]
+  updateLabel: string
+  isAdmin: boolean
+  selectedRowKeys: string[]
+  isSaving: boolean
+  onToggleRow: (rowKey: string) => void
+  onDeleteSelected: () => void
+}) {
   const [page, setPage] = useState(1)
   const sortedMarketTrendRows = [...rows].sort((a, b) => new Date(b.date.replaceAll('.', '-')).getTime() - new Date(a.date.replaceAll('.', '-')).getTime())
   const pageSize = 50
@@ -2669,6 +2689,7 @@ function MarketTrendsPage({ rows, updateLabel }: { rows: MarketTrendRow[]; updat
   const pageStart = (safePage - 1) * pageSize
   const visibleMarketTrendRows = sortedMarketTrendRows.slice(pageStart, pageStart + pageSize)
   const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleMarketTrendRows.length, 0)
+  const selectedRowCount = selectedRowKeys.length
 
   return (
     <section className="panel value-analysis-panel market-trends-panel">
@@ -2679,11 +2700,27 @@ function MarketTrendsPage({ rows, updateLabel }: { rows: MarketTrendRow[]; updat
         </div>
         <span className="section-heading-meta">총 {rows.length}개 <b>|</b> {updateLabel}</span>
       </div>
+      {isAdmin && (
+        <div className="admin-event-toolbar market-trends-admin-toolbar">
+          <span>어드민 모드: 삭제할 시장 트렌드 row를 선택한 뒤 삭제할 수 있습니다.</span>
+          <button
+            aria-hidden={selectedRowCount === 0}
+            className={`remove-selected-button ${selectedRowCount === 0 ? 'reserved-action-button' : ''}`}
+            disabled={isSaving}
+            tabIndex={selectedRowCount === 0 ? -1 : 0}
+            type="button"
+            onClick={onDeleteSelected}
+          >
+            {isSaving ? '삭제 중...' : `삭제${selectedRowCount > 0 ? ` (${selectedRowCount})` : ''}`}
+          </button>
+        </div>
+      )}
 
       <div className="sheet-wrap market-trends-sheet">
-        <table className="sheet-table market-trends-table">
+        <table className={`sheet-table market-trends-table ${isAdmin ? 'admin-market-trends-table' : ''}`}>
           <thead>
             <tr>
+              {isAdmin && <th>선택</th>}
               <th>날짜</th>
               {Array.from({ length: 10 }).map((_, index) => (
                 <th key={`trend-rank-${index + 1}`}>{index + 1}위</th>
@@ -2692,18 +2729,33 @@ function MarketTrendsPage({ rows, updateLabel }: { rows: MarketTrendRow[]; updat
             </tr>
           </thead>
           <tbody>
-            {visibleMarketTrendRows.map((row) => (
-              <tr key={row.date}>
-                <td className="number-cell trend-date-cell">{row.date}</td>
-                {Array.from({ length: 10 }).map((_, index) => (
-                  <td className="trend-rank-cell" key={`${row.date}-${index + 1}`}>{row.ranks[index] ?? '-'}</td>
-                ))}
-                <td className="trend-summary-cell">{row.summary}</td>
-              </tr>
-            ))}
+            {visibleMarketTrendRows.map((row) => {
+              const rowKey = marketTrendRowKey(row)
+              const isSelected = selectedRowKeys.includes(rowKey)
+
+              return (
+                <tr className={isSelected ? 'selected-market-trend-row' : undefined} key={rowKey}>
+                  {isAdmin && (
+                    <td className="checkbox-cell">
+                      <input
+                        aria-label={`${row.date} 시장 트렌드 선택`}
+                        checked={isSelected}
+                        onChange={() => onToggleRow(rowKey)}
+                        type="checkbox"
+                      />
+                    </td>
+                  )}
+                  <td className="number-cell trend-date-cell">{row.date}</td>
+                  {Array.from({ length: 10 }).map((_, index) => (
+                    <td className="trend-rank-cell" key={`${row.date}-${index + 1}`}>{row.ranks[index] ?? '-'}</td>
+                  ))}
+                  <td className="trend-summary-cell">{row.summary}</td>
+                </tr>
+              )
+            })}
             {Array.from({ length: blankRowCount }).map((_, rowIndex) => (
               <tr className="blank-row" key={`market-trend-blank-${rowIndex}`}>
-                {Array.from({ length: 12 }).map((__, cellIndex) => (
+                {Array.from({ length: isAdmin ? 13 : 12 }).map((__, cellIndex) => (
                   <td key={`market-trend-blank-${rowIndex}-${cellIndex}`}>&nbsp;</td>
                 ))}
               </tr>
@@ -3424,6 +3476,9 @@ function App() {
   const [marketEventsMeta, setMarketEventsMeta] = useState<RuntimeMeta | undefined>()
   const [isSavingMarketEvents, setIsSavingMarketEvents] = useState(false)
   const [isMarketEventsDirty, setIsMarketEventsDirty] = useState(false)
+  const [selectedMarketTrendRowKeys, setSelectedMarketTrendRowKeys] = useState<string[]>([])
+  const [pendingMarketTrendDeleteKeys, setPendingMarketTrendDeleteKeys] = useState<string[]>([])
+  const [isSavingMarketTrends, setIsSavingMarketTrends] = useState(false)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [refreshDataMessage, setRefreshDataMessage] = useState('')
   const [watchlistSortSettings, setWatchlistSortSettings] = useState<WatchlistSortSettings>(() => readStoredUserSettings().watchlistSort)
@@ -4569,6 +4624,19 @@ function App() {
     setIsMarketEventsDirty(true)
   }
 
+  const toggleSelectedMarketTrendRow = (rowKey: string) => {
+    setSelectedMarketTrendRowKeys((current) => (
+      current.includes(rowKey)
+        ? current.filter((key) => key !== rowKey)
+        : [...current, rowKey]
+    ))
+  }
+
+  const openMarketTrendDeleteConfirm = () => {
+    if (selectedMarketTrendRowKeys.length === 0) return
+    setPendingMarketTrendDeleteKeys(selectedMarketTrendRowKeys)
+  }
+
   const updateWatchlistSortSetting = (value: WatchlistSortKey) => {
     const nextSort = { primary: value, secondary: 'registered' as WatchlistSortKey }
     setWatchlistSortSettings(nextSort)
@@ -4679,6 +4747,29 @@ function App() {
       await recordApiLog('market-events', 'failure', error instanceof Error ? error.message : '시장 주요 이벤트 저장에 실패했습니다.')
     } finally {
       setIsSavingMarketEvents(false)
+    }
+  }
+
+  const removeSelectedMarketTrendRows = async () => {
+    if (!isAdminUser || pendingMarketTrendDeleteKeys.length === 0) return
+    const deleteKeys = new Set(pendingMarketTrendDeleteKeys)
+    const nextRows = apiMarketTrendRows.filter((row) => !deleteKeys.has(marketTrendRowKey(row)))
+
+    setIsSavingMarketTrends(true)
+    try {
+      const { data: authData } = supabase ? await supabase.auth.getSession() : { data: { session: null } }
+      const saved = await saveMarketTrends(nextRows, apiMetas.marketTrends, {
+        accessToken: authData.session?.access_token,
+      })
+      setApiMarketTrendRows(saved.rows)
+      setApiMetas((current) => ({ ...current, marketTrends: saved.meta }))
+      setSelectedMarketTrendRowKeys((current) => current.filter((key) => !deleteKeys.has(key)))
+      setPendingMarketTrendDeleteKeys([])
+      await recordApiLog('market-trends', 'success', '시장 트렌드 row를 삭제했습니다.', { rows: pendingMarketTrendDeleteKeys.length })
+    } catch (error) {
+      await recordApiLog('market-trends', 'failure', error instanceof Error ? error.message : '시장 트렌드 삭제에 실패했습니다.')
+    } finally {
+      setIsSavingMarketTrends(false)
     }
   }
 
@@ -5712,7 +5803,15 @@ function App() {
           onSave={saveMarketEventEntries}
         />
       ) : currentActivePage === 'market-trends' ? (
-        <MarketTrendsPage rows={apiMarketTrendRows} updateLabel={formatUpdateLabel(apiMetas.marketTrends)} />
+        <MarketTrendsPage
+          rows={apiMarketTrendRows}
+          updateLabel={formatUpdateLabel(apiMetas.marketTrends)}
+          isAdmin={isAdminUser}
+          selectedRowKeys={selectedMarketTrendRowKeys}
+          isSaving={isSavingMarketTrends}
+          onToggleRow={toggleSelectedMarketTrendRow}
+          onDeleteSelected={openMarketTrendDeleteConfirm}
+        />
       ) : currentActivePage === 'admin-logs' && isAdminUser ? (
         <AdminLogsPage logs={apiLogs} isLoading={isLoadingApiLogs} onRefresh={loadApiLogs} />
       ) : currentActivePage === 'board' && isAdminUser ? (
@@ -6238,6 +6337,22 @@ function App() {
               </button>
               <button className="modal-confirm" type="button" onClick={removeSelectedHoldingTrades}>
                 삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {pendingMarketTrendDeleteKeys.length > 0 && (
+        <div className="modal-backdrop" role="presentation">
+          <div aria-modal="true" className="confirm-modal" role="dialog">
+            <h3>선택한 시장 트렌드를 삭제할까요?</h3>
+            <p>선택한 시장 트렌드 row {pendingMarketTrendDeleteKeys.length}개를 삭제합니다. 저장되면 일반 계정에도 삭제된 row는 보이지 않습니다.</p>
+            <div className="modal-actions">
+              <button className="modal-cancel" disabled={isSavingMarketTrends} type="button" onClick={() => setPendingMarketTrendDeleteKeys([])}>
+                취소
+              </button>
+              <button className="modal-confirm" disabled={isSavingMarketTrends} type="button" onClick={() => void removeSelectedMarketTrendRows()}>
+                {isSavingMarketTrends ? '삭제 중...' : '삭제'}
               </button>
             </div>
           </div>

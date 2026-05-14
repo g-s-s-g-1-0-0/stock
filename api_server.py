@@ -85,7 +85,7 @@ class Handler(BaseHTTPRequestHandler):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Headers", "content-type")
+        self.send_header("Access-Control-Allow-Headers", "authorization, content-type")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -112,28 +112,36 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_PUT(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
-        if path != "/api/admin/market-events":
+        if path not in {"/api/admin/market-events", "/api/admin/market-trends"}:
             self._send_json(404, {"error": "not found"})
             return
         length = int(self.headers.get("content-length", "0"))
         try:
             payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
         except json.JSONDecodeError:
-            append_api_log("market-events", "failure", "invalid json")
+            append_api_log("market-trends" if path.endswith("market-trends") else "market-events", "failure", "invalid json")
             self._send_json(400, {"error": "invalid json"})
             return
-        if not isinstance(payload, dict) or not isinstance(payload.get("groups"), list):
-            append_api_log("market-events", "failure", "groups must be an array")
-            self._send_json(400, {"error": "groups must be an array"})
+        is_market_trends = path.endswith("market-trends")
+        required_key = "rows" if is_market_trends else "groups"
+        if not isinstance(payload, dict) or not isinstance(payload.get(required_key), list):
+            append_api_log("market-trends" if is_market_trends else "market-events", "failure", f"{required_key} must be an array")
+            self._send_json(400, {"error": f"{required_key} must be an array"})
             return
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         WEB_PUBLIC_API_DIR.mkdir(parents=True, exist_ok=True)
+        filename = "market-trends.json" if is_market_trends else "market-events.json"
         for directory in (CACHE_DIR, WEB_PUBLIC_API_DIR):
-            (directory / "market-events.json").write_text(
+            (directory / filename).write_text(
                 json.dumps(payload, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
-        append_api_log("market-events", "success", "market events saved", {"groups": len(payload.get("groups", []))})
+        append_api_log(
+            "market-trends" if is_market_trends else "market-events",
+            "success",
+            "market trends saved" if is_market_trends else "market events saved",
+            {required_key: len(payload.get(required_key, []))},
+        )
         self._send_json(200, payload)
 
     def do_POST(self) -> None:  # noqa: N802

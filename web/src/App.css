@@ -1461,6 +1461,10 @@
   min-width: 3920px;
 }
 
+.admin-market-trends-table {
+  min-width: 3960px;
+}
+
 .market-trends-table th:first-child,
 .market-trends-table td:first-child {
   position: sticky;
@@ -1504,6 +1508,55 @@
   width: 780px;
   min-width: 780px;
   max-width: 780px;
+}
+
+.admin-market-trends-table th:first-child,
+.admin-market-trends-table td:first-child {
+  width: 42px;
+  min-width: 42px;
+  max-width: 42px;
+}
+
+.admin-market-trends-table th:nth-child(2),
+.admin-market-trends-table td:nth-child(2) {
+  position: sticky;
+  left: 42px;
+  z-index: 3;
+  width: 108px;
+  min-width: 108px;
+  max-width: 108px;
+  background: var(--sheet-bg);
+  border-right: 0;
+  text-align: center !important;
+}
+
+.admin-market-trends-table th:nth-child(2) {
+  z-index: 5;
+  background: var(--sheet-head);
+}
+
+.admin-market-trends-table th:nth-child(2)::after,
+.admin-market-trends-table td:nth-child(2)::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 2px;
+  background: #64748b;
+  content: '';
+  pointer-events: none;
+}
+
+.admin-market-trends-table th:nth-child(n + 3):nth-child(-n + 12),
+.admin-market-trends-table td:nth-child(n + 3):nth-child(-n + 12) {
+  width: 210px;
+  min-width: 210px;
+  max-width: 210px;
+}
+
+.selected-market-trend-row td {
+  background: #eff6ff;
 }
 
 .trend-rank-cell,
@@ -3332,6 +3385,17 @@
 .admin-event-toolbar button:disabled {
   cursor: wait;
   opacity: 0.7;
+}
+
+.admin-event-toolbar .remove-selected-button {
+  border-color: rgba(239, 68, 68, 0.22);
+  background: #fff7f7;
+  color: #dc2626;
+}
+
+.admin-event-toolbar .remove-selected-button:hover:not(:disabled) {
+  border-color: rgba(239, 68, 68, 0.36);
+  background: #fee2e2;
 }
 
 .event-edit-input {

@@ -134,6 +134,45 @@ export async function saveMarketEvents<TGroup>(
   throw new Error('시장 주요 이벤트 저장에 실패했습니다.')
 }
 
+export async function saveMarketTrends<TRow>(
+  rows: TRow[],
+  meta?: RuntimeMeta,
+  options?: { accessToken?: string },
+) {
+  const payload = {
+    meta: {
+      ...meta,
+      kind: 'market-trends',
+      schedule: 'manual',
+      updatedAt: new Date().toISOString(),
+      lastSuccessfulRun: new Date().toISOString(),
+      failedReason: null,
+    },
+    rows,
+  }
+
+  const endpoints = ['/api/admin/market-trends', 'http://127.0.0.1:8787/api/admin/market-trends']
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'content-type': 'application/json',
+          ...(options?.accessToken ? { authorization: `Bearer ${options.accessToken}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      })
+      if (response.ok) {
+        return await response.json() as { meta: RuntimeMeta; rows: TRow[] }
+      }
+    } catch {
+      // Try the local API server fallback.
+    }
+  }
+
+  throw new Error('시장 트렌드 저장에 실패했습니다.')
+}
+
 export async function refreshAppData(tickers: string[], accessToken?: string, scope = 'analysis') {
   const endpoints = import.meta.env.DEV
     ? ['/api/admin/trigger-refresh', '/api/admin/refresh-data', 'http://127.0.0.1:8787/api/admin/refresh-data']
