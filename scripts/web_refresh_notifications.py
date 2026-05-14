@@ -1327,36 +1327,44 @@ def nasdaq_peak_email_body(snapshot: dict[str, Any]) -> str:
     direct_dist = float(snapshot.get("peakDirectDist") or 0)
     confirm_dist = float(snapshot.get("peakConfirmDist") or 0)
     trigger_rule = (
-        f"회복장 기준: QQQ 이격도 +{direct_dist:.0f}% 초과 또는 +{confirm_dist:.0f}% 초과에서 RSI 과열 둔화와 MACD 히스토그램 2일 연속 둔화"
+        f"회복장에서는 QQQ가 200일선보다 +{direct_dist:.0f}% 이상 높으면 바로 과열로 보고, +{confirm_dist:.0f}% 이상에서는 RSI와 MACD가 식는지까지 확인합니다."
         if snapshot.get("isRecoveryMarket")
-        else f"비회복장 기준: QQQ 이격도 +{direct_dist:.0f}% 초과에서 RSI 과열 둔화, 또는 +{confirm_dist:.0f}% 초과에서 RSI 과열 둔화와 MACD 히스토그램 2일 연속 둔화"
+        else f"비회복장에서는 QQQ가 200일선보다 +{direct_dist:.0f}% 이상 높고 RSI가 꺾이거나, +{confirm_dist:.0f}% 이상에서 RSI와 MACD가 함께 식으면 과열로 봅니다."
     )
     return f"""
     <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;max-width:640px;">
       <p style="font-size:16px;font-weight:bold;color:#333;margin:0 0 12px 0;">
-        QQQ가 동적 고점 청산 구간에 진입했습니다.
+        QQQ 과열 청산 조건이 켜졌습니다.
       </p>
+      <div style="border:1px solid #fde68a;background:#fffbeb;border-radius:10px;padding:12px 14px;margin:0 0 14px 0;">
+        <div style="font-weight:bold;margin-bottom:6px;">핵심만 보면</div>
+        <div>QQQ가 200일선보다 많이 올라온 상태에서 상승 힘이 약해지는 신호가 나왔습니다.</div>
+        <div>이 알림은 시장 공통 청산 조건이 충족됐다는 뜻입니다.</div>
+        <div>웹서비스는 신규 매수와 추가매수를 막고, 보유 종목은 청산 기준으로 점검합니다.</div>
+        <div style="margin-top:6px;">개별 종목의 실제 청산 반영은 이어서 발송되는 투자의견 변경 메일이나 웹의 보유 현황에서 확인해 주세요.</div>
+      </div>
       <div style="margin:0 0 14px 0;">
+        <div style="font-weight:bold;margin-bottom:6px;">시장 위치</div>
         <div><strong>QQQ 현재가:</strong> {snapshot['currentPrice']:.2f}</div>
         <div><strong>QQQ 200일 이평선:</strong> {snapshot['ma200']:.2f}</div>
         <div><strong>200일선 대비:</strong> {fmt_signed(snapshot.get('premiumPercent'), '%')}</div>
         <div><strong>최근 60거래일 최저 이격도:</strong> {fmt_signed(snapshot.get('recent60MinPremiumPercent'), '%')}</div>
         <div><strong>시장 국면:</strong> {regime}</div>
-        <div><strong>직접 청산선:</strong> +{direct_dist:.0f}% ({snapshot['directThreshold']:.2f})</div>
-        <div><strong>확인 청산선:</strong> +{confirm_dist:.0f}% ({snapshot['confirmThreshold']:.2f})</div>
+        <div><strong>직접 청산선:</strong> +{direct_dist:.0f}% ({snapshot['directThreshold']:.2f}) - 이 위면 과열로 바로 판단</div>
+        <div><strong>확인 청산선:</strong> +{confirm_dist:.0f}% ({snapshot['confirmThreshold']:.2f}) - 이 위에서는 RSI/MACD 둔화까지 확인</div>
       </div>
       <div style="margin:0 0 14px 0;">
+        <div style="font-weight:bold;margin-bottom:6px;">힘이 식는지 보는 지표</div>
         <div><strong>QQQ 주봉 RSI(14):</strong> {fmt_number(snapshot.get('weeklyRsi'))}</div>
         <div><strong>QQQ 일봉 RSI(14):</strong> {fmt_number(snapshot.get('dailyRsi'))}</div>
         <div><strong>QQQ 일봉 RSI 전일:</strong> {fmt_number(snapshot.get('dailyRsiPrev'))}</div>
         <div><strong>QQQ MACD Histogram (D/D-1/D-2):</strong> {fmt_signed(snapshot.get('macdHist'))} / {fmt_signed(snapshot.get('macdHistD1'))} / {fmt_signed(snapshot.get('macdHistD2'))}</div>
       </div>
       <p>
-        {html.escape(trigger_rule)} 조건을 충족했습니다.
-        기존 고정 +14% 기준보다 급락 후 회복장은 더 넓게 보고, 비회복장에서는 RSI와 MACD 둔화를 함께 확인합니다.
+        <strong>이번 알림이 뜬 이유:</strong> {html.escape(trigger_rule)}
       </p>
       <p>
-        웹서비스는 이 시장 과열 알림을 먼저 발송합니다. 개별 종목의 투자의견 변경 메일에는 같은 QQQ 국면과 차단선이 판단 근거로 함께 반영됩니다.
+        <strong>지금 할 일:</strong> 새 매수와 추가매수는 보류하고, 보유 종목은 웹의 보유 현황 또는 이어지는 투자의견 변경 메일에서 실제 청산 반영 여부를 확인해 주세요.
       </p>
       <p style="color:#888;font-size:12px;margin:0;">
         발송 시각 (한국): {html.escape(kst_date)}<br>
@@ -1397,7 +1405,7 @@ def send_nasdaq_peak_notifications() -> int:
         print("No recipients for nasdaq peak notification.")
         return 0
 
-    subject = "나스닥 고점 구간 알림 (매도 시그널)"
+    subject = "나스닥 과열 청산 조건 알림"
     body = nasdaq_peak_email_body(snapshot)
     sent = 0
     for recipient in recipients:

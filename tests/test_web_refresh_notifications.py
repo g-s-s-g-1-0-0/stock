@@ -533,7 +533,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 self.notifications.send_email = original_send_email
 
         self.assertEqual(1, sent)
-        self.assertEqual([("user@example.com", "나스닥 고점 구간 알림 (매도 시그널)")], sent_messages)
+        self.assertEqual([("user@example.com", "나스닥 과열 청산 조건 알림")], sent_messages)
         self.assertIs(state["nasdaqPeak"]["sent"], True)
 
 

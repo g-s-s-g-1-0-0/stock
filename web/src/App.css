@@ -924,6 +924,7 @@
 
 .trading-log-table {
   min-width: 1180px;
+  height: 100%;
 }
 
 .long-term-trading-log-table {

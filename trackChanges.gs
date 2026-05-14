@@ -680,8 +680,8 @@ const Utils = {
     QQQ_RECOVERY_PEAK_CONFIRM_DIST: 18,
     QQQ_PEAK_RSI_THRESHOLD: 65,
     UPPER_EXIT_MAX_WAIT_DAYS:       5,
-    HOLD_RESTORE_DROP:              0.03,
-    HOLD_RESTORE_MIN_TRADING_DAYS:  3
+    HOLD_RESTORE_DROP:              0.05,
+    HOLD_RESTORE_MIN_TRADING_DAYS:  5
   },
 
   /** 시장트렌드 순위 키워드 ↔ 가치분석 산업 토큰 연결 (완전일치 외 보강용) */
