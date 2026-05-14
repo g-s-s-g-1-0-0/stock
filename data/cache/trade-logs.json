@@ -200,6 +200,36 @@
       "status": "보유 중"
     },
     {
+      "slotId": "SGML_E_20260514_1",
+      "ticker": "SGML",
+      "name": "Sigma Lithium Corporation - common shares",
+      "market": "US",
+      "currentPrice": "$18.83",
+      "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+      "buyDate": "2026.05.14",
+      "buyPrice": "$18.83",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중"
+    },
+    {
+      "slotId": "SGML_F_20260514_2",
+      "ticker": "SGML",
+      "name": "Sigma Lithium Corporation - common shares",
+      "market": "US",
+      "currentPrice": "$18.83",
+      "strategy": "F. 200일선 상방 & BB 극단 저점",
+      "buyDate": "2026.05.14",
+      "buyPrice": "$18.83",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중"
+    },
+    {
       "slotId": "039030_F_20260514_1",
       "ticker": "039030",
       "name": "이오테크닉스",

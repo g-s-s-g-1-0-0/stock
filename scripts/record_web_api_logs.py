@@ -36,7 +36,7 @@ REENTRY_DAYS = 10
 REENTRY_DROP = 0.03
 HOLD_RESTORE_DROP = 0.03
 HOLD_RESTORE_MIN_TRADING_DAYS = 3
-MAX_OPEN_PER_STRATEGY = 1
+MAX_OPEN_PER_STRATEGY = 2
 RESTORE_FAMILY_STRATEGIES = {"E", "F"}
 VALUATION_LOG_FIELDS = [
     ("marketCap", "시가총액"),
@@ -203,28 +203,6 @@ def open_trade_counts(trades: list[dict[str, Any]]) -> dict[tuple[str, str], int
             continue
         counts[key] = counts.get(key, 0) + 1
     return counts
-
-
-def prune_duplicate_open_strategy_slots(trades: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Keep one open slot per ticker/strategy; closed history remains untouched."""
-    seen_open_slots: set[tuple[str, str]] = set()
-    pruned: list[dict[str, Any]] = []
-    for trade in trades:
-        if str(trade.get("status") or "") != "보유 중":
-            pruned.append(trade)
-            continue
-        key = (
-            str(trade.get("ticker") or "").strip().upper(),
-            strategy_code(trade.get("strategy")),
-        )
-        if not key[0] or not key[1]:
-            pruned.append(trade)
-            continue
-        if key in seen_open_slots:
-            continue
-        seen_open_slots.add(key)
-        pruned.append(trade)
-    return pruned
 
 
 def open_trades_by_slot(trades: list[dict[str, Any]]) -> dict[tuple[str, str], list[dict[str, Any]]]:
@@ -446,7 +424,7 @@ def update_trade_logs(
 ) -> None:
     existing = load_json(TRADE_LOG_PUBLIC_PATH, load_json(TRADE_LOG_CACHE_PATH, {"rows": []}))
     rows = existing.get("rows", []) if isinstance(existing, dict) else []
-    trades = prune_duplicate_open_strategy_slots([row for row in rows if isinstance(row, dict)])
+    trades = [row for row in rows if isinstance(row, dict)]
     stocks_by_symbol = stocks_by_ticker(stocks)
     today = kst_trade_date()
     today_date = parse_trade_date(today) or datetime.now(timezone.utc).astimezone(KST).date()
