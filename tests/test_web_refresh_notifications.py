@@ -35,16 +35,20 @@ class WebRefreshWorkflowTest(unittest.TestCase):
     def test_workflow_sends_emails_before_committing_refreshed_state(self) -> None:
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
+        wait_index = workflow.index("- name: Wait until scheduled publish time")
         send_opinion_index = workflow.index("- name: Send opinion change emails")
         send_peak_index = workflow.index("- name: Send Nasdaq peak emails")
         commit_state_index = workflow.index("- name: Commit refreshed caches and notification state")
         deploy_index = workflow.index("- name: Deploy refreshed web")
         failure_index = workflow.index("- name: Notify admins on failure")
 
+        self.assertLess(wait_index, send_opinion_index)
         self.assertLess(send_opinion_index, commit_state_index)
         self.assertLess(send_peak_index, commit_state_index)
         self.assertLess(commit_state_index, deploy_index)
         self.assertLess(commit_state_index, failure_index)
+        self.assertIn('cron: "55 0-22/2 * * *"', workflow)
+        self.assertIn("WEB_REFRESH_PUBLISH_AT=$PUBLISH_AT", workflow)
         self.assertIn("git add data/cache web/public/api", workflow)
         self.assertIn('git commit -m "Update scheduled web data caches"', workflow)
 

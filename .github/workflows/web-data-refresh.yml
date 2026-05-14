@@ -2,9 +2,10 @@ name: Web data refresh
 
 on:
   schedule:
-    # Backup technical refresh every 2 hours at KST even hours + 10 minutes.
+    # Backup technical refresh every 2 hours, 5 minutes before KST even hours.
+    # The job waits until the exact hour before sending notifications and publishing caches.
     # External cron-job.org dispatches remain the primary scheduler.
-    - cron: "10 1-23/2 * * *"
+    - cron: "55 0-22/2 * * *"
   workflow_dispatch:
     inputs:
       refresh_scope:
@@ -84,6 +85,7 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ]; then
             TASKS="technical"
             SEND_NOTIFICATIONS="true"
+            PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0); publish_at = publish_at + timedelta(hours=1) if publish_at <= now else publish_at; print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z"))')"
           else
             case "${{ inputs.refresh_scope }}" in
               all) TASKS="valuation technical market-trends market-events" ;;
@@ -95,11 +97,14 @@ jobs:
               *) TASKS="valuation technical market-trends market-events" ;;
             esac
             SEND_NOTIFICATIONS="${{ inputs.send_notifications || 'true' }}"
+            PUBLISH_AT=""
           fi
           echo "REFRESH_TASKS=$TASKS" >> "$GITHUB_ENV"
           echo "SEND_NOTIFICATIONS=$SEND_NOTIFICATIONS" >> "$GITHUB_ENV"
+          echo "WEB_REFRESH_PUBLISH_AT=$PUBLISH_AT" >> "$GITHUB_ENV"
           echo "Resolved refresh tasks: $TASKS"
           echo "Send notifications: $SEND_NOTIFICATIONS"
+          echo "Publish at: ${PUBLISH_AT:-immediate}"
 
       - name: Skip fresh scheduled refresh
         if: ${{ github.event_name == 'schedule' }}
@@ -141,6 +146,22 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' }}
         continue-on-error: true
         run: python scripts/report_operational_scale.py
+
+      - name: Wait until scheduled publish time
+        if: ${{ env.SKIP_REFRESH != 'true' && env.WEB_REFRESH_PUBLISH_AT != '' }}
+        run: |
+          python - <<'PY'
+          import os
+          import time
+          from datetime import datetime, timezone
+
+          raw_publish_at = os.environ.get("WEB_REFRESH_PUBLISH_AT", "")
+          publish_at = datetime.fromisoformat(raw_publish_at.replace("Z", "+00:00")).astimezone(timezone.utc)
+          wait_seconds = max(0, int((publish_at - datetime.now(timezone.utc)).total_seconds()))
+          print(f"Waiting {wait_seconds}s until scheduled publish time: {raw_publish_at}")
+          if wait_seconds:
+              time.sleep(wait_seconds)
+          PY
 
       - name: Send opinion change emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}

@@ -1,5 +1,6 @@
 import importlib
 import json
+import os
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -78,6 +79,17 @@ class PipelineValuationCacheTest(unittest.TestCase):
             self.pipeline.WEB_PUBLIC_API_DIR = original_web_public_api_dir
             self.pipeline.fetch_valuation = original_fetch_valuation
             self.pipeline.now_iso = original_now_iso
+
+    def test_publish_iso_uses_scheduled_publish_time(self) -> None:
+        original_value = os.environ.get("WEB_REFRESH_PUBLISH_AT")
+        os.environ["WEB_REFRESH_PUBLISH_AT"] = "2026-05-14T15:00:00Z"
+        try:
+            self.assertEqual("2026-05-14T15:00:00+00:00", self.pipeline.publish_iso())
+        finally:
+            if original_value is None:
+                os.environ.pop("WEB_REFRESH_PUBLISH_AT", None)
+            else:
+                os.environ["WEB_REFRESH_PUBLISH_AT"] = original_value
 
 
 if __name__ == "__main__":

@@ -49,6 +49,17 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
 
 
+def publish_iso(default: str | None = None) -> str:
+    raw_publish_at = os.environ.get("WEB_REFRESH_PUBLISH_AT", "").strip()
+    if not raw_publish_at:
+        return default or now_iso()
+    try:
+        publish_at = datetime.fromisoformat(raw_publish_at.replace("Z", "+00:00"))
+    except ValueError:
+        return default or now_iso()
+    return publish_at.astimezone(timezone.utc).isoformat(timespec="seconds")
+
+
 def clean_stock_name(name: Any) -> str:
     value = str(name or "").strip()
     if not value:
@@ -629,7 +640,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
             "meta": {
                 **existing_meta,
                 "kind": "technical",
-                "updatedAt": now_iso(),
+                "updatedAt": publish_iso(),
                 "failedReason": "refresh universe is empty; preserved existing technical cache",
             },
         }
@@ -637,7 +648,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
     valuation_rows = read_cache("valuation").get("rows", {})
     errors: list[dict[str, str]] = []
     successful_rows = 0
-    refreshed_at = now_iso()
+    refreshed_at = publish_iso()
     qqq_market_state: dict[str, Any] = {}
     vix_today: float | None = None
     try:
