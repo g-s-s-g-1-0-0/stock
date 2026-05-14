@@ -4156,7 +4156,7 @@ function App() {
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
     ? '장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 보유 종목에서 직접 처리합니다.'
-    : 'A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%) ※ 장기 보유: 60일 수익/120일 최대'
+    : 'A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%)'
   const investingDays = daysFromFirstTrade(scopedTrades)
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = !isAdminUser && (activePage === 'board' || activePage === 'admin-logs') ? 'home' : activePage
