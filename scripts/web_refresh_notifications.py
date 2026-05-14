@@ -63,6 +63,8 @@ class Recipient:
     email: str
     is_admin: bool
     preferences: dict[str, Any]
+    slack_webhook_url: str = ""
+    slack_channel_name: str = ""
 
 
 def read_json(path: Path) -> Any:
@@ -445,6 +447,18 @@ def load_recipients() -> list[Recipient]:
     settings_rows = supabase_request("/rest/v1/user_settings?select=owner_id,notification_preferences")
     profile_rows = supabase_request("/rest/v1/profiles?select=id,email,is_admin")
     profiles = {row.get("id"): row for row in profile_rows}
+    try:
+        integration_rows = supabase_request(
+            "/rest/v1/notification_integrations?provider=eq.slack&select=owner_id,webhook_url,channel_name"
+        )
+    except Exception as exc:
+        print(f"Slack integration lookup skipped: {exc}")
+        integration_rows = []
+    slack_integrations = {
+        str(row.get("owner_id") or ""): row
+        for row in integration_rows
+        if row.get("webhook_url")
+    }
     recipients: list[Recipient] = []
 
     for row in settings_rows:
@@ -452,13 +466,18 @@ def load_recipients() -> list[Recipient]:
         profile = profiles.get(row.get("owner_id"), {})
         fallback_email = str(profile.get("email") or "").strip()
         target_email = str(prefs.get("recipientEmail") or fallback_email).strip()
-        if not target_email:
+        owner_id = str(row.get("owner_id") or "")
+        slack_integration = slack_integrations.get(owner_id, {})
+        slack_webhook_url = str(slack_integration.get("webhook_url") or "").strip()
+        if not target_email and not slack_webhook_url:
             continue
         recipients.append(Recipient(
-            owner_id=str(row.get("owner_id") or ""),
+            owner_id=owner_id,
             email=target_email,
             is_admin=profile.get("is_admin") is True,
             preferences=prefs,
+            slack_webhook_url=slack_webhook_url,
+            slack_channel_name=str(slack_integration.get("channel_name") or "").strip(),
         ))
     return dedupe_recipients(recipients)
 
@@ -501,7 +520,7 @@ def dedupe_recipients(recipients: list[Recipient]) -> list[Recipient]:
     seen: set[str] = set()
     result: list[Recipient] = []
     for recipient in recipients:
-        key = recipient.email.lower()
+        key = recipient.owner_id or recipient.email.lower() or recipient.slack_webhook_url
         if key in seen:
             continue
         seen.add(key)
@@ -512,6 +531,13 @@ def dedupe_recipients(recipients: list[Recipient]) -> list[Recipient]:
 def enabled(recipient: Recipient, key: str, *, default: bool = True) -> bool:
     value = recipient.preferences.get(key)
     return value if isinstance(value, bool) else default
+
+
+def delivery_channel(recipient: Recipient) -> str:
+    requested = str(recipient.preferences.get("notificationChannel") or "email").strip()
+    if requested == "slack" and recipient.preferences.get("slackConnected") is True and recipient.slack_webhook_url:
+        return "slack"
+    return "email"
 
 
 def smtp_port() -> int:
@@ -593,6 +619,43 @@ def send_brevo_email(to_email: str, subject: str, html_body: str) -> None:
         raise RuntimeError(f"Brevo email request failed with HTTP {exc.code}: {detail}") from exc
 
 
+def html_to_text(html_body: str) -> str:
+    text = str(html_body or "")
+    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
+    text = re.sub(r"(?i)</(p|div|li|h[1-6])>", "\n", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = html.unescape(text)
+    lines = [line.strip() for line in text.splitlines()]
+    compact_lines: list[str] = []
+    blank = False
+    for line in lines:
+        if not line:
+            if not blank:
+                compact_lines.append("")
+            blank = True
+            continue
+        compact_lines.append(line)
+        blank = False
+    return "\n".join(compact_lines).strip()
+
+
+def send_slack_message(webhook_url: str, subject: str, html_body: str) -> None:
+    if not webhook_url:
+        raise RuntimeError("Slack webhook URL이 설정되지 않았습니다.")
+    text = f"*{subject}*\n{html_to_text(html_body)}".strip()
+    if len(text) > 3500:
+        text = text[:3490].rstrip() + "\n..."
+    request = urllib.request.Request(
+        webhook_url,
+        data=json.dumps({"text": text}).encode("utf-8"),
+        headers={"content-type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        if response.status >= 300:
+            raise RuntimeError(f"Slack webhook request failed with {response.status}.")
+
+
 def send_email(to_email: str, subject: str, html_body: str) -> None:
     provider = os.environ.get("EMAIL_PROVIDER", "").strip().lower() or "smtp"
     try:
@@ -626,6 +689,22 @@ def send_email(to_email: str, subject: str, html_body: str) -> None:
             wait_seconds = min(2 ** attempt, 10)
             print(f"Email send failed for {to_email}; retrying in {wait_seconds}s ({attempt}/{attempts}): {exc}")
             time.sleep(wait_seconds)
+
+
+def send_notification(recipient: Recipient, subject: str, html_body: str) -> str:
+    if delivery_channel(recipient) == "slack":
+        try:
+            send_slack_message(recipient.slack_webhook_url, subject, html_body)
+            return "slack"
+        except Exception as exc:
+            if not recipient.email:
+                raise
+            print(f"Slack send failed for {recipient.owner_id or recipient.email}: {exc}; falling back to email.")
+
+    if not recipient.email:
+        raise RuntimeError("이메일 수신처가 없어 알림을 보낼 수 없습니다.")
+    send_email(recipient.email, subject, html_body)
+    return "email"
 
 
 def base64url(data: bytes) -> str:
@@ -1201,7 +1280,7 @@ def send_weekly_trend_notifications() -> int:
     body = weekly_trend_email_body(trend)
     sent = 0
     for recipient in recipients:
-        send_email(recipient.email, subject, append_notification_footer(body, recipient, "weeklyTrendReport"))
+        send_notification(recipient, subject, append_notification_footer(body, recipient, "weeklyTrendReport"))
         sent += 1
     print(f"Sent weekly trend notifications: {sent}")
     return sent
@@ -1322,7 +1401,7 @@ def send_nasdaq_peak_notifications() -> int:
     body = nasdaq_peak_email_body(snapshot)
     sent = 0
     for recipient in recipients:
-        send_email(recipient.email, subject, append_notification_footer(body, recipient, "nasdaqPeakEmail"))
+        send_notification(recipient, subject, append_notification_footer(body, recipient, "nasdaqPeakEmail"))
         sent += 1
 
     state["nasdaqPeak"] = {
@@ -1423,7 +1502,7 @@ def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuatio
         if not candidates:
             continue
         subject = "[실적발표 D-1] " + ", ".join(stock["ticker"] for stock in candidates[:8]) + " — 내일 발표"
-        send_email(recipient.email, subject, append_notification_footer(earnings_email_body(candidates), recipient, "earningsDayBefore"))
+        send_notification(recipient, subject, append_notification_footer(earnings_email_body(candidates), recipient, "earningsDayBefore"))
         sent += 1
     print(f"Sent earnings notifications: {sent}")
     return sent
@@ -1464,7 +1543,7 @@ def send_opinion_notifications(
     body = opinion_email_body(changes, *opinion_groups(current))
     sent = 0
     for recipient in recipients:
-        send_email(recipient.email, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
+        send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
         sent += 1
     if reset_active:
         clear_runtime_reset()
@@ -1494,7 +1573,7 @@ def send_trade_exit_notifications(
     body = opinion_email_body(changes, *opinion_groups(DEFAULT_CURRENT_STOCKS, current))
     sent = 0
     for recipient in recipients:
-        send_email(recipient.email, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
+        send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
         sent += 1
     print(f"Sent trade exit notifications: {sent}")
     return sent
@@ -1516,7 +1595,7 @@ def send_admin_failure(message: str) -> int:
     body = admin_failure_body(message)
     sent = 0
     for recipient in recipients:
-        send_email(recipient.email, subject, append_notification_footer(body, recipient, "adminAutoUpdateFailureEmail"))
+        send_notification(recipient, subject, append_notification_footer(body, recipient, "adminAutoUpdateFailureEmail"))
         sent += 1
     print(f"Sent admin failure notifications: {sent}")
     return sent

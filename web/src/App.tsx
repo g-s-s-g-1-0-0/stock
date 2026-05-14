@@ -3428,6 +3428,7 @@ function App() {
   const [refreshDataMessage, setRefreshDataMessage] = useState('')
   const [watchlistSortSettings, setWatchlistSortSettings] = useState<WatchlistSortSettings>(() => readStoredUserSettings().watchlistSort)
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(() => readStoredUserSettings().notificationPreferences)
+  const [connectingNotificationChannel, setConnectingNotificationChannel] = useState<NotificationIntegrationChannel | null>(null)
   const [investmentType, setInvestmentType] = useState<InvestmentType | null>(() => readStoredUserSettings().investmentType)
   const [onboardingInvestmentType, setOnboardingInvestmentType] = useState<InvestmentType>(DEFAULT_INVESTMENT_TYPE)
   const [isWatchlistSortOpen, setIsWatchlistSortOpen] = useState(false)
@@ -4593,20 +4594,39 @@ function App() {
     void persistUserSettings(watchlistSortSettings, nextPreferences)
   }
 
-  const connectNotificationChannel = (channel: NotificationIntegrationChannel) => {
-    const connectedAt = new Date().toISOString()
-    const nextPreferences: NotificationPreferences = {
-      ...notificationPreferences,
-      notificationChannel: channel,
-      ...(channel === 'kakaoTalk'
-        ? { kakaoTalkConnected: true, kakaoTalkConnectedAt: connectedAt }
-        : { slackConnected: true, slackConnectedAt: connectedAt }),
+  const connectNotificationChannel = async (channel: NotificationIntegrationChannel) => {
+    if (channel === 'kakaoTalk') return
+    if (!userSession || !supabase) {
+      setAuthInfoMessage('슬랙 알림을 연동하려면 먼저 로그인해 주세요.')
+      setIsLoginOpen(true)
+      return
     }
-    setNotificationPreferences(nextPreferences)
-    void persistUserSettings(watchlistSortSettings, nextPreferences)
+
+    setConnectingNotificationChannel(channel)
+    try {
+      const { data } = await supabase.auth.getSession()
+      const accessToken = data.session?.access_token
+      if (!accessToken) {
+        throw new Error('로그인이 필요합니다.')
+      }
+      const response = await fetch('/api/slack/oauth/start', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok || !payload?.url) {
+        throw new Error(payload?.error || 'Slack 연동을 시작하지 못했습니다.')
+      }
+      window.location.assign(String(payload.url))
+    } catch (error) {
+      setAuthInfoMessage(error instanceof Error ? error.message : 'Slack 연동을 시작하지 못했습니다.')
+      setConnectingNotificationChannel(null)
+    }
   }
 
-  const disconnectNotificationChannel = (channel: NotificationIntegrationChannel) => {
+  const disconnectNotificationChannel = async (channel: NotificationIntegrationChannel) => {
     const nextPreferences: NotificationPreferences = {
       ...notificationPreferences,
       notificationChannel: notificationPreferences.notificationChannel === channel ? 'email' : notificationPreferences.notificationChannel,
@@ -4616,6 +4636,21 @@ function App() {
     }
     setNotificationPreferences(nextPreferences)
     void persistUserSettings(watchlistSortSettings, nextPreferences)
+    if (channel !== 'slack' || !supabase) return
+
+    try {
+      const { data } = await supabase.auth.getSession()
+      const accessToken = data.session?.access_token
+      if (!accessToken) return
+      await fetch('/api/slack/integration', {
+        method: 'DELETE',
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
+      })
+    } catch {
+      // Local preference already falls back to email; the server cleanup can be retried by reconnecting/disconnecting later.
+    }
   }
 
   const saveMarketEventEntries = async () => {
@@ -5829,6 +5864,7 @@ function App() {
                         const isConnected = isNotificationIntegrationConnected(option.channel)
                         const isActive = notificationPreferences.notificationChannel === option.channel
                         const isUnavailable = Boolean(option.disabled)
+                        const isConnecting = connectingNotificationChannel === option.channel
 
                         return (
                           <div
@@ -5837,7 +5873,7 @@ function App() {
                           >
                             <button
                               className={`notification-channel-button ${option.channel === 'kakaoTalk' ? 'kakao-card' : 'slack-card'} ${isActive ? 'active' : ''} ${isUnavailable ? 'unavailable' : ''}`}
-                              disabled={isActive || isUnavailable}
+                              disabled={isActive || isUnavailable || isConnecting}
                               type="button"
                               onClick={() => connectNotificationChannel(option.channel)}
                             >
@@ -5855,7 +5891,7 @@ function App() {
                               </span>
                               <span>
                                 <strong>{option.shortTitle}</strong>
-                                <small>{isUnavailable ? '준비중' : isActive ? '수신 중' : isConnected ? '연동됨' : '연동'}</small>
+                                <small>{isUnavailable ? '준비중' : isConnecting ? '연동 중' : isActive ? '수신 중' : isConnected ? '연동됨' : '연동'}</small>
                               </span>
                             </button>
                             {isConnected && !isUnavailable && (
@@ -5871,7 +5907,7 @@ function App() {
                         )
                       })}
                     </div>
-                    <p className="notification-channel-demo-note">지금은 클릭 즉시 저장되는 화면 데모입니다.</p>
+                    <p className="notification-channel-demo-note">슬랙은 승인 후 선택한 채널로 알림을 보냅니다. 연동이 없으면 이메일로 돌아갑니다.</p>
                   </div>
                   <div className="account-alert-card">
                     <div className="account-alert-header">

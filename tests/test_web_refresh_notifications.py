@@ -129,6 +129,56 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertNotIn("'매수'</span>", body)
         self.assertNotIn(">매수</strong><br>", body)
 
+    def test_send_notification_uses_slack_when_selected_and_connected(self) -> None:
+        sent_slack: list[tuple[str, str, str]] = []
+        sent_email: list[tuple[str, str, str]] = []
+        original_send_slack = self.notifications.send_slack_message
+        original_send_email = self.notifications.send_email
+        self.notifications.send_slack_message = lambda webhook, subject, body: sent_slack.append((webhook, subject, body))
+        self.notifications.send_email = lambda email, subject, body: sent_email.append((email, subject, body))
+
+        try:
+            channel = self.notifications.send_notification(
+                self.notifications.Recipient(
+                    owner_id="user-1",
+                    email="user@example.com",
+                    is_admin=False,
+                    preferences={"notificationChannel": "slack", "slackConnected": True},
+                    slack_webhook_url="https://hooks.slack.test/abc",
+                ),
+                "테스트",
+                "<p>본문<br>내용</p>",
+            )
+        finally:
+            self.notifications.send_slack_message = original_send_slack
+            self.notifications.send_email = original_send_email
+
+        self.assertEqual("slack", channel)
+        self.assertEqual([("https://hooks.slack.test/abc", "테스트", "<p>본문<br>내용</p>")], sent_slack)
+        self.assertEqual([], sent_email)
+
+    def test_send_notification_falls_back_to_email_without_slack_webhook(self) -> None:
+        sent_email: list[tuple[str, str, str]] = []
+        original_send_email = self.notifications.send_email
+        self.notifications.send_email = lambda email, subject, body: sent_email.append((email, subject, body))
+
+        try:
+            channel = self.notifications.send_notification(
+                self.notifications.Recipient(
+                    owner_id="user-1",
+                    email="user@example.com",
+                    is_admin=False,
+                    preferences={"notificationChannel": "slack", "slackConnected": True},
+                ),
+                "테스트",
+                "<p>본문</p>",
+            )
+        finally:
+            self.notifications.send_email = original_send_email
+
+        self.assertEqual("email", channel)
+        self.assertEqual([("user@example.com", "테스트", "<p>본문</p>")], sent_email)
+
     def test_opinion_changes_marks_sell_to_buy_as_reentry_with_entry_price(self) -> None:
         with TemporaryDirectory() as temp_dir:
             previous = Path(temp_dir) / "previous.json"
