@@ -36,6 +36,7 @@ REENTRY_DAYS = 10
 REENTRY_DROP = 0.03
 HOLD_RESTORE_DROP = 0.05
 HOLD_RESTORE_MIN_TRADING_DAYS = 5
+HOLD_RESTORE_SIGNAL_CONFIRMATIONS = 2
 MAX_OPEN_PER_STRATEGY = 2
 RESTORE_FAMILY_STRATEGIES = {"E", "F"}
 VALUATION_LOG_FIELDS = [
@@ -78,6 +79,17 @@ def supabase_url() -> str:
 
 def service_key() -> str:
     return os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+
+
+def publish_iso(default: str | None = None) -> str:
+    raw_publish_at = os.environ.get("WEB_REFRESH_PUBLISH_AT", "").strip()
+    if not raw_publish_at:
+        return default or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    try:
+        publish_at = datetime.fromisoformat(raw_publish_at.replace("Z", "+00:00"))
+    except ValueError:
+        return default or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    return publish_at.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 def supabase_request(path: str, method: str = "GET", payload: Any | None = None) -> Any | None:
@@ -343,6 +355,57 @@ def hold_restore_allowed(trade: dict[str, Any], current_price: float | None, tod
     return drop_ok or days_ok
 
 
+def restore_signal_counts(trade: dict[str, Any]) -> dict[str, int]:
+    raw_counts = trade.get("restoreSignalCounts")
+    if not isinstance(raw_counts, dict):
+        return {}
+    counts: dict[str, int] = {}
+    for raw_strategy, raw_count in raw_counts.items():
+        strategy = strategy_code(raw_strategy)
+        if not strategy:
+            continue
+        try:
+            counts[strategy] = int(raw_count)
+        except (TypeError, ValueError):
+            continue
+    return counts
+
+
+def set_restore_signal_count(trade: dict[str, Any], strategy: str, count: int) -> None:
+    counts = restore_signal_counts(trade)
+    strategy = strategy_code(strategy)
+    if not strategy:
+        return
+    if count <= 0:
+        counts.pop(strategy, None)
+    else:
+        counts[strategy] = count
+    if counts:
+        trade["restoreSignalCounts"] = counts
+    else:
+        trade.pop("restoreSignalCounts", None)
+
+
+def confirm_restore_signal(trade: dict[str, Any], strategy: str) -> bool:
+    strategy = strategy_code(strategy)
+    if not strategy:
+        return False
+    count = restore_signal_counts(trade).get(strategy, 0) + 1
+    set_restore_signal_count(trade, strategy, count)
+    return count >= HOLD_RESTORE_SIGNAL_CONFIRMATIONS
+
+
+def clear_stale_restore_signal_counts(trade: dict[str, Any], active_codes: set[str]) -> None:
+    counts = restore_signal_counts(trade)
+    if not counts:
+        return
+    next_counts = {strategy: count for strategy, count in counts.items() if strategy in active_codes}
+    if next_counts:
+        trade["restoreSignalCounts"] = next_counts
+    else:
+        trade.pop("restoreSignalCounts", None)
+
+
 def restore_family_open_trades(
     current_open_trades: dict[tuple[str, str], list[dict[str, Any]]],
     ticker: str,
@@ -400,7 +463,7 @@ def close_trade(
 ) -> None:
     result = return_pct(trade.get("buyPrice"), sell_price)
     trade["sellDate"] = today
-    trade["sellTimestamp"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    trade["sellTimestamp"] = publish_iso()
     trade["sellPrice"] = sell_price or "-"
     trade["returnPct"] = result
     trade["holdingDays"] = "-"
@@ -464,6 +527,7 @@ def update_trade_logs(
             closed += 1
             continue
         strategy = strategy_code(trade.get("strategy"))
+        clear_stale_restore_signal_counts(trade, entry_codes)
         buy_price = parse_price(trade.get("buyPrice"))
         current_price = parse_price(sell_price)
         if strategy in {"E", "F"} and buy_price and current_price and current_price >= buy_price * 1.20:
@@ -502,14 +566,15 @@ def update_trade_logs(
                     continue
             family_trades = restore_family_open_trades(current_open_trades, ticker, code)
             if family_trades:
-                family_restore_source_trades = [
-                    trade
-                    for trade in family_trades
-                    if hold_restore_allowed(trade, current_price, today_date)
-                ]
-                if not family_restore_source_trades:
-                    for trade in family_trades:
+                family_restore_source_trades: list[dict[str, Any]] = []
+                for trade in family_trades:
+                    if not hold_restore_allowed(trade, current_price, today_date):
                         mark_restore_watch(trade, today)
+                        set_restore_signal_count(trade, code, 0)
+                        continue
+                    if confirm_restore_signal(trade, code):
+                        family_restore_source_trades.append(trade)
+                if not family_restore_source_trades:
                     continue
                 restore_source_trades.extend(family_restore_source_trades)
             closed_trade = latest_closed_trade(trades, ticker, code)
@@ -535,17 +600,19 @@ def update_trade_logs(
             trades.append(new_trade)
             for trade in restore_source_trades:
                 trade.pop("restoreWatchDate", None)
+                set_restore_signal_count(trade, code, 0)
             current_open_counts[slot_key] = open_count + 1
             current_open_trades.setdefault(slot_key, []).append(new_trade)
             appended += 1
 
     deduped = list({trade_key(trade): trade for trade in trades}.values())
+    refreshed_at = publish_iso()
     payload = {
         "meta": {
             "kind": "trade-logs",
             "schedule": "auto",
-            "updatedAt": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            "lastSuccessfulRun": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "updatedAt": refreshed_at,
+            "lastSuccessfulRun": refreshed_at,
             "failedReason": None,
             "appendedOpenTrades": appended,
             "closedTrades": closed,

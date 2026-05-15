@@ -28,6 +28,10 @@ on:
         options:
           - "true"
           - "false"
+      scheduled_publish_at:
+        description: "UTC ISO time to wait until before notifications, commit, and deploy"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -97,7 +101,14 @@ jobs:
               *) TASKS="valuation technical market-trends market-events" ;;
             esac
             SEND_NOTIFICATIONS="${{ inputs.send_notifications || 'true' }}"
-            PUBLISH_AT=""
+            RAW_PUBLISH_AT="${{ inputs.scheduled_publish_at || '' }}"
+            if [ "$RAW_PUBLISH_AT" = "immediate" ]; then
+              PUBLISH_AT=""
+            elif [ -n "$RAW_PUBLISH_AT" ]; then
+              PUBLISH_AT="$RAW_PUBLISH_AT"
+            else
+              PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1); print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z") if now.minute >= 50 else "")')"
+            fi
           fi
           echo "REFRESH_TASKS=$TASKS" >> "$GITHUB_ENV"
           echo "SEND_NOTIFICATIONS=$SEND_NOTIFICATIONS" >> "$GITHUB_ENV"

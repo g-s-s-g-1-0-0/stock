@@ -39,6 +39,15 @@ function isValidCronRequest(req) {
   return Boolean(cronSecret && readCronSecret(req) === cronSecret)
 }
 
+function nextTopOfHourIso() {
+  const publishAt = new Date()
+  publishAt.setUTCMinutes(0, 0, 0)
+  if (publishAt.getTime() <= Date.now()) {
+    publishAt.setUTCHours(publishAt.getUTCHours() + 1)
+  }
+  return publishAt.toISOString().replace(/\.000Z$/, 'Z')
+}
+
 async function readSupabaseUser(accessToken) {
   const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '')
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -61,7 +70,7 @@ async function readSupabaseUser(accessToken) {
   return response.json()
 }
 
-async function triggerWorkflow(scope, sendNotifications) {
+async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = '') {
   const token = process.env.GITHUB_ACTIONS_TOKEN
   const repo = process.env.GITHUB_REPO || DEFAULT_REPO
   const workflowId = process.env.GITHUB_REFRESH_WORKFLOW_ID || DEFAULT_WORKFLOW_ID
@@ -85,6 +94,7 @@ async function triggerWorkflow(scope, sendNotifications) {
       inputs: {
         refresh_scope: scope,
         send_notifications: sendNotifications ? 'true' : 'false',
+        scheduled_publish_at: scheduledPublishAt,
       },
     }),
   })
@@ -131,11 +141,16 @@ export default async function handler(req, res) {
       }
     }
 
-    const workflow = await triggerWorkflow(scope, true)
+    const scheduledPublishAt = isCronRequest ? nextTopOfHourIso() : ''
+    const workflowScheduledPublishAt = scheduledPublishAt || 'immediate'
+    const workflow = await triggerWorkflow(scope, true, workflowScheduledPublishAt)
     return json(res, 202, {
       ok: true,
       mode: 'workflow_dispatch',
-      message: 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다.',
+      message: scheduledPublishAt
+        ? 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다. 정각까지 대기 후 메일 발송과 배포를 진행합니다.'
+        : 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다.',
+      scheduledPublishAt,
       ...workflow,
     })
   } catch (error) {

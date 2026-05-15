@@ -214,7 +214,7 @@ def test_ef_family_blocks_cross_strategy_slot_until_restore_condition(monkeypatc
     assert updated["meta"]["appendedOpenTrades"] == 0
 
 
-def test_ef_family_adds_cross_strategy_slot_after_five_percent_drop(monkeypatch, tmp_path):
+def test_ef_family_adds_cross_strategy_slot_after_five_percent_drop_and_two_signals(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
@@ -243,11 +243,25 @@ def test_ef_family_adds_cross_strategy_slot_after_five_percent_drop(monkeypatch,
 
     updated = logs.load_json(cache_path, {})
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
+    assert len(rows) == 1
+    assert rows[0]["restoreSignalCounts"] == {"F": 1}
+    assert updated["meta"]["appendedOpenTrades"] == 0
+
+    logs.update_trade_logs(
+        [{"ticker": "DL", "name": "DL", "market": "US", "currentPrice": "$95.00", "opinion": "매수"}],
+        {"DL": {"opinion": "매수"}},
+        {"DL": {"entrySignalCodes": "F", "현재가": "$95.00"}},
+        {"peakTriggered": False},
+    )
+
+    updated = logs.load_json(cache_path, {})
+    rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
     assert [row["strategy"] for row in rows] == [
         "E. 200일선 상방 & 스퀴즈 저점",
         "F. 200일선 상방 & BB 극단 저점",
     ]
     assert rows[1]["slotId"].startswith("DL_F_")
+    assert "restoreSignalCounts" not in rows[0]
     assert updated["meta"]["appendedOpenTrades"] == 1
 
 
