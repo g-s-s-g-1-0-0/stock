@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-15T14:55:43+00:00",
-    "lastSuccessfulRun": "2026-05-15T14:55:43+00:00",
+    "updatedAt": "2026-05-15T15:01:27+00:00",
+    "lastSuccessfulRun": "2026-05-15T15:01:27+00:00",
     "failedReason": null
   },
   "rows": [
@@ -367,7 +367,7 @@
       "ticker": "NBIS",
       "name": "Nebius Group N.V. -",
       "market": "US",
-      "fairPrice": "$25.50 ~ $35.70",
+      "fairPrice": "$150.00 ~ $210.00",
       "fairPriceReason": null,
       "currentPrice": "$222.51",
       "valuation": "고평가",
@@ -383,7 +383,7 @@
       "ticker": "ASX",
       "name": "ASE Technology Holding Co., Ltd.",
       "market": "US",
-      "fairPrice": "$13.60 ~ $20.40",
+      "fairPrice": "$13.40 ~ $20.10",
       "fairPriceReason": null,
       "currentPrice": "$34.03",
       "valuation": "고평가",
