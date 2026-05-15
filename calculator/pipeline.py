@@ -65,17 +65,45 @@ def clean_stock_name(name: Any) -> str:
     if not value:
         return "-"
 
-    for marker in (" American Depositary", " Depositary Shares", " ADS"):
+    value = re.sub(r"\s+", " ", value).strip()
+    value = re.sub(r"\s+-\s*$", "", value).strip()
+
+    for marker in (
+        " American Depositary",
+        " Depositary Shares",
+        " Class A Common Stock",
+        " Class B Common Stock",
+        " Common Stock",
+        " common shares",
+        " ordinary shares",
+        " ADS",
+    ):
         if marker in value:
             value = value.split(marker, 1)[0].strip()
 
-    for suffix in (", Ltd.", " Ltd.", ", Inc.", " Inc.", ", Corp.", " Corp.", ", Co.", " Co."):
-        index = value.find(suffix)
-        if index != -1:
-            value = value[:index + len(suffix)].strip()
-            break
+    value = re.sub(r"\bWhen-Issued\b", "", value, flags=re.IGNORECASE).strip(" ,-")
+    value = re.sub(r"\s+-\s*$", "", value).strip()
 
-    return value
+    suffix_patterns = (
+        r",?\s+Incorporated\.?$",
+        r",?\s+Corporation\.?$",
+        r",?\s+Corp\.?$",
+        r",?\s+Limited\.?$",
+        r",?\s+Ltd\.?$",
+        r",?\s+Inc\.?$",
+        r",?\s+N\.V\.?$",
+        r",?\s+Co\.?$",
+    )
+    changed = True
+    while changed:
+        changed = False
+        for pattern in suffix_patterns:
+            cleaned = re.sub(pattern, "", value, flags=re.IGNORECASE).strip(" ,-")
+            if cleaned != value and cleaned:
+                value = cleaned
+                changed = True
+
+    return value or "-"
 
 
 def write_cache(name: str, payload: dict[str, Any]) -> None:

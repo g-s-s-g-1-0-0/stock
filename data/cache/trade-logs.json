@@ -30,7 +30,7 @@
     {
       "slotId": "MP_D_20260510_1",
       "ticker": "MP",
-      "name": "MP Materials Corp.",
+      "name": "MP Materials",
       "market": "US",
       "currentPrice": "$60.87",
       "strategy": "D. 200일선 상방 & 상승 흐름 강화",
@@ -47,7 +47,7 @@
     {
       "slotId": "ANET_F_20260511_1",
       "ticker": "ANET",
-      "name": "Arista Networks, Inc.",
+      "name": "Arista Networks",
       "market": "US",
       "currentPrice": "$144.77",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
@@ -64,7 +64,7 @@
     {
       "slotId": "NBIS_D_20260513_1",
       "ticker": "NBIS",
-      "name": "Nebius Group N.V. -",
+      "name": "Nebius Group",
       "market": "US",
       "currentPrice": "$213.66",
       "strategy": "D. 200일선 상방 & 상승 흐름 강화",
@@ -81,7 +81,7 @@
     {
       "slotId": "SGML_E_20260513_1",
       "ticker": "SGML",
-      "name": "Sigma Lithium Corporation - common shares",
+      "name": "Sigma Lithium",
       "market": "US",
       "currentPrice": "$16.82",
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",
@@ -115,7 +115,7 @@
     {
       "slotId": "AVGO_E_20260514_1",
       "ticker": "AVGO",
-      "name": "Broadcom Inc.",
+      "name": "Broadcom",
       "market": "US",
       "currentPrice": "$428.76",
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",
@@ -132,7 +132,7 @@
     {
       "slotId": "SGML_F_20260514_1",
       "ticker": "SGML",
-      "name": "Sigma Lithium Corporation - common shares",
+      "name": "Sigma Lithium",
       "market": "US",
       "currentPrice": "$16.82",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
@@ -166,7 +166,7 @@
     {
       "slotId": "IREN_D_20260515_1",
       "ticker": "IREN",
-      "name": "IREN Limited -",
+      "name": "IREN",
       "market": "US",
       "currentPrice": "$53.29",
       "strategy": "D. 200일선 상방 & 상승 흐름 강화",
@@ -182,7 +182,7 @@
     {
       "slotId": "CRDO_E_20260515_1",
       "ticker": "CRDO",
-      "name": "Credo Technology Group Holding Ltd -",
+      "name": "Credo Technology Group Holding",
       "market": "US",
       "currentPrice": "$175.82",
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",

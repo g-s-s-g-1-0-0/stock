@@ -41,7 +41,7 @@
     },
     {
       "ticker": "NVDA",
-      "name": "NVIDIA Corporation",
+      "name": "NVIDIA",
       "market": "US",
       "fairPrice": "$245.00 ~ $343.00",
       "fairPriceReason": null,
@@ -57,7 +57,7 @@
     },
     {
       "ticker": "LITE",
-      "name": "Lumentum Holdings Inc.",
+      "name": "Lumentum Holdings",
       "market": "US",
       "fairPrice": "$269.50 ~ $377.30",
       "fairPriceReason": null,
@@ -73,7 +73,7 @@
     },
     {
       "ticker": "SNDK",
-      "name": "Sandisk Corporation When-Issued",
+      "name": "Sandisk",
       "market": "US",
       "fairPrice": "$287.70 ~ $431.55",
       "fairPriceReason": null,
@@ -219,7 +219,7 @@
     },
     {
       "ticker": "GOOGL",
-      "name": "Alphabet Inc.",
+      "name": "Alphabet",
       "market": "US",
       "fairPrice": "$196.65 ~ $327.75",
       "fairPriceReason": null,
@@ -235,7 +235,7 @@
     },
     {
       "ticker": "AVGO",
-      "name": "Broadcom Inc.",
+      "name": "Broadcom",
       "market": "US",
       "fairPrice": "$76.95 ~ $128.25",
       "fairPriceReason": null,
@@ -251,7 +251,7 @@
     },
     {
       "ticker": "MU",
-      "name": "Micron Technology, Inc.",
+      "name": "Micron Technology",
       "market": "US",
       "fairPrice": "$317.70 ~ $529.50",
       "fairPriceReason": null,
@@ -283,7 +283,7 @@
     },
     {
       "ticker": "RKLB",
-      "name": "Rocket Lab Corporation",
+      "name": "Rocket Lab",
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
@@ -299,7 +299,7 @@
     },
     {
       "ticker": "ASTS",
-      "name": "AST SpaceMobile, Inc.",
+      "name": "AST SpaceMobile",
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
@@ -315,7 +315,7 @@
     },
     {
       "ticker": "IONQ",
-      "name": "IonQ, Inc.",
+      "name": "IonQ",
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
@@ -331,7 +331,7 @@
     },
     {
       "ticker": "BE",
-      "name": "Bloom Energy Corporation",
+      "name": "Bloom Energy",
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
@@ -347,7 +347,7 @@
     },
     {
       "ticker": "IREN",
-      "name": "IREN Limited -",
+      "name": "IREN",
       "market": "US",
       "fairPrice": "$14.50 ~ $20.30",
       "fairPriceReason": null,
@@ -363,7 +363,7 @@
     },
     {
       "ticker": "NBIS",
-      "name": "Nebius Group N.V. -",
+      "name": "Nebius Group",
       "market": "US",
       "fairPrice": "$150.00 ~ $210.00",
       "fairPriceReason": null,
@@ -379,7 +379,7 @@
     },
     {
       "ticker": "ASX",
-      "name": "ASE Technology Holding Co., Ltd.",
+      "name": "ASE Technology Holding",
       "market": "US",
       "fairPrice": "$13.40 ~ $20.10",
       "fairPriceReason": null,
@@ -395,7 +395,7 @@
     },
     {
       "ticker": "MP",
-      "name": "MP Materials Corp.",
+      "name": "MP Materials",
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
@@ -411,7 +411,7 @@
     },
     {
       "ticker": "INTC",
-      "name": "Intel Corporation",
+      "name": "Intel",
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
@@ -443,7 +443,7 @@
     },
     {
       "ticker": "GLW",
-      "name": "Corning Incorporated",
+      "name": "Corning",
       "market": "US",
       "fairPrice": "$62.40 ~ $83.20",
       "fairPriceReason": null,
@@ -459,7 +459,7 @@
     },
     {
       "ticker": "CRDO",
-      "name": "Credo Technology Group Holding Ltd -",
+      "name": "Credo Technology Group Holding",
       "market": "US",
       "fairPrice": "$90.00 ~ $126.00",
       "fairPriceReason": null,
@@ -477,7 +477,7 @@
     },
     {
       "ticker": "COHR",
-      "name": "Coherent Corp.",
+      "name": "Coherent",
       "market": "US",
       "fairPrice": "$41.80 ~ $62.70",
       "fairPriceReason": null,
@@ -509,7 +509,7 @@
     },
     {
       "ticker": "LRCX",
-      "name": "Lam Research Corporation",
+      "name": "Lam Research",
       "market": "US",
       "fairPrice": "$79.50 ~ $132.50",
       "fairPriceReason": null,
@@ -525,7 +525,7 @@
     },
     {
       "ticker": "ACLS",
-      "name": "Axcelis Technologies, Inc.",
+      "name": "Axcelis Technologies",
       "market": "US",
       "fairPrice": "$48.15 ~ $64.20",
       "fairPriceReason": null,
@@ -541,7 +541,7 @@
     },
     {
       "ticker": "ANET",
-      "name": "Arista Networks, Inc.",
+      "name": "Arista Networks",
       "market": "US",
       "fairPrice": "$43.80 ~ $73.00",
       "fairPriceReason": null,
@@ -607,7 +607,7 @@
     },
     {
       "ticker": "AMD",
-      "name": "Advanced Micro Devices, Inc.",
+      "name": "Advanced Micro Devices",
       "market": "US",
       "fairPrice": "$122.00 ~ $152.50",
       "fairPriceReason": null,
@@ -623,7 +623,7 @@
     },
     {
       "ticker": "TSLA",
-      "name": "Tesla, Inc.",
+      "name": "Tesla",
       "market": "US",
       "fairPrice": "$16.35 ~ $21.80",
       "fairPriceReason": null,
@@ -655,7 +655,7 @@
     },
     {
       "ticker": "TER",
-      "name": "Teradyne, Inc.",
+      "name": "Teradyne",
       "market": "US",
       "fairPrice": "$81.00 ~ $135.00",
       "fairPriceReason": null,
@@ -687,7 +687,7 @@
     },
     {
       "ticker": "SGML",
-      "name": "Sigma Lithium Corporation - common shares",
+      "name": "Sigma Lithium",
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
