@@ -4619,7 +4619,7 @@ function App() {
       label: '보유 현금',
       value: formatKrwAmount(portfolioSummary.cash),
       action: openContributionSettings,
-      clickable: !isOperatorDataMode && Boolean(userSession),
+      clickable: Boolean(userSession) && (!isOperatorDataMode || isAdminUser),
     },
     { label: '평가 투자금', value: formatKrwAmount(portfolioSummary.openInvestmentAmount) },
     { label: '누적 매수금', value: formatKrwAmount(portfolioSummary.cumulativeInvestmentAmount) },
