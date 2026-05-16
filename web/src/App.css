@@ -243,6 +243,12 @@
   padding: 16px;
 }
 
+.trading-log-panel {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
 .dimmed-panel {
   position: relative;
   overflow: hidden;
@@ -350,7 +356,7 @@
   display: grid;
   grid-template-columns: minmax(760px, 1.55fr) minmax(560px, 1fr);
   gap: 16px;
-  align-items: stretch;
+  align-items: start;
   width: 100%;
   box-sizing: border-box;
 }
@@ -358,9 +364,13 @@
 .right-column {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  height: 100%;
+  height: auto;
   min-width: 0;
-  gap: 16px;
+  gap: 52px;
+}
+
+.long-term-home-grid .right-column {
+  gap: 29px;
 }
 
 .section-heading {
@@ -442,6 +452,62 @@
   display: grid;
   min-width: 0;
   gap: 6px;
+}
+
+.asset-summary-box {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: -4px 0 12px;
+}
+
+.asset-summary-item {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  padding: 9px 10px;
+}
+
+.asset-summary-item > span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-summary-value {
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--text-h);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  padding: 0;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asset-summary-button {
+  color: #2563eb;
+  cursor: pointer;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: rgba(37, 99, 235, 0.35);
+  text-underline-offset: 3px;
+}
+
+.asset-summary-item.strong {
+  border-color: rgba(37, 99, 235, 0.2);
+  background: rgba(37, 99, 235, 0.06);
 }
 
 .log-title-row h2 {
@@ -896,7 +962,11 @@
 }
 
 .trading-log-scroll {
-  max-height: none;
+  --trading-log-sheet-height: 1054px;
+  flex: none;
+  height: var(--trading-log-sheet-height);
+  max-height: var(--trading-log-sheet-height);
+  overflow: auto;
 }
 
 .watchlist-sheet {
@@ -906,7 +976,7 @@
 
 .holding-sheet {
   flex: none;
-  height: 482px;
+  height: 570px;
 }
 
 .sheet-table {
@@ -921,7 +991,6 @@
 
 .trading-log-table {
   min-width: 1320px;
-  height: 100%;
 }
 
 .long-term-trading-log-table {
@@ -934,7 +1003,6 @@
 
 .holding-table {
   min-width: 980px;
-  height: 100%;
 }
 
 .long-term-holding-table {
@@ -946,7 +1014,6 @@
   border-collapse: separate;
   border-spacing: 0;
 }
-
 .watchlist-table {
   --home-select-left: 0px;
   --home-select-width: 40px;
@@ -2256,14 +2323,6 @@
   text-align: left;
 }
 
-.trading-log-table .centered-strategy-cell {
-  text-align: center;
-}
-
-.trading-log-table .centered-strategy-cell .strategy-pill {
-  justify-content: center;
-}
-
 .watchlist-table .industry-cell {
   text-align: left !important;
 }
@@ -2301,6 +2360,14 @@
   text-decoration: none;
 }
 
+.cash-settings-button {
+  color: #2563eb;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: rgba(37, 99, 235, 0.35);
+  text-underline-offset: 3px;
+}
+
 .table-amount-button {
   width: 100%;
   color: #2563eb;
@@ -2324,11 +2391,27 @@
 
 .amount-edit-error {
   display: block;
-  margin-top: -4px;
+  margin-top: 8px;
   color: #dc2626;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 400;
   line-height: 1.35;
+}
+
+.field-message {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.35;
+}
+
+.field-message-error {
+  color: #dc2626 !important;
+}
+
+.field-message-note {
+  color: var(--muted) !important;
 }
 
 .watchlist-table .number-cell {
@@ -3183,7 +3266,8 @@
   font-weight: 800;
 }
 
-.login-field input {
+.login-field input,
+.login-field select {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--border);
@@ -3195,7 +3279,8 @@
   padding: 11px 12px;
 }
 
-.login-field input:focus {
+.login-field input:focus,
+.login-field select:focus {
   border-color: #94a3b8;
   box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.2);
 }
@@ -3588,11 +3673,11 @@
 .app-footer {
   display: grid;
   justify-items: center;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 4px;
+  margin-top: 0;
   border-top: 1px solid var(--border);
   color: var(--muted);
-  padding: 24px 16px 6px;
+  padding: 12px 16px 4px;
   text-align: center;
 }
 

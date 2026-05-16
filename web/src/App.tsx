@@ -104,25 +104,33 @@ type HoldingLiquidationDraft = {
   sellPrice: string
 }
 
-type TradeInvestmentDraft = {
-  key: string
-  name: string
-  currentAmount: number
-  value: string
-  error?: string
+type ContributionFrequency = 'weekly' | 'monthly'
+
+type ContributionSettings = {
+  initialCapital: number
+  frequency: ContributionFrequency
+  amount: number
+  dayOfWeek: number
+  dayOfMonth: number
 }
 
-type CashEditDraft = {
-  investmentType: InvestmentType
-  value: string
+type ContributionSettingsDraft = {
+  initialCapital: string
+  frequency: ContributionFrequency
+  amount: string
+  dayOfWeek: string
+  dayOfMonth: string
 }
 
 type PortfolioSummary = {
   cash: number
   projectedCash: number
-  withdrawn: number
   totalCapital: number
   investedAmount: number
+  openInvestmentAmount: number
+  cumulativeInvestmentAmount: number
+  positionValue: number
+  totalAsset: number
   profitAmount: number
   profitRate: number
   amountByTradeKey: Map<string, number>
@@ -215,12 +223,14 @@ type ValuationMetric = {
 
 const MAX_WATCHLIST_ITEMS = 50
 const LEGACY_AUTH_SESSION_STORAGE_KEY = 'gongsu-user-session'
+const LOCAL_TEST_SESSION_STORAGE_KEY = 'gongsu-local-test-session'
 const WATCHLIST_STORAGE_KEY = 'gongsu-watchlist'
 const OPERATOR_WATCHLIST_STORAGE_KEY = 'gongsu-operator-watchlist'
 const PERSONAL_TRADES_STORAGE_KEY = 'gongsu-personal-trades'
 const VIEW_MODE_STORAGE_KEY = 'gongsu-view-mode'
 const VIEW_MODE_HINT_STORAGE_KEY = 'gongsu-view-mode-hint-seen'
 const USER_SETTINGS_STORAGE_KEY = 'gongsu-user-settings'
+const CONTRIBUTION_SETTINGS_STORAGE_KEY = 'gongsu-contribution-settings'
 const API_LOGS_STORAGE_KEY = 'gongsu-api-logs'
 const ACTIVE_PAGE_STORAGE_KEY = 'gongsu-active-page'
 const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
@@ -252,6 +262,22 @@ const DEFAULT_USER_SETTINGS: StoredUserSettings = {
 }
 const DEFAULT_INVESTMENT_TYPE: InvestmentType = 'long_term'
 const DEFAULT_PORTFOLIO_CASH = 10_000_000
+const DEFAULT_CONTRIBUTION_SETTINGS: ContributionSettings = {
+  initialCapital: DEFAULT_PORTFOLIO_CASH,
+  frequency: 'monthly',
+  amount: 1_000_000,
+  dayOfWeek: 1,
+  dayOfMonth: 1,
+}
+const weekdayOptions = [
+  { value: 0, label: '일요일' },
+  { value: 1, label: '월요일' },
+  { value: 2, label: '화요일' },
+  { value: 3, label: '수요일' },
+  { value: 4, label: '목요일' },
+  { value: 5, label: '금요일' },
+  { value: 6, label: '토요일' },
+]
 const TEST_USER_SESSION: UserSession = {
   id: 'local-test-user',
   email: 'test@gongsu.local',
@@ -440,6 +466,10 @@ function userSettingsStorageKey(session: UserSession | null = null) {
   return `${USER_SETTINGS_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
 }
 
+function contributionSettingsStorageKey(session: UserSession | null = null) {
+  return `${CONTRIBUTION_SETTINGS_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
+}
+
 function personalTradeLogsStorageKey(session: UserSession | null = null) {
   return `${PERSONAL_TRADES_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
 }
@@ -523,7 +553,7 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
 }
 
 function readStoredPersonalTradeLogs(session: UserSession | null = null) {
-  if (!session) return personalTrades
+  if (!session) return []
   const stored = localStorage.getItem(personalTradeLogsStorageKey(session))
   if (!stored) return personalTrades
 
@@ -571,6 +601,70 @@ function storeUserSettings(
   investmentType: InvestmentType | null,
 ) {
   localStorage.setItem(userSettingsStorageKey(session), JSON.stringify({ watchlistSort, notificationPreferences, investmentType }))
+}
+
+function normalizeContributionSettings(value: unknown): ContributionSettings {
+  const candidate = value as Partial<ContributionSettings> | null
+  if (!candidate) return DEFAULT_CONTRIBUTION_SETTINGS
+  const frequency = candidate.frequency === 'weekly' || candidate.frequency === 'monthly' ? candidate.frequency : DEFAULT_CONTRIBUTION_SETTINGS.frequency
+  const initialCapital = typeof candidate.initialCapital === 'number' && Number.isFinite(candidate.initialCapital)
+    ? Math.max(0, Math.round(candidate.initialCapital))
+    : DEFAULT_CONTRIBUTION_SETTINGS.initialCapital
+  const amount = typeof candidate.amount === 'number' && Number.isFinite(candidate.amount)
+    ? Math.max(0, Math.round(candidate.amount))
+    : DEFAULT_CONTRIBUTION_SETTINGS.amount
+
+  return {
+    initialCapital,
+    frequency,
+    amount,
+    dayOfWeek: Math.min(6, Math.max(0, Number(candidate.dayOfWeek) || DEFAULT_CONTRIBUTION_SETTINGS.dayOfWeek)),
+    dayOfMonth: Math.min(31, Math.max(1, Number(candidate.dayOfMonth) || DEFAULT_CONTRIBUTION_SETTINGS.dayOfMonth)),
+  }
+}
+
+function readStoredContributionSettings(session: UserSession | null = null): ContributionSettings {
+  const stored = localStorage.getItem(contributionSettingsStorageKey(session)) ?? localStorage.getItem(CONTRIBUTION_SETTINGS_STORAGE_KEY)
+  if (!stored) return DEFAULT_CONTRIBUTION_SETTINGS
+  try {
+    return normalizeContributionSettings(JSON.parse(stored))
+  } catch {
+    localStorage.removeItem(contributionSettingsStorageKey(session))
+    return DEFAULT_CONTRIBUTION_SETTINGS
+  }
+}
+
+function storeContributionSettings(session: UserSession | null, settings: ContributionSettings) {
+  localStorage.setItem(contributionSettingsStorageKey(session), JSON.stringify(settings))
+}
+
+function readStoredLocalTestSession(): UserSession | null {
+  if (!import.meta.env.DEV) return null
+  const stored = localStorage.getItem(LOCAL_TEST_SESSION_STORAGE_KEY)
+  if (!stored) return null
+
+  try {
+    const parsed = JSON.parse(stored) as Partial<UserSession>
+    if (typeof parsed.email !== 'string' || typeof parsed.id !== 'string' || typeof parsed.name !== 'string') return null
+    return {
+      id: parsed.id,
+      email: parsed.email,
+      name: parsed.name,
+      loggedInAt: typeof parsed.loggedInAt === 'string' ? parsed.loggedInAt : new Date().toISOString(),
+    }
+  } catch {
+    localStorage.removeItem(LOCAL_TEST_SESSION_STORAGE_KEY)
+    return null
+  }
+}
+
+function storeLocalTestSession(session: UserSession | null) {
+  if (!import.meta.env.DEV) return
+  if (!session) {
+    localStorage.removeItem(LOCAL_TEST_SESSION_STORAGE_KEY)
+    return
+  }
+  localStorage.setItem(LOCAL_TEST_SESSION_STORAGE_KEY, JSON.stringify(session))
 }
 
 function readStoredApiLogs() {
@@ -1415,6 +1509,13 @@ function tradeMarket(trade: TradeLog) {
   return trade.market || stockMarket(trade.ticker)
 }
 
+function formatTradePrice(trade: TradeLog, value: number | null, fallback: string) {
+  if (value === null) return fallback
+  return tradeMarket(trade) === 'KR'
+    ? `₩${Math.round(value).toLocaleString('ko-KR')}`
+    : `$${value.toFixed(2)}`
+}
+
 function marketFlag(market: Market) {
   return market === 'KR' ? '🇰🇷' : '🇺🇸'
 }
@@ -1543,6 +1644,20 @@ function parseAmountValue(value: string) {
   return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : null
 }
 
+function amountInputValue(value: string) {
+  const digits = value.replace(/[^0-9]/g, '')
+  if (!digits) return ''
+  return `₩${Number(digits).toLocaleString('ko-KR')}`
+}
+
+function amountInputDigits(value: string) {
+  return value.replace(/[^0-9]/g, '')
+}
+
+function amountDraftValue(value: string) {
+  return amountInputDigits(value) || '0'
+}
+
 function currentReturnPct(trade: TradeLog, stocks: Stock[] = searchUniverse) {
   const buyPrice = parsePriceValue(trade.buyPrice)
   const currentPrice = parsePriceValue(trade.currentPrice || stocks.find((stock) => stock.ticker === trade.ticker)?.currentPrice || '')
@@ -1560,7 +1675,7 @@ function displayedTradeReturnPct(trade: TradeLog, stocks: Stock[] = searchUniver
 }
 
 function tradeInvestmentAmount(trade: TradeLog, amountByTradeKey?: Map<string, number>) {
-  return amountByTradeKey?.get(tradeKey(trade)) ?? trade.investmentAmount ?? 0
+  return amountByTradeKey?.get(tradeKey(trade)) ?? 0
 }
 
 function tradeProfitAmount(trade: TradeLog, stocks: Stock[] = searchUniverse, amountByTradeKey?: Map<string, number>) {
@@ -1606,48 +1721,144 @@ function tradeKey(trade: TradeLog) {
   return trade.slotId || `${trade.investmentType ?? 'shared'}-${trade.ticker}-${trade.buyDate}-${strategyCode(trade.strategy)}-${trade.buyPrice}`
 }
 
+function tradeDateObject(value: string) {
+  return new Date(value.replaceAll('.', '-'))
+}
+
+function sameOrBeforeDate(a: Date, b: Date) {
+  return a.getTime() <= b.getTime()
+}
+
+function nextDay(date: Date) {
+  const next = new Date(date)
+  next.setDate(next.getDate() + 1)
+  return next
+}
+
+function scheduledContributionBetween(startExclusive: Date, endInclusive: Date, settings: ContributionSettings) {
+  let total = 0
+  for (let day = nextDay(startExclusive); sameOrBeforeDate(day, endInclusive); day = nextDay(day)) {
+    if (settings.frequency === 'weekly' && day.getDay() === settings.dayOfWeek) {
+      total += settings.amount
+    }
+    if (settings.frequency === 'monthly' && day.getDate() === settings.dayOfMonth) {
+      total += settings.amount
+    }
+  }
+  return total
+}
+
+function contributionDayMessage(value: string) {
+  if (value.trim() === '') return '입금일을 입력해 주세요.'
+  const day = Number(value)
+  if (!Number.isInteger(day) || day < 1 || day > 31) {
+    return '입금일은 1일부터 31일 사이의 숫자로 입력해 주세요.'
+  }
+  if (day === 29) return '2월 29일은 윤년에만 입금됩니다.'
+  if (day === 30) return '30일이 없는 달에는 해당 월 입금이 건너뜁니다.'
+  if (day === 31) return '31일이 없는 달에는 해당 월 입금이 건너뜁니다.'
+  return ''
+}
+
+function allocationWeightsForProfile(investmentType: InvestmentType) {
+  return investmentType === 'swing'
+    ? [0.5, 0.25, 0.25]
+    : Array.from({ length: 10 }, () => 0.1)
+}
+
 function buildPortfolioSummary(
   trades: TradeLog[],
   stocks: Stock[],
   megaTrendForTrade: (trade: TradeLog) => string,
-  cashOverride?: number,
-  initialCash = DEFAULT_PORTFOLIO_CASH,
+  settings: ContributionSettings,
+  investmentType: InvestmentType,
+  initialCash = settings.initialCapital,
 ): PortfolioSummary {
   let runningCash = initialCash
+  const slotWeights = allocationWeightsForProfile(investmentType)
+  const occupiedSlots = new Map<string, number>()
   const amountByTradeKey = new Map<string, number>()
-  const orderedTrades = [...trades].sort((a, b) => {
-    const dateDelta = parseTradeDate(a.buyDate) - parseTradeDate(b.buyDate)
-    if (dateDelta !== 0) return dateDelta
-    const aTrendRank = megaTrendForTrade(a).startsWith('충족') ? 0 : 1
-    const bTrendRank = megaTrendForTrade(b).startsWith('충족') ? 0 : 1
-    return aTrendRank - bTrendRank || a.ticker.localeCompare(b.ticker)
-  })
+  let openInvestmentAmount = 0
+  let cumulativeInvestmentAmount = 0
+  let positionValue = 0
+  let profitAmount = 0
+  const eventsByDate = new Map<string, { buys: TradeLog[]; sells: TradeLog[] }>()
+  const addEvent = (date: string, field: 'buys' | 'sells', trade: TradeLog) => {
+    const bucket = eventsByDate.get(date) ?? { buys: [], sells: [] }
+    bucket[field].push(trade)
+    eventsByDate.set(date, bucket)
+  }
 
-  for (const trade of orderedTrades) {
-    const amount = trade.investmentAmount ?? Math.max(0, Math.floor(runningCash * 0.5))
-    amountByTradeKey.set(tradeKey(trade), amount)
-    runningCash -= amount
-
-    if (trade.status !== '보유 중') {
-      const realizedReturn = displayedTradeReturnPct(trade, stocks) ?? 0
-      runningCash += Math.round(amount * (1 + realizedReturn / 100))
+  for (const trade of trades) {
+    addEvent(trade.buyDate, 'buys', trade)
+    if (trade.status !== '보유 중' && trade.sellDate !== '-') {
+      addEvent(trade.sellDate, 'sells', trade)
     }
   }
 
+  const orderedDates = [...eventsByDate.keys()].sort((a, b) => parseTradeDate(a) - parseTradeDate(b))
+  let contributionCursor = orderedDates[0] ? tradeDateObject(orderedDates[0]) : new Date()
+
+  for (const date of orderedDates) {
+    const tradeDate = tradeDateObject(date)
+    runningCash += scheduledContributionBetween(contributionCursor, tradeDate, settings)
+    contributionCursor = tradeDate
+    const events = eventsByDate.get(date)
+    if (!events) continue
+
+    for (const trade of events.sells) {
+      const key = tradeKey(trade)
+      const amount = amountByTradeKey.get(key) ?? 0
+      const tradeProfit = Math.round(amount * (displayedTradeReturnPct(trade, stocks) ?? 0) / 100)
+      runningCash += amount + tradeProfit
+      occupiedSlots.delete(key)
+    }
+
+    const cashBeforeBuys = runningCash
+    const orderedBuys = [...events.buys].sort((a, b) => {
+      const aTrendRank = megaTrendForTrade(a).startsWith('충족') ? 0 : 1
+      const bTrendRank = megaTrendForTrade(b).startsWith('충족') ? 0 : 1
+      return aTrendRank - bTrendRank || a.ticker.localeCompare(b.ticker)
+    })
+
+    for (const trade of orderedBuys) {
+      const key = tradeKey(trade)
+      const slotIndex = slotWeights.findIndex((_, index) => ![...occupiedSlots.values()].includes(index))
+      const amount = slotIndex >= 0 ? Math.min(runningCash, Math.max(0, Math.floor(cashBeforeBuys * slotWeights[slotIndex]))) : 0
+      amountByTradeKey.set(key, amount)
+      if (slotIndex >= 0) occupiedSlots.set(key, slotIndex)
+      cumulativeInvestmentAmount += amount
+      runningCash -= amount
+    }
+  }
+
+  for (const trade of trades) {
+    const amount = amountByTradeKey.get(tradeKey(trade)) ?? 0
+    const tradeProfit = Math.round(amount * (displayedTradeReturnPct(trade, stocks) ?? 0) / 100)
+    profitAmount += tradeProfit
+    if (trade.status === '보유 중') {
+      openInvestmentAmount += amount
+      positionValue += amount + tradeProfit
+    }
+  }
+
+  runningCash += scheduledContributionBetween(contributionCursor, new Date(), settings)
   const projectedCash = Math.round(runningCash)
-  const cash = cashOverride ?? projectedCash
-  const withdrawn = cash < projectedCash ? projectedCash - cash : 0
-  const investedAmount = trades.reduce((sum, trade) => sum + tradeInvestmentAmount(trade, amountByTradeKey), 0)
-  const profitAmount = trades.reduce((sum, trade) => sum + (tradeProfitAmount(trade, stocks, amountByTradeKey) ?? 0), 0)
-  const totalCapital = investedAmount
-  const profitRate = investedAmount > 0 ? profitAmount / investedAmount * 100 : 0
+  const cash = projectedCash
+  const investedAmount = openInvestmentAmount
+  const totalCapital = openInvestmentAmount
+  const totalAsset = cash + positionValue
+  const profitRate = cumulativeInvestmentAmount > 0 ? profitAmount / cumulativeInvestmentAmount * 100 : 0
 
   return {
     cash,
     projectedCash,
-    withdrawn,
     totalCapital,
     investedAmount,
+    openInvestmentAmount,
+    cumulativeInvestmentAmount,
+    positionValue,
+    totalAsset,
     profitAmount,
     profitRate,
     amountByTradeKey,
@@ -3574,10 +3785,19 @@ function BoardPage({
 
 function App() {
   const cachedAppData = useMemo(() => readCachedAppData(), [])
+  const initialLocalTestSession = useMemo(() => readStoredLocalTestSession(), [])
   const [query, setQuery] = useState('')
-  const [watchlist, setWatchlist] = useState<string[]>(() => readStoredWatchlist())
+  const [watchlist, setWatchlist] = useState<string[]>(() => {
+    if (!initialLocalTestSession) return readStoredWatchlist()
+    const storedWatchlist = readLegacyWatchlist(initialLocalTestSession)
+    return storedWatchlist && storedWatchlist.length > 0 ? storedWatchlist : localTestWatchlist
+  })
   const [operatorWatchlist, setOperatorWatchlist] = useState<string[]>(() => readStoredOperatorWatchlist())
-  const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(() => readStoredPersonalTradeLogs())
+  const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(() => {
+    if (!initialLocalTestSession) return readStoredPersonalTradeLogs()
+    const storedTrades = readStoredPersonalTradeLogs(initialLocalTestSession)
+    return storedTrades.length > 0 ? storedTrades : localTestPersonalTrades
+  })
   const [systemTradeLogs, setSystemTradeLogs] = useState<TradeLog[]>(() => cachedAppData?.tradeLogs?.rows ?? operatorTrades)
   const [isAddingStock, setIsAddingStock] = useState(false)
   const [viewMode, setViewMode] = useState<'personal' | 'operator'>(() => readStoredViewMode())
@@ -3591,9 +3811,8 @@ function App() {
   const [isHoldingDeleteConfirmOpen, setIsHoldingDeleteConfirmOpen] = useState(false)
   const [isHoldingLiquidationOpen, setIsHoldingLiquidationOpen] = useState(false)
   const [holdingLiquidationDrafts, setHoldingLiquidationDrafts] = useState<HoldingLiquidationDraft[]>([])
-  const [tradeInvestmentDraft, setTradeInvestmentDraft] = useState<TradeInvestmentDraft | null>(null)
-  const [cashEditDraft, setCashEditDraft] = useState<CashEditDraft | null>(null)
-  const [cashOverrides, setCashOverrides] = useState<Partial<Record<InvestmentType, number>>>({})
+  const [contributionSettings, setContributionSettings] = useState<ContributionSettings>(() => readStoredContributionSettings(initialLocalTestSession))
+  const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
   const [isLoginOpen, setIsLoginOpen] = useState(() => Boolean(notificationSettingsDeepLinkMessage()))
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [loginEmail, setLoginEmail] = useState('')
@@ -3611,8 +3830,8 @@ function App() {
   const [boardSortDirection, setBoardSortDirection] = useState<BoardSortDirection>('desc')
   const [selectedBoardPostIds, setSelectedBoardPostIds] = useState<string[]>([])
   const [pendingBoardDeleteIds, setPendingBoardDeleteIds] = useState<string[]>([])
-  const [userSession, setUserSession] = useState<UserSession | null>(null)
-  const [canUseAccountSwitch, setCanUseAccountSwitch] = useState(false)
+  const [userSession, setUserSession] = useState<UserSession | null>(initialLocalTestSession)
+  const [canUseAccountSwitch, setCanUseAccountSwitch] = useState(Boolean(initialLocalTestSession))
   const [authInfoMessage, setAuthInfoMessage] = useState(() => notificationSettingsDeepLinkMessage())
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
   const [apiStocks, setApiStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? cachedAppData.stocks.rows.map(withDisplayStockName) : searchUniverse.map(stockSearchShell))
@@ -3641,10 +3860,10 @@ function App() {
   const [isSavingMarketTrends, setIsSavingMarketTrends] = useState(false)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [refreshDataMessage, setRefreshDataMessage] = useState('')
-  const [watchlistSortSettings, setWatchlistSortSettings] = useState<WatchlistSortSettings>(() => readStoredUserSettings().watchlistSort)
-  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(() => readStoredUserSettings().notificationPreferences)
+  const [watchlistSortSettings, setWatchlistSortSettings] = useState<WatchlistSortSettings>(() => readStoredUserSettings(initialLocalTestSession).watchlistSort)
+  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(() => readStoredUserSettings(initialLocalTestSession).notificationPreferences)
   const [connectingNotificationChannel, setConnectingNotificationChannel] = useState<NotificationIntegrationChannel | null>(null)
-  const [investmentType, setInvestmentType] = useState<InvestmentType | null>(() => readStoredUserSettings().investmentType)
+  const [investmentType, setInvestmentType] = useState<InvestmentType | null>(() => readStoredUserSettings(initialLocalTestSession).investmentType)
   const [onboardingInvestmentType, setOnboardingInvestmentType] = useState<InvestmentType>(DEFAULT_INVESTMENT_TYPE)
   const [isWatchlistSortOpen, setIsWatchlistSortOpen] = useState(false)
   const [isOperatorImportOpen, setIsOperatorImportOpen] = useState(false)
@@ -3652,8 +3871,9 @@ function App() {
   const [apiLogs, setApiLogs] = useState<ApiLog[]>(() => readStoredApiLogs())
   const [isLoadingApiLogs, setIsLoadingApiLogs] = useState(false)
   const [activePage, setActivePage] = useState<ActivePage>(() => readInitialActivePage())
-  const [areHomeColumnsPinned, setAreHomeColumnsPinned] = useState(false)
-  const [homePinnedWidths, setHomePinnedWidths] = useState<{ watchlistName?: number; holdingName?: number }>({})
+  const [isWatchlistPinned, setIsWatchlistPinned] = useState(false)
+  const [isHoldingPinned, setIsHoldingPinned] = useState(false)
+  const [homePinnedStyles, setHomePinnedStyles] = useState<{ watchlist?: CSSProperties; holding?: CSSProperties }>({})
   const addStockButtonRef = useRef<HTMLButtonElement | null>(null)
   const inlineAddRef = useRef<HTMLDivElement | null>(null)
   const watchlistSortMenuRef = useRef<HTMLDivElement | null>(null)
@@ -3674,22 +3894,46 @@ function App() {
     window.setTimeout(reset, 80)
   }
 
-  const measureHomePinnedWidths = () => {
-    const readWidth = (sheet: HTMLDivElement | null) => {
-      const header = sheet?.querySelector<HTMLTableCellElement>('.home-name-header')
-      return header ? Math.ceil(header.getBoundingClientRect().width) : undefined
+  const homePinnedStyleFor = (sheet: HTMLDivElement | null, type: 'watchlist' | 'holding') => {
+    const table = sheet?.querySelector<HTMLTableElement>('table')
+    const headers = Array.from(table?.querySelectorAll<HTMLTableCellElement>('thead th') ?? [])
+    const width = (index: number, fallback: number) => Math.ceil(headers[index]?.getBoundingClientRect().width || fallback)
+    const isEditable = table?.classList.contains('editable-home-table') ?? true
+    const selectWidth = isEditable ? width(0, 40) : 0
+    const noIndex = isEditable ? 1 : 0
+    const noWidth = width(noIndex, 48)
+    const tickerIndex = type === 'holding' ? (isEditable ? 2 : 1) : -1
+    const tickerWidth = tickerIndex >= 0 ? width(tickerIndex, 92) : 0
+    const nameIndex = type === 'watchlist' ? (isEditable ? 2 : 1) : (isEditable ? 3 : 2)
+    const nameWidth = width(nameIndex, 220)
+    const vars: Record<string, string> = {
+      '--home-select-width': `${selectWidth}px`,
+      '--home-no-left': `${selectWidth}px`,
+      '--home-no-width': `${noWidth}px`,
+      '--home-name-left': `${selectWidth + noWidth + tickerWidth}px`,
+      '--home-name-width': `${nameWidth}px`,
     }
-    return {
-      watchlistName: readWidth(watchlistSheetRef.current),
-      holdingName: readWidth(holdingSheetRef.current),
+
+    if (type === 'holding') {
+      vars['--home-ticker-left'] = `${selectWidth + noWidth}px`
+      vars['--home-ticker-width'] = `${tickerWidth}px`
     }
+
+    return vars as CSSProperties
   }
 
-  const toggleHomeColumnsPinned = () => {
-    if (!areHomeColumnsPinned) {
-      setHomePinnedWidths(measureHomePinnedWidths())
+  const toggleWatchlistPinned = () => {
+    if (!isWatchlistPinned) {
+      setHomePinnedStyles((current) => ({ ...current, watchlist: homePinnedStyleFor(watchlistSheetRef.current, 'watchlist') }))
     }
-    setAreHomeColumnsPinned((current) => !current)
+    setIsWatchlistPinned((current) => !current)
+  }
+
+  const toggleHoldingPinned = () => {
+    if (!isHoldingPinned) {
+      setHomePinnedStyles((current) => ({ ...current, holding: homePinnedStyleFor(holdingSheetRef.current, 'holding') }))
+    }
+    setIsHoldingPinned((current) => !current)
   }
 
   const applyLoadedData = (data: GssgAppData) => {
@@ -4112,6 +4356,7 @@ function App() {
       setWatchlistSortSettings(loadedSettings.watchlistSort)
       setNotificationPreferences(loadedSettings.notificationPreferences)
       setInvestmentType(loadedSettings.investmentType)
+      setContributionSettings(readStoredContributionSettings(session))
       setPersonalTradeLogs(readStoredPersonalTradeLogs(session))
       await loadBoardPosts()
       const legacyTickers = session ? readLegacyWatchlist(session) : null
@@ -4199,6 +4444,13 @@ function App() {
     const syncAuthUser = async (user: User | null, keepLoginModal = false) => {
       if (!isMounted) return
       if (!user) {
+        const storedTestSession = readStoredLocalTestSession()
+        if (storedTestSession) {
+          setUserSession(storedTestSession)
+          setCanUseAccountSwitch(true)
+          await loadServiceData(storedTestSession)
+          return
+        }
         setUserSession(null)
         setCanUseAccountSwitch(false)
         setWatchlist(readStoredWatchlist(null))
@@ -4217,6 +4469,7 @@ function App() {
         setAuthMode('login')
       }
       localStorage.removeItem(LEGACY_AUTH_SESSION_STORAGE_KEY)
+      storeLocalTestSession(null)
       await ensureProfile(nextSession)
       await loadServiceData(nextSession)
     }
@@ -4282,11 +4535,16 @@ function App() {
     [apiStocks, watchlist],
   )
 
+  const operatorFallbackTickers = useMemo(
+    () => Array.from(new Set(systemTradeLogs.map((trade) => trade.ticker))).filter(Boolean),
+    [systemTradeLogs],
+  )
+  const effectiveOperatorWatchlist = operatorWatchlist.length > 0 ? operatorWatchlist : operatorFallbackTickers
   const operatorStocks = useMemo(
-    () => operatorWatchlist
+    () => effectiveOperatorWatchlist
       .map((ticker) => apiStocks.find((stock) => stock.ticker === ticker))
       .filter((stock): stock is Stock => Boolean(stock)),
-    [apiStocks, operatorWatchlist],
+    [apiStocks, effectiveOperatorWatchlist],
   )
 
   const searchResults = useMemo(() => {
@@ -4344,9 +4602,34 @@ function App() {
     visibleProfileTrades,
     apiStocks,
     megaTrendStatus,
-    !isOperatorDataMode ? cashOverrides[displayedInvestmentType] : undefined,
-    userSession || isOperatorDataMode ? DEFAULT_PORTFOLIO_CASH : 0,
+    contributionSettings,
+    displayedInvestmentType,
+    userSession || isOperatorDataMode ? contributionSettings.initialCapital : 0,
   )
+  const contributionDayValidationMessage = contributionDraft?.frequency === 'monthly'
+    ? contributionDayMessage(contributionDraft.dayOfMonth)
+    : ''
+  const isContributionDayInvalid = Boolean(
+    contributionDayValidationMessage
+    && !contributionDayValidationMessage.includes('없는 달')
+    && !contributionDayValidationMessage.includes('윤년'),
+  )
+  const assetSummaryItems = [
+    {
+      label: '보유 현금',
+      value: formatKrwAmount(portfolioSummary.cash),
+      action: openContributionSettings,
+      clickable: !isOperatorDataMode && Boolean(userSession),
+    },
+    { label: '평가 투자금', value: formatKrwAmount(portfolioSummary.openInvestmentAmount) },
+    { label: '누적 매수금', value: formatKrwAmount(portfolioSummary.cumulativeInvestmentAmount) },
+    {
+      label: '예상 손익',
+      value: `${formatKrwAmount(portfolioSummary.profitAmount)} (${portfolioSummary.profitRate >= 0 ? '+' : ''}${portfolioSummary.profitRate.toFixed(1)}%)`,
+      tone: tradeProfitClass(portfolioSummary.profitAmount),
+    },
+    { label: '총 자산', value: formatKrwAmount(portfolioSummary.totalAsset), strong: true },
+  ]
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = !isAdminUser && (activePage === 'board' || activePage === 'admin-logs') ? 'home' : activePage
   const homeSheetResetKey = `${currentActivePage}-${effectiveViewMode}-${displayedInvestmentType}-${userSession?.id ?? 'guest'}`
@@ -4477,30 +4760,33 @@ function App() {
     })
   }
 
-  const saveTradeInvestmentDraft = () => {
-    if (!tradeInvestmentDraft) return
-    const nextAmount = parseAmountValue(tradeInvestmentDraft.value)
-    if (nextAmount === null) return
-    const addedAmount = nextAmount - tradeInvestmentDraft.currentAmount
-    if (addedAmount > portfolioSummary.cash) {
-      setTradeInvestmentDraft((current) => current ? {
-        ...current,
-        error: `지금 바로 넣을 수 있는 현금은 ${formatKrwAmount(portfolioSummary.cash)}까지예요. 보유 현금을 먼저 늘린 뒤 다시 배정해 주세요.`,
-      } : current)
-      return
-    }
-    commitPersonalTradeLogs((current) => current.map((trade) => (
-      tradeKey(trade) === tradeInvestmentDraft.key ? { ...trade, investmentAmount: nextAmount } : trade
-    )))
-    setTradeInvestmentDraft(null)
+  function openContributionSettings() {
+    setContributionDraft({
+      initialCapital: String(contributionSettings.initialCapital),
+      frequency: contributionSettings.frequency,
+      amount: String(contributionSettings.amount),
+      dayOfWeek: String(contributionSettings.dayOfWeek),
+      dayOfMonth: String(contributionSettings.dayOfMonth),
+    })
   }
 
-  const saveCashEditDraft = () => {
-    if (!cashEditDraft) return
-    const nextCash = parseAmountValue(cashEditDraft.value)
-    if (nextCash === null) return
-    setCashOverrides((current) => ({ ...current, [cashEditDraft.investmentType]: nextCash }))
-    setCashEditDraft(null)
+  const saveContributionSettings = () => {
+    if (!contributionDraft) return
+    const dayMessage = contributionDayMessage(contributionDraft.dayOfMonth)
+    if (contributionDraft.frequency === 'monthly' && dayMessage && !dayMessage.includes('없는 달') && !dayMessage.includes('윤년')) {
+      return
+    }
+    const dayOfMonth = Number(contributionDraft.dayOfMonth)
+    const nextSettings = {
+      initialCapital: parseAmountValue(contributionDraft.initialCapital) ?? DEFAULT_CONTRIBUTION_SETTINGS.initialCapital,
+      frequency: contributionDraft.frequency,
+      amount: parseAmountValue(contributionDraft.amount) ?? 0,
+      dayOfWeek: Number(contributionDraft.dayOfWeek),
+      dayOfMonth,
+    }
+    setContributionSettings(nextSettings)
+    storeContributionSettings(userSession, nextSettings)
+    setContributionDraft(null)
   }
 
   const removeSelectedHoldingTrades = () => {
@@ -4563,9 +4849,9 @@ function App() {
 
       return {
         ...trade,
-        buyPrice: draft.buyPrice,
+        buyPrice: formatTradePrice(trade, buyPrice > 0 ? buyPrice : null, draft.buyPrice),
         sellDate,
-        sellPrice: draft.sellPrice,
+        sellPrice: formatTradePrice(trade, sellPrice > 0 ? sellPrice : null, draft.sellPrice),
         returnPct,
         holdingDays,
         status: returnPct >= 0 ? '익절' : '손절',
@@ -4733,11 +5019,13 @@ function App() {
 
   const logout = async () => {
     await supabase?.auth.signOut()
+    storeLocalTestSession(null)
     setUserSession(null)
     setCanUseAccountSwitch(false)
     setWatchlist(readStoredWatchlist(null))
     setPersonalTradeLogs(readStoredPersonalTradeLogs(null))
     setInvestmentType(readStoredUserSettings(null).investmentType)
+    setContributionSettings(readStoredContributionSettings(null))
     setSelectedTickers([])
     setSelectedHoldingTradeKeys([])
     closeHoldingLiquidationModal()
@@ -4767,6 +5055,7 @@ function App() {
         }
 
     setUserSession(nextSession)
+    storeLocalTestSession(nextSession)
     setCanUseAccountSwitch(true)
     const storedWatchlist = readStoredWatchlist(nextSession)
     const nextWatchlist = mode === 'user' && storedWatchlist.length === 0 ? localTestWatchlist : storedWatchlist
@@ -4785,6 +5074,7 @@ function App() {
     setNotificationPreferences(nextSettings.notificationPreferences)
     const nextInvestmentType = mode === 'user' ? nextSettings.investmentType ?? 'long_term' : nextSettings.investmentType
     setInvestmentType(nextInvestmentType)
+    setContributionSettings(readStoredContributionSettings(nextSession))
     if (mode === 'user' && !nextSettings.investmentType) {
       storeUserSettings(nextSession, nextSettings.watchlistSort, nextSettings.notificationPreferences, nextInvestmentType)
     }
@@ -5190,7 +5480,7 @@ function App() {
     setBoardPage(1)
   }
 
-  const currentWatchlistTickers = isOperatorDataMode ? operatorWatchlist : watchlist
+  const currentWatchlistTickers = isOperatorDataMode ? effectiveOperatorWatchlist : watchlist
 
   useEffect(() => {
     localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, activePage)
@@ -5224,11 +5514,11 @@ function App() {
   const isCurrentWatchlistFull = canEditCurrentWatchlist && currentWatchlistTickers.length >= MAX_WATCHLIST_ITEMS
   const personalRemainingSlots = Math.max(0, MAX_WATCHLIST_ITEMS - watchlist.length)
   const operatorImportCandidates = useMemo(
-    () => operatorWatchlist
+    () => effectiveOperatorWatchlist
       .filter((ticker) => !watchlist.includes(ticker))
       .map((ticker) => apiStocks.find((stock) => stock.ticker === ticker) ?? apiSearchStocks.find((stock) => stock.ticker === ticker))
       .filter((stock): stock is Stock => Boolean(stock)),
-    [apiSearchStocks, apiStocks, operatorWatchlist, watchlist],
+    [apiSearchStocks, apiStocks, effectiveOperatorWatchlist, watchlist],
   )
   const isOperatorImportSelectionFull = operatorImportTickers.length >= personalRemainingSlots
   const canShowOperatorImport = Boolean(userSession) && effectiveViewMode === 'personal' && canEditCurrentWatchlist
@@ -5283,9 +5573,9 @@ function App() {
   const currentPricePendingLabel = nextTwoHourUpdateLabel()
   const showEmptyTradeExample = tableStocks.length > 0 && scopedTrades.length === 0
   const showEmptyHoldingExample = tableStocks.length > 0 && scopedOpenTrades.length === 0
-  const tradeBlankRows = Math.max(3, 22 - filteredTrades.length - (showEmptyTradeExample ? 1 : 0))
+  const tradeBlankRows = Math.max(3, 23 - filteredTrades.length - (showEmptyTradeExample ? 1 : 0))
   const watchlistBlankRows = Math.max(0, 10 - tableStocks.length)
-  const holdingBlankRows = Math.max(0, 10 - scopedOpenTrades.length - (showEmptyHoldingExample ? 1 : 0))
+  const holdingBlankRows = Math.max(0, 12 - scopedOpenTrades.length - (showEmptyHoldingExample ? 1 : 0))
   const visibleWatchlistSortOptions = isLongTermInvestor
     ? watchlistSortOptions.filter((option) => option.value !== 'opinion_sell_first')
     : watchlistSortOptions
@@ -5299,12 +5589,8 @@ function App() {
   const isNotificationIntegrationConnected = (channel: NotificationIntegrationChannel) => (
     channel === 'kakaoTalk' ? notificationPreferences.kakaoTalkConnected : notificationPreferences.slackConnected
   )
-  const watchlistPinnedStyle = areHomeColumnsPinned && homePinnedWidths.watchlistName
-    ? { '--home-name-width': `${homePinnedWidths.watchlistName}px` } as CSSProperties
-    : undefined
-  const holdingPinnedStyle = areHomeColumnsPinned && homePinnedWidths.holdingName
-    ? { '--home-name-width': `${homePinnedWidths.holdingName}px` } as CSSProperties
-    : undefined
+  const watchlistPinnedStyle = isWatchlistPinned ? homePinnedStyles.watchlist : undefined
+  const holdingPinnedStyle = isHoldingPinned ? homePinnedStyles.holding : undefined
   const addStockInlineControl = isAddingStock && canEditCurrentWatchlist && !isCurrentWatchlistFull ? (
     <div className="inline-add analysis-inline-add" ref={inlineAddRef}>
       {canShowOperatorImport && (
@@ -5506,7 +5792,7 @@ function App() {
       </header>
 
       {currentActivePage === 'home' ? (
-      <section className="dashboard-grid">
+      <section className={`dashboard-grid ${isLongTermInvestor ? 'long-term-home-grid' : 'swing-home-grid'}`}>
         <section className={`panel trading-log-panel ${isCurrentWatchlistEmpty ? 'dimmed-panel' : ''}`}>
           <div className="log-header">
             <div className="log-title-row">
@@ -5527,21 +5813,7 @@ function App() {
             </div>
             <div className="log-sub-row">
               <div className="log-meta">
-                <p>
-                  총 투자 기간 {investingDays}일
-                  <span>|</span> 총 투자금 {formatKrwAmount(portfolioSummary.totalCapital)}
-                  <span>|</span> 보유 현금{' '}
-                  <button
-                    className="inline-amount-button"
-                    disabled={isOperatorDataMode}
-                    type="button"
-                    onClick={() => setCashEditDraft({ investmentType: displayedInvestmentType, value: String(portfolioSummary.cash) })}
-                  >
-                    {formatKrwAmount(portfolioSummary.cash)}
-                  </button>
-                  {portfolioSummary.withdrawn > 0 && <small> (- {formatKrwAmount(portfolioSummary.withdrawn)} 인출)</small>}
-                  <span>|</span> 예상 손익 {formatKrwAmount(portfolioSummary.profitAmount)} ({portfolioSummary.profitRate >= 0 ? '+' : ''}{portfolioSummary.profitRate.toFixed(1)}%)
-                </p>
+                <p>총 투자 기간 {investingDays}일</p>
                 {!isLongTermInvestor && <p>승률: {visibleWinRates}</p>}
                 <p>성공/실패 기준: {strategyCriteriaLine}</p>
               </div>
@@ -5554,6 +5826,21 @@ function App() {
                 <span aria-hidden="true">{sortDirection === 'desc' ? '↓' : '↑'}</span>
               </button>
             </div>
+          </div>
+
+          <div className="asset-summary-box" aria-label="현재 자산 요약">
+            {assetSummaryItems.map((item) => (
+              <div className={`asset-summary-item ${item.strong ? 'strong' : ''}`} key={item.label}>
+                <span>{item.label}</span>
+                {item.clickable ? (
+                  <button className="asset-summary-value asset-summary-button" type="button" onClick={item.action}>
+                    {item.value}
+                  </button>
+                ) : (
+                  <strong className={`asset-summary-value ${item.tone ?? ''}`}>{item.value}</strong>
+                )}
+              </div>
+            ))}
           </div>
 
           <div className="sheet-wrap trading-log-scroll" key={`trades-${homeSheetResetKey}`} ref={tradingLogScrollRef}>
@@ -5627,7 +5914,7 @@ function App() {
                       <td className="number-cell">{trade.buyPrice}</td>
                       {!isLongTermInvestor && <td>{trade.sellDate}</td>}
                       {!isLongTermInvestor && <td className={trade.sellPrice === '-' ? 'dash-cell' : 'number-cell'}>{trade.sellPrice}</td>}
-                      <td className="strategy-data-cell centered-strategy-cell">
+                      <td className="strategy-data-cell">
                         <StrategyTag
                           onTooltipClose={() => setActiveTooltip(null)}
                           onTooltipOpen={setActiveTooltip}
@@ -5644,21 +5931,7 @@ function App() {
                           {formatPriceWithReturn(returnPriceText, profileReturnPct)}
                         </td>
                       )}
-                      <td className="number-cell">
-                        <button
-                          className="table-amount-button"
-                          disabled={isOperatorDataMode}
-                          type="button"
-                          onClick={() => setTradeInvestmentDraft({
-                            key: tradeKey(trade),
-                            name: `${tradeName(trade)} · ${trade.ticker}`,
-                            currentAmount: investedAmount,
-                            value: String(investedAmount),
-                          })}
-                        >
-                          {formatKrwAmount(investedAmount)}
-                        </button>
-                      </td>
+                      <td className="number-cell">{formatKrwAmount(investedAmount)}</td>
                       <td className={`number-cell ${tradeProfitClass(profitAmount)}`}>{profitAmount === null ? '-' : formatKrwAmount(profitAmount)}</td>
                       <td>{holdingPeriodDays(trade)}</td>
                       {!isLongTermInvestor && (
@@ -5794,7 +6067,7 @@ function App() {
                 </div>
               ) : (
                 <table
-                  className={`sheet-table watchlist-table ${canEditCurrentWatchlist ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
+                  className={`sheet-table watchlist-table ${canEditCurrentWatchlist ? 'editable-home-table' : 'readonly-home-table'} ${isWatchlistPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
                   style={watchlistPinnedStyle}
                 >
                   <thead>
@@ -5804,12 +6077,12 @@ function App() {
                       <th className="home-name-header">
                         <span>종목명</span>
                         <button
-                          aria-label={areHomeColumnsPinned ? 'Home 종목명 고정 끄기' : 'Home 종목명 고정 켜기'}
-                          aria-pressed={areHomeColumnsPinned}
-                          className={`home-pin-toggle ${areHomeColumnsPinned ? 'active' : ''}`}
-                          title={areHomeColumnsPinned ? '종목명 고정 끄기' : '종목명 고정 켜기'}
+                          aria-label={isWatchlistPinned ? '관심 종목명 고정 끄기' : '관심 종목명 고정 켜기'}
+                          aria-pressed={isWatchlistPinned}
+                          className={`home-pin-toggle ${isWatchlistPinned ? 'active' : ''}`}
+                          title={isWatchlistPinned ? '종목명 고정 끄기' : '종목명 고정 켜기'}
                           type="button"
-                          onClick={toggleHomeColumnsPinned}
+                          onClick={toggleWatchlistPinned}
                         >
                           <span aria-hidden="true">📌</span>
                         </button>
@@ -5953,7 +6226,7 @@ function App() {
 
             <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetRef}>
               <table
-                className={`sheet-table holding-table ${isLongTermInvestor ? 'long-term-holding-table' : ''} ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
+                className={`sheet-table holding-table ${isLongTermInvestor ? 'long-term-holding-table' : ''} ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${isHoldingPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
                 style={holdingPinnedStyle}
               >
                 <thead>
@@ -5964,12 +6237,12 @@ function App() {
                     <th className="home-name-header">
                       <span>종목명</span>
                       <button
-                        aria-label={areHomeColumnsPinned ? 'Home 종목명 고정 끄기' : 'Home 종목명 고정 켜기'}
-                        aria-pressed={areHomeColumnsPinned}
-                        className={`home-pin-toggle ${areHomeColumnsPinned ? 'active' : ''}`}
-                        title={areHomeColumnsPinned ? '종목명 고정 끄기' : '종목명 고정 켜기'}
+                        aria-label={isHoldingPinned ? '보유 종목명 고정 끄기' : '보유 종목명 고정 켜기'}
+                        aria-pressed={isHoldingPinned}
+                        className={`home-pin-toggle ${isHoldingPinned ? 'active' : ''}`}
+                        title={isHoldingPinned ? '종목명 고정 끄기' : '종목명 고정 켜기'}
                         type="button"
-                        onClick={toggleHomeColumnsPinned}
+                        onClick={toggleHoldingPinned}
                       >
                         <span aria-hidden="true">📌</span>
                       </button>
@@ -6543,50 +6816,72 @@ function App() {
           </div>
         </div>
       )}
-      {tradeInvestmentDraft && (
+      {contributionDraft && (
         <div className="modal-backdrop" role="presentation">
           <div aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
-            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setTradeInvestmentDraft(null)}>×</button>
-            <h3>투자금 수정</h3>
-            <p>
-              {tradeInvestmentDraft.name}의 투자금 기본값은 매수 시점 보유 현금의 50%입니다.
-              직접 수정하지 않으면 이 기준으로 자동 배정되고, 수정 후에는 입력한 금액을 기준으로 손익을 계산합니다.
-            </p>
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setContributionDraft(null)}>×</button>
+            <h3>현금 투입 설정</h3>
+            <p>초기 자금과 정기 입금액을 기준으로 보유 현금액이 늘어나며, 매수 때마다 종목 별 보유 현금의 50%를 자동 배정합니다.</p>
             <label className="login-field">
-              <span>투자금</span>
+              <span>초기 자금</span>
               <input
                 autoFocus
                 inputMode="numeric"
-                value={tradeInvestmentDraft.value}
-                onChange={(event) => setTradeInvestmentDraft((current) => current ? { ...current, value: event.target.value, error: undefined } : current)}
+                value={amountInputValue(contributionDraft.initialCapital)}
+                onChange={(event) => setContributionDraft((current) => current ? { ...current, initialCapital: amountDraftValue(event.target.value) } : current)}
               />
             </label>
-            {tradeInvestmentDraft.error && <span className="amount-edit-error">{tradeInvestmentDraft.error}</span>}
-            <div className="modal-actions">
-              <button className="modal-cancel" type="button" onClick={() => setTradeInvestmentDraft(null)}>취소</button>
-              <button className="modal-confirm" type="button" onClick={saveTradeInvestmentDraft}>저장</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {cashEditDraft && (
-        <div className="modal-backdrop" role="presentation">
-          <div aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
-            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setCashEditDraft(null)}>×</button>
-            <h3>보유 현금 수정</h3>
-            <p>현금을 줄이면 총 투자금은 유지하고, 줄어든 금액은 인출액으로 표시합니다.</p>
             <label className="login-field">
-              <span>보유 현금</span>
+              <span>입금 주기</span>
+              <select
+                value={contributionDraft.frequency}
+                onChange={(event) => setContributionDraft((current) => current ? { ...current, frequency: event.target.value as ContributionFrequency } : current)}
+              >
+                <option value="weekly">매주</option>
+                <option value="monthly">매월</option>
+              </select>
+            </label>
+            {contributionDraft.frequency === 'weekly' ? (
+              <label className="login-field">
+                <span>입금 요일</span>
+                <select
+                  value={contributionDraft.dayOfWeek}
+                  onChange={(event) => setContributionDraft((current) => current ? { ...current, dayOfWeek: event.target.value } : current)}
+                >
+                  {weekdayOptions.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+            ) : (
+              <label className="login-field">
+                <span>입금일</span>
+                <input
+                  inputMode="numeric"
+                  max="31"
+                  min="1"
+                  step="1"
+                  value={contributionDraft.dayOfMonth}
+                  onChange={(event) => setContributionDraft((current) => current ? { ...current, dayOfMonth: event.target.value } : current)}
+                />
+                {contributionDayValidationMessage && (
+                  <span className={isContributionDayInvalid ? 'field-message field-message-error' : 'field-message field-message-note'}>
+                    {contributionDayValidationMessage}
+                  </span>
+                )}
+              </label>
+            )}
+            <label className="login-field">
+              <span>입금액</span>
               <input
-                autoFocus
                 inputMode="numeric"
-                value={cashEditDraft.value}
-                onChange={(event) => setCashEditDraft((current) => current ? { ...current, value: event.target.value } : current)}
+                value={amountInputValue(contributionDraft.amount)}
+                onChange={(event) => setContributionDraft((current) => current ? { ...current, amount: amountDraftValue(event.target.value) } : current)}
               />
             </label>
             <div className="modal-actions">
-              <button className="modal-cancel" type="button" onClick={() => setCashEditDraft(null)}>취소</button>
-              <button className="modal-confirm" type="button" onClick={saveCashEditDraft}>저장</button>
+              <button className="modal-cancel" type="button" onClick={() => setContributionDraft(null)}>취소</button>
+              <button className="modal-confirm" disabled={isContributionDayInvalid} type="button" onClick={saveContributionSettings}>저장</button>
             </div>
           </div>
         </div>
