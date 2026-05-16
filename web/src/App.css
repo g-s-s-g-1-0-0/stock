@@ -471,6 +471,23 @@
   padding: 9px 10px;
 }
 
+.asset-summary-action {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.asset-summary-action:hover {
+  border-color: rgba(37, 99, 235, 0.45);
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.asset-summary-action:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.35);
+  outline-offset: 2px;
+}
+
 .asset-summary-item > span {
   overflow: hidden;
   color: var(--muted);

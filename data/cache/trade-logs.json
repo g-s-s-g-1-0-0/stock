@@ -57,7 +57,7 @@
       "sellPrice": "$145.29",
       "returnPct": 2.48,
       "holdingDays": "-",
-      "status": "익절",
+      "status": "실패 익절",
       "sellTimestamp": "2026-05-14T16:55:47.670880Z",
       "exitReason": "나스닥 고점 청산/강제매도"
     },
@@ -108,7 +108,7 @@
       "sellPrice": "₩85,000",
       "returnPct": 2.16,
       "holdingDays": "-",
-      "status": "익절",
+      "status": "실패 익절",
       "sellTimestamp": "2026-05-14T16:55:47.671085Z",
       "exitReason": "나스닥 고점 청산/강제매도"
     },
@@ -125,7 +125,7 @@
       "sellPrice": "$433.37",
       "returnPct": 4.6,
       "holdingDays": "-",
-      "status": "익절",
+      "status": "실패 익절",
       "sellTimestamp": "2026-05-14T16:55:47.671128Z",
       "exitReason": "나스닥 고점 청산/강제매도"
     },

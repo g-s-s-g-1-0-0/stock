@@ -328,10 +328,11 @@ const notificationIntegrationOptions: Array<{
 ]
 
 function configuredAdminEmails() {
-  return (import.meta.env.VITE_ADMIN_EMAILS ?? DEFAULT_ADMIN_EMAILS.join(','))
+  const configuredEmails = (import.meta.env.VITE_ADMIN_EMAILS ?? '')
     .split(',')
     .map((email: string) => email.trim().toLowerCase())
     .filter(Boolean)
+  return configuredEmails.length > 0 ? configuredEmails : DEFAULT_ADMIN_EMAILS
 }
 
 function personalWatchlistStorageKey(session: UserSession | null) {
@@ -4614,12 +4615,13 @@ function App() {
     && !contributionDayValidationMessage.includes('없는 달')
     && !contributionDayValidationMessage.includes('윤년'),
   )
+  const canEditContributionSettings = Boolean(userSession && (!isOperatorDataMode || isAdminUser))
   const assetSummaryItems = [
     {
       label: '보유 현금',
       value: formatKrwAmount(portfolioSummary.cash),
       action: openContributionSettings,
-      clickable: Boolean(userSession) && (!isOperatorDataMode || isAdminUser),
+      clickable: canEditContributionSettings,
     },
     { label: '평가 투자금', value: formatKrwAmount(portfolioSummary.openInvestmentAmount) },
     { label: '누적 매수금', value: formatKrwAmount(portfolioSummary.cumulativeInvestmentAmount) },
@@ -5829,18 +5831,24 @@ function App() {
           </div>
 
           <div className="asset-summary-box" aria-label="현재 자산 요약">
-            {assetSummaryItems.map((item) => (
-              <div className={`asset-summary-item ${item.strong ? 'strong' : ''}`} key={item.label}>
-                <span>{item.label}</span>
-                {item.clickable ? (
-                  <button className="asset-summary-value asset-summary-button" type="button" onClick={item.action}>
-                    {item.value}
+            {assetSummaryItems.map((item) => {
+              const itemClassName = `asset-summary-item ${item.strong ? 'strong' : ''}`.trim()
+              if (item.clickable) {
+                return (
+                  <button className={`${itemClassName} asset-summary-action`} key={item.label} type="button" onClick={item.action}>
+                    <span>{item.label}</span>
+                    <strong className="asset-summary-value asset-summary-button">{item.value}</strong>
                   </button>
-                ) : (
+                )
+              }
+
+              return (
+                <div className={itemClassName} key={item.label}>
+                  <span>{item.label}</span>
                   <strong className={`asset-summary-value ${item.tone ?? ''}`}>{item.value}</strong>
-                )}
-              </div>
-            ))}
+                </div>
+              )
+            })}
           </div>
 
           <div className="sheet-wrap trading-log-scroll" key={`trades-${homeSheetResetKey}`} ref={tradingLogScrollRef}>
