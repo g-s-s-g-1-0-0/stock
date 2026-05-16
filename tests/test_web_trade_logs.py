@@ -91,6 +91,35 @@ def test_nasdaq_peak_uses_existing_trade_price_when_stock_cache_omits_ticker(mon
     assert row["status"] == "익절"
 
 
+def test_profitable_exit_before_strategy_target_is_failure_profit(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    payload = {
+        "rows": [
+            {
+                "ticker": "AVGO",
+                "strategy": "A. 200일선 상방 & 모멘텀 재가속",
+                "buyDate": "2026.05.01",
+                "buyPrice": "$100.00",
+                "currentPrice": "$115.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            },
+        ],
+    }
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps(payload), encoding="utf-8")
+
+    logs.update_trade_logs([], {}, {}, {"peakTriggered": True})
+
+    updated = logs.load_json(cache_path, {})
+    row = updated["rows"][0]
+    assert row["returnPct"] == 15.0
+    assert row["status"] == "실패 익절"
+
+
 def test_buy_signals_append_one_open_trade_per_strategy(monkeypatch, tmp_path):
     cache_path, _ = patch_log_paths(monkeypatch, tmp_path)
 

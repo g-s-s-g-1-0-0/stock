@@ -248,6 +248,21 @@ def return_pct(buy_price: Any, sell_price: Any) -> float:
     return round(((sell - buy) / buy) * 100, 2)
 
 
+def target_return_pct(strategy: str) -> float:
+    code = strategy_code(strategy)
+    if code == "D":
+        return 12.0
+    if code in {"A", "B", "C", "E", "F"}:
+        return 20.0
+    return 20.0
+
+
+def trade_status_for_exit(trade: dict[str, Any], result: float) -> str:
+    if result <= 0:
+        return "손절"
+    return "익절" if result >= target_return_pct(str(trade.get("strategy") or "")) else "실패 익절"
+
+
 def strategy_code(value: Any) -> str:
     text = str(value or "").strip()
     if not text:
@@ -467,7 +482,7 @@ def close_trade(
     trade["sellPrice"] = sell_price or "-"
     trade["returnPct"] = result
     trade["holdingDays"] = "-"
-    trade["status"] = "익절" if result > 0 else "손절"
+    trade["status"] = trade_status_for_exit(trade, result)
     trade["exitReason"] = reason
     trade.pop("upperExitArmedDate", None)
     trade.pop("restoreWatchDate", None)

@@ -474,6 +474,7 @@ function normalizeInvestmentType(value: unknown): InvestmentType | null {
 function normalizeTradeLog(value: unknown): TradeLog | null {
   const candidate = value as Partial<TradeLog> | null
   if (!candidate || typeof candidate.ticker !== 'string' || typeof candidate.buyDate !== 'string') return null
+  const normalizedStatus = String(candidate.status).replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim()
 
   return {
     slotId: typeof candidate.slotId === 'string' ? candidate.slotId : undefined,
@@ -488,7 +489,7 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     sellPrice: typeof candidate.sellPrice === 'string' ? candidate.sellPrice : '-',
     returnPct: typeof candidate.returnPct === 'number' && Number.isFinite(candidate.returnPct) ? candidate.returnPct : 0,
     holdingDays: typeof candidate.holdingDays === 'number' || candidate.holdingDays === '-' ? candidate.holdingDays : '-',
-    status: ['익절', '손절', '실패 익절', '보유 중'].includes(String(candidate.status)) ? candidate.status as TradeStatus : '보유 중',
+    status: ['익절', '손절', '실패 익절', '보유 중'].includes(normalizedStatus) ? normalizedStatus as TradeStatus : '보유 중',
   }
 }
 
@@ -1185,6 +1186,11 @@ function returnClass(value: number) {
   if (value > 0) return 'return-positive'
   if (value < 0) return 'return-negative'
   return ''
+}
+
+function tradeReturnClass(trade: TradeLog, value: number) {
+  if (trade.status === '손절' || trade.status === '실패 익절') return 'return-negative'
+  return returnClass(value)
 }
 
 function strategyCode(strategy: string) {
@@ -4145,7 +4151,8 @@ function App() {
   const isLongTermInvestor = displayedInvestmentType === 'long_term' && effectiveViewMode === 'personal'
   const scopedTrades = isOperatorDataMode ? systemTradeLogs : personalTradeLogs
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
-  const filteredTrades = scopedTrades
+  const visibleProfileTrades = isLongTermInvestor ? scopedOpenTrades : scopedTrades
+  const filteredTrades = visibleProfileTrades
     .filter((trade) => selectedStrategy === '전체' || strategyCode(trade.strategy) === selectedStrategy)
     .slice()
     .sort((a, b) => {
@@ -4165,7 +4172,7 @@ function App() {
   const strategyCriteriaLine = isLongTermInvestor
     ? '장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 보유 종목에서 직접 처리합니다.'
     : 'A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%)'
-  const investingDays = daysFromFirstTrade(scopedTrades)
+  const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = !isAdminUser && (activePage === 'board' || activePage === 'admin-logs') ? 'home' : activePage
   const homeSheetResetKey = `${currentActivePage}-${effectiveViewMode}-${displayedInvestmentType}-${userSession?.id ?? 'guest'}`
@@ -5414,7 +5421,7 @@ function App() {
                       {profileReturnPct === null ? (
                         <td className={returnPriceText === '-' ? 'dash-cell' : 'number-cell'}>{returnPriceText === '-' ? '-' : formatPriceWithReturn(returnPriceText, null)}</td>
                       ) : (
-                        <td className={`number-cell ${returnClass(profileReturnPct)}`}>
+                        <td className={`number-cell ${tradeReturnClass(trade, profileReturnPct)}`}>
                           {formatPriceWithReturn(returnPriceText, profileReturnPct)}
                         </td>
                       )}
