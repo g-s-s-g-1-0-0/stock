@@ -2085,6 +2085,7 @@ const Utils = {
     const stockSymbols = changes.map(c => c.ticker).join(", ");
     const displayFrom = c => c.fromLabel || ((c.from === "매수" && c.to === "매수") ? "매수(보유중)" : c.from);
     const displayTo   = c => c.toLabel   || ((c.from === "매수" && c.to === "매수") ? "추가 매수" : c.to);
+    const hasBuyTransition = changes.some(c => c.to === "매수" && (c.from !== "매수" || displayTo(c).includes("추가 매수")));
     const changesHtml  = changes.map((c, i) => {
       const fromLabel    = displayFrom(c);
       const toLabel      = displayTo(c);
@@ -2111,10 +2112,15 @@ const Utils = {
       );
     }).join("");
 
+    const macroContextHtml = hasBuyTransition ? Utils.buildMacroContextHtml(globalData) : "";
+    const trendTop3Html    = hasBuyTransition ? Utils.buildTrendTop3Html(trendData) : "";
+
     const emailBody = `
     <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
       <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">투자의견이 변경된 종목이 있습니다.</p>
       <div>${changesHtml}</div>
+      ${macroContextHtml}
+      ${trendTop3Html}
       <p style="margin:0;"><strong>현재 매수 의견 종목:</strong> ${buyOpinions.length > 0 ? buyOpinions.join(", ") : "없음"}</p>
       <p style="margin:0;"><strong>보유 중 관망 종목:</strong> ${watchHoldingOpinions.length > 0 ? watchHoldingOpinions.join(", ") : "없음"}</p>
       <p style="margin:0;"><strong>현재 매도 의견 종목:</strong> ${sellOpinions.length > 0 ? sellOpinions.join(", ") : "없음"}</p><br>
