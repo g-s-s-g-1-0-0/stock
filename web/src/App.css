@@ -452,13 +452,10 @@
 }
 
 .log-sub-row p {
-  overflow: hidden;
   margin: 0;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .log-sub-row p span {
@@ -923,12 +920,12 @@
 }
 
 .trading-log-table {
-  min-width: 1180px;
+  min-width: 1320px;
   height: 100%;
 }
 
 .long-term-trading-log-table {
-  min-width: 760px;
+  min-width: 940px;
 }
 
 .watchlist-table {
@@ -2259,6 +2256,14 @@
   text-align: left;
 }
 
+.trading-log-table .centered-strategy-cell {
+  text-align: center;
+}
+
+.trading-log-table .centered-strategy-cell .strategy-pill {
+  justify-content: center;
+}
+
 .watchlist-table .industry-cell {
   text-align: left !important;
 }
@@ -2277,6 +2282,53 @@
 
 .number-cell {
   text-align: right !important;
+}
+
+.inline-amount-button,
+.table-amount-button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  padding: 0;
+  text-align: right;
+}
+
+.inline-amount-button {
+  color: var(--sheet-text);
+  text-decoration: none;
+}
+
+.table-amount-button {
+  width: 100%;
+  color: #2563eb;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: rgba(37, 99, 235, 0.35);
+  text-underline-offset: 3px;
+}
+
+.inline-amount-button:disabled,
+.table-amount-button:disabled {
+  cursor: default;
+  text-decoration: none;
+}
+
+.amount-edit-modal {
+  max-width: 420px;
+}
+
+.amount-edit-error {
+  display: block;
+  margin-top: -4px;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .watchlist-table .number-cell {

@@ -1,5 +1,5 @@
 import './App.css'
-import { Fragment, type FormEvent, type ReactNode, type WheelEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, type CSSProperties, type FormEvent, type ReactNode, type WheelEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, type AppData, type RuntimeMeta } from './api'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
@@ -58,6 +58,8 @@ type Stock = {
 
 type TradeLog = {
   slotId?: string
+  investmentType?: InvestmentType
+  investmentAmount?: number
   ticker: string
   name?: string
   market?: Market
@@ -100,6 +102,30 @@ type HoldingLiquidationDraft = {
   buyPrice: string
   sellDate: string
   sellPrice: string
+}
+
+type TradeInvestmentDraft = {
+  key: string
+  name: string
+  currentAmount: number
+  value: string
+  error?: string
+}
+
+type CashEditDraft = {
+  investmentType: InvestmentType
+  value: string
+}
+
+type PortfolioSummary = {
+  cash: number
+  projectedCash: number
+  withdrawn: number
+  totalCapital: number
+  investedAmount: number
+  profitAmount: number
+  profitRate: number
+  amountByTradeKey: Map<string, number>
 }
 
 type TechnicalColumn = {
@@ -225,6 +251,7 @@ const DEFAULT_USER_SETTINGS: StoredUserSettings = {
   investmentType: null,
 }
 const DEFAULT_INVESTMENT_TYPE: InvestmentType = 'long_term'
+const DEFAULT_PORTFOLIO_CASH = 10_000_000
 const TEST_USER_SESSION: UserSession = {
   id: 'local-test-user',
   email: 'test@gongsu.local',
@@ -478,6 +505,8 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
 
   return {
     slotId: typeof candidate.slotId === 'string' ? candidate.slotId : undefined,
+    investmentType: normalizeInvestmentType(candidate.investmentType) ?? undefined,
+    investmentAmount: typeof candidate.investmentAmount === 'number' && Number.isFinite(candidate.investmentAmount) ? candidate.investmentAmount : undefined,
     ticker: candidate.ticker,
     name: typeof candidate.name === 'string' ? candidate.name : undefined,
     market: candidate.market === 'KR' || candidate.market === 'US' ? candidate.market : undefined,
@@ -494,12 +523,18 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
 }
 
 function readStoredPersonalTradeLogs(session: UserSession | null = null) {
+  if (!session) return personalTrades
   const stored = localStorage.getItem(personalTradeLogsStorageKey(session))
   if (!stored) return personalTrades
 
   try {
     const parsed = JSON.parse(stored)
-    return Array.isArray(parsed) ? parsed.map(normalizeTradeLog).filter((trade): trade is TradeLog => Boolean(trade)) : personalTrades
+    if (!Array.isArray(parsed)) return personalTrades
+    const normalized = parsed.map(normalizeTradeLog).filter((trade): trade is TradeLog => Boolean(trade))
+    if (import.meta.env.DEV && normalized.length > 0 && normalized.every((trade) => !trade.investmentType)) {
+      return personalTrades
+    }
+    return normalized
   } catch {
     localStorage.removeItem(personalTradeLogsStorageKey(session))
     return personalTrades
@@ -796,16 +831,17 @@ const initialWatchlist: string[] = []
 const operatorTickers: string[] = []
 const strategyFilters = ['A', 'B', 'C', 'D', 'E', 'F']
 const personalTrades: TradeLog[] = []
-const localTestWatchlist = ['NVDA', 'MSFT', '005930']
+const localTestWatchlist = ['AVGO', 'NVDA', 'MSFT', '005930']
 const localTestPersonalTrades: TradeLog[] = [
   {
-    ticker: 'NVDA',
-    name: 'NVIDIA',
+    investmentType: 'long_term',
+    ticker: 'AVGO',
+    name: 'Broadcom',
     market: 'US',
-    currentPrice: '$118.40',
-    strategy: 'D. 200일선 상방 & 상승 흐름 강화',
-    buyDate: '2026.04.15',
-    buyPrice: '$104.20',
+    currentPrice: '$425.19',
+    strategy: 'E. 200일선 상방 & 스퀴즈 저점',
+    buyDate: '2026.04.18',
+    buyPrice: '$389.40',
     sellDate: '-',
     sellPrice: '-',
     returnPct: 0,
@@ -813,6 +849,7 @@ const localTestPersonalTrades: TradeLog[] = [
     status: '보유 중',
   },
   {
+    investmentType: 'long_term',
     ticker: 'MSFT',
     name: 'Microsoft',
     market: 'US',
@@ -827,6 +864,37 @@ const localTestPersonalTrades: TradeLog[] = [
     status: '보유 중',
   },
   {
+    investmentType: 'swing',
+    ticker: 'AVGO',
+    name: 'Broadcom',
+    market: 'US',
+    currentPrice: '$425.19',
+    strategy: 'E. 200일선 상방 & 스퀴즈 저점',
+    buyDate: '2026.04.18',
+    buyPrice: '$389.40',
+    sellDate: '2026.05.15',
+    sellPrice: '$425.19',
+    returnPct: 9.19,
+    holdingDays: 27,
+    status: '실패 익절',
+  },
+  {
+    investmentType: 'swing',
+    ticker: 'NVDA',
+    name: 'NVIDIA',
+    market: 'US',
+    currentPrice: '$118.40',
+    strategy: 'D. 200일선 상방 & 상승 흐름 강화',
+    buyDate: '2026.04.15',
+    buyPrice: '$104.20',
+    sellDate: '2026.05.08',
+    sellPrice: '$118.40',
+    returnPct: 13.63,
+    holdingDays: 23,
+    status: '익절',
+  },
+  {
+    investmentType: 'swing',
     ticker: '005930',
     name: '삼성전자',
     market: 'KR',
@@ -1470,6 +1538,11 @@ function parsePriceValue(value: string) {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+function parseAmountValue(value: string) {
+  const parsed = Number(value.replace(/[^0-9.-]/g, ''))
+  return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : null
+}
+
 function currentReturnPct(trade: TradeLog, stocks: Stock[] = searchUniverse) {
   const buyPrice = parsePriceValue(trade.buyPrice)
   const currentPrice = parsePriceValue(trade.currentPrice || stocks.find((stock) => stock.ticker === trade.ticker)?.currentPrice || '')
@@ -1484,6 +1557,28 @@ function tradeCurrentPriceText(trade: TradeLog, stocks: Stock[] = searchUniverse
 
 function displayedTradeReturnPct(trade: TradeLog, stocks: Stock[] = searchUniverse) {
   return trade.status === '보유 중' ? currentReturnPct(trade, stocks) : trade.returnPct
+}
+
+function tradeInvestmentAmount(trade: TradeLog, amountByTradeKey?: Map<string, number>) {
+  return amountByTradeKey?.get(tradeKey(trade)) ?? trade.investmentAmount ?? 0
+}
+
+function tradeProfitAmount(trade: TradeLog, stocks: Stock[] = searchUniverse, amountByTradeKey?: Map<string, number>) {
+  const returnPct = displayedTradeReturnPct(trade, stocks)
+  if (returnPct === null) return null
+  return Math.round(tradeInvestmentAmount(trade, amountByTradeKey) * returnPct / 100)
+}
+
+function formatKrwAmount(value: number) {
+  const sign = value < 0 ? '-' : ''
+  return `${sign}₩${Math.abs(Math.round(value)).toLocaleString('ko-KR')}`
+}
+
+function tradeProfitClass(value: number | null) {
+  if (value === null) return ''
+  if (value > 0) return 'return-positive'
+  if (value < 0) return 'return-negative'
+  return ''
 }
 
 function tradeReturnPriceText(trade: TradeLog, stocks: Stock[] = searchUniverse) {
@@ -1508,7 +1603,55 @@ function valuationFromPriceRange(currentPrice: string, fairPrice: string): Valua
 }
 
 function tradeKey(trade: TradeLog) {
-  return trade.slotId || `${trade.ticker}-${trade.buyDate}-${strategyCode(trade.strategy)}-${trade.buyPrice}`
+  return trade.slotId || `${trade.investmentType ?? 'shared'}-${trade.ticker}-${trade.buyDate}-${strategyCode(trade.strategy)}-${trade.buyPrice}`
+}
+
+function buildPortfolioSummary(
+  trades: TradeLog[],
+  stocks: Stock[],
+  megaTrendForTrade: (trade: TradeLog) => string,
+  cashOverride?: number,
+  initialCash = DEFAULT_PORTFOLIO_CASH,
+): PortfolioSummary {
+  let runningCash = initialCash
+  const amountByTradeKey = new Map<string, number>()
+  const orderedTrades = [...trades].sort((a, b) => {
+    const dateDelta = parseTradeDate(a.buyDate) - parseTradeDate(b.buyDate)
+    if (dateDelta !== 0) return dateDelta
+    const aTrendRank = megaTrendForTrade(a).startsWith('충족') ? 0 : 1
+    const bTrendRank = megaTrendForTrade(b).startsWith('충족') ? 0 : 1
+    return aTrendRank - bTrendRank || a.ticker.localeCompare(b.ticker)
+  })
+
+  for (const trade of orderedTrades) {
+    const amount = trade.investmentAmount ?? Math.max(0, Math.floor(runningCash * 0.5))
+    amountByTradeKey.set(tradeKey(trade), amount)
+    runningCash -= amount
+
+    if (trade.status !== '보유 중') {
+      const realizedReturn = displayedTradeReturnPct(trade, stocks) ?? 0
+      runningCash += Math.round(amount * (1 + realizedReturn / 100))
+    }
+  }
+
+  const projectedCash = Math.round(runningCash)
+  const cash = cashOverride ?? projectedCash
+  const withdrawn = cash < projectedCash ? projectedCash - cash : 0
+  const investedAmount = trades.reduce((sum, trade) => sum + tradeInvestmentAmount(trade, amountByTradeKey), 0)
+  const profitAmount = trades.reduce((sum, trade) => sum + (tradeProfitAmount(trade, stocks, amountByTradeKey) ?? 0), 0)
+  const totalCapital = investedAmount
+  const profitRate = investedAmount > 0 ? profitAmount / investedAmount * 100 : 0
+
+  return {
+    cash,
+    projectedCash,
+    withdrawn,
+    totalCapital,
+    investedAmount,
+    profitAmount,
+    profitRate,
+    amountByTradeKey,
+  }
 }
 
 function displayIndustryLabel(industry?: string) {
@@ -3448,6 +3591,9 @@ function App() {
   const [isHoldingDeleteConfirmOpen, setIsHoldingDeleteConfirmOpen] = useState(false)
   const [isHoldingLiquidationOpen, setIsHoldingLiquidationOpen] = useState(false)
   const [holdingLiquidationDrafts, setHoldingLiquidationDrafts] = useState<HoldingLiquidationDraft[]>([])
+  const [tradeInvestmentDraft, setTradeInvestmentDraft] = useState<TradeInvestmentDraft | null>(null)
+  const [cashEditDraft, setCashEditDraft] = useState<CashEditDraft | null>(null)
+  const [cashOverrides, setCashOverrides] = useState<Partial<Record<InvestmentType, number>>>({})
   const [isLoginOpen, setIsLoginOpen] = useState(() => Boolean(notificationSettingsDeepLinkMessage()))
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [loginEmail, setLoginEmail] = useState('')
@@ -3507,6 +3653,7 @@ function App() {
   const [isLoadingApiLogs, setIsLoadingApiLogs] = useState(false)
   const [activePage, setActivePage] = useState<ActivePage>(() => readInitialActivePage())
   const [areHomeColumnsPinned, setAreHomeColumnsPinned] = useState(false)
+  const [homePinnedWidths, setHomePinnedWidths] = useState<{ watchlistName?: number; holdingName?: number }>({})
   const addStockButtonRef = useRef<HTMLButtonElement | null>(null)
   const inlineAddRef = useRef<HTMLDivElement | null>(null)
   const watchlistSortMenuRef = useRef<HTMLDivElement | null>(null)
@@ -3525,6 +3672,24 @@ function App() {
     reset()
     window.requestAnimationFrame(reset)
     window.setTimeout(reset, 80)
+  }
+
+  const measureHomePinnedWidths = () => {
+    const readWidth = (sheet: HTMLDivElement | null) => {
+      const header = sheet?.querySelector<HTMLTableCellElement>('.home-name-header')
+      return header ? Math.ceil(header.getBoundingClientRect().width) : undefined
+    }
+    return {
+      watchlistName: readWidth(watchlistSheetRef.current),
+      holdingName: readWidth(holdingSheetRef.current),
+    }
+  }
+
+  const toggleHomeColumnsPinned = () => {
+    if (!areHomeColumnsPinned) {
+      setHomePinnedWidths(measureHomePinnedWidths())
+    }
+    setAreHomeColumnsPinned((current) => !current)
   }
 
   const applyLoadedData = (data: GssgAppData) => {
@@ -4149,7 +4314,9 @@ function App() {
   const isOperatorDataMode = effectiveViewMode === 'operator'
   const displayedInvestmentType = investmentType ?? DEFAULT_INVESTMENT_TYPE
   const isLongTermInvestor = displayedInvestmentType === 'long_term' && effectiveViewMode === 'personal'
-  const scopedTrades = isOperatorDataMode ? systemTradeLogs : personalTradeLogs
+  const scopedTrades = isOperatorDataMode
+    ? systemTradeLogs
+    : personalTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const visibleProfileTrades = isLongTermInvestor ? scopedOpenTrades : scopedTrades
   const filteredTrades = visibleProfileTrades
@@ -4173,6 +4340,13 @@ function App() {
     ? '장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 보유 종목에서 직접 처리합니다.'
     : 'A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%)'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
+  const portfolioSummary = buildPortfolioSummary(
+    visibleProfileTrades,
+    apiStocks,
+    megaTrendStatus,
+    !isOperatorDataMode ? cashOverrides[displayedInvestmentType] : undefined,
+    userSession || isOperatorDataMode ? DEFAULT_PORTFOLIO_CASH : 0,
+  )
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = !isAdminUser && (activePage === 'board' || activePage === 'admin-logs') ? 'home' : activePage
   const homeSheetResetKey = `${currentActivePage}-${effectiveViewMode}-${displayedInvestmentType}-${userSession?.id ?? 'guest'}`
@@ -4301,6 +4475,32 @@ function App() {
       storePersonalTradeLogs(userSession, next)
       return next
     })
+  }
+
+  const saveTradeInvestmentDraft = () => {
+    if (!tradeInvestmentDraft) return
+    const nextAmount = parseAmountValue(tradeInvestmentDraft.value)
+    if (nextAmount === null) return
+    const addedAmount = nextAmount - tradeInvestmentDraft.currentAmount
+    if (addedAmount > portfolioSummary.cash) {
+      setTradeInvestmentDraft((current) => current ? {
+        ...current,
+        error: `지금 바로 넣을 수 있는 현금은 ${formatKrwAmount(portfolioSummary.cash)}까지예요. 보유 현금을 먼저 늘린 뒤 다시 배정해 주세요.`,
+      } : current)
+      return
+    }
+    commitPersonalTradeLogs((current) => current.map((trade) => (
+      tradeKey(trade) === tradeInvestmentDraft.key ? { ...trade, investmentAmount: nextAmount } : trade
+    )))
+    setTradeInvestmentDraft(null)
+  }
+
+  const saveCashEditDraft = () => {
+    if (!cashEditDraft) return
+    const nextCash = parseAmountValue(cashEditDraft.value)
+    if (nextCash === null) return
+    setCashOverrides((current) => ({ ...current, [cashEditDraft.investmentType]: nextCash }))
+    setCashEditDraft(null)
   }
 
   const removeSelectedHoldingTrades = () => {
@@ -5065,7 +5265,7 @@ function App() {
     }
     closeOperatorImportModal()
   }
-  const megaTrendStatus = (trade: TradeLog) => {
+  function megaTrendStatus(trade: TradeLog) {
     const stock = apiStocks.find((candidate) => candidate.ticker === trade.ticker)
     const industry = primaryIndustryLabel(stock?.industry)
     const keywords = industryTrendKeywords(stock?.industry)
@@ -5099,6 +5299,12 @@ function App() {
   const isNotificationIntegrationConnected = (channel: NotificationIntegrationChannel) => (
     channel === 'kakaoTalk' ? notificationPreferences.kakaoTalkConnected : notificationPreferences.slackConnected
   )
+  const watchlistPinnedStyle = areHomeColumnsPinned && homePinnedWidths.watchlistName
+    ? { '--home-name-width': `${homePinnedWidths.watchlistName}px` } as CSSProperties
+    : undefined
+  const holdingPinnedStyle = areHomeColumnsPinned && homePinnedWidths.holdingName
+    ? { '--home-name-width': `${homePinnedWidths.holdingName}px` } as CSSProperties
+    : undefined
   const addStockInlineControl = isAddingStock && canEditCurrentWatchlist && !isCurrentWatchlistFull ? (
     <div className="inline-add analysis-inline-add" ref={inlineAddRef}>
       {canShowOperatorImport && (
@@ -5323,12 +5529,20 @@ function App() {
               <div className="log-meta">
                 <p>
                   총 투자 기간 {investingDays}일
-                  {!isLongTermInvestor && (
-                    <>
-                      <span>|</span> 승률: {visibleWinRates}
-                    </>
-                  )}
+                  <span>|</span> 총 투자금 {formatKrwAmount(portfolioSummary.totalCapital)}
+                  <span>|</span> 보유 현금{' '}
+                  <button
+                    className="inline-amount-button"
+                    disabled={isOperatorDataMode}
+                    type="button"
+                    onClick={() => setCashEditDraft({ investmentType: displayedInvestmentType, value: String(portfolioSummary.cash) })}
+                  >
+                    {formatKrwAmount(portfolioSummary.cash)}
+                  </button>
+                  {portfolioSummary.withdrawn > 0 && <small> (- {formatKrwAmount(portfolioSummary.withdrawn)} 인출)</small>}
+                  <span>|</span> 예상 손익 {formatKrwAmount(portfolioSummary.profitAmount)} ({portfolioSummary.profitRate >= 0 ? '+' : ''}{portfolioSummary.profitRate.toFixed(1)}%)
                 </p>
+                {!isLongTermInvestor && <p>승률: {visibleWinRates}</p>}
                 <p>성공/실패 기준: {strategyCriteriaLine}</p>
               </div>
               <button
@@ -5364,6 +5578,8 @@ function App() {
                     </MetricValue>
                   </th>
                   <th>{isLongTermInvestor ? '현재가(수익률)' : '가격(수익률)'}</th>
+                  <th>투자금</th>
+                  <th>예상 손익</th>
                   <th>보유 기간</th>
                   {!isLongTermInvestor && <th>결과</th>}
                 </tr>
@@ -5387,13 +5603,16 @@ function App() {
                     <td className="dash-cell">미충족</td>
                     <td className="dash-cell">-</td>
                     <td className="dash-cell">-</td>
+                    <td className="dash-cell">-</td>
+                    <td className="dash-cell">-</td>
                     {!isLongTermInvestor && <td><span className="example-note">예시</span></td>}
                   </tr>
                 )}
                 {displayedTradeRows.map(({ trade, rowNumber }) => {
                   const profileReturnPct = displayedTradeReturnPct(trade, apiStocks)
                   const returnPriceText = tradeReturnPriceText(trade, apiStocks)
-
+                  const investedAmount = tradeInvestmentAmount(trade, portfolioSummary.amountByTradeKey)
+                  const profitAmount = tradeProfitAmount(trade, apiStocks, portfolioSummary.amountByTradeKey)
                   return (
                     <tr key={tradeKey(trade)}>
                       <td className="numbering-cell">{rowNumber}</td>
@@ -5408,7 +5627,7 @@ function App() {
                       <td className="number-cell">{trade.buyPrice}</td>
                       {!isLongTermInvestor && <td>{trade.sellDate}</td>}
                       {!isLongTermInvestor && <td className={trade.sellPrice === '-' ? 'dash-cell' : 'number-cell'}>{trade.sellPrice}</td>}
-                      <td className="strategy-data-cell">
+                      <td className="strategy-data-cell centered-strategy-cell">
                         <StrategyTag
                           onTooltipClose={() => setActiveTooltip(null)}
                           onTooltipOpen={setActiveTooltip}
@@ -5425,6 +5644,22 @@ function App() {
                           {formatPriceWithReturn(returnPriceText, profileReturnPct)}
                         </td>
                       )}
+                      <td className="number-cell">
+                        <button
+                          className="table-amount-button"
+                          disabled={isOperatorDataMode}
+                          type="button"
+                          onClick={() => setTradeInvestmentDraft({
+                            key: tradeKey(trade),
+                            name: `${tradeName(trade)} · ${trade.ticker}`,
+                            currentAmount: investedAmount,
+                            value: String(investedAmount),
+                          })}
+                        >
+                          {formatKrwAmount(investedAmount)}
+                        </button>
+                      </td>
+                      <td className={`number-cell ${tradeProfitClass(profitAmount)}`}>{profitAmount === null ? '-' : formatKrwAmount(profitAmount)}</td>
                       <td>{holdingPeriodDays(trade)}</td>
                       {!isLongTermInvestor && (
                         <td>
@@ -5440,7 +5675,7 @@ function App() {
                 })}
                 {Array.from({ length: tradeBlankRows }).map((_, index) => (
                   <tr className="blank-row" key={`trade-blank-${index}`}>
-                    {Array.from({ length: isLongTermInvestor ? 9 : 12 }).map((_, cellIndex) => (
+                    {Array.from({ length: isLongTermInvestor ? 11 : 14 }).map((_, cellIndex) => (
                       <td className={cellIndex === 0 ? 'numbering-cell' : undefined} key={`trade-blank-${index}-${cellIndex}`}>{cellIndex === 0 ? '\u00a0' : ''}</td>
                     ))}
                   </tr>
@@ -5558,7 +5793,10 @@ function App() {
                   </div>
                 </div>
               ) : (
-                <table className={`sheet-table watchlist-table ${canEditCurrentWatchlist ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}>
+                <table
+                  className={`sheet-table watchlist-table ${canEditCurrentWatchlist ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
+                  style={watchlistPinnedStyle}
+                >
                   <thead>
                     <tr>
                       {canEditCurrentWatchlist && <th>선택</th>}
@@ -5571,7 +5809,7 @@ function App() {
                           className={`home-pin-toggle ${areHomeColumnsPinned ? 'active' : ''}`}
                           title={areHomeColumnsPinned ? '종목명 고정 끄기' : '종목명 고정 켜기'}
                           type="button"
-                          onClick={() => setAreHomeColumnsPinned((current) => !current)}
+                          onClick={toggleHomeColumnsPinned}
                         >
                           <span aria-hidden="true">📌</span>
                         </button>
@@ -5714,7 +5952,10 @@ function App() {
             <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다</p>
 
             <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetRef}>
-              <table className={`sheet-table holding-table ${isLongTermInvestor ? 'long-term-holding-table' : ''} ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}>
+              <table
+                className={`sheet-table holding-table ${isLongTermInvestor ? 'long-term-holding-table' : ''} ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${areHomeColumnsPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
+                style={holdingPinnedStyle}
+              >
                 <thead>
                   <tr>
                     {effectiveViewMode === 'personal' && <th>선택</th>}
@@ -5728,7 +5969,7 @@ function App() {
                         className={`home-pin-toggle ${areHomeColumnsPinned ? 'active' : ''}`}
                         title={areHomeColumnsPinned ? '종목명 고정 끄기' : '종목명 고정 켜기'}
                         type="button"
-                        onClick={() => setAreHomeColumnsPinned((current) => !current)}
+                        onClick={toggleHomeColumnsPinned}
                       >
                         <span aria-hidden="true">📌</span>
                       </button>
@@ -6298,6 +6539,54 @@ function App() {
               <button className="modal-confirm" type="button" onClick={confirmBoardPostDeletion}>
                 삭제
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {tradeInvestmentDraft && (
+        <div className="modal-backdrop" role="presentation">
+          <div aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setTradeInvestmentDraft(null)}>×</button>
+            <h3>투자금 수정</h3>
+            <p>
+              {tradeInvestmentDraft.name}의 투자금 기본값은 매수 시점 보유 현금의 50%입니다.
+              직접 수정하지 않으면 이 기준으로 자동 배정되고, 수정 후에는 입력한 금액을 기준으로 손익을 계산합니다.
+            </p>
+            <label className="login-field">
+              <span>투자금</span>
+              <input
+                autoFocus
+                inputMode="numeric"
+                value={tradeInvestmentDraft.value}
+                onChange={(event) => setTradeInvestmentDraft((current) => current ? { ...current, value: event.target.value, error: undefined } : current)}
+              />
+            </label>
+            {tradeInvestmentDraft.error && <span className="amount-edit-error">{tradeInvestmentDraft.error}</span>}
+            <div className="modal-actions">
+              <button className="modal-cancel" type="button" onClick={() => setTradeInvestmentDraft(null)}>취소</button>
+              <button className="modal-confirm" type="button" onClick={saveTradeInvestmentDraft}>저장</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {cashEditDraft && (
+        <div className="modal-backdrop" role="presentation">
+          <div aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setCashEditDraft(null)}>×</button>
+            <h3>보유 현금 수정</h3>
+            <p>현금을 줄이면 총 투자금은 유지하고, 줄어든 금액은 인출액으로 표시합니다.</p>
+            <label className="login-field">
+              <span>보유 현금</span>
+              <input
+                autoFocus
+                inputMode="numeric"
+                value={cashEditDraft.value}
+                onChange={(event) => setCashEditDraft((current) => current ? { ...current, value: event.target.value } : current)}
+              />
+            </label>
+            <div className="modal-actions">
+              <button className="modal-cancel" type="button" onClick={() => setCashEditDraft(null)}>취소</button>
+              <button className="modal-confirm" type="button" onClick={saveCashEditDraft}>저장</button>
             </div>
           </div>
         </div>
