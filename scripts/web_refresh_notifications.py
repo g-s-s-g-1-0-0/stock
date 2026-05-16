@@ -977,10 +977,7 @@ def market_context(technical_row: dict[str, Any]) -> str:
 
 
 def append_market_context(reason: str, technical_row: dict[str, Any]) -> str:
-    context = market_context(technical_row)
-    if not context:
-        return reason
-    return f"{reason} | {context}"
+    return reason
 
 
 def watch_release_detail(strategy: str, current_stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
@@ -1327,7 +1324,7 @@ def nasdaq_peak_email_body(snapshot: dict[str, Any]) -> str:
     direct_dist = float(snapshot.get("peakDirectDist") or 0)
     confirm_dist = float(snapshot.get("peakConfirmDist") or 0)
     trigger_rule = (
-        f"회복장에서는 QQQ가 200일선보다 +{direct_dist:.0f}% 이상 높으면 바로 과열로 보고, +{confirm_dist:.0f}% 이상에서는 RSI와 MACD가 식는지까지 확인합니다."
+        f"회복장에서는 QQQ가 200일선보다 +{direct_dist:.0f}% 이상 높으면 과열로 봅니다."
         if snapshot.get("isRecoveryMarket")
         else f"비회복장에서는 QQQ가 200일선보다 +{direct_dist:.0f}% 이상 높고 RSI가 꺾이거나, +{confirm_dist:.0f}% 이상에서 RSI와 MACD가 함께 식으면 과열로 봅니다."
     )
@@ -1338,7 +1335,7 @@ def nasdaq_peak_email_body(snapshot: dict[str, Any]) -> str:
       </p>
       <div style="border:1px solid #fde68a;background:#fffbeb;border-radius:10px;padding:12px 14px;margin:0 0 14px 0;">
         <div style="font-weight:bold;margin-bottom:6px;">핵심만 보면</div>
-        <div>QQQ가 200일선보다 많이 올라온 상태에서 상승 힘이 약해지는 신호가 나왔습니다.</div>
+        <div>QQQ가 국면별 고점 청산 기준을 충족했습니다.</div>
         <div>이 알림은 시장 공통 청산 조건이 충족됐다는 뜻입니다.</div>
         <div>웹서비스는 신규 매수와 추가매수를 막고, 보유 종목은 청산 기준으로 점검합니다.</div>
         <div style="margin-top:6px;">개별 종목의 실제 청산 반영은 이어서 발송되는 투자의견 변경 메일이나 웹의 보유 현황에서 확인해 주세요.</div>
@@ -1351,7 +1348,7 @@ def nasdaq_peak_email_body(snapshot: dict[str, Any]) -> str:
         <div><strong>최근 60거래일 최저 이격도:</strong> {fmt_signed(snapshot.get('recent60MinPremiumPercent'), '%')}</div>
         <div><strong>시장 국면:</strong> {regime}</div>
         <div><strong>직접 청산선:</strong> +{direct_dist:.0f}% ({snapshot['directThreshold']:.2f}) - 이 위면 과열로 바로 판단</div>
-        <div><strong>확인 청산선:</strong> +{confirm_dist:.0f}% ({snapshot['confirmThreshold']:.2f}) - 이 위에서는 RSI/MACD 둔화까지 확인</div>
+        {'' if snapshot.get("isRecoveryMarket") else f'<div><strong>확인 청산선:</strong> +{confirm_dist:.0f}% ({snapshot["confirmThreshold"]:.2f}) - 이 위에서는 RSI/MACD 둔화까지 확인</div>'}
       </div>
       <div style="margin:0 0 14px 0;">
         <div style="font-weight:bold;margin-bottom:6px;">힘이 식는지 보는 지표</div>

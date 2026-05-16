@@ -380,7 +380,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("F. 200일선 상방 & BB 극단 저점", changes[0]["reason"])
         self.assertIn("BB 하단 눌림 해소", changes[0]["reason"])
         self.assertIn("저가 %B 8.40", changes[0]["reason"])
-        self.assertIn("시장 국면: 급락 후 회복장", changes[0]["reason"])
+        self.assertNotIn("시장 국면:", changes[0]["reason"])
 
     def test_refresh_to_opinion_change_sends_email_end_to_end(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []

@@ -111,10 +111,7 @@ def build_qqq_market_state(
     if is_recovery:
         peak_triggered = (
             current_dist is not None
-            and (
-                current_dist > peak_dist["direct"]
-                or (current_dist > peak_dist["confirm"] and rsi_hot and macd_slowing)
-            )
+            and current_dist > peak_dist["direct"]
         )
     else:
         peak_triggered = (
@@ -136,7 +133,7 @@ def build_qqq_market_state(
         "buyBlockMax": qqq_buy_block_max(is_recovery),
         "peakDirectDist": peak_dist["direct"],
         "peakConfirmDist": peak_dist["confirm"],
-        "peakResetDist": peak_dist["confirm"],
+        "peakResetDist": peak_dist["direct"] if is_recovery else peak_dist["confirm"],
         "weeklyRsi": _num(weekly_rsi),
         "dailyRsi": _num(qqq_row.get("rsi")),
         "dailyRsiPrev": _num(qqq_row.get("rsiD1")),

@@ -60,7 +60,7 @@ function checkNasdaqMASignals() {
       var emailBody =
         '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;padding-top:8px;">' +
           '<p style="font-size:16px;font-weight:bold;color:#333;margin:0 0 12px 0;">' +
-            "QQQ가 고점 과열 구간에 진입했으며, RSI 둔화 신호가 감지되었습니다." +
+            "QQQ가 고점 청산 기준을 충족했습니다." +
           "</p>" +
           '<div style="margin:0 0 14px 0;">' +
             '<div style="margin:4px 0;"><strong>QQQ 현재가:</strong> ' + currentPrice.toFixed(2) + "</div>" +
@@ -76,16 +76,8 @@ function checkNasdaqMASignals() {
             '<div style="margin:4px 0;"><strong>QQQ MACD Hist:</strong> ' + qqqMacdHist + " / " + qqqMacdHistD1 + " / " + qqqMacdHistD2 + "</div>" +
           "</div>" +
           '<p style="margin:0 0 12px 0;">' +
-            "QQQ가 국면별 고점 청산 기준을 충족했습니다." +
-            " 비회복장은 +16%와 +14% 확인선, 회복장은 +22%와 +18% 확인선을 사용하며," +
-            " 확인선에서는 RSI 과열 하락과 MACD 둔화를 함께 확인합니다." +
-            " 따라서 보유 중인 종목의 부분 매도 또는 일괄 매도를 신중히 고려하시기 바랍니다." +
-          "</p>" +
-          '<p style="margin:0 0 12px 0;">' +
-            "단, 시장 전체의 방향성과 별개로 산업군·종목에 따라 개별 상승 모멘텀이 유효한 경우도 있으며," +
-            " 금리·인플레이션 등 거시 지표나 주요 기업 실적발표 일정에 따라 국면이 달라질 수 있습니다." +
-            " 매수 조건을 충족한 종목은 이후에도 시그널 메일이 발송될 수 있으나," +
-            " 가급적 당분간은 신규 진입을 자제하고 개별 종목 단위의 진입 여부는 시황을 직접 확인한 후 스스로 판단하시기 바랍니다." +
+            "비회복장은 +16% 직접선 또는 +14% 확인선을 사용하고, 회복장은 +22% 직접선만 사용합니다." +
+            " 보유 종목의 실제 청산 반영은 이어서 발송되는 투자의견 변경 메일에서 확인해 주세요." +
           "</p>" +
           '<p style="margin:0 0 12px 0;">' +
             "※ 알림은 조건 충족 시 <strong>한 번만</strong> 발송되며, QQQ가 기준선 아래로 하락 시 재알림이 가능합니다." +
