@@ -3938,8 +3938,13 @@
 }
 
 .unavailable-value-label {
-  color: #b45309;
+  display: inline-block;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.88);
+  color: #64748b;
   font-weight: 700;
+  padding: 2px 7px;
   white-space: nowrap;
 }
 

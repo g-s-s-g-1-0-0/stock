@@ -58,7 +58,7 @@ type Stock = {
   strategies: string[]
   category?: string
   industry?: string
-  fairPriceReason?: 'loss_making'
+  fairPriceReason?: 'loss_making' | 'etf'
   updatedAt: string
 }
 
@@ -258,6 +258,7 @@ const API_LOGS_STORAGE_KEY = 'gongsu-api-logs'
 const ACTIVE_PAGE_STORAGE_KEY = 'gongsu-active-page'
 const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
 const FAIR_PRICE_UNAVAILABLE_LABEL = '적자 상태라 판단 불가'
+const ETF_FAIR_PRICE_UNAVAILABLE_LABEL = 'ETF라 판단 불가'
 const FAIR_PRICE_RANGE_TOOLTIP = 'EPS(TTM) × 적용 PER 배수로 계산합니다. 가치주는 10~15배, 혼합주는 15~25배를 적용하고, 성장주는 매출 성장률에 따라 15~20배부터 최대 50~70배까지 적용합니다. EPS가 0 이하이면 판단 불가로 표시합니다.'
 const ADMIN_LOGS_PAGE_SIZE = 50
 const BOARD_POST_PAGE_SIZE = 50
@@ -1570,11 +1571,17 @@ function isSystemHolding(ticker: string, targetTrades: TradeLog[]) {
   return targetTrades.some((trade) => trade.ticker === ticker && trade.status === '보유 중')
 }
 
+function isEtfStock(stock: Stock) {
+  const normalizedText = `${stock.name} ${stock.category ?? ''} ${stock.industry ?? ''}`.toUpperCase()
+  return stock.fairPriceReason === 'etf' || /\bETF\b/.test(normalizedText)
+}
+
 function isFairPriceUnavailable(stock: Stock) {
-  return stock.fairPriceReason === 'loss_making' || stock.fairPrice === FAIR_PRICE_UNAVAILABLE_LABEL
+  return isEtfStock(stock) || stock.fairPriceReason === 'loss_making' || stock.fairPrice === FAIR_PRICE_UNAVAILABLE_LABEL
 }
 
 function displayFairPriceText(stock: Stock) {
+  if (isEtfStock(stock)) return ETF_FAIR_PRICE_UNAVAILABLE_LABEL
   return isFairPriceUnavailable(stock) ? FAIR_PRICE_UNAVAILABLE_LABEL : stock.fairPrice
 }
 
@@ -6697,10 +6704,10 @@ function App() {
                         <td className="ticker-cell">{stock.ticker}</td>
                         <td className="industry-cell">{displayIndustryLabel(stock.industry)}</td>
                         <td className="number-cell">
-                          {isPendingValue(stock.fairPrice) ? (
-                            <span className="pending-update-label">{fairPricePendingLabel}</span>
-                          ) : isFairPriceUnavailable(stock) ? (
+                          {isFairPriceUnavailable(stock) ? (
                             <span className="unavailable-value-label">{displayFairPriceText(stock)}</span>
+                          ) : isPendingValue(stock.fairPrice) ? (
+                            <span className="pending-update-label">{fairPricePendingLabel}</span>
                           ) : displayFairPriceText(stock)}
                         </td>
                         <td className="number-cell">
