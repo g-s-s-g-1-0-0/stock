@@ -2785,9 +2785,18 @@
   color: #ffffff;
 }
 
+.danger-confirm {
+  background: #dc2626;
+}
+
 .modal-confirm:hover,
 .modal-confirm:focus-visible {
   background: var(--accent-strong);
+}
+
+.danger-confirm:hover,
+.danger-confirm:focus-visible {
+  background: #b91c1c;
 }
 
 .modal-confirm:disabled {
@@ -2902,9 +2911,10 @@
 .account-modal {
   box-sizing: border-box;
   width: min(920px, calc(100vw - 48px));
-  max-height: calc(100svh - 48px);
+  max-height: calc(100dvh - 48px);
   overflow-y: auto;
   overflow-x: hidden;
+  padding-bottom: 24px;
 }
 
 .investment-profile-modal {
@@ -3179,7 +3189,9 @@
 
 
 .forgot-password-button,
-.auth-back-button {
+.auth-back-button,
+.auth-secondary-text-button,
+.auth-resend-button {
   border: 0;
   background: transparent;
   color: var(--accent);
@@ -3195,6 +3207,19 @@
   margin: 8px 0 0 auto;
 }
 
+.auth-secondary-text-button {
+  display: block;
+  min-height: 24px;
+  margin: 8px auto 14px;
+  line-height: 1.35;
+}
+
+.auth-resend-button {
+  justify-self: start;
+  margin-top: 4px;
+  font-weight: 800;
+}
+
 .auth-back-button {
   display: inline-flex;
   margin: 0 0 14px;
@@ -3203,7 +3228,11 @@
 .forgot-password-button:hover,
 .forgot-password-button:focus-visible,
 .auth-back-button:hover,
-.auth-back-button:focus-visible {
+.auth-back-button:focus-visible,
+.auth-secondary-text-button:hover,
+.auth-secondary-text-button:focus-visible,
+.auth-resend-button:hover,
+.auth-resend-button:focus-visible {
   outline: none;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -3377,6 +3406,44 @@
 
 .logout-confirm {
   background: #475569;
+}
+
+.account-delete-footer {
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  padding-top: 16px;
+}
+
+.account-delete-error {
+  display: block;
+  margin-top: -4px;
+  text-align: center;
+}
+
+.account-delete-text-button {
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 4px 6px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.account-delete-text-button:hover,
+.account-delete-text-button:focus-visible {
+  color: #b91c1c;
+  outline: none;
+}
+
+.account-delete-modal p {
+  color: #475569;
+  line-height: 1.55;
 }
 
 .blank-row td {

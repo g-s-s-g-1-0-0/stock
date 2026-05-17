@@ -362,6 +362,10 @@ function configuredAdminEmails() {
   return configuredEmails.length > 0 ? configuredEmails : DEFAULT_ADMIN_EMAILS
 }
 
+function isConfiguredAdminEmail(email: string | null | undefined) {
+  return Boolean(email && configuredAdminEmails().includes(email.toLowerCase()))
+}
+
 function personalWatchlistStorageKey(session: UserSession | null) {
   return `${WATCHLIST_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
 }
@@ -488,6 +492,44 @@ function notificationSettingsDeepLinkMessage() {
 function hasNotificationSettingsDeepLink() {
   const params = activePageHashParams()
   return params.get('settings') === 'notifications' || params.get('notification') === 'unsubscribed'
+}
+
+function authCallbackParams() {
+  const params = new URLSearchParams(window.location.search)
+  const hash = window.location.hash.replace(/^#/, '')
+  if (hash.includes('=')) {
+    const [, rawHashQuery = hash] = hash.split('?')
+    const hashParams = new URLSearchParams(rawHashQuery)
+    hashParams.forEach((value, key) => params.set(key, value))
+  }
+  return params
+}
+
+function authCallbackMessage() {
+  const params = authCallbackParams()
+  const errorCode = params.get('error_code')
+  const errorDescription = params.get('error_description') ?? params.get('error')
+  if (errorCode === 'otp_expired') {
+    return '가입 확인 링크가 만료되었거나 이미 사용되었습니다.\n회원가입 탭에서 같은 이메일로 다시 요청해 주세요.'
+  }
+  if (errorDescription) {
+    return `인증 링크를 처리하지 못했습니다.\n${errorDescription.replace(/\+/g, ' ')}`
+  }
+  return ''
+}
+
+function hasAuthCallbackError() {
+  const params = authCallbackParams()
+  return Boolean(params.get('error') || params.get('error_code') || params.get('error_description'))
+}
+
+function clearAuthCallbackErrorFromUrl() {
+  if (!hasAuthCallbackError()) return
+  const searchParams = new URLSearchParams(window.location.search)
+  ;['error', 'error_code', 'error_description'].forEach((key) => searchParams.delete(key))
+  const nextSearch = searchParams.toString()
+  const nextHash = activePageFromHash() ? window.location.hash : activePageHash(readStoredActivePage())
+  window.history.replaceState(null, '', `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${nextHash}`)
 }
 
 function userSettingsStorageKey(session: UserSession | null = null) {
@@ -696,8 +738,8 @@ function storeContributionSettings(session: UserSession | null, settings: Contri
   localStorage.setItem(contributionSettingsStorageKey(session), JSON.stringify(settings))
 }
 
-function readStoredLocalTestSession(): UserSession | null {
-  if (!import.meta.env.DEV) return null
+function readStoredLocalTestSession({ allowProduction = false } = {}): UserSession | null {
+  if (!import.meta.env.DEV && !allowProduction) return null
   const stored = localStorage.getItem(LOCAL_TEST_SESSION_STORAGE_KEY)
   if (!stored) return null
 
@@ -716,8 +758,8 @@ function readStoredLocalTestSession(): UserSession | null {
   }
 }
 
-function storeLocalTestSession(session: UserSession | null) {
-  if (!import.meta.env.DEV) return
+function storeLocalTestSession(session: UserSession | null, { allowProduction = false } = {}) {
+  if (!import.meta.env.DEV && !allowProduction) return
   if (!session) {
     localStorage.removeItem(LOCAL_TEST_SESSION_STORAGE_KEY)
     return
@@ -3929,12 +3971,16 @@ function App() {
   const [contributionSettings, setContributionSettings] = useState<ContributionSettings>(() => readStoredContributionSettings(initialLocalTestSession))
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
   const [contributionSettingsMode, setContributionSettingsMode] = useState<ContributionSettingsMode>('cash')
-  const [isLoginOpen, setIsLoginOpen] = useState(() => Boolean(notificationSettingsDeepLinkMessage()))
+  const [isLoginOpen, setIsLoginOpen] = useState(() => Boolean(authCallbackMessage() || notificationSettingsDeepLinkMessage()))
+  const [isAccountDeleteConfirmOpen, setIsAccountDeleteConfirmOpen] = useState(false)
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [accountDeleteError, setAccountDeleteError] = useState('')
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
   const [loginPasswordConfirm, setLoginPasswordConfirm] = useState('')
   const [loginError, setLoginError] = useState('')
+  const [signupConfirmationEmail, setSignupConfirmationEmail] = useState('')
   const [isRecoverySent, setIsRecoverySent] = useState(false)
   const [boardPosts, setBoardPosts] = useState<BoardPost[]>(initialBoardPosts)
   const [boardCategory, setBoardCategory] = useState<BoardCategory>('건의')
@@ -3948,7 +3994,7 @@ function App() {
   const [pendingBoardDeleteIds, setPendingBoardDeleteIds] = useState<string[]>([])
   const [userSession, setUserSession] = useState<UserSession | null>(initialLocalTestSession)
   const [canUseAccountSwitch, setCanUseAccountSwitch] = useState(Boolean(initialLocalTestSession))
-  const [authInfoMessage, setAuthInfoMessage] = useState(() => notificationSettingsDeepLinkMessage())
+  const [authInfoMessage, setAuthInfoMessage] = useState(() => authCallbackMessage() || notificationSettingsDeepLinkMessage())
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
   const [apiStocks, setApiStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? cachedAppData.stocks.rows.map(withDisplayStockName) : searchUniverse.map(stockSearchShell))
   const [apiSearchStocks, setApiSearchStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? mergeStocks(cachedAppData.stocks.rows, searchUniverse) : searchUniverse.map(stockSearchShell))
@@ -4258,7 +4304,7 @@ function App() {
   }
 
   async function loadApiLogs() {
-    if (!userSession || !configuredAdminEmails().includes(userSession.email.toLowerCase())) return
+    if (!userSession || !isConfiguredAdminEmail(userSession.email)) return
     setIsLoadingApiLogs(true)
     const cutoff = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString()
     try {
@@ -4315,6 +4361,33 @@ function App() {
         })
     } catch {
       // The in-memory log is still shown to the admin for this session.
+    }
+  }
+
+  const applyLocalTestSessionData = (session: UserSession) => {
+    const isLocalAdmin = isConfiguredAdminEmail(session.email)
+    const storedWatchlist = readStoredWatchlist(session)
+    const nextWatchlist = !isLocalAdmin && storedWatchlist.length === 0 ? localTestWatchlist : storedWatchlist
+    setWatchlist(nextWatchlist)
+    if (!isLocalAdmin && storedWatchlist.length === 0) {
+      localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(nextWatchlist))
+    }
+
+    const storedPersonalTrades = readStoredPersonalTradeLogs(session)
+    const nextPersonalTrades = !isLocalAdmin && storedPersonalTrades.length === 0 ? localTestPersonalTrades : storedPersonalTrades
+    setPersonalTradeLogs(nextPersonalTrades)
+    if (!isLocalAdmin && storedPersonalTrades.length === 0) {
+      storePersonalTradeLogs(session, nextPersonalTrades)
+    }
+
+    const nextSettings = readStoredUserSettings(session)
+    setWatchlistSortSettings(nextSettings.watchlistSort)
+    setNotificationPreferences(nextSettings.notificationPreferences)
+    const nextInvestmentType = !isLocalAdmin ? nextSettings.investmentType ?? 'long_term' : nextSettings.investmentType
+    setInvestmentType(nextInvestmentType)
+    setContributionSettings(readStoredContributionSettings(session))
+    if (!isLocalAdmin && !nextSettings.investmentType) {
+      storeUserSettings(session, nextSettings.watchlistSort, nextSettings.notificationPreferences, nextInvestmentType)
     }
   }
 
@@ -4643,6 +4716,7 @@ function App() {
       }
     }
 
+    const authErrorMessage = authCallbackMessage()
     const syncAuthUser = async (user: User | null, keepLoginModal = false) => {
       if (!isMounted) return
       if (!user) {
@@ -4650,7 +4724,8 @@ function App() {
         if (storedTestSession) {
           setUserSession(storedTestSession)
           setCanUseAccountSwitch(true)
-          await loadServiceData(storedTestSession)
+          applyLocalTestSessionData(storedTestSession)
+          setIsRemoteDataReady(true)
           return
         }
         setUserSession(null)
@@ -4662,7 +4737,12 @@ function App() {
       }
 
       const nextSession = sessionFromSupabaseUser(user)
-      setUserSession(nextSession)
+      const storedTestSession = isConfiguredAdminEmail(nextSession.email)
+        ? readStoredLocalTestSession({ allowProduction: true })
+        : null
+      const effectiveSession = storedTestSession ?? nextSession
+      setUserSession(effectiveSession)
+      setCanUseAccountSwitch(isConfiguredAdminEmail(nextSession.email))
       if (hasNotificationSettingsDeepLink()) {
         setIsLoginOpen(true)
         setAuthMode('login')
@@ -4671,14 +4751,29 @@ function App() {
         setAuthMode('login')
       }
       localStorage.removeItem(LEGACY_AUTH_SESSION_STORAGE_KEY)
-      storeLocalTestSession(null)
-      await ensureProfile(nextSession)
-      await loadServiceData(nextSession)
+      if (!storedTestSession) {
+        storeLocalTestSession(null, { allowProduction: true })
+        await ensureProfile(nextSession)
+        await loadServiceData(nextSession)
+        return
+      }
+      applyLocalTestSessionData(storedTestSession)
+      setIsRemoteDataReady(true)
     }
 
-    supabase.auth.getSession().then(({ data }) => {
-      void syncAuthUser(data.session?.user ?? null)
-    })
+    if (authErrorMessage) {
+      setAuthMode('login')
+      setAuthInfoMessage(authErrorMessage)
+      setIsLoginOpen(true)
+      clearAuthCallbackErrorFromUrl()
+      supabase.auth.signOut().then(() => {
+        void syncAuthUser(null, true)
+      })
+    } else {
+      supabase.auth.getSession().then(({ data }) => {
+        void syncAuthUser(data.session?.user ?? null)
+      })
+    }
 
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
@@ -4761,7 +4856,7 @@ function App() {
   }, [apiSearchStocks, query])
 
   const trimmedLoginEmail = loginEmail.trim().toLowerCase()
-  const isAdminUser = userSession ? configuredAdminEmails().includes(userSession.email.toLowerCase()) : false
+  const isAdminUser = isConfiguredAdminEmail(userSession?.email)
 
   useEffect(() => {
     if (isAdminUser) {
@@ -5130,7 +5225,16 @@ function App() {
     setLoginPasswordConfirm('')
     setLoginError('')
     setAuthInfoMessage('')
+    setSignupConfirmationEmail('')
     setIsRecoverySent(false)
+  }
+
+  const clearSessionLocalData = (session: UserSession | null) => {
+    if (!session) return
+    localStorage.removeItem(personalWatchlistStorageKey(session))
+    localStorage.removeItem(personalTradeLogsStorageKey(session))
+    localStorage.removeItem(contributionSettingsStorageKey(session))
+    localStorage.removeItem(userSettingsStorageKey(session))
   }
 
   const switchAuthMode = (mode: AuthMode) => {
@@ -5204,7 +5308,7 @@ function App() {
         return
       }
 
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -5220,10 +5324,18 @@ function App() {
           : `회원가입을 완료하지 못했습니다.\n${error.message}`)
         return
       }
+      if (Array.isArray(data.user?.identities) && data.user.identities.length === 0) {
+        clearAuthForm()
+        setAuthMode('login')
+        setSignupConfirmationEmail(email)
+        setAuthInfoMessage('이미 가입 요청된 이메일이거나 확인 대기 중인 계정일 수 있습니다.\n메일이 오지 않았다면 확인 메일을 다시 보내고, 이미 인증한 계정이면 로그인 또는 비밀번호 재설정을 이용해 주세요.')
+        return
+      }
 
       clearAuthForm()
       setAuthMode('login')
-      setAuthInfoMessage('가입 확인 메일을 보냈습니다.\n이메일 인증 후 로그인해 주세요.')
+      setSignupConfirmationEmail(email)
+      setAuthInfoMessage('가입 확인 메일을 보냈습니다.\n이메일 인증 후 로그인해 주세요. 메일이 안 오면 아래 재발송을 눌러 주세요.')
       return
     }
 
@@ -5249,7 +5361,7 @@ function App() {
 
   const logout = async () => {
     await supabase?.auth.signOut()
-    storeLocalTestSession(null)
+    storeLocalTestSession(null, { allowProduction: true })
     setUserSession(null)
     setCanUseAccountSwitch(false)
     setWatchlist(readStoredWatchlist(null))
@@ -5262,6 +5374,71 @@ function App() {
     clearAuthForm()
     setAuthMode('login')
     setIsLoginOpen(false)
+  }
+
+  const logoutAndOpenLogin = async () => {
+    await logout()
+    setAuthMode('login')
+    setAuthInfoMessage('기존 계정에서 로그아웃했습니다.\n다른 메일로 로그인하거나 회원가입 탭에서 새 계정을 추가해 주세요.')
+    setIsLoginOpen(true)
+  }
+
+  const resendSignupConfirmation = async () => {
+    if (!supabase || !signupConfirmationEmail) return
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: signupConfirmationEmail,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    })
+    if (error) {
+      setLoginError(`확인 메일을 다시 보내지 못했습니다.\n${error.message}`)
+      return
+    }
+    setLoginError('')
+    setAuthInfoMessage(`확인 메일을 다시 보냈습니다.\n${signupConfirmationEmail} 메일함과 스팸함을 확인해 주세요.`)
+  }
+
+  const deleteAccount = async () => {
+    if (!userSession || isDeletingAccount) return
+    if (!supabase) {
+      setAccountDeleteError('Supabase 연결값이 없어 회원탈퇴를 처리할 수 없습니다.')
+      setIsAccountDeleteConfirmOpen(false)
+      return
+    }
+
+    setIsDeletingAccount(true)
+    setAccountDeleteError('')
+    const deletingSession = userSession
+    try {
+      const { error } = await supabase.rpc('delete_own_account')
+      if (error) {
+        setAccountDeleteError(`회원탈퇴를 완료하지 못했습니다.\n${error.message}`)
+        setIsAccountDeleteConfirmOpen(false)
+        setIsLoginOpen(true)
+        return
+      }
+
+      await supabase.auth.signOut()
+      clearSessionLocalData(deletingSession)
+      storeLocalTestSession(null, { allowProduction: true })
+      setUserSession(null)
+      setCanUseAccountSwitch(false)
+      setWatchlist(readStoredWatchlist(null))
+      setPersonalTradeLogs(readStoredPersonalTradeLogs(null))
+      setInvestmentType(readStoredUserSettings(null).investmentType)
+      setContributionSettings(readStoredContributionSettings(null))
+      setSelectedTickers([])
+      setSelectedHoldingTradeKeys([])
+      closeHoldingLiquidationModal()
+      clearAuthForm()
+      setAuthMode('login')
+      setIsAccountDeleteConfirmOpen(false)
+      setIsLoginOpen(false)
+    } finally {
+      setIsDeletingAccount(false)
+    }
   }
 
   const closeLoginModalAfterAccountSwitch = () => {
@@ -5285,29 +5462,9 @@ function App() {
         }
 
     setUserSession(nextSession)
-    storeLocalTestSession(nextSession)
+    storeLocalTestSession(nextSession, { allowProduction: true })
     setCanUseAccountSwitch(true)
-    const storedWatchlist = readStoredWatchlist(nextSession)
-    const nextWatchlist = mode === 'user' && storedWatchlist.length === 0 ? localTestWatchlist : storedWatchlist
-    setWatchlist(nextWatchlist)
-    if (mode === 'user' && storedWatchlist.length === 0) {
-      localStorage.setItem(personalWatchlistStorageKey(nextSession), JSON.stringify(nextWatchlist))
-    }
-    const storedPersonalTrades = readStoredPersonalTradeLogs(nextSession)
-    const nextPersonalTrades = mode === 'user' && storedPersonalTrades.length === 0 ? localTestPersonalTrades : storedPersonalTrades
-    setPersonalTradeLogs(nextPersonalTrades)
-    if (mode === 'user' && storedPersonalTrades.length === 0) {
-      storePersonalTradeLogs(nextSession, nextPersonalTrades)
-    }
-    const nextSettings = readStoredUserSettings(nextSession)
-    setWatchlistSortSettings(nextSettings.watchlistSort)
-    setNotificationPreferences(nextSettings.notificationPreferences)
-    const nextInvestmentType = mode === 'user' ? nextSettings.investmentType ?? 'long_term' : nextSettings.investmentType
-    setInvestmentType(nextInvestmentType)
-    setContributionSettings(readStoredContributionSettings(nextSession))
-    if (mode === 'user' && !nextSettings.investmentType) {
-      storeUserSettings(nextSession, nextSettings.watchlistSort, nextSettings.notificationPreferences, nextInvestmentType)
-    }
+    applyLocalTestSessionData(nextSession)
     setSelectedTickers([])
     setSelectedHoldingTradeKeys([])
     closeHoldingLiquidationModal()
@@ -5715,6 +5872,10 @@ function App() {
     }
     if (isResetConfirmOpen) {
       setIsResetConfirmOpen(false)
+      return
+    }
+    if (isAccountDeleteConfirmOpen && !isDeletingAccount) {
+      setIsAccountDeleteConfirmOpen(false)
       return
     }
     if (isLoginOpen) {
@@ -6957,6 +7118,31 @@ function App() {
                     로그아웃
                   </button>
                 </div>
+                <button className="auth-secondary-text-button" type="button" onClick={() => void logoutAndOpenLogin()}>
+                  다른 메일로 로그인
+                </button>
+                {accountDeleteError && (
+                  <span className="login-error account-delete-error">
+                    {accountDeleteError.split('\n').map((line, index) => (
+                      <Fragment key={`${line}-${index}`}>
+                        {line}
+                        {index < accountDeleteError.split('\n').length - 1 && <br />}
+                      </Fragment>
+                    ))}
+                  </span>
+                )}
+                <div className="account-delete-footer">
+                  <button
+                    className="account-delete-text-button"
+                    type="button"
+                    onClick={() => {
+                      setAccountDeleteError('')
+                      setIsAccountDeleteConfirmOpen(true)
+                    }}
+                  >
+                    회원탈퇴
+                  </button>
+                </div>
               </>
             ) : (
               <>
@@ -7070,6 +7256,11 @@ function App() {
                     {authInfoMessage.split('\n').map((line, index) => (
                       index === 0 ? <strong key={line}>{line}</strong> : <span key={line}>{line}</span>
                     ))}
+                    {signupConfirmationEmail && (
+                      <button className="auth-resend-button" type="button" onClick={() => void resendSignupConfirmation()}>
+                        확인 메일 다시 보내기
+                      </button>
+                    )}
                   </div>
                 )}
                 {loginError && <span className="login-error">{loginError}</span>}
@@ -7118,6 +7309,34 @@ function App() {
               </button>
               <button className="modal-confirm" type="button" onClick={confirmBoardPostDeletion}>
                 삭제
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isAccountDeleteConfirmOpen && (
+        <div className="modal-backdrop" role="presentation">
+          <div aria-modal="true" className="confirm-modal account-delete-modal" role="dialog">
+            <button
+              className="modal-close-button"
+              disabled={isDeletingAccount}
+              type="button"
+              aria-label="닫기"
+              onClick={() => setIsAccountDeleteConfirmOpen(false)}
+            >
+              ×
+            </button>
+            <h3>정말 회원탈퇴할까요?</h3>
+            <p>
+              계정, 관심종목, 투자 설정, 개인 트레이딩 로그, 게시글과 댓글, 알림 연동 정보가 DB에서 삭제됩니다.
+              삭제 후에는 되돌릴 수 없습니다.
+            </p>
+            <div className="modal-actions">
+              <button className="modal-cancel" disabled={isDeletingAccount} type="button" onClick={() => setIsAccountDeleteConfirmOpen(false)}>
+                취소
+              </button>
+              <button className="modal-confirm danger-confirm" disabled={isDeletingAccount} type="button" onClick={() => void deleteAccount()}>
+                {isDeletingAccount ? '탈퇴 처리 중' : '회원탈퇴'}
               </button>
             </div>
           </div>

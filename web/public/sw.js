@@ -1,7 +1,16 @@
-const CACHE_VERSION = 'gongsu-pwa-v1'
+const CACHE_VERSION = 'gongsu-pwa-v2'
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`
 const DATA_CACHE = `${CACHE_VERSION}-data`
-const APP_SHELL = ['/', '/manifest.webmanifest', '/gongsu-logo.png']
+const APP_SHELL = ['/']
+const FRESH_ASSET_PATHS = new Set([
+  '/apple-touch-icon.png',
+  '/favicon.ico',
+  '/favicon.svg',
+  '/gongsu-logo.png',
+  '/manifest.webmanifest',
+  '/pwa-icon-192.png',
+  '/pwa-icon-512.png',
+])
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -32,6 +41,11 @@ self.addEventListener('fetch', (event) => {
 
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(request, DATA_CACHE))
+    return
+  }
+
+  if (FRESH_ASSET_PATHS.has(url.pathname)) {
+    event.respondWith(networkFirst(request, APP_SHELL_CACHE))
     return
   }
 
