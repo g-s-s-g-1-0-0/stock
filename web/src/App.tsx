@@ -2644,8 +2644,9 @@ function MetricValue({
 
   const openTooltip = (element: HTMLElement) => {
     const rect = element.getBoundingClientRect()
-    const minX = 280
-    const maxX = window.innerWidth - 280
+    const tooltipHalfWidth = Math.min(130, (window.innerWidth - 32) / 2)
+    const minX = tooltipHalfWidth + 16
+    const maxX = window.innerWidth - tooltipHalfWidth - 16
     const centeredX = rect.left + rect.width / 2
 
     onTooltipOpen({
@@ -6954,7 +6955,7 @@ function App() {
       )}
       {activeTooltip && (
         <div
-          className={`floating-tooltip ${currentActivePage === 'market-events' ? 'market-events-floating-tooltip' : ''}`}
+          className={`floating-tooltip mobile-floating-tooltip ${currentActivePage === 'market-events' ? 'market-events-floating-tooltip' : ''}`}
           style={{
             left: activeTooltip.x,
             top: activeTooltip.y,
