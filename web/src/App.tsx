@@ -45,6 +45,11 @@ type StoredPortfolioState = {
   initialized: boolean
 }
 
+type LoadedWatchlist = {
+  tickers: string[] | null
+  watchlistSort: WatchlistSortSettings | null
+}
+
 type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
 
 type Stock = {
@@ -630,6 +635,10 @@ function readOperatorWatchlistSortSettings() {
 
 function storeOperatorWatchlistSortSettings(watchlistSort: WatchlistSortSettings) {
   localStorage.setItem(OPERATOR_WATCHLIST_SORT_STORAGE_KEY, JSON.stringify(watchlistSort))
+}
+
+function normalizeWatchlistTickers(value: unknown) {
+  return Array.isArray(value) ? value.filter((ticker): ticker is string => typeof ticker === 'string') : null
 }
 
 function normalizeNotificationChannel(value: unknown): NotificationDeliveryChannel {
@@ -4610,28 +4619,44 @@ function App() {
     await Promise.all(apiLogTabs.map((tab) => recordApiLog(tab.key, status, message, buildRefreshLogMetadata(tab.key, metadata))))
   }
 
-  async function loadWatchlist(scope: 'personal' | 'operator', session: UserSession | null) {
+  async function loadWatchlist(scope: 'personal' | 'operator', session: UserSession | null): Promise<LoadedWatchlist> {
     if (!supabase) {
-      return scope === 'operator' ? readStoredOperatorWatchlist() : readStoredWatchlist(session)
+      return {
+        tickers: scope === 'operator' ? readStoredOperatorWatchlist() : readStoredWatchlist(session),
+        watchlistSort: scope === 'operator' ? readOperatorWatchlistSortSettings() : null,
+      }
+    }
+    const client = supabase
+
+    const selectWatchlist = async (columns: string) => {
+      let query = client
+        .from('watchlists')
+        .select(columns)
+        .eq('scope', scope)
+
+      query = scope === 'operator'
+        ? query.is('owner_id', null)
+        : query.eq('owner_id', session?.id ?? '')
+
+      return query.maybeSingle()
     }
 
-    let query = supabase
-      .from('watchlists')
-      .select('tickers')
-      .eq('scope', scope)
+    let { data, error } = await selectWatchlist('tickers, watchlist_sort')
+    if (error) {
+      const fallback = await selectWatchlist('tickers')
+      if (fallback.error) throw error
+      data = fallback.data
+    }
+    const row = data as { tickers?: unknown, watchlist_sort?: unknown } | null
 
-    query = scope === 'operator'
-      ? query.is('owner_id', null)
-      : query.eq('owner_id', session?.id ?? '')
-
-    const { data, error } = await query.maybeSingle()
-    if (error) throw error
-
-    const tickers = Array.isArray(data?.tickers)
-      ? data.tickers.filter((ticker): ticker is string => typeof ticker === 'string')
+    const watchlistSort = scope === 'operator'
+      ? normalizeWatchlistSortSettings(row?.watchlist_sort)
       : null
 
-    return tickers
+    return {
+      tickers: normalizeWatchlistTickers(row?.tickers),
+      watchlistSort,
+    }
   }
 
   async function persistWatchlist(scope: 'personal' | 'operator', tickers: string[], session = userSession) {
@@ -4645,27 +4670,71 @@ function App() {
     }
 
     if (scope === 'personal' && !session) return
+    const client = supabase
 
-    let updateQuery = supabase
-      .from('watchlists')
-      .update({ tickers })
-      .eq('scope', scope)
+    const payload = scope === 'operator'
+      ? { tickers, watchlist_sort: watchlistSortSettings }
+      : { tickers }
 
-    updateQuery = scope === 'operator'
-      ? updateQuery.is('owner_id', null)
-      : updateQuery.eq('owner_id', session?.id ?? '')
+    const updateWatchlist = async (nextPayload: Record<string, unknown>) => {
+      let updateQuery = client
+        .from('watchlists')
+        .update(nextPayload)
+        .eq('scope', scope)
 
-    const { data, error } = await updateQuery.select('id')
+      updateQuery = scope === 'operator'
+        ? updateQuery.is('owner_id', null)
+        : updateQuery.eq('owner_id', session?.id ?? '')
+
+      return updateQuery.select('id')
+    }
+
+    let { data, error } = await updateWatchlist(payload)
+    if (error && scope === 'operator') {
+      const fallback = await updateWatchlist({ tickers })
+      data = fallback.data
+      error = fallback.error
+    }
     if (error) throw error
     if (data && data.length > 0) return
 
-    await supabase
+    const insertPayload = {
+      owner_id: scope === 'operator' ? null : session?.id,
+      scope,
+      ...payload,
+    }
+    const { error: insertError } = await client
+      .from('watchlists')
+      .insert(insertPayload as never)
+    if (!insertError) return
+    if (scope !== 'operator') throw insertError
+
+    await client
       .from('watchlists')
       .insert({
-        owner_id: scope === 'operator' ? null : session?.id,
+        owner_id: null,
         scope,
         tickers,
       })
+  }
+
+  async function persistOperatorWatchlistSort(watchlistSort: WatchlistSortSettings, session = userSession) {
+    storeOperatorWatchlistSortSettings(watchlistSort)
+    if (!supabase || !session || !isConfiguredAdminEmail(session.email)) return
+    const client = supabase
+
+    try {
+      const updateQuery = client
+        .from('watchlists')
+        .update({ watchlist_sort: watchlistSort })
+        .eq('scope', 'operator')
+        .is('owner_id', null)
+
+      const { error } = await updateQuery.select('id')
+      if (error) return
+    } catch {
+      // Older databases without watchlist_sort still use the local fallback.
+    }
   }
 
   async function loadBoardPosts() {
@@ -4689,9 +4758,13 @@ function App() {
         loadUserSettings(session),
         loadPortfolioState(session),
       ])
-      setWatchlistSortSettings(loadedSettings.watchlistSort)
+      const operatorDefaultSort = operatorTickersFromDb?.watchlistSort
+      const nextSortSettings = session ? loadedSettings.watchlistSort : operatorDefaultSort ?? loadedSettings.watchlistSort
+      setWatchlistSortSettings(nextSortSettings)
       if (session && isConfiguredAdminEmail(session.email)) {
-        storeOperatorWatchlistSortSettings(loadedSettings.watchlistSort)
+        await persistOperatorWatchlistSort(loadedSettings.watchlistSort, session)
+      } else if (operatorDefaultSort) {
+        storeOperatorWatchlistSortSettings(operatorDefaultSort)
       }
       setNotificationPreferences(loadedSettings.notificationPreferences)
       setInvestmentType(loadedSettings.investmentType)
@@ -4699,14 +4772,14 @@ function App() {
       setPersonalTradeLogs(loadedPortfolioState.personalTradeLogs)
       await loadBoardPosts()
       const legacyTickers = session ? readLegacyWatchlist(session) : null
-      const nextPersonalTickers = personalTickers && personalTickers.length > 0
-        ? personalTickers
+      const nextPersonalTickers = personalTickers?.tickers && personalTickers.tickers.length > 0
+        ? personalTickers.tickers
         : legacyTickers ?? initialWatchlist
 
       setWatchlist(session ? nextPersonalTickers : readStoredWatchlist(null))
-      setOperatorWatchlist(operatorTickersFromDb && operatorTickersFromDb.length > 0 ? operatorTickersFromDb : operatorTickers)
+      setOperatorWatchlist(operatorTickersFromDb?.tickers && operatorTickersFromDb.tickers.length > 0 ? operatorTickersFromDb.tickers : operatorTickers)
 
-      if (session && (!personalTickers || personalTickers.length === 0) && legacyTickers) {
+      if (session && (!personalTickers?.tickers || personalTickers.tickers.length === 0) && legacyTickers) {
         await persistWatchlist('personal', legacyTickers, session)
       }
     } finally {
@@ -5637,7 +5710,7 @@ function App() {
     const nextSort = { primary: value, secondary: 'registered' as WatchlistSortKey }
     setWatchlistSortSettings(nextSort)
     if (isAdminUser && isOperatorDataMode) {
-      storeOperatorWatchlistSortSettings(nextSort)
+      void persistOperatorWatchlistSort(nextSort)
     }
     setIsWatchlistSortOpen(false)
     void persistUserSettings(nextSort, notificationPreferences)
