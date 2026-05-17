@@ -252,7 +252,7 @@ const PERSONAL_TRADES_STORAGE_KEY = 'gongsu-personal-trades'
 const VIEW_MODE_STORAGE_KEY = 'gongsu-view-mode'
 const VIEW_MODE_HINT_STORAGE_KEY = 'gongsu-view-mode-hint-seen'
 const USER_SETTINGS_STORAGE_KEY = 'gongsu-user-settings'
-const WATCHLIST_SORT_STORAGE_KEY = 'gongsu-watchlist-sort'
+const OPERATOR_WATCHLIST_SORT_STORAGE_KEY = 'gongsu-operator-watchlist-sort'
 const CONTRIBUTION_SETTINGS_STORAGE_KEY = 'gongsu-contribution-settings'
 const API_LOGS_STORAGE_KEY = 'gongsu-api-logs'
 const ACTIVE_PAGE_STORAGE_KEY = 'gongsu-active-page'
@@ -616,20 +616,20 @@ function normalizeWatchlistSortSettings(value: unknown): WatchlistSortSettings {
   return { primary, secondary }
 }
 
-function readSharedWatchlistSortSettings() {
-  const stored = localStorage.getItem(WATCHLIST_SORT_STORAGE_KEY)
+function readOperatorWatchlistSortSettings() {
+  const stored = localStorage.getItem(OPERATOR_WATCHLIST_SORT_STORAGE_KEY)
   if (!stored) return null
 
   try {
     return normalizeWatchlistSortSettings(JSON.parse(stored))
   } catch {
-    localStorage.removeItem(WATCHLIST_SORT_STORAGE_KEY)
+    localStorage.removeItem(OPERATOR_WATCHLIST_SORT_STORAGE_KEY)
     return null
   }
 }
 
-function storeSharedWatchlistSortSettings(watchlistSort: WatchlistSortSettings) {
-  localStorage.setItem(WATCHLIST_SORT_STORAGE_KEY, JSON.stringify(watchlistSort))
+function storeOperatorWatchlistSortSettings(watchlistSort: WatchlistSortSettings) {
+  localStorage.setItem(OPERATOR_WATCHLIST_SORT_STORAGE_KEY, JSON.stringify(watchlistSort))
 }
 
 function normalizeNotificationChannel(value: unknown): NotificationDeliveryChannel {
@@ -714,26 +714,27 @@ function storePersonalTradeLogs(session: UserSession | null, trades: TradeLog[])
 }
 
 function readStoredUserSettings(session: UserSession | null = null): StoredUserSettings {
-  const stored = localStorage.getItem(userSettingsStorageKey(session)) ?? localStorage.getItem(USER_SETTINGS_STORAGE_KEY)
-  const sharedWatchlistSort = readSharedWatchlistSortSettings()
+  const stored = localStorage.getItem(userSettingsStorageKey(session)) ?? (session ? localStorage.getItem(USER_SETTINGS_STORAGE_KEY) : null)
   if (!stored) {
     return {
       ...DEFAULT_USER_SETTINGS,
-      watchlistSort: sharedWatchlistSort ?? DEFAULT_USER_SETTINGS.watchlistSort,
+      watchlistSort: session ? DEFAULT_USER_SETTINGS.watchlistSort : readOperatorWatchlistSortSettings() ?? DEFAULT_USER_SETTINGS.watchlistSort,
     }
   }
 
   try {
     const parsed = JSON.parse(stored)
-    const storedWatchlistSort = normalizeWatchlistSortSettings(parsed.watchlistSort)
     return {
-      watchlistSort: session ? storedWatchlistSort : sharedWatchlistSort ?? storedWatchlistSort,
+      watchlistSort: normalizeWatchlistSortSettings(parsed.watchlistSort),
       notificationPreferences: normalizeNotificationPreferences(parsed.notificationPreferences),
       investmentType: normalizeInvestmentType(parsed.investmentType),
     }
   } catch {
     localStorage.removeItem(userSettingsStorageKey(session))
-    return DEFAULT_USER_SETTINGS
+    return {
+      ...DEFAULT_USER_SETTINGS,
+      watchlistSort: session ? DEFAULT_USER_SETTINGS.watchlistSort : readOperatorWatchlistSortSettings() ?? DEFAULT_USER_SETTINGS.watchlistSort,
+    }
   }
 }
 
@@ -743,7 +744,6 @@ function storeUserSettings(
   notificationPreferences: NotificationPreferences,
   investmentType: InvestmentType | null,
 ) {
-  storeSharedWatchlistSortSettings(watchlistSort)
   localStorage.setItem(userSettingsStorageKey(session), JSON.stringify({ watchlistSort, notificationPreferences, investmentType }))
 }
 
@@ -4456,6 +4456,9 @@ function App() {
 
     const nextSettings = readStoredUserSettings(session)
     setWatchlistSortSettings(nextSettings.watchlistSort)
+    if (isLocalAdmin) {
+      storeOperatorWatchlistSortSettings(nextSettings.watchlistSort)
+    }
     setNotificationPreferences(nextSettings.notificationPreferences)
     const nextInvestmentType = !isLocalAdmin ? nextSettings.investmentType ?? 'long_term' : nextSettings.investmentType
     setInvestmentType(nextInvestmentType)
@@ -4687,6 +4690,9 @@ function App() {
         loadPortfolioState(session),
       ])
       setWatchlistSortSettings(loadedSettings.watchlistSort)
+      if (session && isConfiguredAdminEmail(session.email)) {
+        storeOperatorWatchlistSortSettings(loadedSettings.watchlistSort)
+      }
       setNotificationPreferences(loadedSettings.notificationPreferences)
       setInvestmentType(loadedSettings.investmentType)
       setContributionSettings(loadedPortfolioState.contributionSettings)
@@ -5457,7 +5463,9 @@ function App() {
     setCanUseAccountSwitch(false)
     setWatchlist(readStoredWatchlist(null))
     setPersonalTradeLogs(readStoredPersonalTradeLogs(null))
-    setInvestmentType(readStoredUserSettings(null).investmentType)
+    const guestSettings = readStoredUserSettings(null)
+    setWatchlistSortSettings(guestSettings.watchlistSort)
+    setInvestmentType(guestSettings.investmentType)
     setContributionSettings(readStoredContributionSettings(null))
     setSelectedTickers([])
     setSelectedHoldingTradeKeys([])
@@ -5521,7 +5529,9 @@ function App() {
       setCanUseAccountSwitch(false)
       setWatchlist(readStoredWatchlist(null))
       setPersonalTradeLogs(readStoredPersonalTradeLogs(null))
-      setInvestmentType(readStoredUserSettings(null).investmentType)
+      const guestSettings = readStoredUserSettings(null)
+      setWatchlistSortSettings(guestSettings.watchlistSort)
+      setInvestmentType(guestSettings.investmentType)
       setContributionSettings(readStoredContributionSettings(null))
       setSelectedTickers([])
       setSelectedHoldingTradeKeys([])
@@ -5626,6 +5636,9 @@ function App() {
   const updateWatchlistSortSetting = (value: WatchlistSortKey) => {
     const nextSort = { primary: value, secondary: 'registered' as WatchlistSortKey }
     setWatchlistSortSettings(nextSort)
+    if (isAdminUser && isOperatorDataMode) {
+      storeOperatorWatchlistSortSettings(nextSort)
+    }
     setIsWatchlistSortOpen(false)
     void persistUserSettings(nextSort, notificationPreferences)
   }
