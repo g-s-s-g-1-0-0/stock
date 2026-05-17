@@ -33772,8 +33772,8 @@
       "ticker": "CIFR",
       "name": "Cipher Digital",
       "market": "US",
-      "category": "혼합주",
-      "industry": "해외 보통주, 개별 사업영역 추가 확인 필요"
+      "category": "성장주",
+      "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, HPC"
     },
     {
       "ticker": "CIFU",
@@ -43881,7 +43881,7 @@
       "name": "Eaton Corporation, PLC",
       "market": "US",
       "category": "혼합주",
-      "industry": "해외 보통주, 개별 사업영역 추가 확인 필요"
+      "industry": "전력관리, 전기장비, 데이터센터 전력 인프라, 항공·차량 전장"
     },
     {
       "ticker": "ETO",
@@ -100804,8 +100804,8 @@
       "ticker": "WULF",
       "name": "TeraWulf",
       "market": "US",
-      "category": "혼합주",
-      "industry": "해외 보통주, 개별 사업영역 추가 확인 필요"
+      "category": "성장주",
+      "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC"
     },
     {
       "ticker": "WULX",

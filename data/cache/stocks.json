@@ -734,7 +734,7 @@
         "F. 200일선 상방 & BB 극단 저점"
       ],
       "category": "혼합주",
-      "industry": "해외 보통주, 개별 사업영역 추가 확인 필요",
+      "industry": "전력관리, 전기장비, 데이터센터 전력 인프라, 항공·차량 전장",
       "updatedAt": "2026-05-17T04:55:31+00:00"
     },
     {
@@ -749,8 +749,8 @@
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
       "strategies": [],
-      "category": "혼합주",
-      "industry": "해외 보통주, 개별 사업영역 추가 확인 필요",
+      "category": "성장주",
+      "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
       "updatedAt": "2026-05-17T04:55:31+00:00"
     },
     {
@@ -765,8 +765,8 @@
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
       "strategies": [],
-      "category": "혼합주",
-      "industry": "해외 보통주, 개별 사업영역 추가 확인 필요",
+      "category": "성장주",
+      "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, HPC",
       "updatedAt": "2026-05-17T04:55:31+00:00"
     }
   ]

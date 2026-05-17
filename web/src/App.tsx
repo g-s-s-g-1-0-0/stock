@@ -1456,7 +1456,7 @@ function tradeCriteriaInfo(strategy: string) {
 
 function tradeResultInfo(trade: TradeLog) {
   if (trade.status !== '보유 중') return tradeCriteriaInfo(trade.strategy)
-  return '아직 매도 신호가 없어 성공/실패를 확정하지 않은 보유 중 거래입니다.'
+  return '아직 매도 신호가 없어 성공/실패를 확정하지 않은 보유 중 거래입니다. 보유 여부는 투자금 산정과 별개로 구분해서 봅니다.'
 }
 
 function isSystemHolding(ticker: string, targetTrades: TradeLog[]) {
