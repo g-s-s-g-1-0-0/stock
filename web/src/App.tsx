@@ -1604,6 +1604,10 @@ function StrategyTag({
     <span
       className="strategy-item"
       onBlur={onTooltipClose}
+      onClick={(event) => {
+        event.stopPropagation()
+        openTooltip(event.currentTarget)
+      }}
       onFocus={(event) => openTooltip(event.currentTarget)}
       onMouseEnter={(event) => openTooltip(event.currentTarget)}
       onMouseLeave={onTooltipClose}
@@ -1642,6 +1646,10 @@ function ResultBadge({
     <span
       className={`status-badge result-badge ${statusClass(trade.status)}`}
       onBlur={onTooltipClose}
+      onClick={(event) => {
+        event.stopPropagation()
+        openTooltip(event.currentTarget)
+      }}
       onFocus={(event) => openTooltip(event.currentTarget)}
       onMouseEnter={(event) => openTooltip(event.currentTarget)}
       onMouseLeave={onTooltipClose}
@@ -2568,7 +2576,10 @@ function MetricValue({
       className="metric-tooltip-trigger"
       type="button"
       onBlur={onTooltipClose}
-      onClick={(event) => openTooltip(event.currentTarget)}
+      onClick={(event) => {
+        event.stopPropagation()
+        openTooltip(event.currentTarget)
+      }}
       onFocus={(event) => openTooltip(event.currentTarget)}
       onMouseEnter={(event) => openTooltip(event.currentTarget)}
       onMouseLeave={onTooltipClose}
@@ -4600,6 +4611,22 @@ function App() {
   }, [apiStocks, isStockSearchLoaded, query])
 
   useEffect(() => {
+    if (!activeTooltip) return
+
+    const closeTooltip = () => setActiveTooltip(null)
+    const closeTooltipOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setActiveTooltip(null)
+    }
+
+    document.addEventListener('click', closeTooltip)
+    document.addEventListener('keydown', closeTooltipOnEscape)
+    return () => {
+      document.removeEventListener('click', closeTooltip)
+      document.removeEventListener('keydown', closeTooltipOnEscape)
+    }
+  }, [activeTooltip])
+
+  useEffect(() => {
     let isMounted = true
 
     if (!supabase) {
@@ -4738,9 +4765,12 @@ function App() {
   const effectiveViewMode = isAdminUser ? 'operator' : viewMode
   const isOperatorDataMode = effectiveViewMode === 'operator'
   const displayedInvestmentType = investmentType ?? DEFAULT_INVESTMENT_TYPE
-  const isLongTermInvestor = displayedInvestmentType === 'long_term' && effectiveViewMode === 'personal'
+  const shouldApplyInvestmentTypeView = !isAdminUser
+  const isLongTermInvestor = shouldApplyInvestmentTypeView && displayedInvestmentType === 'long_term'
   const scopedTrades = isOperatorDataMode
-    ? systemTradeLogs
+    ? shouldApplyInvestmentTypeView
+      ? systemTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
+      : systemTradeLogs
     : personalTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const visibleProfileTrades = isLongTermInvestor ? scopedOpenTrades : scopedTrades
@@ -6685,6 +6715,7 @@ function App() {
             left: activeTooltip.x,
             top: activeTooltip.y,
           }}
+          onClick={(event) => event.stopPropagation()}
         >
           {activeTooltip.text}
         </div>
