@@ -489,6 +489,21 @@ function notificationSettingsDeepLinkMessage() {
   return ''
 }
 
+function notificationIntegrationDeepLinkMessage() {
+  const params = activePageHashParams()
+  const slackStatus = params.get('slack')
+  if (slackStatus === 'connected') {
+    return 'Slack 연동이 완료되었습니다. 이제 슬랙으로 알림을 받을 수 있습니다.'
+  }
+  if (slackStatus === 'error') {
+    const detail = params.get('detail')
+    return detail
+      ? `Slack 연동에 실패했습니다. ${detail.replace(/\+/g, ' ')}`
+      : 'Slack 연동에 실패했습니다. 잠시 후 다시 시도해 주세요.'
+  }
+  return ''
+}
+
 function hasNotificationSettingsDeepLink() {
   const params = activePageHashParams()
   return params.get('settings') === 'notifications' || params.get('notification') === 'unsubscribed'
@@ -4012,6 +4027,7 @@ function App() {
   const [loginError, setLoginError] = useState('')
   const [signupConfirmationEmail, setSignupConfirmationEmail] = useState('')
   const [isRecoverySent, setIsRecoverySent] = useState(false)
+  const [notificationChannelMessage, setNotificationChannelMessage] = useState(() => notificationIntegrationDeepLinkMessage())
   const [boardPosts, setBoardPosts] = useState<BoardPost[]>(initialBoardPosts)
   const [boardCategory, setBoardCategory] = useState<BoardCategory>('건의')
   const [boardContent, setBoardContent] = useState('')
@@ -5459,7 +5475,10 @@ function App() {
     try {
       const { error } = await supabase.rpc('delete_own_account')
       if (error) {
-        setAccountDeleteError(`회원탈퇴를 완료하지 못했습니다.\n${error.message}`)
+        const message = error.message.includes('delete_own_account') || error.message.includes('schema cache')
+          ? '회원탈퇴 RPC가 아직 DB에 적용되지 않았습니다.\nSupabase migration 008_refresh_delete_own_account_rpc.sql을 적용한 뒤 다시 시도해 주세요.'
+          : `회원탈퇴를 완료하지 못했습니다.\n${error.message}`
+        setAccountDeleteError(message)
         setIsAccountDeleteConfirmOpen(false)
         setIsLoginOpen(true)
         return
@@ -5596,6 +5615,7 @@ function App() {
   const selectEmailNotificationChannel = () => {
     const nextPreferences = { ...notificationPreferences, notificationChannel: 'email' as const }
     setNotificationPreferences(nextPreferences)
+    setNotificationChannelMessage('')
     void persistUserSettings(watchlistSortSettings, nextPreferences)
   }
 
@@ -5603,6 +5623,7 @@ function App() {
     if (!isNotificationIntegrationConnected(channel)) return
     const nextPreferences = { ...notificationPreferences, notificationChannel: channel }
     setNotificationPreferences(nextPreferences)
+    setNotificationChannelMessage(`${notificationChannelLabels[channel]} 알림을 사용합니다.`)
     void persistUserSettings(watchlistSortSettings, nextPreferences)
   }
 
@@ -5619,6 +5640,7 @@ function App() {
     }
 
     setConnectingNotificationChannel(channel)
+    setNotificationChannelMessage('Slack 연동을 시작합니다. 새 창이 열리면 워크스페이스와 채널을 승인해 주세요.')
     const oauthWindow = window.open('about:blank', '_blank')
     try {
       const { data } = await supabase.auth.getSession()
@@ -5642,10 +5664,10 @@ function App() {
       } else {
         window.open(String(payload.url), '_blank', 'noopener,noreferrer')
       }
-      setAuthInfoMessage('새 창에서 Slack 연동을 완료해 주세요. 완료 후 알림 설정에서 슬랙을 선택할 수 있습니다.')
+      setNotificationChannelMessage('새 창에서 Slack 연동을 완료해 주세요. 완료 후 이 화면으로 돌아오면 슬랙이 자동 선택됩니다.')
     } catch (error) {
       oauthWindow?.close()
-      setAuthInfoMessage(error instanceof Error ? error.message : 'Slack 연동을 시작하지 못했습니다.')
+      setNotificationChannelMessage(error instanceof Error ? error.message : 'Slack 연동을 시작하지 못했습니다.')
     } finally {
       setConnectingNotificationChannel(null)
     }
@@ -5660,6 +5682,7 @@ function App() {
         : { slackConnected: false, slackConnectedAt: '' }),
     }
     setNotificationPreferences(nextPreferences)
+    setNotificationChannelMessage(channel === 'slack' ? 'Slack 연동을 해제하고 이메일 알림으로 돌아갑니다.' : '')
     void persistUserSettings(watchlistSortSettings, nextPreferences)
     if (channel !== 'slack' || !supabase) return
 
@@ -5982,6 +6005,7 @@ function App() {
       if (hasNotificationSettingsDeepLink()) {
         setAuthMode('login')
         setAuthInfoMessage(notificationSettingsDeepLinkMessage())
+        setNotificationChannelMessage(notificationIntegrationDeepLinkMessage())
         setIsLoginOpen(true)
       }
     }
@@ -7080,6 +7104,9 @@ function App() {
                       })}
                     </div>
                     <p className="notification-channel-demo-note">슬랙은 승인 후 선택한 채널로 알림을 보냅니다. 연동이 없으면 이메일로 돌아갑니다.</p>
+                    {notificationChannelMessage && (
+                      <p className="notification-channel-status">{notificationChannelMessage}</p>
+                    )}
                   </div>
                   <div className="account-alert-card">
                     <div className="account-alert-header">
