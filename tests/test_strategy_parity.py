@@ -54,6 +54,31 @@ def test_exit_condition_for_non_ef_target_is_immediate():
     assert "즉시" in result["reason"]
 
 
+def test_nasdaq_peak_exit_skips_exempt_strategies():
+    row = IndicatorRow(
+        stock_name="AAPL",
+        current_price=110,
+        entry_price=100,
+    )
+
+    result = evaluate_exit_condition(row, strategy_type="A", nasdaq_peak_alert=True, trading_days=10)
+
+    assert result["shouldExit"] is False
+
+
+def test_nasdaq_peak_exit_still_applies_to_b_and_d():
+    row = IndicatorRow(
+        stock_name="AAPL",
+        current_price=110,
+        entry_price=100,
+    )
+
+    result = evaluate_exit_condition(row, strategy_type="D", nasdaq_peak_alert=True, trading_days=10)
+
+    assert result["shouldExit"] is True
+    assert "나스닥 고점" in result["reason"]
+
+
 def test_exit_condition_for_ef_waits_for_macd_turn():
     row = IndicatorRow(
         stock_name="TSLA",
@@ -74,5 +99,7 @@ if __name__ == "__main__":
     test_strategy_a_matches_sheet_conditions()
     test_strategy_b_uses_vix_and_oversold_below_ma200()
     test_exit_condition_for_non_ef_target_is_immediate()
+    test_nasdaq_peak_exit_skips_exempt_strategies()
+    test_nasdaq_peak_exit_still_applies_to_b_and_d()
     test_exit_condition_for_ef_waits_for_macd_turn()
     print("strategy parity smoke tests passed")

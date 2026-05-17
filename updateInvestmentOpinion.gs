@@ -82,6 +82,30 @@ const CONSTANTS = {
 const HOLD_ANCHOR_PREFIX   = "HOLD_ANCHOR_";
 const HOLD_WATCH_PREFIX    = "HOLD_WATCH_";
 const UPPER_EXIT_ARM_PREFIX = "UPPER_EXIT_ARM_";
+const NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES = ["A", "C", "E", "F"];
+
+function isNasdaqPeakExitExemptStrategy(strategyType) {
+  return NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES.indexOf(String(strategyType || "A").toUpperCase()) !== -1;
+}
+
+function nasdaqPeakExitApplies(strategyType) {
+  return !isNasdaqPeakExitExemptStrategy(strategyType);
+}
+
+function clearNasdaqPeakEligibleSlots(stockName, slots, props, sellDate, sellPrice) {
+  if (typeof Utils === "undefined" || typeof Utils.clearSlot !== "function") return [];
+  const closed = [];
+  const dateStr = sellDate instanceof Date
+    ? Utilities.formatDate(sellDate, "Asia/Seoul", "yyyy-MM-dd")
+    : String(sellDate || "");
+  (slots || []).forEach(slot => {
+    if (isNasdaqPeakExitExemptStrategy(slot.strategy)) return;
+    Utils.clearSlot(stockName, slot.id, props);
+    if (dateStr) props.setProperty(`SLOT_SELL_${stockName}_${slot.strategy}`, `${dateStr}|${sellPrice}`);
+    closed.push(slot);
+  });
+  return closed;
+}
 
 function clearAHoldRestoreProps(stockName) {
   const p = PropertiesService.getScriptProperties();
@@ -476,8 +500,9 @@ function getActiveSlotsFromProperties(stockName, allProperties) {
     });
 }
 
-function pickLatestSlot(slots) {
-  return (slots && slots.length > 0) ? slots[0] : null;
+function pickLatestSlot(slots, predicate) {
+  const candidates = predicate ? (slots || []).filter(predicate) : (slots || []);
+  return candidates.length > 0 ? candidates[0] : null;
 }
 
 function clearSellInfo(stockName) {
@@ -622,7 +647,7 @@ function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding =
 function evaluateExitCondition(ind, now, nasdaqPeakAlert, strategyType = "A", allProperties = null) {
   const S = CONSTANTS.STRATEGY;
   if (!ind.entryPrice || ind.entryPrice <= 0 || !ind.entryDate) return { shouldExit: false, reason: null };
-  if (nasdaqPeakAlert) return { shouldExit: true, reason: "나스닥 고점 청산/강제매도 — 국면별 QQQ 과열 기준 충족" };
+  if (nasdaqPeakAlert && nasdaqPeakExitApplies(strategyType)) return { shouldExit: true, reason: "나스닥 고점 청산/강제매도 — 국면별 QQQ 과열 기준 충족" };
 
   const targetPct = strategyType === "A" ? S.TARGET_PCT_A
                   : strategyType === "B" ? S.TARGET_PCT_B
@@ -705,7 +730,7 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
   const entryDateWrites     = {};
   const entryStrategyWrites = {};
 
-  if (nasdaqPeakAlert) console.log(`[나스닥 고점 청산/강제매도] 조건 충족(${marketData.nasdaqPeakReason || "국면별 QQQ 과열 기준"}) — ENTRY_ 키 보유 종목 전체 강제 매도 + 신규/재진입 차단`);
+  if (nasdaqPeakAlert) console.log(`[나스닥 고점 청산/강제매도] 조건 충족(${marketData.nasdaqPeakReason || "국면별 QQQ 과열 기준"}) — B/D 전략 보유분 강제 매도, A/C/E/F 보유분 제외 + 신규/재진입 차단`);
 
   if (ixicFilterActive) {
     const rawDeath = ixicDist > S.NASDAQ_DIST_LOWER && ixicDist < S.NASDAQ_DIST_UPPER;
@@ -823,8 +848,17 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
       saveExitReason(ind.stockName, reason);
       entryStrategyWrites[i + 3] = "";  // BC열 초기화
     };
-    const promoteSlotToPrimary = () => {
-      const promotedSlot = pickLatestSlot(activeSlots);
+    const liquidatePrimaryOnly = (reason) => {
+      newOpinion = "매도";
+      newEntryPrice = 0;
+      newEntryDate = null;
+      clearEntryInfo(ind.stockName);
+      saveSellInfo(ind.stockName, now, ind.currentPrice);
+      saveExitReason(ind.stockName, reason);
+      entryStrategyWrites[i + 3] = "";
+    };
+    const promoteSlotToPrimary = (predicate) => {
+      const promotedSlot = pickLatestSlot(activeSlots, predicate);
       if (!promotedSlot) return false;
       const exitedPrimaryStrategy = saved.strategyType;
 
@@ -890,9 +924,15 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
       }
     } else if (isHolding) {
       if (exit.shouldExit) {
-        if (nasdaqPeakAlert) {
-          liquidateAllHoldings(exit.reason);
-          console.log(` → [전량 청산] ${ind.displayName}: ${exit.reason} (PRIMARY + 슬롯 전체 청산)`);
+        if (nasdaqPeakAlert && nasdaqPeakExitApplies(saved.strategyType)) {
+          const closedPeakSlots = clearNasdaqPeakEligibleSlots(ind.stockName, activeSlots, props, now, ind.currentPrice);
+          activeSlots = getActiveSlotsFromProperties(ind.stockName, props.getProperties());
+          if (!promoteSlotToPrimary(slot => isNasdaqPeakExitExemptStrategy(slot.strategy))) {
+            liquidatePrimaryOnly(exit.reason);
+            console.log(` → [고점 청산] ${ind.displayName}: ${exit.reason} (PRIMARY ${saved.strategyType} 전략 청산, A/C/E/F 슬롯 제외)`);
+          } else {
+            console.log(` → [고점 부분 청산] ${ind.displayName}: PRIMARY ${saved.strategyType} 전략 및 B/D 슬롯 ${closedPeakSlots.length}개 청산, A/C/E/F 슬롯 보존`);
+          }
         } else if (!promoteSlotToPrimary()) {
           liquidateAllHoldings(exit.reason);
           console.log(` → [매도] ${ind.displayName}: ${exit.reason}`);

@@ -275,7 +275,9 @@ function handleOpinionChange(stockName, fromOpinion, toOpinion, row, currentGlob
       const returnPct    = ((price - saved.price) / saved.price * 100).toFixed(2);
       entryNote = `진입가 ${Utils.fmtPrice(saved.price, stockName)} (${entryDateStr}) · 수익률 ${Number(returnPct) >= 0 ? "+" : ""}${returnPct}%`;
     }
-    Utils.clearAllSlotStateForStock(stockName, price, kstDate, props, allProperties);
+    const isPeakSell = typeof reason === "string" && reason.indexOf("고점 청산/강제매도") !== -1;
+    const keepPeakStrategies = isPeakSell ? ["A", "C", "E", "F"] : null;
+    Utils.clearAllSlotStateForStock(stockName, price, kstDate, props, allProperties, { keepStrategies: keepPeakStrategies });
   }
 
   changes.push({ stock: displayName, ticker: stockName, from: fromOpinion, to: toOpinion, reason, price: fmtP, entryNote, stopLoss: "" });
@@ -314,8 +316,7 @@ function handleOpinionChange(stockName, fromOpinion, toOpinion, row, currentGlob
     }
   }
   if (toOpinion === "매도" && fromOpinion !== "매도") {
-    const isBulkSell = typeof reason === "string" &&
-      (reason.indexOf("나스닥 고점 경고") !== -1 || reason.indexOf("고점 청산/강제매도") !== -1);
+    const isBulkSell = typeof reason === "string" && reason.indexOf("나스닥 고점 경고") !== -1;
     let resolvedSellStrategy = existingEntry.strategyType;
     if (!resolvedSellStrategy) {
       const sheetStratStr = String(row[Utils.COL_INDICES.entryStrategy] || "").trim();
@@ -1233,7 +1234,7 @@ const Utils = {
         buyTriggered = fCond1 && !ixicFilterActive && nasdaqBelowBuyBlock && pctBLow !== null && fCond2;
       }
 
-      if (nasdaqPeakAlert) return { opinion: "매도", reason: `나스닥 고점 청산/강제매도 — ${globalData.nasdaqPeakReason || "국면별 QQQ 과열 기준 충족"}`, strategyType: savedStrategy };
+      if (nasdaqPeakAlert && typeof nasdaqPeakExitApplies === "function" && nasdaqPeakExitApplies(savedStrategy)) return { opinion: "매도", reason: `나스닥 고점 청산/강제매도 — ${globalData.nasdaqPeakReason || "국면별 QQQ 과열 기준 충족"}`, strategyType: savedStrategy };
 
       const cp          = currentPrice !== null ? currentPrice : 0;
       const returnPct   = (cp - entryPrice) / entryPrice;
@@ -1708,34 +1709,52 @@ const Utils = {
     return match ? match[1].toUpperCase() : null;
   },
 
-  clearAllSlotStateForStock(stockName, sellPrice, sellDate, props, allProperties) {
+  clearAllSlotStateForStock(stockName, sellPrice, sellDate, props, allProperties, options = {}) {
     const properties = props || PropertiesService.getScriptProperties();
     const snapshot   = allProperties || properties.getProperties();
+    const keepStrategies = new Set((options.keepStrategies || []).map(s => String(s).toUpperCase()));
+    const slots = Utils.loadSlots(stockName, snapshot);
+    const slotsToKeep = keepStrategies.size > 0 ? slots.filter(slot => keepStrategies.has(String(slot.strategy).toUpperCase())) : [];
+    const slotsToClear = keepStrategies.size > 0 ? slots.filter(slot => !keepStrategies.has(String(slot.strategy).toUpperCase())) : slots;
 
-    // SLOT_UPPER_EXIT_ARM_ 키 전부 제거
+    // SLOT_UPPER_EXIT_ARM_ 키 제거. 고점 부분청산에서는 A/C/E/F 슬롯 arm은 보존한다.
     Object.keys(snapshot)
       .filter(k => k.startsWith(`SLOT_UPPER_EXIT_ARM_${stockName}_`))
-      .forEach(k => properties.deleteProperty(k));
+      .forEach(k => {
+        const strategy = k.replace(`SLOT_UPPER_EXIT_ARM_${stockName}_`, "").charAt(0).toUpperCase();
+        if (!keepStrategies.has(strategy)) properties.deleteProperty(k);
+      });
 
-    // 각 슬롯 전략에 대해 SLOT_SELL_ 쿨다운 기록
+    // 각 청산 슬롯 전략에 대해 SLOT_SELL_ 쿨다운 기록
     if (sellDate) {
       const dateStr = sellDate instanceof Date
         ? Utilities.formatDate(sellDate, "Asia/Seoul", "yyyy-MM-dd")
         : String(sellDate);
-      Utils.loadSlots(stockName, snapshot).forEach(slot => {
+      slotsToClear.forEach(slot => {
         properties.setProperty(`SLOT_SELL_${stockName}_${slot.strategy}`, `${dateStr}|${sellPrice}`);
       });
     }
 
-    // SLOTS_ 배열 키 제거
-    properties.deleteProperty(`SLOTS_${stockName}`);
+    if (slotsToKeep.length > 0) {
+      properties.setProperty(`SLOTS_${stockName}`, JSON.stringify(slotsToKeep.map(slot => ({
+        ...slot,
+        date: slot.date instanceof Date
+          ? Utilities.formatDate(slot.date, "Asia/Seoul", "yyyy-MM-dd'T'HH:mm:ss") + "+09:00"
+          : slot.date
+      }))));
+    } else {
+      properties.deleteProperty(`SLOTS_${stockName}`);
+    }
 
     // 레거시 SLOT_{stockName}_* 키 정리 (구 형식 잔재)
     Object.keys(snapshot)
       .filter(k => k.startsWith(`SLOT_${stockName}_`)
                && !k.startsWith(`SLOT_SELL_${stockName}_`)
                && !k.startsWith(`SLOT_UPPER_EXIT_ARM_${stockName}_`))
-      .forEach(k => properties.deleteProperty(k));
+      .forEach(k => {
+        const strategy = k.replace(`SLOT_${stockName}_`, "").charAt(0).toUpperCase();
+        if (!keepStrategies.has(strategy)) properties.deleteProperty(k);
+      });
   },
 
   recordAllOpenSellSignals(stockName, sellDate, sellPrice) {
@@ -1940,7 +1959,7 @@ const Utils = {
     const isEfStrategy = strategy === "E" || strategy === "F";
     let upperExitArmDate = isEfStrategy ? Utils.loadSlotUpperExitArm(stockName, strategy, allProperties) : null;
 
-    if (globalData.nasdaqPeakAlert)              return { reason: `나스닥 고점 청산/강제매도 — ${globalData.nasdaqPeakReason || "국면별 QQQ 과열 기준 충족"} [${label}]` };
+    if (globalData.nasdaqPeakAlert && typeof nasdaqPeakExitApplies === "function" && nasdaqPeakExitApplies(strategy)) return { reason: `나스닥 고점 청산/강제매도 — ${globalData.nasdaqPeakReason || "국면별 QQQ 과열 기준 충족"} [${label}]` };
     if (returnPct <= -circuitPct)                return { reason: `손절 기준 도달 -${Math.abs(returnPct * 100).toFixed(2)}% [${label}]` };
 
     if (isEfStrategy && returnPct >= targetPct && !upperExitArmDate) {

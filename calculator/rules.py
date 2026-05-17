@@ -61,6 +61,8 @@ STRATEGY_LABELS = {
     "F": "200일선 상방 & BB 극단 저점",
 }
 
+NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES = {"A", "C", "E", "F"}
+
 
 @dataclass(frozen=True)
 class IndicatorRow:
@@ -115,6 +117,10 @@ def strategy_display_name(strategy: str | None) -> str:
     if not strategy:
         return "-"
     return f"{strategy}. {STRATEGY_LABELS.get(strategy, strategy)}"
+
+
+def nasdaq_peak_exit_applies(strategy_type: str | None) -> bool:
+    return (strategy_type or "A").upper() not in NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES
 
 
 def compute_nasdaq_filter_active(ixic_dist: float | None, was_active: bool = False) -> bool:
@@ -257,7 +263,7 @@ def evaluate_exit_condition(
 ) -> dict[str, Any]:
     if not ind.entry_price or ind.entry_price <= 0:
         return {"shouldExit": False, "reason": None}
-    if nasdaq_peak_alert:
+    if nasdaq_peak_alert and nasdaq_peak_exit_applies(strategy_type):
         return {"shouldExit": True, "reason": "나스닥 고점 청산/강제매도"}
 
     s = STRATEGY_RULES
