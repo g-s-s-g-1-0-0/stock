@@ -105,6 +105,12 @@ type HoldingLiquidationDraft = {
 }
 
 type ContributionFrequency = 'weekly' | 'monthly'
+type ContributionSettingsMode = 'cash' | 'investment'
+
+type AllocationSettings = {
+  slotCount: number
+  slotPercents: number[]
+}
 
 type ContributionSettings = {
   initialCapital: number
@@ -112,6 +118,7 @@ type ContributionSettings = {
   amount: number
   dayOfWeek: number
   dayOfMonth: number
+  allocationByInvestmentType: Record<InvestmentType, AllocationSettings>
 }
 
 type ContributionSettingsDraft = {
@@ -120,6 +127,10 @@ type ContributionSettingsDraft = {
   amount: string
   dayOfWeek: string
   dayOfMonth: string
+  allocationByInvestmentType: Record<InvestmentType, {
+    slotCount: string
+    slotPercents: string[]
+  }>
 }
 
 type PortfolioSummary = {
@@ -134,6 +145,11 @@ type PortfolioSummary = {
   profitAmount: number
   profitRate: number
   amountByTradeKey: Map<string, number>
+}
+
+type TradeBuyPriority = {
+  megaRank: number
+  trendRank: number
 }
 
 type TechnicalColumn = {
@@ -262,12 +278,17 @@ const DEFAULT_USER_SETTINGS: StoredUserSettings = {
 }
 const DEFAULT_INVESTMENT_TYPE: InvestmentType = 'long_term'
 const DEFAULT_PORTFOLIO_CASH = 10_000_000
+const DEFAULT_ALLOCATION_SETTINGS: Record<InvestmentType, AllocationSettings> = {
+  swing: { slotCount: 3, slotPercents: [50, 25, 25] },
+  long_term: { slotCount: 10, slotPercents: Array.from({ length: 10 }, () => 10) },
+}
 const DEFAULT_CONTRIBUTION_SETTINGS: ContributionSettings = {
   initialCapital: DEFAULT_PORTFOLIO_CASH,
   frequency: 'monthly',
   amount: 1_000_000,
   dayOfWeek: 1,
   dayOfMonth: 1,
+  allocationByInvestmentType: DEFAULT_ALLOCATION_SETTINGS,
 }
 const weekdayOptions = [
   { value: 0, label: '일요일' },
@@ -604,6 +625,24 @@ function storeUserSettings(
   localStorage.setItem(userSettingsStorageKey(session), JSON.stringify({ watchlistSort, notificationPreferences, investmentType }))
 }
 
+function normalizeAllocationSettings(value: unknown, investmentType: InvestmentType): AllocationSettings {
+  const fallback = DEFAULT_ALLOCATION_SETTINGS[investmentType]
+  const candidate = value as Partial<AllocationSettings> | null
+  const slotCount = typeof candidate?.slotCount === 'number' && Number.isFinite(candidate.slotCount)
+    ? Math.min(20, Math.max(1, Math.round(candidate.slotCount)))
+    : fallback.slotCount
+  const candidatePercents = Array.isArray(candidate?.slotPercents) ? candidate.slotPercents : []
+  const slotPercents = Array.from({ length: slotCount }, (_, index) => {
+    const value = candidatePercents[index]
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return Math.min(100, Math.max(0, Math.round(value)))
+    }
+    return fallback.slotPercents[index] ?? 0
+  })
+
+  return { slotCount, slotPercents }
+}
+
 function normalizeContributionSettings(value: unknown): ContributionSettings {
   const candidate = value as Partial<ContributionSettings> | null
   if (!candidate) return DEFAULT_CONTRIBUTION_SETTINGS
@@ -621,6 +660,10 @@ function normalizeContributionSettings(value: unknown): ContributionSettings {
     amount,
     dayOfWeek: Math.min(6, Math.max(0, Number(candidate.dayOfWeek) || DEFAULT_CONTRIBUTION_SETTINGS.dayOfWeek)),
     dayOfMonth: Math.min(31, Math.max(1, Number(candidate.dayOfMonth) || DEFAULT_CONTRIBUTION_SETTINGS.dayOfMonth)),
+    allocationByInvestmentType: {
+      swing: normalizeAllocationSettings(candidate.allocationByInvestmentType?.swing, 'swing'),
+      long_term: normalizeAllocationSettings(candidate.allocationByInvestmentType?.long_term, 'long_term'),
+    },
   }
 }
 
@@ -1761,22 +1804,53 @@ function contributionDayMessage(value: string) {
   return ''
 }
 
-function allocationWeightsForProfile(investmentType: InvestmentType) {
-  return investmentType === 'swing'
-    ? [0.5, 0.25, 0.25]
-    : Array.from({ length: 10 }, () => 0.1)
+function allocationWeightsForProfile(investmentType: InvestmentType, settings: ContributionSettings) {
+  const allocation = settings.allocationByInvestmentType[investmentType]
+  return allocation.slotPercents.slice(0, allocation.slotCount).map((percent) => percent / 100)
+}
+
+function contributionSettingsDraftFrom(settings: ContributionSettings): ContributionSettingsDraft {
+  return {
+    initialCapital: String(settings.initialCapital),
+    frequency: settings.frequency,
+    amount: String(settings.amount),
+    dayOfWeek: String(settings.dayOfWeek),
+    dayOfMonth: String(settings.dayOfMonth),
+    allocationByInvestmentType: {
+      swing: {
+        slotCount: String(settings.allocationByInvestmentType.swing.slotCount),
+        slotPercents: settings.allocationByInvestmentType.swing.slotPercents.map(String),
+      },
+      long_term: {
+        slotCount: String(settings.allocationByInvestmentType.long_term.slotCount),
+        slotPercents: settings.allocationByInvestmentType.long_term.slotPercents.map(String),
+      },
+    },
+  }
+}
+
+function allocationSummaryText(settings: AllocationSettings) {
+  const percents = settings.slotPercents.slice(0, settings.slotCount)
+  const firstPercent = percents[0] ?? 0
+  const isSamePercent = percents.every((percent) => percent === firstPercent)
+
+  if (isSamePercent) {
+    return `제한 슬롯 ${settings.slotCount}개 · 각 슬롯당 ${firstPercent}%가 기본값`
+  }
+
+  return `제한 슬롯 ${settings.slotCount}개 · 슬롯 비중 ${percents.join('% / ')}%`
 }
 
 function buildPortfolioSummary(
   trades: TradeLog[],
   stocks: Stock[],
-  megaTrendForTrade: (trade: TradeLog) => string,
+  buyPriorityForTrade: (trade: TradeLog) => TradeBuyPriority,
   settings: ContributionSettings,
   investmentType: InvestmentType,
   initialCash = settings.initialCapital,
 ): PortfolioSummary {
   let runningCash = initialCash
-  const slotWeights = allocationWeightsForProfile(investmentType)
+  const slotWeights = allocationWeightsForProfile(investmentType, settings)
   const occupiedSlots = new Map<string, number>()
   const amountByTradeKey = new Map<string, number>()
   let openInvestmentAmount = 0
@@ -1817,17 +1891,24 @@ function buildPortfolioSummary(
 
     const cashBeforeBuys = runningCash
     const orderedBuys = [...events.buys].sort((a, b) => {
-      const aTrendRank = megaTrendForTrade(a).startsWith('충족') ? 0 : 1
-      const bTrendRank = megaTrendForTrade(b).startsWith('충족') ? 0 : 1
-      return aTrendRank - bTrendRank || a.ticker.localeCompare(b.ticker)
+      const aPriority = buyPriorityForTrade(a)
+      const bPriority = buyPriorityForTrade(b)
+      return aPriority.megaRank - bPriority.megaRank
+        || aPriority.trendRank - bPriority.trendRank
+        || a.ticker.localeCompare(b.ticker)
     })
 
     for (const trade of orderedBuys) {
       const key = tradeKey(trade)
-      const slotIndex = slotWeights.findIndex((_, index) => ![...occupiedSlots.values()].includes(index))
-      const amount = slotIndex >= 0 ? Math.min(runningCash, Math.max(0, Math.floor(cashBeforeBuys * slotWeights[slotIndex]))) : 0
+      const fixedAmount = typeof trade.investmentAmount === 'number' && Number.isFinite(trade.investmentAmount)
+        ? Math.max(0, Math.round(trade.investmentAmount))
+        : null
+      const slotIndex = fixedAmount === 0 ? -1 : slotWeights.findIndex((_, index) => ![...occupiedSlots.values()].includes(index))
+      const amount = fixedAmount !== null
+        ? fixedAmount
+        : slotIndex >= 0 ? Math.min(runningCash, Math.max(0, Math.floor(cashBeforeBuys * slotWeights[slotIndex]))) : 0
       amountByTradeKey.set(key, amount)
-      if (slotIndex >= 0) occupiedSlots.set(key, slotIndex)
+      if (slotIndex >= 0 && amount > 0) occupiedSlots.set(key, slotIndex)
       cumulativeInvestmentAmount += amount
       runningCash -= amount
     }
@@ -3814,6 +3895,7 @@ function App() {
   const [holdingLiquidationDrafts, setHoldingLiquidationDrafts] = useState<HoldingLiquidationDraft[]>([])
   const [contributionSettings, setContributionSettings] = useState<ContributionSettings>(() => readStoredContributionSettings(initialLocalTestSession))
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
+  const [contributionSettingsMode, setContributionSettingsMode] = useState<ContributionSettingsMode>('cash')
   const [isLoginOpen, setIsLoginOpen] = useState(() => Boolean(notificationSettingsDeepLinkMessage()))
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [loginEmail, setLoginEmail] = useState('')
@@ -4602,7 +4684,7 @@ function App() {
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,
     apiStocks,
-    megaTrendStatus,
+    tradeBuyPriority,
     contributionSettings,
     displayedInvestmentType,
     userSession || isOperatorDataMode ? contributionSettings.initialCapital : 0,
@@ -4615,7 +4697,15 @@ function App() {
     && !contributionDayValidationMessage.includes('없는 달')
     && !contributionDayValidationMessage.includes('윤년'),
   )
+  const isContributionSaveDisabled = contributionSettingsMode === 'cash' && isContributionDayInvalid
   const canEditContributionSettings = Boolean(userSession && (!isOperatorDataMode || isAdminUser))
+  const activeAllocation = contributionDraft?.allocationByInvestmentType[displayedInvestmentType]
+  const displayedAllocationSettings = contributionSettings.allocationByInvestmentType[displayedInvestmentType]
+  const displayedAllocationLabel = displayedInvestmentType === 'swing' ? '스윙 투자' : '가치 투자'
+  const displayedAllocationDescription = displayedInvestmentType === 'swing'
+    ? '스윙 투자는 신호가 잡힌 순서대로 제한된 슬롯에 집중 배분합니다. 매도되어 슬롯이 비면 다음 새 매수 신호에서 현금 기준 비중을 다시 계산합니다.'
+    : '가치 투자는 여러 종목을 오래 가져가는 전제로 슬롯을 넓게 나눕니다. 보유 중인 신호만 집계하고, 새 매수 신호가 들어올 때 빈 슬롯 비중만큼 배정합니다.'
+  const displayedAllocationSummary = allocationSummaryText(displayedAllocationSettings)
   const assetSummaryItems = [
     {
       label: '보유 현금',
@@ -4623,7 +4713,12 @@ function App() {
       action: openContributionSettings,
       clickable: canEditContributionSettings,
     },
-    { label: '평가 투자금', value: formatKrwAmount(portfolioSummary.openInvestmentAmount) },
+    {
+      label: '평가 투자금',
+      value: formatKrwAmount(portfolioSummary.openInvestmentAmount),
+      action: openInvestmentAllocationSettings,
+      clickable: canEditContributionSettings,
+    },
     { label: '누적 매수금', value: formatKrwAmount(portfolioSummary.cumulativeInvestmentAmount) },
     {
       label: '예상 손익',
@@ -4763,19 +4858,19 @@ function App() {
   }
 
   function openContributionSettings() {
-    setContributionDraft({
-      initialCapital: String(contributionSettings.initialCapital),
-      frequency: contributionSettings.frequency,
-      amount: String(contributionSettings.amount),
-      dayOfWeek: String(contributionSettings.dayOfWeek),
-      dayOfMonth: String(contributionSettings.dayOfMonth),
-    })
+    setContributionSettingsMode('cash')
+    setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
+  }
+
+  function openInvestmentAllocationSettings() {
+    setContributionSettingsMode('investment')
+    setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
   }
 
   const saveContributionSettings = () => {
     if (!contributionDraft) return
     const dayMessage = contributionDayMessage(contributionDraft.dayOfMonth)
-    if (contributionDraft.frequency === 'monthly' && dayMessage && !dayMessage.includes('없는 달') && !dayMessage.includes('윤년')) {
+    if (contributionSettingsMode === 'cash' && contributionDraft.frequency === 'monthly' && dayMessage && !dayMessage.includes('없는 달') && !dayMessage.includes('윤년')) {
       return
     }
     const dayOfMonth = Number(contributionDraft.dayOfMonth)
@@ -4785,6 +4880,16 @@ function App() {
       amount: parseAmountValue(contributionDraft.amount) ?? 0,
       dayOfWeek: Number(contributionDraft.dayOfWeek),
       dayOfMonth,
+      allocationByInvestmentType: {
+        swing: normalizeAllocationSettings({
+          slotCount: Number(contributionDraft.allocationByInvestmentType.swing.slotCount),
+          slotPercents: contributionDraft.allocationByInvestmentType.swing.slotPercents.map((value) => Number(value)),
+        }, 'swing'),
+        long_term: normalizeAllocationSettings({
+          slotCount: Number(contributionDraft.allocationByInvestmentType.long_term.slotCount),
+          slotPercents: contributionDraft.allocationByInvestmentType.long_term.slotPercents.map((value) => Number(value)),
+        }, 'long_term'),
+      },
     }
     setContributionSettings(nextSettings)
     storeContributionSettings(userSession, nextSettings)
@@ -5464,6 +5569,44 @@ function App() {
     setPendingBoardDeleteIds(selectedBoardPostIds)
   }
 
+  function closeTopModal() {
+    if (pendingMarketTrendDeleteKeys.length > 0 && !isSavingMarketTrends) {
+      setPendingMarketTrendDeleteKeys([])
+      return
+    }
+    if (isHoldingDeleteConfirmOpen) {
+      setIsHoldingDeleteConfirmOpen(false)
+      return
+    }
+    if (isHoldingLiquidationOpen) {
+      closeHoldingLiquidationModal()
+      return
+    }
+    if (contributionDraft) {
+      setContributionDraft(null)
+      return
+    }
+    if (pendingBoardDeleteIds.length > 0) {
+      setPendingBoardDeleteIds([])
+      return
+    }
+    if (isResetConfirmOpen) {
+      setIsResetConfirmOpen(false)
+      return
+    }
+    if (isLoginOpen) {
+      closeLoginModal()
+      return
+    }
+    if (shouldShowInvestmentProfileOnboarding) {
+      closeInvestmentProfileOnboarding()
+      return
+    }
+    if (isOperatorImportOpen) {
+      closeOperatorImportModal()
+    }
+  }
+
   const confirmBoardPostDeletion = async () => {
     if (pendingBoardDeleteIds.length === 0) return
     const deleteIds = new Set(pendingBoardDeleteIds)
@@ -5483,6 +5626,16 @@ function App() {
   }
 
   const currentWatchlistTickers = isOperatorDataMode ? effectiveOperatorWatchlist : watchlist
+
+  useEffect(() => {
+    const handleModalEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      closeTopModal()
+    }
+
+    document.addEventListener('keydown', handleModalEscape)
+    return () => document.removeEventListener('keydown', handleModalEscape)
+  })
 
   useEffect(() => {
     localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, activePage)
@@ -5560,15 +5713,33 @@ function App() {
   function megaTrendStatus(trade: TradeLog) {
     const stock = apiStocks.find((candidate) => candidate.ticker === trade.ticker)
     const industry = primaryIndustryLabel(stock?.industry)
-    const keywords = industryTrendKeywords(stock?.industry)
-    if (industry === '-' || keywords.length === 0) return '미충족'
+    const rank = trendReportRankForTrade(trade)
 
-    const matchedTrend = apiMarketTrendRows.find((row) => isSameTrendWeek(trade.buyDate, row.date))
-    const topThreeTrendText = matchedTrend?.ranks.slice(0, 3).map(normalizeTrendText).join(' ') ?? ''
-
-    return keywords.some((keyword) => topThreeTrendText.includes(keyword))
+    return rank !== null && rank <= 3
       ? `충족(${industry})`
       : '미충족'
+  }
+
+  function trendReportRankForTrade(trade: TradeLog) {
+    const stock = apiStocks.find((candidate) => candidate.ticker === trade.ticker)
+    const keywords = industryTrendKeywords(stock?.industry)
+    if (keywords.length === 0) return null
+
+    const matchedTrend = apiMarketTrendRows.find((row) => isSameTrendWeek(trade.buyDate, row.date))
+    const matchedIndex = matchedTrend?.ranks.slice(0, 10).findIndex((rankText) => {
+      const normalizedRankText = normalizeTrendText(rankText)
+      return keywords.some((keyword) => normalizedRankText.includes(keyword))
+    }) ?? -1
+
+    return matchedIndex >= 0 ? matchedIndex + 1 : null
+  }
+
+  function tradeBuyPriority(trade: TradeLog): TradeBuyPriority {
+    const rank = trendReportRankForTrade(trade)
+    return {
+      megaRank: rank !== null && rank <= 3 ? 0 : 1,
+      trendRank: rank ?? 99,
+    }
   }
   const exampleStock = rawTableStocks[0]
   const fairPricePendingLabel = nextMidnightUpdateLabel()
@@ -6789,6 +6960,7 @@ function App() {
       {isResetConfirmOpen && (
         <div className="modal-backdrop" role="presentation">
           <div aria-modal="true" className="confirm-modal" role="dialog">
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setIsResetConfirmOpen(false)}>×</button>
             <h3>{isAdminUser ? '공수성가 기록을 모두 초기화할까요?' : '본인 기록을 모두 초기화할까요?'}</h3>
             <p>
               {isAdminUser
@@ -6809,6 +6981,7 @@ function App() {
       {pendingBoardDeleteIds.length > 0 && (
         <div className="modal-backdrop" role="presentation">
           <div aria-modal="true" className="confirm-modal" role="dialog">
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setPendingBoardDeleteIds([])}>×</button>
             <h3>게시글을 삭제할까요?</h3>
             <p>
               선택한 게시글 {pendingBoardDeleteIds.length}개를 삭제합니다. 삭제한 게시글은 다시 되돌릴 수 없습니다.
@@ -6828,68 +7001,143 @@ function App() {
         <div className="modal-backdrop" role="presentation">
           <div aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setContributionDraft(null)}>×</button>
-            <h3>현금 투입 설정</h3>
-            <p>초기 자금과 정기 입금액을 기준으로 보유 현금액이 늘어나며, 매수 때마다 종목 별 보유 현금의 50%를 자동 배정합니다.</p>
-            <label className="login-field">
-              <span>초기 자금</span>
-              <input
-                autoFocus
-                inputMode="numeric"
-                value={amountInputValue(contributionDraft.initialCapital)}
-                onChange={(event) => setContributionDraft((current) => current ? { ...current, initialCapital: amountDraftValue(event.target.value) } : current)}
-              />
-            </label>
-            <label className="login-field">
-              <span>입금 주기</span>
-              <select
-                value={contributionDraft.frequency}
-                onChange={(event) => setContributionDraft((current) => current ? { ...current, frequency: event.target.value as ContributionFrequency } : current)}
-              >
-                <option value="weekly">매주</option>
-                <option value="monthly">매월</option>
-              </select>
-            </label>
-            {contributionDraft.frequency === 'weekly' ? (
-              <label className="login-field">
-                <span>입금 요일</span>
-                <select
-                  value={contributionDraft.dayOfWeek}
-                  onChange={(event) => setContributionDraft((current) => current ? { ...current, dayOfWeek: event.target.value } : current)}
-                >
-                  {weekdayOptions.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <label className="login-field">
-                <span>입금일</span>
-                <input
-                  inputMode="numeric"
-                  max="31"
-                  min="1"
-                  step="1"
-                  value={contributionDraft.dayOfMonth}
-                  onChange={(event) => setContributionDraft((current) => current ? { ...current, dayOfMonth: event.target.value } : current)}
-                />
-                {contributionDayValidationMessage && (
-                  <span className={isContributionDayInvalid ? 'field-message field-message-error' : 'field-message field-message-note'}>
-                    {contributionDayValidationMessage}
-                  </span>
+            {contributionSettingsMode === 'cash' ? (
+              <>
+                <h3>현금 투입 설정</h3>
+                <p>초기 자금과 정기 입금액을 기준으로 보유 현금액이 늘어납니다. 매수 신호가 새로 잡힐 때만 현재 투자성향의 슬롯 비중으로 투자금을 배정합니다.</p>
+                <label className="login-field">
+                  <span>초기 자금</span>
+                  <input
+                    autoFocus
+                    inputMode="numeric"
+                    value={amountInputValue(contributionDraft.initialCapital)}
+                    onChange={(event) => setContributionDraft((current) => current ? { ...current, initialCapital: amountDraftValue(event.target.value) } : current)}
+                  />
+                </label>
+                <label className="login-field">
+                  <span>입금 주기</span>
+                  <select
+                    value={contributionDraft.frequency}
+                    onChange={(event) => setContributionDraft((current) => current ? { ...current, frequency: event.target.value as ContributionFrequency } : current)}
+                  >
+                    <option value="weekly">매주</option>
+                    <option value="monthly">매월</option>
+                  </select>
+                </label>
+                {contributionDraft.frequency === 'weekly' ? (
+                  <label className="login-field">
+                    <span>입금 요일</span>
+                    <select
+                      value={contributionDraft.dayOfWeek}
+                      onChange={(event) => setContributionDraft((current) => current ? { ...current, dayOfWeek: event.target.value } : current)}
+                    >
+                      {weekdayOptions.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <label className="login-field">
+                    <span>입금일</span>
+                    <input
+                      inputMode="numeric"
+                      max="31"
+                      min="1"
+                      step="1"
+                      value={contributionDraft.dayOfMonth}
+                      onChange={(event) => setContributionDraft((current) => current ? { ...current, dayOfMonth: event.target.value } : current)}
+                    />
+                    {contributionDayValidationMessage && (
+                      <span className={isContributionDayInvalid ? 'field-message field-message-error' : 'field-message field-message-note'}>
+                        {contributionDayValidationMessage}
+                      </span>
+                    )}
+                  </label>
                 )}
-              </label>
+                <label className="login-field">
+                  <span>입금액</span>
+                  <input
+                    inputMode="numeric"
+                    value={amountInputValue(contributionDraft.amount)}
+                    onChange={(event) => setContributionDraft((current) => current ? { ...current, amount: amountDraftValue(event.target.value) } : current)}
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                <h3>{displayedAllocationLabel} 투자금 배정</h3>
+                <p>{displayedAllocationDescription}</p>
+                <div className="allocation-rule-note">
+                  <strong>현재 배정 기준</strong>
+                  <span>{displayedAllocationSummary}</span>
+                  <em>0원으로 기록된 신호는 나중에 매도 현금이 생겨도 다시 배정하지 않고, 다음 새 매수 신호부터 현금이 있으면 배정합니다.</em>
+                </div>
+                {activeAllocation && (
+                  <>
+                    <label className="login-field">
+                      <span>제한 슬롯 수</span>
+                      <input
+                        autoFocus
+                        inputMode="numeric"
+                        value={activeAllocation.slotCount}
+                        onChange={(event) => {
+                          const nextSlotCount = event.target.value.replace(/[^0-9]/g, '')
+                          const parsedSlotCount = Math.min(20, Math.max(1, Number(nextSlotCount) || 1))
+                          setContributionDraft((current) => {
+                            if (!current) return current
+                            const currentAllocation = current.allocationByInvestmentType[displayedInvestmentType]
+                            const fallbackPercents = DEFAULT_ALLOCATION_SETTINGS[displayedInvestmentType].slotPercents
+                            const slotPercents = Array.from({ length: parsedSlotCount }, (_, index) => currentAllocation.slotPercents[index] ?? String(fallbackPercents[index] ?? 0))
+                            return {
+                              ...current,
+                              allocationByInvestmentType: {
+                                ...current.allocationByInvestmentType,
+                                [displayedInvestmentType]: {
+                                  slotCount: nextSlotCount,
+                                  slotPercents,
+                                },
+                              },
+                            }
+                          })
+                        }}
+                      />
+                    </label>
+                    <div className="allocation-percent-grid" aria-label={`${displayedAllocationLabel} 슬롯 비중`}>
+                      {activeAllocation.slotPercents.map((percent, index) => (
+                        <label className="login-field" key={`${displayedInvestmentType}-slot-${index + 1}`}>
+                          <span>{index + 1}번 슬롯 비중(%)</span>
+                          <input
+                            inputMode="numeric"
+                            value={percent}
+                            onChange={(event) => {
+                              const nextPercent = event.target.value.replace(/[^0-9]/g, '')
+                              setContributionDraft((current) => {
+                                if (!current) return current
+                                const currentAllocation = current.allocationByInvestmentType[displayedInvestmentType]
+                                const slotPercents = currentAllocation.slotPercents.map((value, percentIndex) => percentIndex === index ? nextPercent : value)
+                                return {
+                                  ...current,
+                                  allocationByInvestmentType: {
+                                    ...current.allocationByInvestmentType,
+                                    [displayedInvestmentType]: {
+                                      ...currentAllocation,
+                                      slotPercents,
+                                    },
+                                  },
+                                }
+                              })
+                            }}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
             )}
-            <label className="login-field">
-              <span>입금액</span>
-              <input
-                inputMode="numeric"
-                value={amountInputValue(contributionDraft.amount)}
-                onChange={(event) => setContributionDraft((current) => current ? { ...current, amount: amountDraftValue(event.target.value) } : current)}
-              />
-            </label>
             <div className="modal-actions">
               <button className="modal-cancel" type="button" onClick={() => setContributionDraft(null)}>취소</button>
-              <button className="modal-confirm" disabled={isContributionDayInvalid} type="button" onClick={saveContributionSettings}>저장</button>
+              <button className="modal-confirm" disabled={isContributionSaveDisabled} type="button" onClick={saveContributionSettings}>저장</button>
             </div>
           </div>
         </div>
@@ -6960,6 +7208,7 @@ function App() {
       {isHoldingDeleteConfirmOpen && (
         <div className="modal-backdrop" role="presentation">
           <div aria-modal="true" className="confirm-modal" role="dialog">
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setIsHoldingDeleteConfirmOpen(false)}>×</button>
             <h3>선택한 보유 종목을 삭제할까요?</h3>
             <p>선택한 보유중인 종목 기록이 삭제되며, 연결된 트레이딩 로그도 함께 삭제됩니다. 이 작업은 복구할 수 없습니다.</p>
             <div className="modal-actions">
@@ -6976,6 +7225,7 @@ function App() {
       {pendingMarketTrendDeleteKeys.length > 0 && (
         <div className="modal-backdrop" role="presentation">
           <div aria-modal="true" className="confirm-modal" role="dialog">
+            <button className="modal-close-button" disabled={isSavingMarketTrends} type="button" aria-label="닫기" onClick={() => setPendingMarketTrendDeleteKeys([])}>×</button>
             <h3>선택한 시장 트렌드를 삭제할까요?</h3>
             <p>선택한 시장 트렌드 row {pendingMarketTrendDeleteKeys.length}개를 삭제합니다. 저장되면 일반 계정에도 삭제된 row는 보이지 않습니다.</p>
             <div className="modal-actions">

@@ -2403,7 +2403,8 @@
 }
 
 .amount-edit-modal {
-  max-width: 420px;
+  width: min(760px, 100%);
+  max-width: 760px;
 }
 
 .amount-edit-error {
@@ -2429,6 +2430,40 @@
 
 .field-message-note {
   color: var(--muted) !important;
+}
+
+.allocation-rule-note {
+  display: grid;
+  gap: 5px;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.06);
+  margin-top: 14px;
+  padding: 11px 12px;
+}
+
+.allocation-rule-note strong {
+  color: var(--text-h);
+  font-size: 13px;
+}
+
+.allocation-rule-note span {
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.allocation-rule-note em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.allocation-percent-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 10px;
 }
 
 .watchlist-table .number-cell {
@@ -2723,7 +2758,11 @@
 }
 
 .confirm-modal {
+  position: relative;
+  box-sizing: border-box;
   width: min(360px, 100%);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--surface);
@@ -2734,6 +2773,7 @@
 
 .confirm-modal h3 {
   margin: 0 0 8px;
+  padding-right: 38px;
   color: var(--text-h);
   font-size: 17px;
 }
