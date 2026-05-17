@@ -4773,7 +4773,8 @@ function App() {
   const effectiveViewMode = isAdminUser ? 'operator' : viewMode
   const isOperatorDataMode = effectiveViewMode === 'operator'
   const displayedInvestmentType = investmentType ?? DEFAULT_INVESTMENT_TYPE
-  const shouldApplyInvestmentTypeView = !isAdminUser
+  // Admins are forced into operator data, but the operator preview still needs profile-specific views.
+  const shouldApplyInvestmentTypeView = isOperatorDataMode || !isAdminUser
   const isLongTermInvestor = shouldApplyInvestmentTypeView && displayedInvestmentType === 'long_term'
   const scopedTrades = isOperatorDataMode
     ? shouldApplyInvestmentTypeView
