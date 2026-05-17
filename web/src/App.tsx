@@ -2745,6 +2745,7 @@ function TechnicalAnalysisPage({
   onTooltipOpen: (tooltip: TooltipState) => void
   onTooltipClose: () => void
 }) {
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false)
   const visibleStocks = stocks.slice(0, MAX_WATCHLIST_ITEMS)
   const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleStocks.length, 0)
   const isEmpty = stocks.length === 0
@@ -2776,7 +2777,11 @@ function TechnicalAnalysisPage({
         <span className="section-heading-meta">총 {visibleStocks.length}개 <b>|</b> {updateLabel}</span>
       </div>
 
-      <details className="technical-summary-disclosure">
+      <details
+        className="technical-summary-disclosure"
+        open={isSummaryOpen}
+        onToggle={(event) => setIsSummaryOpen(event.currentTarget.open)}
+      >
         <summary>
           <span>공통 지표</span>
           <strong>VIX (변동성지수) {vixSnapshot}</strong>
@@ -2803,6 +2808,9 @@ function TechnicalAnalysisPage({
             </div>
           ))}
         </div>
+        <button className="technical-summary-collapse-button" type="button" onClick={() => setIsSummaryOpen(false)}>
+          공통 지표 접기
+        </button>
       </details>
 
       {addStockControl}

@@ -3499,6 +3499,19 @@
   padding: 7px;
 }
 
+.technical-summary-collapse-button {
+  display: none;
+  width: calc(100% - 14px);
+  min-height: 34px;
+  margin: 0 7px 7px;
+  border: 1px solid rgba(34, 136, 238, 0.22);
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .technical-summary-item {
   display: grid;
   gap: 3px;
@@ -4674,6 +4687,15 @@
     min-height: calc(100svh - 132px);
   }
 
+  .value-analysis-panel {
+    height: auto;
+  }
+
+  .value-analysis-sheet {
+    flex: none;
+    max-height: 62svh;
+  }
+
   .value-analysis-table th:nth-child(1),
   .value-analysis-table td:nth-child(1) {
     width: 188px;
@@ -4709,6 +4731,10 @@
 
   .technical-summary-strip {
     grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  }
+
+  .technical-summary-collapse-button {
+    display: block;
   }
 }
 
@@ -4841,7 +4867,8 @@
   }
 
   .technical-summary-disclosure summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr auto;
+    align-items: center;
     padding: 9px 10px;
   }
 
@@ -4850,20 +4877,27 @@
   }
 
   .technical-summary-disclosure summary strong {
-    display: block;
+    display: none;
     min-width: 0;
     font-size: 10.5px;
   }
 
   .technical-summary-disclosure summary em {
-    grid-row: auto;
-    grid-column: auto;
-    justify-self: start;
+    grid-row: 1;
+    grid-column: 2;
+    justify-self: end;
     margin-left: 0;
   }
 
   .technical-summary-strip {
     grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .technical-summary-collapse-button {
+    width: calc(100% - 16px);
+    margin: 0 8px 8px;
   }
 
   .app-footer {
