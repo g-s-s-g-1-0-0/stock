@@ -252,6 +252,7 @@ const PERSONAL_TRADES_STORAGE_KEY = 'gongsu-personal-trades'
 const VIEW_MODE_STORAGE_KEY = 'gongsu-view-mode'
 const VIEW_MODE_HINT_STORAGE_KEY = 'gongsu-view-mode-hint-seen'
 const USER_SETTINGS_STORAGE_KEY = 'gongsu-user-settings'
+const WATCHLIST_SORT_STORAGE_KEY = 'gongsu-watchlist-sort'
 const CONTRIBUTION_SETTINGS_STORAGE_KEY = 'gongsu-contribution-settings'
 const API_LOGS_STORAGE_KEY = 'gongsu-api-logs'
 const ACTIVE_PAGE_STORAGE_KEY = 'gongsu-active-page'
@@ -614,6 +615,22 @@ function normalizeWatchlistSortSettings(value: unknown): WatchlistSortSettings {
   return { primary, secondary }
 }
 
+function readSharedWatchlistSortSettings() {
+  const stored = localStorage.getItem(WATCHLIST_SORT_STORAGE_KEY)
+  if (!stored) return null
+
+  try {
+    return normalizeWatchlistSortSettings(JSON.parse(stored))
+  } catch {
+    localStorage.removeItem(WATCHLIST_SORT_STORAGE_KEY)
+    return null
+  }
+}
+
+function storeSharedWatchlistSortSettings(watchlistSort: WatchlistSortSettings) {
+  localStorage.setItem(WATCHLIST_SORT_STORAGE_KEY, JSON.stringify(watchlistSort))
+}
+
 function normalizeNotificationChannel(value: unknown): NotificationDeliveryChannel {
   return value === 'kakaoTalk' || value === 'slack' ? value : 'email'
 }
@@ -697,14 +714,19 @@ function storePersonalTradeLogs(session: UserSession | null, trades: TradeLog[])
 
 function readStoredUserSettings(session: UserSession | null = null): StoredUserSettings {
   const stored = localStorage.getItem(userSettingsStorageKey(session)) ?? localStorage.getItem(USER_SETTINGS_STORAGE_KEY)
+  const sharedWatchlistSort = readSharedWatchlistSortSettings()
   if (!stored) {
-    return DEFAULT_USER_SETTINGS
+    return {
+      ...DEFAULT_USER_SETTINGS,
+      watchlistSort: sharedWatchlistSort ?? DEFAULT_USER_SETTINGS.watchlistSort,
+    }
   }
 
   try {
     const parsed = JSON.parse(stored)
+    const storedWatchlistSort = normalizeWatchlistSortSettings(parsed.watchlistSort)
     return {
-      watchlistSort: normalizeWatchlistSortSettings(parsed.watchlistSort),
+      watchlistSort: session ? storedWatchlistSort : sharedWatchlistSort ?? storedWatchlistSort,
       notificationPreferences: normalizeNotificationPreferences(parsed.notificationPreferences),
       investmentType: normalizeInvestmentType(parsed.investmentType),
     }
@@ -720,6 +742,7 @@ function storeUserSettings(
   notificationPreferences: NotificationPreferences,
   investmentType: InvestmentType | null,
 ) {
+  storeSharedWatchlistSortSettings(watchlistSort)
   localStorage.setItem(userSettingsStorageKey(session), JSON.stringify({ watchlistSort, notificationPreferences, investmentType }))
 }
 
