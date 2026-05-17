@@ -3259,6 +3259,10 @@
   font-size: 12px;
 }
 
+.account-auth-feedback {
+  margin: 10px 0 12px;
+}
+
 .auth-mode-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;

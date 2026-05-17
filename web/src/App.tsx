@@ -523,13 +523,43 @@ function hasAuthCallbackError() {
   return Boolean(params.get('error') || params.get('error_code') || params.get('error_description'))
 }
 
+function hasAuthCallbackPayload() {
+  const params = authCallbackParams()
+  return Boolean(
+    params.get('access_token')
+    || params.get('refresh_token')
+    || params.get('code')
+    || params.get('type') === 'signup'
+    || params.get('type') === 'recovery',
+  )
+}
+
+function authCallbackSuccessMessage() {
+  const type = authCallbackParams().get('type')
+  if (type === 'signup') {
+    return '이메일 인증이 완료되었습니다.\n계정으로 로그인되었습니다.'
+  }
+  if (type === 'recovery') {
+    return '비밀번호 재설정 링크가 확인되었습니다.\n새 비밀번호를 입력해 주세요.'
+  }
+  if (hasAuthCallbackPayload()) {
+    return '인증이 완료되었습니다.\n계정 정보를 불러왔습니다.'
+  }
+  return ''
+}
+
+function clearAuthCallbackFromUrl() {
+  if (!hasAuthCallbackError() && !hasAuthCallbackPayload()) return
+  const searchParams = new URLSearchParams(window.location.search)
+  ;['code', 'error', 'error_code', 'error_description'].forEach((key) => searchParams.delete(key))
+  const nextSearch = searchParams.toString()
+  const nextHash = activePageHash(readStoredActivePage())
+  window.history.replaceState(null, '', `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${nextHash}`)
+}
+
 function clearAuthCallbackErrorFromUrl() {
   if (!hasAuthCallbackError()) return
-  const searchParams = new URLSearchParams(window.location.search)
-  ;['error', 'error_code', 'error_description'].forEach((key) => searchParams.delete(key))
-  const nextSearch = searchParams.toString()
-  const nextHash = activePageFromHash() ? window.location.hash : activePageHash(readStoredActivePage())
-  window.history.replaceState(null, '', `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}${nextHash}`)
+  clearAuthCallbackFromUrl()
 }
 
 function userSettingsStorageKey(session: UserSession | null = null) {
@@ -4717,6 +4747,7 @@ function App() {
     }
 
     const authErrorMessage = authCallbackMessage()
+    const authSuccessMessage = authCallbackSuccessMessage()
     const syncAuthUser = async (user: User | null, keepLoginModal = false) => {
       if (!isMounted) return
       if (!user) {
@@ -4743,10 +4774,17 @@ function App() {
       const effectiveSession = storedTestSession ?? nextSession
       setUserSession(effectiveSession)
       setCanUseAccountSwitch(isConfiguredAdminEmail(nextSession.email))
+      if (hasAuthCallbackPayload()) {
+        if (authSuccessMessage) {
+          setAuthInfoMessage(authSuccessMessage)
+          setIsLoginOpen(true)
+        }
+        clearAuthCallbackFromUrl()
+      }
       if (hasNotificationSettingsDeepLink()) {
         setIsLoginOpen(true)
         setAuthMode('login')
-      } else if (!keepLoginModal) {
+      } else if (!keepLoginModal && !authSuccessMessage) {
         setIsLoginOpen(false)
         setAuthMode('login')
       }
@@ -4783,6 +4821,13 @@ function App() {
         setLoginError('')
         setAuthInfoMessage('')
         setIsLoginOpen(true)
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        const successMessage = authCallbackSuccessMessage()
+        if (successMessage) {
+          setAuthInfoMessage(successMessage)
+          setIsLoginOpen(true)
+        }
+        clearAuthCallbackFromUrl()
       }
       void syncAuthUser(session?.user ?? null, event === 'PASSWORD_RECOVERY')
     })
@@ -5922,6 +5967,7 @@ function App() {
   })
 
   useEffect(() => {
+    if (hasAuthCallbackPayload()) return
     localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, activePage)
     const nextHash = activePageHash(activePage)
     if (activePageFromHash() !== activePage) {
@@ -6942,6 +6988,13 @@ function App() {
             {userSession && authMode !== 'reset' ? (
               <>
                 <p className="account-modal-copy">알림 받을 곳만 먼저 바꿔보는 FE 데모입니다.</p>
+                {authInfoMessage && (
+                  <div className="recovery-sent-card account-auth-feedback">
+                    {authInfoMessage.split('\n').map((line, index) => (
+                      index === 0 ? <strong key={`${line}-${index}`}>{line}</strong> : <span key={`${line}-${index}`}>{line}</span>
+                    ))}
+                  </div>
+                )}
                 <div className="account-settings-stack">
                   <div className="login-account-card">
                     <span>로그인 계정</span>
