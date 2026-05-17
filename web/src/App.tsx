@@ -39,6 +39,12 @@ type StoredUserSettings = {
   investmentType: InvestmentType | null
 }
 
+type StoredPortfolioState = {
+  personalTradeLogs: TradeLog[]
+  contributionSettings: ContributionSettings
+  initialized: boolean
+}
+
 type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
 
 type Stock = {
@@ -494,6 +500,14 @@ function contributionSettingsStorageKey(session: UserSession | null = null) {
 
 function personalTradeLogsStorageKey(session: UserSession | null = null) {
   return `${PERSONAL_TRADES_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
+}
+
+function hasStoredContributionSettings(session: UserSession | null = null) {
+  return Boolean(localStorage.getItem(contributionSettingsStorageKey(session)) ?? localStorage.getItem(CONTRIBUTION_SETTINGS_STORAGE_KEY))
+}
+
+function hasStoredPersonalTradeLogs(session: UserSession | null = null) {
+  return Boolean(localStorage.getItem(personalTradeLogsStorageKey(session)))
 }
 
 function normalizeWatchlistSortSettings(value: unknown): WatchlistSortSettings {
@@ -4155,6 +4169,75 @@ function App() {
     }
   }
 
+  async function loadPortfolioState(session: UserSession | null): Promise<StoredPortfolioState> {
+    const localTrades = readStoredPersonalTradeLogs(session)
+    const localContributionSettings = readStoredContributionSettings(session)
+    const localState: StoredPortfolioState = {
+      personalTradeLogs: localTrades,
+      contributionSettings: localContributionSettings,
+      initialized: hasStoredPersonalTradeLogs(session) || hasStoredContributionSettings(session),
+    }
+
+    if (!session || !supabase) return localState
+
+    try {
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('personal_trade_logs, contribution_settings, portfolio_state_initialized')
+        .eq('owner_id', session.id)
+        .maybeSingle()
+
+      if (error) return localState
+
+      const remoteInitialized = Boolean(data?.portfolio_state_initialized)
+      const remoteTrades = Array.isArray(data?.personal_trade_logs)
+        ? data.personal_trade_logs.map(normalizeTradeLog).filter((trade): trade is TradeLog => Boolean(trade))
+        : []
+      const remoteContributionSettings = data?.contribution_settings && typeof data.contribution_settings === 'object'
+        ? normalizeContributionSettings(data.contribution_settings)
+        : DEFAULT_CONTRIBUTION_SETTINGS
+
+      if (!remoteInitialized && localState.initialized) {
+        await persistPortfolioState(localState.personalTradeLogs, localState.contributionSettings, session)
+        return { ...localState, initialized: true }
+      }
+
+      const remoteState = {
+        personalTradeLogs: remoteInitialized ? remoteTrades : localTrades,
+        contributionSettings: remoteInitialized ? remoteContributionSettings : localContributionSettings,
+        initialized: remoteInitialized,
+      }
+      storePersonalTradeLogs(session, remoteState.personalTradeLogs)
+      storeContributionSettings(session, remoteState.contributionSettings)
+      return remoteState
+    } catch {
+      return localState
+    }
+  }
+
+  async function persistPortfolioState(
+    trades = personalTradeLogs,
+    settings = contributionSettings,
+    session = userSession,
+  ) {
+    storePersonalTradeLogs(session, trades)
+    storeContributionSettings(session, settings)
+    if (!supabase || !session) return
+
+    try {
+      await supabase
+        .from('user_settings')
+        .upsert({
+          owner_id: session.id,
+          personal_trade_logs: trades,
+          contribution_settings: settings,
+          portfolio_state_initialized: true,
+        })
+    } catch {
+      // Local storage remains the offline fallback if the remote schema is not applied yet.
+    }
+  }
+
   async function loadApiLogs() {
     if (!userSession || !configuredAdminEmails().includes(userSession.email.toLowerCase())) return
     setIsLoadingApiLogs(true)
@@ -4431,16 +4514,17 @@ function App() {
 
   async function loadServiceData(session: UserSession | null) {
     try {
-      const [personalTickers, operatorTickersFromDb, loadedSettings] = await Promise.all([
+      const [personalTickers, operatorTickersFromDb, loadedSettings, loadedPortfolioState] = await Promise.all([
         session ? loadWatchlist('personal', session) : Promise.resolve(null),
         loadWatchlist('operator', session),
         loadUserSettings(session),
+        loadPortfolioState(session),
       ])
       setWatchlistSortSettings(loadedSettings.watchlistSort)
       setNotificationPreferences(loadedSettings.notificationPreferences)
       setInvestmentType(loadedSettings.investmentType)
-      setContributionSettings(readStoredContributionSettings(session))
-      setPersonalTradeLogs(readStoredPersonalTradeLogs(session))
+      setContributionSettings(loadedPortfolioState.contributionSettings)
+      setPersonalTradeLogs(loadedPortfolioState.personalTradeLogs)
       await loadBoardPosts()
       const legacyTickers = session ? readLegacyWatchlist(session) : null
       const nextPersonalTickers = personalTickers && personalTickers.length > 0
@@ -4852,7 +4936,7 @@ function App() {
   const commitPersonalTradeLogs = (updater: (current: TradeLog[]) => TradeLog[]) => {
     setPersonalTradeLogs((current) => {
       const next = updater(current)
-      storePersonalTradeLogs(userSession, next)
+      void persistPortfolioState(next, contributionSettings)
       return next
     })
   }
@@ -4892,7 +4976,7 @@ function App() {
       },
     }
     setContributionSettings(nextSettings)
-    storeContributionSettings(userSession, nextSettings)
+    void persistPortfolioState(personalTradeLogs, nextSettings)
     setContributionDraft(null)
   }
 
