@@ -4744,6 +4744,28 @@
     align-items: stretch;
   }
 
+  .brand {
+    order: 1;
+  }
+
+  .login-button {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .reset-button,
+  .refresh-data-button {
+    order: 2;
+  }
+
+  .gnb-menu {
+    order: 3;
+  }
+
+  .view-mode-tabs {
+    order: 4;
+  }
+
   .brand span {
     font-size: 13px;
   }
