@@ -2,10 +2,10 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-05-17T05:00:00Z",
-    "lastSuccessfulRun": "2026-05-17T05:00:00Z",
+    "updatedAt": "2026-05-17T07:00:00Z",
+    "lastSuccessfulRun": "2026-05-17T07:00:00Z",
     "failedReason": null,
-    "appendedOpenTrades": 1,
+    "appendedOpenTrades": 0,
     "closedTrades": 0,
     "nasdaqPeakLiquidation": false
   },
@@ -57,7 +57,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.17"
     },
     {
       "slotId": "IREN_D_20260515_1",
