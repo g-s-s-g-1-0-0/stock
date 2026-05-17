@@ -146,13 +146,6 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' }}
         run: python scripts/refresh_web_caches.py $REFRESH_TASKS
 
-      - name: Record stock-level operation logs
-        if: ${{ env.SKIP_REFRESH != 'true' }}
-        continue-on-error: true
-        env:
-          PREVIOUS_STOCKS_PATH: ${{ runner.temp }}/stocks.before-refresh.json
-        run: python scripts/record_web_api_logs.py $REFRESH_TASKS
-
       - name: Report operational scale metrics
         if: ${{ env.SKIP_REFRESH != 'true' }}
         continue-on-error: true
@@ -217,6 +210,13 @@ jobs:
           done
           echo "Failed to push refreshed caches after retries."
           exit 1
+
+      - name: Record stock-level operation logs
+        if: ${{ env.SKIP_REFRESH != 'true' }}
+        continue-on-error: true
+        env:
+          PREVIOUS_STOCKS_PATH: ${{ runner.temp }}/stocks.before-refresh.json
+        run: python scripts/record_web_api_logs.py $REFRESH_TASKS
 
       - name: Deploy refreshed web
         if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' }}

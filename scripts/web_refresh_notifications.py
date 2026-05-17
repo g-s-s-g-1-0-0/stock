@@ -1199,7 +1199,17 @@ def admin_failure_body(message: str) -> str:
 def latest_market_trend() -> dict[str, Any]:
     payload = read_json(DEFAULT_MARKET_TRENDS)
     rows = payload.get("rows") if isinstance(payload, dict) else []
-    return rows[0] if rows and isinstance(rows[0], dict) else {}
+    valid_rows = [row for row in rows if isinstance(row, dict)]
+    if not valid_rows:
+        return {}
+
+    def date_key(row: dict[str, Any]) -> datetime:
+        try:
+            return datetime.strptime(str(row.get("date", "")), "%Y.%m.%d")
+        except ValueError:
+            return datetime.min
+
+    return max(valid_rows, key=date_key)
 
 
 def top_sector_text() -> str:
