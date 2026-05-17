@@ -481,10 +481,7 @@ function activePageHashParams() {
 function notificationSettingsDeepLinkMessage() {
   const params = activePageHashParams()
   if (params.get('notification') === 'unsubscribed') {
-    return '알림 수신 설정이 해제되었습니다. 로그인하면 계정 설정에서 변경 내용을 확인할 수 있습니다.'
-  }
-  if (params.get('settings') === 'notifications') {
-    return '로그인하면 계정 알림 설정을 확인할 수 있습니다.'
+    return '알림 수신 설정이 해제되었습니다.'
   }
   return ''
 }
@@ -4016,7 +4013,7 @@ function App() {
   const [contributionSettings, setContributionSettings] = useState<ContributionSettings>(() => readStoredContributionSettings(initialLocalTestSession))
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
   const [contributionSettingsMode, setContributionSettingsMode] = useState<ContributionSettingsMode>('cash')
-  const [isLoginOpen, setIsLoginOpen] = useState(() => Boolean(authCallbackMessage() || notificationSettingsDeepLinkMessage()))
+  const [isLoginOpen, setIsLoginOpen] = useState(() => Boolean(authCallbackMessage() || hasNotificationSettingsDeepLink()))
   const [isAccountDeleteConfirmOpen, setIsAccountDeleteConfirmOpen] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [accountDeleteError, setAccountDeleteError] = useState('')
@@ -4800,6 +4797,8 @@ function App() {
       if (hasNotificationSettingsDeepLink()) {
         setIsLoginOpen(true)
         setAuthMode('login')
+        setAuthInfoMessage(notificationSettingsDeepLinkMessage())
+        setNotificationChannelMessage(notificationIntegrationDeepLinkMessage())
       } else if (!keepLoginModal && !authSuccessMessage) {
         setIsLoginOpen(false)
         setAuthMode('login')
@@ -6007,11 +6006,14 @@ function App() {
         setAuthInfoMessage(notificationSettingsDeepLinkMessage())
         setNotificationChannelMessage(notificationIntegrationDeepLinkMessage())
         setIsLoginOpen(true)
+        if (userSession) {
+          void loadServiceData(userSession)
+        }
       }
     }
     window.addEventListener('hashchange', syncPageFromHash)
     return () => window.removeEventListener('hashchange', syncPageFromHash)
-  }, [])
+  }, [userSession?.id])
 
   const rawTableStocks = isOperatorDataMode ? operatorStocks : watchlistStocks
   const tableStocks = useMemo(
@@ -7011,7 +7013,6 @@ function App() {
             <h3>{userSession && authMode !== 'reset' ? '내 계정' : authMode === 'recover' ? '비밀번호 찾기' : authMode === 'reset' ? '비밀번호 변경' : '로그인'}</h3>
             {userSession && authMode !== 'reset' ? (
               <>
-                <p className="account-modal-copy">알림 받을 곳만 먼저 바꿔보는 FE 데모입니다.</p>
                 {authInfoMessage && (
                   <div className="recovery-sent-card account-auth-feedback">
                     {authInfoMessage.split('\n').map((line, index) => (
