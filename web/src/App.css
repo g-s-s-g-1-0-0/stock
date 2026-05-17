@@ -4741,29 +4741,39 @@
 @media (max-width: 760px) {
   .app-header {
     position: sticky;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+    grid-template-areas:
+      "brand view reset refresh login"
+      "gnb gnb gnb gnb gnb";
+    align-items: center;
   }
 
   .brand {
-    order: 1;
+    grid-area: brand;
+    margin-right: 0;
   }
 
   .login-button {
-    order: 3;
+    grid-area: login;
     margin-left: auto;
   }
 
-  .reset-button,
+  .reset-button {
+    grid-area: reset;
+  }
+
   .refresh-data-button {
-    order: 3;
+    grid-area: refresh;
   }
 
   .gnb-menu {
-    order: 4;
+    grid-area: gnb;
   }
 
   .view-mode-tabs {
-    order: 2;
+    grid-area: view;
+    justify-self: end;
   }
 
   .brand span {
@@ -4786,6 +4796,10 @@
     border-radius: 9px;
     font-size: 11px;
     padding: 6px 9px;
+  }
+
+  .logged-in-button {
+    max-width: 64px;
   }
 
   .gnb-menu {
