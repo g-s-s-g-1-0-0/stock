@@ -6061,9 +6061,11 @@ function App() {
             </div>
           )}
         </div>
-        <button className="reset-button" type="button" onClick={() => setIsResetConfirmOpen(true)}>
-          초기화
-        </button>
+        {userSession && (
+          <button className="reset-button" type="button" onClick={() => setIsResetConfirmOpen(true)}>
+            초기화
+          </button>
+        )}
         {isAdminUser && (
           <button className="refresh-data-button" disabled={isRefreshingData} type="button" onClick={refreshCurrentData}>
             {isRefreshingData ? '갱신 중' : '즉시 갱신'}
