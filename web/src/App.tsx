@@ -493,7 +493,7 @@ function notificationIntegrationDeepLinkMessage() {
   const params = activePageHashParams()
   const slackStatus = params.get('slack')
   if (slackStatus === 'connected') {
-    return 'Slack 연동이 완료되었습니다. 이제 슬랙으로 알림을 받을 수 있습니다.'
+    return ''
   }
   if (slackStatus === 'error') {
     const detail = params.get('detail')
