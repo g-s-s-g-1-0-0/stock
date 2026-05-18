@@ -463,6 +463,7 @@
 
 .asset-summary-item {
   display: grid;
+  position: relative;
   gap: 4px;
   min-width: 0;
   border: 1px solid var(--border);
@@ -516,12 +517,46 @@
 .asset-summary-detail {
   overflow: hidden;
   color: var(--muted);
+  cursor: help;
   font-family: var(--mono);
   font-size: 10px;
   font-weight: 600;
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.asset-summary-detail:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.28);
+  outline-offset: 2px;
+}
+
+.asset-summary-detail[data-full-text]::after {
+  position: absolute;
+  z-index: 30;
+  bottom: -6px;
+  left: 10px;
+  max-width: min(320px, calc(100vw - 32px));
+  transform: translateY(100%);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+  color: var(--text-h);
+  content: attr(data-full-text);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.35;
+  opacity: 0;
+  padding: 7px 9px;
+  pointer-events: none;
+  white-space: normal;
+}
+
+.asset-summary-item:hover .asset-summary-detail[data-full-text]::after,
+.asset-summary-item:focus-within .asset-summary-detail[data-full-text]::after {
+  opacity: 1;
 }
 
 .asset-summary-button {

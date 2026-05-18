@@ -6502,7 +6502,11 @@ function App() {
                   <button className={`${itemClassName} asset-summary-action`} key={item.label} type="button" onClick={item.action}>
                     <span>{item.label}</span>
                     <strong className="asset-summary-value asset-summary-button">{item.value}</strong>
-                    {item.detail && <small className="asset-summary-detail">{item.detail}</small>}
+                    {item.detail && (
+                      <small className="asset-summary-detail" data-full-text={item.detail} title={item.detail}>
+                        {item.detail}
+                      </small>
+                    )}
                   </button>
                 )
               }
@@ -6511,7 +6515,16 @@ function App() {
                 <div className={itemClassName} key={item.label}>
                   <span>{item.label}</span>
                   <strong className={`asset-summary-value ${item.tone ?? ''}`}>{item.value}</strong>
-                  {item.detail && <small className="asset-summary-detail">{item.detail}</small>}
+                  {item.detail && (
+                    <small
+                      className="asset-summary-detail"
+                      data-full-text={item.detail}
+                      tabIndex={0}
+                      title={item.detail}
+                    >
+                      {item.detail}
+                    </small>
+                  )}
                 </div>
               )
             })}
