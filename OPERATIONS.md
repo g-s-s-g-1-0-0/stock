@@ -5,6 +5,7 @@
 - Workflow: `.github/workflows/web-data-refresh.yml`
 - Trigger in repository: manual `workflow_dispatch`
 - Scheduled trigger: external `cron-job.org` jobs call the GitHub Actions workflow/API.
+- Keep GitHub's native `schedule:` block disabled to avoid duplicate refreshes with the external scheduler.
 - Do not assume a missing `schedule:` block means refresh is unscheduled. The schedule is managed outside this repository.
 
 ## Scale Checks

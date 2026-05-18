@@ -47,13 +47,15 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertLess(send_peak_index, commit_state_index)
         self.assertLess(commit_state_index, deploy_index)
         self.assertLess(commit_state_index, failure_index)
-        self.assertIn('cron: "55 0-22/2 * * *"', workflow)
+        self.assertNotIn('  schedule:', workflow)
+        self.assertIn('cancel-in-progress: true', workflow)
         self.assertIn("scheduled_publish_at:", workflow)
         self.assertIn('RAW_PUBLISH_AT="${{ inputs.scheduled_publish_at || \'\' }}"', workflow)
         self.assertIn('if [ "$RAW_PUBLISH_AT" = "immediate" ]; then', workflow)
         self.assertIn("if now.minute >= 50 else", workflow)
         self.assertIn("WEB_REFRESH_PUBLISH_AT=$PUBLISH_AT", workflow)
-        self.assertIn("git add data/cache web/public/api", workflow)
+        self.assertIn("git diff --quiet -- data/cache data/history web/public/api", workflow)
+        self.assertIn("git add data/cache data/history web/public/api", workflow)
         self.assertIn('git commit -m "Update scheduled web data caches"', workflow)
 
 class WebRefreshNotificationsTest(unittest.TestCase):

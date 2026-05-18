@@ -7,7 +7,8 @@
     "failedReason": null,
     "appendedOpenTrades": 0,
     "closedTrades": 0,
-    "nasdaqPeakLiquidation": false
+    "nasdaqPeakLiquidation": false,
+    "manualAdjustment": "Removed duplicate 2026.05.17 buy entries for 375500 and SGML; wait for a future fresh signal before re-entry."
   },
   "rows": [
     {
@@ -85,36 +86,6 @@
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",
       "buyDate": "2026.05.15",
       "buyPrice": "$174.37",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
-      "holdingDays": "-",
-      "status": "보유 중"
-    },
-    {
-      "slotId": "375500_F_20260517_1",
-      "ticker": "375500",
-      "name": "DL이앤씨",
-      "market": "KR",
-      "currentPrice": "₩80,300",
-      "strategy": "F. 200일선 상방 & BB 극단 저점",
-      "buyDate": "2026.05.17",
-      "buyPrice": "₩80,300",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
-      "holdingDays": "-",
-      "status": "보유 중"
-    },
-    {
-      "slotId": "SGML_F_20260517_1",
-      "ticker": "SGML",
-      "name": "Sigma Lithium",
-      "market": "US",
-      "currentPrice": "$16.82",
-      "strategy": "F. 200일선 상방 & BB 극단 저점",
-      "buyDate": "2026.05.17",
-      "buyPrice": "$16.82",
       "sellDate": "보유 중",
       "sellPrice": "-",
       "returnPct": 0,

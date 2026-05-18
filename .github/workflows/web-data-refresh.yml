@@ -1,11 +1,6 @@
 name: Web data refresh
 
 on:
-  schedule:
-    # Backup technical refresh every 2 hours, 5 minutes before KST even hours.
-    # The job waits until the exact hour before sending notifications and publishing caches.
-    # External cron-job.org dispatches remain the primary scheduler.
-    - cron: "55 0-22/2 * * *"
   workflow_dispatch:
     inputs:
       refresh_scope:
@@ -38,7 +33,7 @@ permissions:
 
 concurrency:
   group: web-data-refresh-main
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   refresh:
@@ -190,13 +185,13 @@ jobs:
       - name: Commit refreshed caches and notification state
         if: ${{ env.SKIP_REFRESH != 'true' }}
         run: |
-          if git diff --quiet -- data/cache web/public/api; then
+          if git diff --quiet -- data/cache data/history web/public/api; then
             echo "No cache changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/cache web/public/api
+          git add data/cache data/history web/public/api
           git commit -m "Update scheduled web data caches"
           BRANCH="${GITHUB_REF_NAME:-main}"
           for attempt in 1 2 3; do
