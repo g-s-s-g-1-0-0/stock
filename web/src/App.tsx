@@ -1,7 +1,7 @@
 import './App.css'
 import { Fragment, type CSSProperties, type FormEvent, type ReactNode, type WheelEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
-import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, type AppData, type RuntimeMeta } from './api'
+import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, saveTradeLogs, type AppData, type RuntimeMeta } from './api'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 
 type Market = 'KR' | 'US'
@@ -4112,6 +4112,7 @@ function App() {
   const [selectedMarketTrendRowKeys, setSelectedMarketTrendRowKeys] = useState<string[]>([])
   const [pendingMarketTrendDeleteKeys, setPendingMarketTrendDeleteKeys] = useState<string[]>([])
   const [isSavingMarketTrends, setIsSavingMarketTrends] = useState(false)
+  const [isSavingTradeLogs, setIsSavingTradeLogs] = useState(false)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [refreshDataMessage, setRefreshDataMessage] = useState('')
   const [watchlistSortSettings, setWatchlistSortSettings] = useState<WatchlistSortSettings>(() => readStoredUserSettings(initialLocalTestSession).watchlistSort)
@@ -5104,6 +5105,7 @@ function App() {
   )
   const isContributionSaveDisabled = contributionSettingsMode === 'cash' && isContributionDayInvalid
   const canEditContributionSettings = Boolean(userSession && (!isOperatorDataMode || isAdminUser))
+  const canManageHoldingTrades = effectiveViewMode === 'personal' || isAdminUser
   const activeAllocation = contributionDraft?.allocationByInvestmentType[displayedInvestmentType]
   const displayedAllocationSettings = contributionSettings.allocationByInvestmentType[displayedInvestmentType]
   const displayedAllocationLabel = displayedInvestmentType === 'swing' ? '스윙 투자' : '가치 투자'
@@ -5276,6 +5278,38 @@ function App() {
     })
   }
 
+  const saveAdminSystemTradeLogs = async (nextTrades: TradeLog[]) => {
+    if (!supabase) {
+      throw new Error('Supabase 연결값이 설정되지 않았습니다.')
+    }
+
+    const { data: authData } = await supabase.auth.getSession()
+    const saved = await saveTradeLogs(nextTrades, apiMetas.tradeLogs, {
+      accessToken: authData.session?.access_token,
+    })
+    setSystemTradeLogs(saved.rows)
+    setApiMetas((current) => ({ ...current, tradeLogs: saved.meta }))
+    setRefreshDataMessage('보유 종목 변경이 반영됐습니다.')
+  }
+
+  const commitManagedHoldingTradeLogs = async (updater: (current: TradeLog[]) => TradeLog[]) => {
+    if (isAdminUser && isOperatorDataMode) {
+      const nextTrades = updater(systemTradeLogs)
+      setIsSavingTradeLogs(true)
+      try {
+        await saveAdminSystemTradeLogs(nextTrades)
+      } catch (error) {
+        setRefreshDataMessage(error instanceof Error ? error.message : '트레이딩 로그 저장에 실패했습니다.')
+        throw error
+      } finally {
+        setIsSavingTradeLogs(false)
+      }
+      return
+    }
+
+    commitPersonalTradeLogs(updater)
+  }
+
   function openContributionSettings() {
     setContributionSettingsMode('cash')
     setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
@@ -5315,14 +5349,19 @@ function App() {
     setContributionDraft(null)
   }
 
-  const removeSelectedHoldingTrades = () => {
-    commitPersonalTradeLogs((current) => current.filter((trade) => !selectedHoldingTradeKeys.includes(tradeKey(trade))))
-    setSelectedHoldingTradeKeys([])
-    setIsHoldingDeleteConfirmOpen(false)
+  const removeSelectedHoldingTrades = async () => {
+    if (selectedHoldingTradeKeys.length === 0 || isSavingTradeLogs) return
+    try {
+      await commitManagedHoldingTradeLogs((current) => current.filter((trade) => !selectedHoldingTradeKeys.includes(tradeKey(trade))))
+      setSelectedHoldingTradeKeys([])
+      setIsHoldingDeleteConfirmOpen(false)
+    } catch {
+      // The user-facing save error is surfaced in the refresh message area.
+    }
   }
 
   const openHoldingLiquidationModal = () => {
-    const targetTrades = personalTradeLogs.filter((trade) => (
+    const targetTrades = scopedOpenTrades.filter((trade) => (
       trade.status === '보유 중' && selectedHoldingTradeKeys.includes(tradeKey(trade))
     ))
     if (targetTrades.length === 0) return
@@ -5359,32 +5398,36 @@ function App() {
     && !Number.isNaN(parseTradeDate(draft.sellDate))
   ))
 
-  const confirmHoldingLiquidation = () => {
-    if (!isHoldingLiquidationReady) return
+  const confirmHoldingLiquidation = async () => {
+    if (!isHoldingLiquidationReady || isSavingTradeLogs) return
 
     const draftMap = new Map(holdingLiquidationDrafts.map((draft) => [draft.key, draft]))
-    commitPersonalTradeLogs((current) => current.map((trade) => {
-      const draft = draftMap.get(tradeKey(trade))
-      if (!draft) return trade
+    try {
+      await commitManagedHoldingTradeLogs((current) => current.map((trade) => {
+        const draft = draftMap.get(tradeKey(trade))
+        if (!draft) return trade
 
-      const buyPrice = parsePriceValue(draft.buyPrice) ?? 0
-      const sellPrice = parsePriceValue(draft.sellPrice) ?? 0
-      const returnPct = buyPrice > 0 ? ((sellPrice - buyPrice) / buyPrice) * 100 : 0
-      const sellDate = normalizeTradeDateInput(draft.sellDate)
-      const holdingDays = Math.max(0, Math.ceil((parseTradeDate(sellDate) - parseTradeDate(trade.buyDate)) / 86_400_000))
+        const buyPrice = parsePriceValue(draft.buyPrice) ?? 0
+        const sellPrice = parsePriceValue(draft.sellPrice) ?? 0
+        const returnPct = buyPrice > 0 ? ((sellPrice - buyPrice) / buyPrice) * 100 : 0
+        const sellDate = normalizeTradeDateInput(draft.sellDate)
+        const holdingDays = Math.max(0, Math.ceil((parseTradeDate(sellDate) - parseTradeDate(trade.buyDate)) / 86_400_000))
 
-      return {
-        ...trade,
-        buyPrice: formatTradePrice(trade, buyPrice > 0 ? buyPrice : null, draft.buyPrice),
-        sellDate,
-        sellPrice: formatTradePrice(trade, sellPrice > 0 ? sellPrice : null, draft.sellPrice),
-        returnPct,
-        holdingDays,
-        status: returnPct >= 0 ? '익절' : '손절',
-      }
-    }))
-    setSelectedHoldingTradeKeys([])
-    closeHoldingLiquidationModal()
+        return {
+          ...trade,
+          buyPrice: formatTradePrice(trade, buyPrice > 0 ? buyPrice : null, draft.buyPrice),
+          sellDate,
+          sellPrice: formatTradePrice(trade, sellPrice > 0 ? sellPrice : null, draft.sellPrice),
+          returnPct,
+          holdingDays,
+          status: returnPct >= 0 ? '익절' : '손절',
+        }
+      }))
+      setSelectedHoldingTradeKeys([])
+      closeHoldingLiquidationModal()
+    } catch {
+      // The user-facing save error is surfaced in the refresh message area.
+    }
   }
 
   const selectInvestmentType = (nextInvestmentType: InvestmentType) => {
@@ -6923,7 +6966,7 @@ function App() {
                 <span>총 {scopedOpenTrades.length}개</span>
               </div>
               <div className="heading-actions">
-                {effectiveViewMode === 'personal' && (
+                {canManageHoldingTrades && (
                   <>
                     <button
                       aria-hidden={selectedHoldingTradeKeys.length === 0}
@@ -6931,10 +6974,10 @@ function App() {
                       tabIndex={selectedHoldingTradeKeys.length === 0 ? -1 : 0}
                       type="button"
                       onClick={() => {
-                        if (selectedHoldingTradeKeys.length > 0) openHoldingLiquidationModal()
+                        if (selectedHoldingTradeKeys.length > 0 && !isSavingTradeLogs) openHoldingLiquidationModal()
                       }}
                     >
-                      청산
+                      {isSavingTradeLogs ? '저장 중' : '청산'}
                     </button>
                     <button
                       aria-hidden={selectedHoldingTradeKeys.length === 0}
@@ -6942,7 +6985,7 @@ function App() {
                       tabIndex={selectedHoldingTradeKeys.length === 0 ? -1 : 0}
                       type="button"
                       onClick={() => {
-                        if (selectedHoldingTradeKeys.length > 0) setIsHoldingDeleteConfirmOpen(true)
+                        if (selectedHoldingTradeKeys.length > 0 && !isSavingTradeLogs) setIsHoldingDeleteConfirmOpen(true)
                       }}
                     >
                       삭제
@@ -6956,12 +6999,12 @@ function App() {
 
             <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetRef}>
               <table
-                className={`sheet-table holding-table ${isLongTermInvestor ? 'long-term-holding-table' : ''} ${effectiveViewMode === 'personal' ? 'editable-home-table' : 'readonly-home-table'} ${isHoldingPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
+                className={`sheet-table holding-table ${isLongTermInvestor ? 'long-term-holding-table' : ''} ${canManageHoldingTrades ? 'editable-home-table' : 'readonly-home-table'} ${isHoldingPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
                 style={holdingPinnedStyle}
               >
                 <thead>
                   <tr>
-                    {effectiveViewMode === 'personal' && <th>선택</th>}
+                    {canManageHoldingTrades && <th>선택</th>}
                     <th>No</th>
                     <th>티커</th>
                     <th className="home-name-header">
@@ -6987,7 +7030,7 @@ function App() {
                 <tbody>
                   {showEmptyHoldingExample && exampleStock && (
                     <tr className="example-row">
-                      {effectiveViewMode === 'personal' && <td></td>}
+                      {canManageHoldingTrades && <td></td>}
                       <td className="numbering-cell">예시</td>
                       <td className="ticker-cell">{exampleStock.ticker}</td>
                       <td className="name-data-cell">
@@ -7009,11 +7052,12 @@ function App() {
 
                     return (
                       <tr key={`open-${tradeKey(trade)}`}>
-                        {effectiveViewMode === 'personal' && (
+                        {canManageHoldingTrades && (
                           <td className="checkbox-cell">
                             <input
                               aria-label={`${tradeName(trade)} 보유 항목 선택`}
                               checked={selectedHoldingTradeKeys.includes(tradeKey(trade))}
+                              disabled={isSavingTradeLogs}
                               onChange={() => toggleSelectedHoldingTrade(tradeKey(trade))}
                               type="checkbox"
                             />
@@ -7049,7 +7093,7 @@ function App() {
                   })}
                   {Array.from({ length: holdingBlankRows }).map((_, index) => (
                     <tr className="blank-row" key={`holding-blank-${index}`}>
-                      {effectiveViewMode === 'personal' && <td></td>}
+                      {canManageHoldingTrades && <td></td>}
                       <td className="numbering-cell">&nbsp;</td>
                       <td>&nbsp;</td>
                       <td></td>
@@ -7764,7 +7808,7 @@ function App() {
       {isHoldingLiquidationOpen && (
         <div className="modal-backdrop" role="presentation">
           <div aria-modal="true" className="confirm-modal holding-liquidation-modal" role="dialog">
-            <button className="modal-close-button" type="button" aria-label="닫기" onClick={closeHoldingLiquidationModal}>×</button>
+            <button className="modal-close-button" disabled={isSavingTradeLogs} type="button" aria-label="닫기" onClick={closeHoldingLiquidationModal}>×</button>
             <h3>선택한 보유 종목을 청산할까요?</h3>
             <p>실제 매수가와 매도가를 확인해 수정하면, 해당 거래가 보유 목록에서 빠지고 트레이딩 로그에 반영됩니다.</p>
             <div className="holding-liquidation-list">
@@ -7783,6 +7827,7 @@ function App() {
                       <span>매수가</span>
                       <input
                         inputMode="decimal"
+                        disabled={isSavingTradeLogs}
                         value={draft.buyPrice}
                         onChange={(event) => updateHoldingLiquidationDraft(draft.key, 'buyPrice', event.target.value)}
                       />
@@ -7790,6 +7835,7 @@ function App() {
                     <label>
                       <span>매도일</span>
                       <input
+                        disabled={isSavingTradeLogs}
                         type="date"
                         value={tradeDateInputValue(draft.sellDate)}
                         onChange={(event) => updateHoldingLiquidationDraft(draft.key, 'sellDate', normalizeTradeDateInput(event.target.value))}
@@ -7799,6 +7845,7 @@ function App() {
                       <span>매도가</span>
                       <input
                         inputMode="decimal"
+                        disabled={isSavingTradeLogs}
                         value={draft.sellPrice}
                         onChange={(event) => updateHoldingLiquidationDraft(draft.key, 'sellPrice', event.target.value)}
                       />
@@ -7814,11 +7861,11 @@ function App() {
               })}
             </div>
             <div className="modal-actions">
-              <button className="modal-cancel" type="button" onClick={closeHoldingLiquidationModal}>
+              <button className="modal-cancel" disabled={isSavingTradeLogs} type="button" onClick={closeHoldingLiquidationModal}>
                 취소
               </button>
-              <button className="modal-confirm" disabled={!isHoldingLiquidationReady} type="button" onClick={confirmHoldingLiquidation}>
-                청산 반영
+              <button className="modal-confirm" disabled={!isHoldingLiquidationReady || isSavingTradeLogs} type="button" onClick={() => void confirmHoldingLiquidation()}>
+                {isSavingTradeLogs ? '저장 중...' : '청산 반영'}
               </button>
             </div>
           </div>
@@ -7827,15 +7874,15 @@ function App() {
       {isHoldingDeleteConfirmOpen && (
         <div className="modal-backdrop" role="presentation">
           <div aria-modal="true" className="confirm-modal" role="dialog">
-            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setIsHoldingDeleteConfirmOpen(false)}>×</button>
+            <button className="modal-close-button" disabled={isSavingTradeLogs} type="button" aria-label="닫기" onClick={() => setIsHoldingDeleteConfirmOpen(false)}>×</button>
             <h3>선택한 보유 종목을 삭제할까요?</h3>
             <p>선택한 보유중인 종목 기록이 삭제되며, 연결된 트레이딩 로그도 함께 삭제됩니다. 이 작업은 복구할 수 없습니다.</p>
             <div className="modal-actions">
-              <button className="modal-cancel" type="button" onClick={() => setIsHoldingDeleteConfirmOpen(false)}>
+              <button className="modal-cancel" disabled={isSavingTradeLogs} type="button" onClick={() => setIsHoldingDeleteConfirmOpen(false)}>
                 취소
               </button>
-              <button className="modal-confirm" type="button" onClick={removeSelectedHoldingTrades}>
-                삭제
+              <button className="modal-confirm" disabled={isSavingTradeLogs} type="button" onClick={() => void removeSelectedHoldingTrades()}>
+                {isSavingTradeLogs ? '삭제 중...' : '삭제'}
               </button>
             </div>
           </div>
