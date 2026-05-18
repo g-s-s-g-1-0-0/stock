@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-05-17T12:55:42+00:00",
-    "lastSuccessfulRun": "2026-05-17T12:55:42+00:00",
+    "updatedAt": "2026-05-18T02:55:37+00:00",
+    "lastSuccessfulRun": "2026-05-18T02:55:37+00:00",
     "failedReason": null
   },
   "rows": [
