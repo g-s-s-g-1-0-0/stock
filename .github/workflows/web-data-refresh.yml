@@ -141,6 +141,12 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' }}
         run: python scripts/refresh_web_caches.py $REFRESH_TASKS
 
+      - name: Update trade logs
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'technical') }}
+        env:
+          PREVIOUS_STOCKS_PATH: ${{ runner.temp }}/stocks.before-refresh.json
+        run: python scripts/record_web_api_logs.py --trade-logs-only $REFRESH_TASKS
+
       - name: Report operational scale metrics
         if: ${{ env.SKIP_REFRESH != 'true' }}
         continue-on-error: true
@@ -211,7 +217,7 @@ jobs:
         continue-on-error: true
         env:
           PREVIOUS_STOCKS_PATH: ${{ runner.temp }}/stocks.before-refresh.json
-        run: python scripts/record_web_api_logs.py $REFRESH_TASKS
+        run: python scripts/record_web_api_logs.py --skip-trade-log-update $REFRESH_TASKS
 
       - name: Deploy refreshed web
         if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' }}

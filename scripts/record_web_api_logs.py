@@ -888,7 +888,26 @@ def actions_url() -> str:
     return ""
 
 
-def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
+def update_trade_logs_for_tasks(enabled_tasks: set[str]) -> bool:
+    if "technical-analysis" not in enabled_tasks:
+        print("[trade_logs] no technical-analysis task; skipped.")
+        return False
+
+    stocks_payload = load_json(API_DIR / "stocks.json", {"rows": []})
+    previous_stocks_payload = load_json(PREVIOUS_STOCKS_PATH, {"rows": []})
+    technical_payload = load_json(API_DIR / "technical.json", {"rows": {}})
+
+    stocks = stocks_payload.get("rows", []) if isinstance(stocks_payload, dict) else []
+    previous_stocks_list = previous_stocks_payload.get("rows", []) if isinstance(previous_stocks_payload, dict) else []
+    previous_stocks = stocks_by_ticker(previous_stocks_list)
+    technical = technical_payload.get("rows", {}) if isinstance(technical_payload, dict) else {}
+    qqq_market_state = technical_payload.get("qqqMarketState", {}) if isinstance(technical_payload, dict) else {}
+    update_trade_logs(stocks, previous_stocks, technical, qqq_market_state)
+    print("[trade_logs] updated trade logs.")
+    return True
+
+
+def build_logs(enabled_tasks: set[str], *, update_trade_logs_enabled: bool = True) -> list[dict[str, Any]]:
     stocks_payload = load_json(API_DIR / "stocks.json", {"rows": []})
     previous_stocks_payload = load_json(PREVIOUS_STOCKS_PATH, {"rows": []})
     valuation_payload = load_json(API_DIR / "valuation.json", {"rows": {}})
@@ -912,8 +931,8 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
     value_rows = value_log_rows(stocks, valuation, tickers)
     technical_rows = technical_log_rows(stocks, previous_stocks, technical, tickers)
     trend_rows = market_trend_log_rows(market_trends)
-    if "technical-analysis" in enabled_tasks:
-        update_trade_logs(stocks, previous_stocks, technical, qqq_market_state)
+    if update_trade_logs_enabled:
+        update_trade_logs_for_tasks(enabled_tasks)
 
     logs = [
         {
@@ -983,7 +1002,27 @@ def build_logs(enabled_tasks: set[str]) -> list[dict[str, Any]]:
     return [log for log in logs if log["trigger_name"] in enabled_tasks]
 
 
+def parse_runtime_args(argv: list[str]) -> tuple[bool, bool, list[str]]:
+    trade_logs_only = False
+    skip_trade_log_update = False
+    tasks: list[str] = []
+    for arg in argv:
+        if arg == "--trade-logs-only":
+            trade_logs_only = True
+        elif arg == "--skip-trade-log-update":
+            skip_trade_log_update = True
+        else:
+            tasks.append(arg)
+    return trade_logs_only, skip_trade_log_update, tasks
+
+
 def main() -> None:
+    trade_logs_only, skip_trade_log_update, task_args = parse_runtime_args(sys.argv[1:])
+    enabled_tasks = parse_log_tasks(task_args)
+    if trade_logs_only:
+        update_trade_logs_for_tasks(enabled_tasks)
+        return
+
     if not supabase_url() or not service_key():
         print("[api_logs] Supabase service credentials are missing; skipped.")
         return
@@ -991,7 +1030,7 @@ def main() -> None:
         reset_api_logs()
     else:
         clean_old_logs()
-    logs = build_logs(parse_log_tasks(sys.argv[1:]))
+    logs = build_logs(enabled_tasks, update_trade_logs_enabled=not skip_trade_log_update)
     if not logs:
         print("[api_logs] no matching operation-log tasks; skipped.")
         return
