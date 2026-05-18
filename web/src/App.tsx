@@ -4158,20 +4158,20 @@ function App() {
     const selectWidth = type === 'trading' ? 0 : isEditable ? width(0, 40) : 0
     const noIndex = type === 'trading' ? 0 : isEditable ? 1 : 0
     const noWidth = width(noIndex, 48)
-    const tickerIndex = type === 'holding' ? (isEditable ? 2 : 1) : -1
+    const tickerIndex = type === 'holding' ? (isEditable ? 3 : 2) : -1
     const tickerWidth = tickerIndex >= 0 ? width(tickerIndex, 92) : 0
-    const nameIndex = type === 'trading' ? 1 : type === 'watchlist' ? (isEditable ? 2 : 1) : (isEditable ? 3 : 2)
+    const nameIndex = type === 'trading' ? 1 : type === 'watchlist' || type === 'holding' ? (isEditable ? 2 : 1) : (isEditable ? 3 : 2)
     const nameWidth = width(nameIndex, 220)
     const vars: Record<string, string> = {
       '--home-select-width': `${selectWidth}px`,
       '--home-no-left': `${selectWidth}px`,
       '--home-no-width': `${noWidth}px`,
-      '--home-name-left': `${selectWidth + noWidth + tickerWidth}px`,
+      '--home-name-left': `${selectWidth + noWidth}px`,
       '--home-name-width': `${nameWidth}px`,
     }
 
     if (type === 'holding') {
-      vars['--home-ticker-left'] = `${selectWidth + noWidth}px`
+      vars['--home-ticker-left'] = `${selectWidth + noWidth + nameWidth}px`
       vars['--home-ticker-width'] = `${tickerWidth}px`
     }
 
@@ -7006,7 +7006,6 @@ function App() {
                   <tr>
                     {canManageHoldingTrades && <th>선택</th>}
                     <th>No</th>
-                    <th>티커</th>
                     <th className="home-name-header">
                       <span>종목명</span>
                       <button
@@ -7020,6 +7019,7 @@ function App() {
                         <span aria-hidden="true">📌</span>
                       </button>
                     </th>
+                    <th>티커</th>
                     <th>매수 신호일</th>
                     <th>매수 신호 가격</th>
                     <th>매수 전략</th>
@@ -7032,13 +7032,13 @@ function App() {
                     <tr className="example-row">
                       {canManageHoldingTrades && <td></td>}
                       <td className="numbering-cell">예시</td>
-                      <td className="ticker-cell">{exampleStock.ticker}</td>
                       <td className="name-data-cell">
                         <div className="name-cell">
                           <span className="market-flag" aria-hidden="true">{marketFlag(exampleStock.market)}</span>
                           <span>{exampleStock.name}</span>
                         </div>
                       </td>
+                      <td className="ticker-cell">{exampleStock.ticker}</td>
                       <td>신호 발생 시</td>
                       <td className="number-cell">{displayCurrentPriceText(exampleStock)}</td>
                       <td className="holding-example-note-cell"><span className="example-note">보유 전환 시 표시됩니다.</span></td>
@@ -7064,13 +7064,13 @@ function App() {
                           </td>
                         )}
                         <td className="numbering-cell">{index + 1}</td>
-                        <td className="ticker-cell">{trade.ticker}</td>
                         <td className="name-data-cell">
                           <div className="name-cell">
                             <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>
                             <span>{tradeName(trade)}</span>
                           </div>
                         </td>
+                        <td className="ticker-cell">{trade.ticker}</td>
                         <td>{trade.buyDate}</td>
                         <td className="number-cell">{trade.buyPrice}</td>
                         <td className="strategy-data-cell">
@@ -7095,8 +7095,8 @@ function App() {
                     <tr className="blank-row" key={`holding-blank-${index}`}>
                       {canManageHoldingTrades && <td></td>}
                       <td className="numbering-cell">&nbsp;</td>
-                      <td>&nbsp;</td>
                       <td></td>
+                      <td>&nbsp;</td>
                       <td></td>
                       <td></td>
                       <td></td>

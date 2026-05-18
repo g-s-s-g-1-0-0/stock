@@ -1141,16 +1141,16 @@
   --home-select-width: 40px;
   --home-no-left: 40px;
   --home-no-width: 48px;
-  --home-ticker-left: 88px;
-  --home-ticker-width: 92px;
-  --home-name-left: 180px;
+  --home-name-left: 88px;
   --home-name-width: 220px;
+  --home-ticker-left: 308px;
+  --home-ticker-width: 92px;
 }
 
 .holding-table.readonly-home-table {
   --home-no-left: 0px;
-  --home-ticker-left: 48px;
-  --home-name-left: 140px;
+  --home-name-left: 48px;
+  --home-ticker-left: 268px;
 }
 
 .value-analysis-panel {
@@ -1275,10 +1275,10 @@
 .trading-log-table.pinned-home-table td:nth-child(2),
 .watchlist-table.pinned-home-table.editable-home-table th:nth-child(3),
 .watchlist-table.pinned-home-table.editable-home-table td:nth-child(3),
-.holding-table.pinned-home-table.readonly-home-table th:nth-child(3),
-.holding-table.pinned-home-table.readonly-home-table td:nth-child(3),
-.holding-table.pinned-home-table.editable-home-table th:nth-child(4),
-.holding-table.pinned-home-table.editable-home-table td:nth-child(4) {
+.holding-table.pinned-home-table.readonly-home-table th:nth-child(2),
+.holding-table.pinned-home-table.readonly-home-table td:nth-child(2),
+.holding-table.pinned-home-table.editable-home-table th:nth-child(3),
+.holding-table.pinned-home-table.editable-home-table td:nth-child(3) {
   position: sticky;
   left: var(--home-name-left);
   z-index: 3;
@@ -1291,10 +1291,10 @@
   text-overflow: ellipsis;
 }
 
-.holding-table.pinned-home-table.readonly-home-table th:nth-child(2),
-.holding-table.pinned-home-table.readonly-home-table td:nth-child(2),
-.holding-table.pinned-home-table.editable-home-table th:nth-child(3),
-.holding-table.pinned-home-table.editable-home-table td:nth-child(3) {
+.holding-table.pinned-home-table.readonly-home-table th:nth-child(3),
+.holding-table.pinned-home-table.readonly-home-table td:nth-child(3),
+.holding-table.pinned-home-table.editable-home-table th:nth-child(4),
+.holding-table.pinned-home-table.editable-home-table td:nth-child(4) {
   position: sticky;
   left: var(--home-ticker-left);
   z-index: 3;
