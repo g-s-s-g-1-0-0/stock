@@ -514,10 +514,16 @@
   white-space: nowrap;
 }
 
+.asset-summary-detail-wrap {
+  display: block;
+  min-width: 0;
+  cursor: help;
+}
+
 .asset-summary-detail {
+  display: block;
   overflow: hidden;
   color: var(--muted);
-  cursor: help;
   font-family: var(--mono);
   font-size: 10px;
   font-weight: 600;
@@ -526,37 +532,61 @@
   white-space: nowrap;
 }
 
-.asset-summary-detail:focus-visible {
+.asset-summary-detail-wrap:focus-visible {
   outline: 2px solid rgba(37, 99, 235, 0.28);
   outline-offset: 2px;
 }
 
-.asset-summary-detail[data-full-text]::after {
+.asset-summary-tooltip {
   position: absolute;
   z-index: 30;
   bottom: -6px;
   left: 10px;
-  min-width: 168px;
+  display: grid;
+  min-width: 190px;
   max-width: min(320px, calc(100vw - 32px));
+  gap: 6px;
   transform: translateY(100%);
   border: 1px solid rgba(148, 163, 184, 0.45);
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
   color: var(--text-h);
-  content: attr(data-full-text);
   font-family: var(--mono);
   font-size: 11px;
-  font-weight: 700;
   line-height: 1.35;
   opacity: 0;
-  padding: 7px 9px;
+  padding: 9px 10px;
   pointer-events: none;
-  white-space: pre-line;
 }
 
-.asset-summary-item:hover .asset-summary-detail[data-full-text]::after,
-.asset-summary-item:focus-within .asset-summary-detail[data-full-text]::after {
+.asset-summary-tooltip-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.asset-summary-tooltip-label {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.asset-summary-tooltip-label::before {
+  margin-right: 4px;
+  color: #94a3b8;
+  content: '•';
+}
+
+.asset-summary-tooltip-row strong {
+  color: var(--text-h);
+  font-weight: 900;
+  text-align: right;
+}
+
+.asset-summary-item:hover .asset-summary-tooltip,
+.asset-summary-item:focus-within .asset-summary-tooltip {
   opacity: 1;
 }
 

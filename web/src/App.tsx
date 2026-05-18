@@ -5119,7 +5119,7 @@ function App() {
     strong?: boolean
     tone?: string
     detail?: string
-    detailTooltip?: string
+    detailTooltipRows?: Array<{ label: string; value: string }>
   }> = [
     {
       label: '보유 현금',
@@ -5138,7 +5138,10 @@ function App() {
       label: '예상 손익',
       value: `${formatKrwAmount(portfolioSummary.profitAmount)} (${portfolioSummary.profitRate >= 0 ? '+' : ''}${portfolioSummary.profitRate.toFixed(1)}%)`,
       detail: `실현 ${formatKrwAmount(portfolioSummary.realizedProfitAmount)} · 평가 ${formatKrwAmount(portfolioSummary.unrealizedProfitAmount)}`,
-      detailTooltip: `실현손익 ${formatKrwAmount(portfolioSummary.realizedProfitAmount)}\n평가손익 ${formatKrwAmount(portfolioSummary.unrealizedProfitAmount)}`,
+      detailTooltipRows: [
+        { label: '실현손익', value: formatKrwAmount(portfolioSummary.realizedProfitAmount) },
+        { label: '평가손익', value: formatKrwAmount(portfolioSummary.unrealizedProfitAmount) },
+      ],
       tone: tradeProfitClass(portfolioSummary.profitAmount),
     },
     { label: '총 자산', value: formatKrwAmount(portfolioSummary.totalAsset), strong: true },
@@ -6508,15 +6511,29 @@ function App() {
           <div className="asset-summary-box" aria-label="현재 자산 요약">
             {assetSummaryItems.map((item) => {
               const itemClassName = `asset-summary-item ${item.strong ? 'strong' : ''}`.trim()
+              const detailTitle = item.detailTooltipRows
+                ? item.detailTooltipRows.map((row) => `${row.label}: ${row.value}`).join('\n')
+                : item.detail
+              const detailTooltip = item.detailTooltipRows ? (
+                <span className="asset-summary-tooltip" role="tooltip">
+                  {item.detailTooltipRows.map((row) => (
+                    <span className="asset-summary-tooltip-row" key={row.label}>
+                      <span className="asset-summary-tooltip-label">{row.label}</span>
+                      <strong>{row.value}</strong>
+                    </span>
+                  ))}
+                </span>
+              ) : null
               if (item.clickable) {
                 return (
                   <button className={`${itemClassName} asset-summary-action`} key={item.label} type="button" onClick={item.action}>
                     <span>{item.label}</span>
                     <strong className="asset-summary-value asset-summary-button">{item.value}</strong>
                     {item.detail && (
-                      <small className="asset-summary-detail" data-full-text={item.detailTooltip ?? item.detail} title={item.detailTooltip ?? item.detail}>
-                        {item.detail}
-                      </small>
+                      <span className="asset-summary-detail-wrap" title={detailTitle}>
+                        <small className="asset-summary-detail">{item.detail}</small>
+                        {detailTooltip}
+                      </span>
                     )}
                   </button>
                 )
@@ -6527,14 +6544,14 @@ function App() {
                   <span>{item.label}</span>
                   <strong className={`asset-summary-value ${item.tone ?? ''}`}>{item.value}</strong>
                   {item.detail && (
-                    <small
-                      className="asset-summary-detail"
-                      data-full-text={item.detailTooltip ?? item.detail}
+                    <span
+                      className="asset-summary-detail-wrap"
                       tabIndex={0}
-                      title={item.detailTooltip ?? item.detail}
+                      title={detailTitle}
                     >
-                      {item.detail}
-                    </small>
+                      <small className="asset-summary-detail">{item.detail}</small>
+                      {detailTooltip}
+                    </span>
                   )}
                 </div>
               )
