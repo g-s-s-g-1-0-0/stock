@@ -4125,9 +4125,10 @@ function App() {
   const [apiLogs, setApiLogs] = useState<ApiLog[]>(() => readStoredApiLogs())
   const [isLoadingApiLogs, setIsLoadingApiLogs] = useState(false)
   const [activePage, setActivePage] = useState<ActivePage>(() => readInitialActivePage())
+  const [isTradingPinned, setIsTradingPinned] = useState(false)
   const [isWatchlistPinned, setIsWatchlistPinned] = useState(false)
   const [isHoldingPinned, setIsHoldingPinned] = useState(false)
-  const [homePinnedStyles, setHomePinnedStyles] = useState<{ watchlist?: CSSProperties; holding?: CSSProperties }>({})
+  const [homePinnedStyles, setHomePinnedStyles] = useState<{ trading?: CSSProperties; watchlist?: CSSProperties; holding?: CSSProperties }>({})
   const addStockButtonRef = useRef<HTMLButtonElement | null>(null)
   const inlineAddRef = useRef<HTMLDivElement | null>(null)
   const watchlistSortMenuRef = useRef<HTMLDivElement | null>(null)
@@ -4148,17 +4149,17 @@ function App() {
     window.setTimeout(reset, 80)
   }
 
-  const homePinnedStyleFor = (sheet: HTMLDivElement | null, type: 'watchlist' | 'holding') => {
+  const homePinnedStyleFor = (sheet: HTMLDivElement | null, type: 'trading' | 'watchlist' | 'holding') => {
     const table = sheet?.querySelector<HTMLTableElement>('table')
     const headers = Array.from(table?.querySelectorAll<HTMLTableCellElement>('thead th') ?? [])
     const width = (index: number, fallback: number) => Math.ceil(headers[index]?.getBoundingClientRect().width || fallback)
     const isEditable = table?.classList.contains('editable-home-table') ?? true
-    const selectWidth = isEditable ? width(0, 40) : 0
-    const noIndex = isEditable ? 1 : 0
+    const selectWidth = type === 'trading' ? 0 : isEditable ? width(0, 40) : 0
+    const noIndex = type === 'trading' ? 0 : isEditable ? 1 : 0
     const noWidth = width(noIndex, 48)
     const tickerIndex = type === 'holding' ? (isEditable ? 2 : 1) : -1
     const tickerWidth = tickerIndex >= 0 ? width(tickerIndex, 92) : 0
-    const nameIndex = type === 'watchlist' ? (isEditable ? 2 : 1) : (isEditable ? 3 : 2)
+    const nameIndex = type === 'trading' ? 1 : type === 'watchlist' ? (isEditable ? 2 : 1) : (isEditable ? 3 : 2)
     const nameWidth = width(nameIndex, 220)
     const vars: Record<string, string> = {
       '--home-select-width': `${selectWidth}px`,
@@ -4174,6 +4175,13 @@ function App() {
     }
 
     return vars as CSSProperties
+  }
+
+  const toggleTradingPinned = () => {
+    if (!isTradingPinned) {
+      setHomePinnedStyles((current) => ({ ...current, trading: homePinnedStyleFor(tradingLogScrollRef.current, 'trading') }))
+    }
+    setIsTradingPinned((current) => !current)
   }
 
   const toggleWatchlistPinned = () => {
@@ -6257,6 +6265,7 @@ function App() {
   )
   const watchlistPinnedStyle = isWatchlistPinned ? homePinnedStyles.watchlist : undefined
   const holdingPinnedStyle = isHoldingPinned ? homePinnedStyles.holding : undefined
+  const tradingPinnedStyle = isTradingPinned ? homePinnedStyles.trading : undefined
   const addStockInlineControl = isAddingStock && canEditCurrentWatchlist && !isCurrentWatchlistFull ? (
     <div className="inline-add analysis-inline-add" ref={inlineAddRef}>
       {canShowOperatorImport && (
@@ -6533,11 +6542,26 @@ function App() {
           </div>
 
           <div className="sheet-wrap trading-log-scroll" key={`trades-${homeSheetResetKey}`} ref={tradingLogScrollRef}>
-            <table className={`sheet-table trading-log-table ${isLongTermInvestor ? 'long-term-trading-log-table' : ''}`}>
+            <table
+              className={`sheet-table trading-log-table ${isLongTermInvestor ? 'long-term-trading-log-table' : ''} ${isTradingPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
+              style={tradingPinnedStyle}
+            >
               <thead>
                 <tr>
                   <th>No</th>
-                  <th>종목명</th>
+                  <th className="home-name-header">
+                    <span>종목명</span>
+                    <button
+                      aria-label={isTradingPinned ? '트레이딩로그 종목명 고정 끄기' : '트레이딩로그 종목명 고정 켜기'}
+                      aria-pressed={isTradingPinned}
+                      className={`home-pin-toggle ${isTradingPinned ? 'active' : ''}`}
+                      title={isTradingPinned ? '종목명 고정 끄기' : '종목명 고정 켜기'}
+                      type="button"
+                      onClick={toggleTradingPinned}
+                    >
+                      <span aria-hidden="true">📌</span>
+                    </button>
+                  </th>
                   <th>티커</th>
                   <th>매수 신호일</th>
                   <th>매수 신호 가격</th>

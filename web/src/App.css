@@ -1078,11 +1078,20 @@
   min-width: 720px;
 }
 
+.trading-log-table,
 .watchlist-table,
 .holding-table {
   border-collapse: separate;
   border-spacing: 0;
 }
+
+.trading-log-table {
+  --home-no-left: 0px;
+  --home-no-width: 48px;
+  --home-name-left: 48px;
+  --home-name-width: 220px;
+}
+
 .watchlist-table {
   --home-select-left: 0px;
   --home-select-width: 40px;
@@ -1204,6 +1213,8 @@
 
 .watchlist-table.pinned-home-table.readonly-home-table th:nth-child(1),
 .watchlist-table.pinned-home-table.readonly-home-table td:nth-child(1),
+.trading-log-table.pinned-home-table th:nth-child(1),
+.trading-log-table.pinned-home-table td:nth-child(1),
 .holding-table.pinned-home-table.readonly-home-table th:nth-child(1),
 .holding-table.pinned-home-table.readonly-home-table td:nth-child(1) {
   position: sticky;
@@ -1230,6 +1241,8 @@
 
 .watchlist-table.pinned-home-table.readonly-home-table th:nth-child(2),
 .watchlist-table.pinned-home-table.readonly-home-table td:nth-child(2),
+.trading-log-table.pinned-home-table th:nth-child(2),
+.trading-log-table.pinned-home-table td:nth-child(2),
 .watchlist-table.pinned-home-table.editable-home-table th:nth-child(3),
 .watchlist-table.pinned-home-table.editable-home-table td:nth-child(3),
 .holding-table.pinned-home-table.readonly-home-table th:nth-child(3),
@@ -1263,6 +1276,8 @@
 
 .watchlist-table.pinned-home-table.readonly-home-table th:nth-child(2),
 .watchlist-table.pinned-home-table.readonly-home-table td:nth-child(2),
+.trading-log-table.pinned-home-table th:nth-child(2),
+.trading-log-table.pinned-home-table td:nth-child(2),
 .watchlist-table.pinned-home-table.editable-home-table th:nth-child(3),
 .watchlist-table.pinned-home-table.editable-home-table td:nth-child(3),
 .holding-table.pinned-home-table.readonly-home-table th:nth-child(3),
@@ -1274,6 +1289,8 @@
 
 .watchlist-table.pinned-home-table.readonly-home-table th:nth-child(2)::after,
 .watchlist-table.pinned-home-table.readonly-home-table td:nth-child(2)::after,
+.trading-log-table.pinned-home-table th:nth-child(2)::after,
+.trading-log-table.pinned-home-table td:nth-child(2)::after,
 .watchlist-table.pinned-home-table.editable-home-table th:nth-child(3)::after,
 .watchlist-table.pinned-home-table.editable-home-table td:nth-child(3)::after,
 .holding-table.pinned-home-table.readonly-home-table th:nth-child(3)::after,
@@ -1293,6 +1310,7 @@
 
 .watchlist-table.pinned-home-table.editable-home-table th:nth-child(-n + 3),
 .watchlist-table.pinned-home-table.readonly-home-table th:nth-child(-n + 2),
+.trading-log-table.pinned-home-table th:nth-child(-n + 2),
 .holding-table.pinned-home-table.editable-home-table th:nth-child(-n + 4),
 .holding-table.pinned-home-table.readonly-home-table th:nth-child(-n + 3) {
   z-index: 5;
