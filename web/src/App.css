@@ -513,6 +513,17 @@
   white-space: nowrap;
 }
 
+.asset-summary-detail {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .asset-summary-button {
   color: #2563eb;
   cursor: pointer;
@@ -4965,6 +4976,10 @@
 
   .asset-summary-value {
     font-size: 12px;
+  }
+
+  .asset-summary-detail {
+    font-size: 9.5px;
   }
 
   .trading-log-scroll {

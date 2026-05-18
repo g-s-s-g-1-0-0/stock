@@ -154,6 +154,8 @@ type PortfolioSummary = {
   positionValue: number
   totalAsset: number
   profitAmount: number
+  realizedProfitAmount: number
+  unrealizedProfitAmount: number
   profitRate: number
   amountByTradeKey: Map<string, number>
 }
@@ -2002,6 +2004,8 @@ function buildPortfolioSummary(
   let cumulativeInvestmentAmount = 0
   let positionValue = 0
   let profitAmount = 0
+  let realizedProfitAmount = 0
+  let unrealizedProfitAmount = 0
   const eventsByDate = new Map<string, { buys: TradeLog[]; sells: TradeLog[] }>()
   const addEvent = (date: string, field: 'buys' | 'sells', trade: TradeLog) => {
     const bucket = eventsByDate.get(date) ?? { buys: [], sells: [] }
@@ -2064,8 +2068,11 @@ function buildPortfolioSummary(
     const tradeProfit = Math.round(amount * (displayedTradeReturnPct(trade, stocks) ?? 0) / 100)
     profitAmount += tradeProfit
     if (trade.status === '보유 중') {
+      unrealizedProfitAmount += tradeProfit
       openInvestmentAmount += amount
       positionValue += amount + tradeProfit
+    } else {
+      realizedProfitAmount += tradeProfit
     }
   }
 
@@ -2087,6 +2094,8 @@ function buildPortfolioSummary(
     positionValue,
     totalAsset,
     profitAmount,
+    realizedProfitAmount,
+    unrealizedProfitAmount,
     profitRate,
     amountByTradeKey,
   }
@@ -5094,7 +5103,15 @@ function App() {
     ? '스윙 투자는 신호가 잡힌 순서대로 제한된 슬롯에 집중 배분합니다. 매도되어 슬롯이 비면 다음 새 매수 신호에서 현금 기준 비중을 다시 계산합니다.'
     : '가치 투자는 여러 종목을 오래 가져가는 전제로 슬롯을 넓게 나눕니다. 보유 중인 신호만 집계하고, 새 매수 신호가 들어올 때 빈 슬롯 비중만큼 배정합니다.'
   const displayedAllocationSummary = allocationSummaryText(displayedAllocationSettings)
-  const assetSummaryItems = [
+  const assetSummaryItems: Array<{
+    label: string
+    value: string
+    action?: () => void
+    clickable?: boolean
+    strong?: boolean
+    tone?: string
+    detail?: string
+  }> = [
     {
       label: '보유 현금',
       value: formatKrwAmount(portfolioSummary.cash),
@@ -5111,6 +5128,7 @@ function App() {
     {
       label: '예상 손익',
       value: `${formatKrwAmount(portfolioSummary.profitAmount)} (${portfolioSummary.profitRate >= 0 ? '+' : ''}${portfolioSummary.profitRate.toFixed(1)}%)`,
+      detail: `실현 ${formatKrwAmount(portfolioSummary.realizedProfitAmount)} · 평가 ${formatKrwAmount(portfolioSummary.unrealizedProfitAmount)}`,
       tone: tradeProfitClass(portfolioSummary.profitAmount),
     },
     { label: '총 자산', value: formatKrwAmount(portfolioSummary.totalAsset), strong: true },
@@ -6484,6 +6502,7 @@ function App() {
                   <button className={`${itemClassName} asset-summary-action`} key={item.label} type="button" onClick={item.action}>
                     <span>{item.label}</span>
                     <strong className="asset-summary-value asset-summary-button">{item.value}</strong>
+                    {item.detail && <small className="asset-summary-detail">{item.detail}</small>}
                   </button>
                 )
               }
@@ -6492,6 +6511,7 @@ function App() {
                 <div className={itemClassName} key={item.label}>
                   <span>{item.label}</span>
                   <strong className={`asset-summary-value ${item.tone ?? ''}`}>{item.value}</strong>
+                  {item.detail && <small className="asset-summary-detail">{item.detail}</small>}
                 </div>
               )
             })}
