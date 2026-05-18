@@ -370,7 +370,7 @@
 }
 
 .long-term-home-grid .right-column {
-  gap: 29px;
+  gap: 42px;
 }
 
 .section-heading {
@@ -1066,6 +1066,10 @@
   height: var(--trading-log-sheet-height);
   max-height: var(--trading-log-sheet-height);
   overflow: auto;
+}
+
+.long-term-home-grid .trading-log-scroll {
+  --trading-log-sheet-height: 1054px;
 }
 
 .watchlist-sheet {

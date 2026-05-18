@@ -6293,7 +6293,7 @@ function App() {
   const currentPricePendingLabel = nextTwoHourUpdateLabel()
   const showEmptyTradeExample = tableStocks.length > 0 && scopedTrades.length === 0
   const showEmptyHoldingExample = tableStocks.length > 0 && scopedOpenTrades.length === 0
-  const tradeBlankRows = Math.max(3, 22 - filteredTrades.length - (showEmptyTradeExample ? 1 : 0))
+  const tradeBlankRows = Math.max(3, (isLongTermInvestor ? 23 : 22) - filteredTrades.length - (showEmptyTradeExample ? 1 : 0))
   const watchlistBlankRows = Math.max(0, 10 - tableStocks.length)
   const holdingBlankRows = Math.max(0, 12 - scopedOpenTrades.length - (showEmptyHoldingExample ? 1 : 0))
   const visibleWatchlistSortOptions = isLongTermInvestor
