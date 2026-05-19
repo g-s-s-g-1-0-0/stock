@@ -88,7 +88,15 @@ function processData(currentData, currentGlobalData, lastEvent, currentValidOpin
     processMultiSlots(stockName, row, currentGlobalData, now, allProperties, kstDate, changes, props);
   });
 
-  return { changes, buyOpinions, watchHoldingOpinions, sellOpinions, updatedOpinions };
+  const additionalBuyTickers = {};
+  changes.forEach(c => {
+    if (c && c.eventType === "additional_buy" && c.ticker) additionalBuyTickers[c.ticker] = true;
+  });
+  const visibleChanges = changes.filter(c =>
+    !(c && c.entryNote === "보유 중 매수 복원" && c.ticker && additionalBuyTickers[c.ticker])
+  );
+
+  return { changes: visibleChanges, buyOpinions, watchHoldingOpinions, sellOpinions, updatedOpinions };
 }
 
 function processMultiSlots(stockName, row, globalData, now, allProperties, kstDate, changes, props) {
@@ -154,9 +162,10 @@ function processMultiSlots(stockName, row, globalData, now, allProperties, kstDa
   for (const strategy of STRATEGIES) {
     const liveProps  = props.getProperties();
     const liveSlots  = Utils.loadSlots(stockName, liveProps);
-    if (liveSlots.some(s => s.strategy === strategy)) continue;
-    if (currentOpinion === "매수" && primaryEntry.strategyType && primaryEntry.strategyType === strategy) {
-      console.log(`[슬롯 진입 건너뜀] ${displayName} ${strategy}그룹: 현재 매수 유지 중인 ENTRY 전략과 동일`);
+    const sameStrategySlotCount = liveSlots.filter(s => s.strategy === strategy).length;
+    const primarySameStrategyCount = primaryEntry.price > 0 && primaryEntry.strategyType === strategy ? 1 : 0;
+    if (sameStrategySlotCount + primarySameStrategyCount >= S.MAX_OPEN_PER_STRATEGY) {
+      console.log(`[슬롯 진입 건너뜀] ${displayName} ${strategy}그룹: 동일 전략 최대 슬롯 수(${S.MAX_OPEN_PER_STRATEGY}) 도달`);
       continue;
     }
 
@@ -678,8 +687,9 @@ const Utils = {
     QQQ_RECOVERY_PEAK_CONFIRM_DIST: 18,
     QQQ_PEAK_RSI_THRESHOLD: 65,
     UPPER_EXIT_MAX_WAIT_DAYS:       5,
-    HOLD_RESTORE_DROP:              0.05,
-    HOLD_RESTORE_MIN_TRADING_DAYS:  5
+    HOLD_RESTORE_DROP:              0.10,
+    HOLD_RESTORE_MIN_TRADING_DAYS:  10,
+    MAX_OPEN_PER_STRATEGY:          2
   },
 
   /** 시장트렌드 순위 키워드 ↔ 가치분석 산업 토큰 연결 (완전일치 외 보강용) */
@@ -1064,7 +1074,7 @@ const Utils = {
       days,
       ddOk,
       daysOk,
-      allowed: ddOk || daysOk,
+      allowed: ddOk && daysOk,
       missingEntry: !(entry.price > 0),
       missingWatch: !watchDate
     };
@@ -1075,9 +1085,9 @@ const Utils = {
     const state = Utils.getHoldRestoreState(stockName, currentPrice, now, allProperties);
     const label = strategy || "-";
     if (state.missingEntry) {
-      return `${label}그룹 복원 대기: 전 진입가 정보 없음`;
+      return `${label}그룹 추가 매수 대기: 전 진입가 정보 없음`;
     }
-    return `${label}그룹 복원 대기: 전 진입가 ${Utils.fmtPrice(state.entryPrice, stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 또는 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 허용`;
+    return `${label}그룹 추가 매수 대기: 전 진입가 ${Utils.fmtPrice(state.entryPrice, stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 및 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 허용`;
   },
 
   loadEntryInfoFrom(stockName, allProperties) {
@@ -1305,7 +1315,7 @@ const Utils = {
             opinion: "관망",
             reason: typeof buildHoldRestorePendingReason === "function"
               ? buildHoldRestorePendingReason(stockName, savedStrategy, currentPrice, now, allProperties)
-              : `보유 유지 (${savedStrategy}그룹 복원 대기: 전 진입가 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 또는 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 복원)`,
+              : `보유 유지 (${savedStrategy}그룹 추가 매수 대기: 전 진입가 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 및 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 허용)`,
             strategyType: savedStrategy
           };
         }

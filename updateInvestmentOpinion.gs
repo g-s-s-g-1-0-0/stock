@@ -74,8 +74,8 @@ const CONSTANTS = {
     QQQ_RECOVERY_PEAK_CONFIRM_DIST: 18,
     QQQ_PEAK_RSI_THRESHOLD: 65,
     UPPER_EXIT_MAX_WAIT_DAYS: 5,
-    HOLD_RESTORE_DROP:               0.05,
-    HOLD_RESTORE_MIN_TRADING_DAYS:   5
+    HOLD_RESTORE_DROP:               0.10,
+    HOLD_RESTORE_MIN_TRADING_DAYS:   10
   }
 };
 
@@ -137,7 +137,7 @@ function getHoldRestoreState(stockName, currentPrice, now, allProperties) {
     days,
     ddOk,
     daysOk,
-    allowed: ddOk || daysOk,
+    allowed: ddOk && daysOk,
     missingEntry: !(entry.price > 0),
     missingWatch: !watchDate
   };
@@ -156,9 +156,9 @@ function buildHoldRestorePendingReason(stockName, strategyType, currentPrice, no
     return `보유 유지 (${label}그룹 복원 대기: 전 진입가 정보 없음)`;
   }
   if (state.missingWatch) {
-    return `보유 유지 (${label}그룹 복원 대기: 전 진입가 ${fmtPrice(state.entryPrice, stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 또는 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 복원)`; 
+    return `보유 유지 (${label}그룹 복원 대기: 전 진입가 ${fmtPrice(state.entryPrice, stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 및 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 복원)`; 
   }
-  return `보유 유지 (${label}그룹 복원 대기: 전 진입가 ${fmtPrice(state.entryPrice, stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 또는 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 복원)`;
+  return `보유 유지 (${label}그룹 복원 대기: 전 진입가 ${fmtPrice(state.entryPrice, stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 및 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 복원)`;
 }
 
 function ensureHoldRestoreWatchState(stockName, currentPrice, now, allProperties, props) {
@@ -962,9 +962,7 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
           if (restoreState.allowed) {
             newOpinion = "매수";
             clearAHoldRestoreProps(ind.stockName);
-            const restoreBasis = restoreState.ddOk
-              ? `전 진입가 ${fmtPrice(restoreState.entryPrice, ind.stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 눌림 충족`
-              : `관망 ${restoreState.days}거래일 경과`;
+            const restoreBasis = `전 진입가 ${fmtPrice(restoreState.entryPrice, ind.stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 눌림 및 관망 ${restoreState.days}거래일 경과`;
             console.log(` → [보유 유지/관망→매수 복원] ${ind.displayName}: 매수 조건 재충족 (${restoreBasis})`);
           } else {
             const repairedState = ensureHoldRestoreWatchState(ind.stockName, ind.currentPrice, now, allProperties, props);
@@ -972,7 +970,7 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
               ? "전 진입가 정보 없음"
               : repairedState.missingWatch
               ? "관망 시작 시각 복구 실패"
-              : `전 진입가 ${fmtPrice(repairedState.entryPrice, ind.stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 또는 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일`;
+              : `전 진입가 ${fmtPrice(repairedState.entryPrice, ind.stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 및 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일`;
             console.log(` → [${saved.strategyType} 복원 보류] ${ind.displayName}: ${restoreWait} 충족 시에만 매수 복원`);
           }
         } else if (shouldDeferHoldingChange) {

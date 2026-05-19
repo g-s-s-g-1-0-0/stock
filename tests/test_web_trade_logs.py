@@ -173,7 +173,7 @@ def test_same_strategy_does_not_duplicate_while_signal_never_left(monkeypatch, t
     assert updated["meta"]["appendedOpenTrades"] == 0
 
 
-def test_same_strategy_adds_slot_after_restore_wait(monkeypatch, tmp_path):
+def test_same_strategy_adds_slot_after_ten_percent_drop_and_ten_days(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
@@ -183,7 +183,7 @@ def test_same_strategy_adds_slot_after_restore_wait(monkeypatch, tmp_path):
                 "strategy": "D. 200일선 상방 & 상승 흐름 강화",
                 "buyDate": "2026.05.01",
                 "buyPrice": "$100.00",
-                "currentPrice": "$98.00",
+                "currentPrice": "$90.00",
                 "restoreWatchDate": "2026.05.01",
                 "sellDate": "보유 중",
                 "sellPrice": "-",
@@ -195,9 +195,9 @@ def test_same_strategy_adds_slot_after_restore_wait(monkeypatch, tmp_path):
     }), encoding="utf-8")
 
     logs.update_trade_logs(
-        [{"ticker": "MP", "name": "MP Materials", "market": "US", "currentPrice": "$98.00", "opinion": "매수"}],
+        [{"ticker": "MP", "name": "MP Materials", "market": "US", "currentPrice": "$90.00", "opinion": "매수"}],
         {},
-        {"MP": {"entrySignalCodes": "D", "현재가": "$98.00"}},
+        {"MP": {"entrySignalCodes": "D", "현재가": "$90.00"}},
         {"peakTriggered": False},
     )
 
@@ -244,7 +244,7 @@ def test_ef_family_blocks_cross_strategy_slot_until_restore_condition(monkeypatc
     assert updated["meta"]["appendedOpenTrades"] == 0
 
 
-def test_ef_family_adds_cross_strategy_slot_after_five_percent_drop_and_two_signals(monkeypatch, tmp_path):
+def test_ef_family_adds_cross_strategy_slot_after_ten_percent_drop_ten_days_and_two_signals(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
@@ -254,7 +254,8 @@ def test_ef_family_adds_cross_strategy_slot_after_five_percent_drop_and_two_sign
                 "strategy": "E. 200일선 상방 & 스퀴즈 저점",
                 "buyDate": "2026.05.01",
                 "buyPrice": "$100.00",
-                "currentPrice": "$95.00",
+                "currentPrice": "$90.00",
+                "restoreWatchDate": "2026.05.01",
                 "sellDate": "보유 중",
                 "sellPrice": "-",
                 "returnPct": 0,
@@ -265,9 +266,9 @@ def test_ef_family_adds_cross_strategy_slot_after_five_percent_drop_and_two_sign
     }), encoding="utf-8")
 
     logs.update_trade_logs(
-        [{"ticker": "DL", "name": "DL", "market": "US", "currentPrice": "$95.00", "opinion": "매수"}],
+        [{"ticker": "DL", "name": "DL", "market": "US", "currentPrice": "$90.00", "opinion": "매수"}],
         {"DL": {"opinion": "매수"}},
-        {"DL": {"entrySignalCodes": "F", "현재가": "$95.00"}},
+        {"DL": {"entrySignalCodes": "F", "현재가": "$90.00"}},
         {"peakTriggered": False},
     )
 
@@ -278,9 +279,9 @@ def test_ef_family_adds_cross_strategy_slot_after_five_percent_drop_and_two_sign
     assert updated["meta"]["appendedOpenTrades"] == 0
 
     logs.update_trade_logs(
-        [{"ticker": "DL", "name": "DL", "market": "US", "currentPrice": "$95.00", "opinion": "매수"}],
+        [{"ticker": "DL", "name": "DL", "market": "US", "currentPrice": "$90.00", "opinion": "매수"}],
         {"DL": {"opinion": "매수"}},
-        {"DL": {"entrySignalCodes": "F", "현재가": "$95.00"}},
+        {"DL": {"entrySignalCodes": "F", "현재가": "$90.00"}},
         {"peakTriggered": False},
     )
 

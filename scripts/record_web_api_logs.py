@@ -34,8 +34,8 @@ KST = ZoneInfo("Asia/Seoul")
 SELL_HOLD_DAYS = 2
 REENTRY_DAYS = 10
 REENTRY_DROP = 0.03
-HOLD_RESTORE_DROP = 0.05
-HOLD_RESTORE_MIN_TRADING_DAYS = 5
+HOLD_RESTORE_DROP = 0.10
+HOLD_RESTORE_MIN_TRADING_DAYS = 10
 HOLD_RESTORE_SIGNAL_CONFIRMATIONS = 2
 MAX_OPEN_PER_STRATEGY = 2
 RESTORE_FAMILY_STRATEGIES = {"E", "F"}
@@ -367,7 +367,7 @@ def hold_restore_allowed(trade: dict[str, Any], current_price: float | None, tod
         watch_date
         and trading_days_since(trade.get("restoreWatchDate"), today_date) >= HOLD_RESTORE_MIN_TRADING_DAYS
     )
-    return drop_ok or days_ok
+    return drop_ok and days_ok
 
 
 def restore_signal_counts(trade: dict[str, Any]) -> dict[str, int]:

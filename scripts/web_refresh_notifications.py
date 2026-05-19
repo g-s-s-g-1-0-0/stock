@@ -329,6 +329,10 @@ def opinion_changes(
         if old_opinion not in VALID_OPINIONS or new_opinion not in VALID_OPINIONS:
             continue
         technical_row = technical_rows.get(ticker, {})
+        normalized_ticker = str(ticker).strip().upper()
+        added_for_ticker = added_trades_by_ticker.get(normalized_ticker, [])
+        previous_trade_rows = previous_trades_by_ticker.get(normalized_ticker, [])
+        current_trade_rows = current_trades_by_ticker.get(normalized_ticker, [])
         change = {
             "ticker": ticker,
             "name": current_stock.get("name") or ticker,
@@ -340,13 +344,17 @@ def opinion_changes(
             "strategies": current_stock.get("strategies") or [],
             "reason": concise_opinion_reason(old_opinion, new_opinion, previous_stock, current_stock, technical_row),
         }
-        normalized_ticker = str(ticker).strip().upper()
         if new_opinion == "매수":
+            if added_for_ticker and any(is_open_trade(row) for row in previous_trade_rows):
+                added_trade = added_for_ticker[0]
+                change["fromLabel"] = "매수(보유중)"
+                change["toLabel"] = "추가 매수"
+                change["reason"] = buy_reason_for_trade(added_trade, current_stock, technical_row)
             change["entryNote"] = buy_entry_note(
                 old_opinion=old_opinion,
-                previous_trade_rows=previous_trades_by_ticker.get(normalized_ticker, []),
-                current_trade_rows=current_trades_by_ticker.get(normalized_ticker, []),
-                added_trades=added_trades_by_ticker.get(normalized_ticker, []),
+                previous_trade_rows=previous_trade_rows,
+                current_trade_rows=current_trade_rows,
+                added_trades=added_for_ticker,
             )
             buy_transition_tickers.add(normalized_ticker)
         changes.append(change)
@@ -1122,6 +1130,109 @@ def change_display_to(change: dict[str, Any]) -> str:
     return str(change.get("to") or "-")
 
 
+def first_metric_number(value: Any) -> float | None:
+    match = re.search(r"[+-]?\d+(?:\.\d+)?", str(value or "").replace(",", ""))
+    if not match:
+        return None
+    try:
+        return float(match.group(0))
+    except ValueError:
+        return None
+
+
+def market_snapshot_map(technical_path: Path = DEFAULT_TECHNICAL) -> dict[str, str]:
+    payload = read_json(technical_path)
+    rows = payload.get("marketSnapshot") if isinstance(payload, dict) else []
+    snapshot: dict[str, str] = {}
+    if not isinstance(rows, list):
+        return snapshot
+    for row in rows:
+        if not isinstance(row, list) or len(row) < 2:
+            continue
+        key = str(row[0] or "").strip()
+        if key:
+            snapshot[key] = str(row[1] or "").strip()
+    return snapshot
+
+
+def fmt_context_percent(value: float | None) -> str:
+    return "데이터 없음" if value is None else f"{value:.2f}%"
+
+
+def fmt_context_index(value: float | None) -> str:
+    return "데이터 없음" if value is None else f"{value:,.2f}"
+
+
+def build_macro_context_html(technical_path: Path = DEFAULT_TECHNICAL) -> str:
+    snapshot = market_snapshot_map(technical_path)
+    us10y = first_metric_number(snapshot.get("미국 10년물 금리"))
+    dxy = first_metric_number(snapshot.get("달러 인덱스"))
+    vix = first_metric_number(snapshot.get("VIX (변동성지수) 당일·전날"))
+    qqq_price = first_metric_number(snapshot.get("나스닥 (QQQ, 당일)"))
+    qqq_ma60 = first_metric_number(snapshot.get("나스닥 (QQQ, 60일 이동평균선)"))
+    tech_weak = qqq_price is not None and qqq_ma60 is not None and qqq_price < qqq_ma60
+    nasdaq_status = (
+        f"{fmt_context_index(qqq_price)} / 60일선 {fmt_context_index(qqq_ma60)} ({'하회' if tech_weak else '상회'})"
+        if qqq_price is not None and qqq_ma60 is not None
+        else "데이터 없음"
+    )
+
+    active_flags = []
+    if us10y is not None and us10y >= 4.2:
+        active_flags.append("고금리")
+    if dxy is not None and dxy >= 103:
+        active_flags.append("강달러")
+    if vix is not None and vix >= 20:
+        active_flags.append("시장 불안(VIX)")
+    if tech_weak:
+        active_flags.append("기술주 약세")
+
+    status_line = (
+        f'현재 체크 구간: <strong style="color:#c0392b;">{html.escape(" · ".join(active_flags))}</strong>'
+        if active_flags
+        else '현재 체크 구간: <strong style="color:#27ae60;">해당 없음</strong>'
+    )
+
+    return f"""
+      <div style="margin:12px 0 14px;padding:10px 12px;background:#fff8e8;border-left:3px solid #f39c12;font-size:13px;color:#444;">
+        <strong>매크로 참고</strong><br>
+        단, 고금리(미국 10년물 4.2% 이상), 강달러(달러 인덱스 103 이상), 시장 불안(VIX 20 이상), 기술주 약세(QQQ 60일선 하회) 구간에서는 적자 성장주보다 <strong>실적이 확인되는 종목</strong>을 우선할 것을 권장합니다.<br>
+        현재값: 미국 10년물 <strong>{html.escape(fmt_context_percent(us10y))}</strong> · 달러 인덱스 <strong>{html.escape(fmt_context_index(dxy))}</strong> · VIX <strong>{html.escape(fmt_number(vix)) if vix is not None else "데이터 없음"}</strong> · QQQ <strong>{html.escape(nasdaq_status)}</strong><br>
+        {status_line}
+      </div>
+    """
+
+
+def build_trend_top3_html() -> str:
+    trend = latest_market_trend()
+    if not trend:
+        return ""
+    top3 = [rank for rank in market_trend_ranks(trend) if rank["rank"] <= 3]
+    if not top3:
+        return ""
+    rows_html = "".join(
+        f"""
+        <div style="padding:5px 0;border-bottom:1px solid #e8f0fe;font-size:13px;">
+          <span style="color:#3498db;font-weight:bold;min-width:28px;display:inline-block;">{rank['rank']}위</span>
+          <strong style="color:#222;">{html.escape(str(rank['sector']))}</strong>
+          <span style="color:#666;margin-left:8px;">{html.escape(str(rank['keywords']))}</span>
+        </div>
+        """
+        for rank in top3
+    )
+    date = str(trend.get("date") or "").strip()
+    date_html = f" (기준: {html.escape(date)})" if date else ""
+    summary = str(trend.get("summary") or "").strip()
+    summary_html = f'<div style="margin-top:8px;font-size:12px;color:#555;">※ {html.escape(summary)}</div>' if summary else ""
+    return f"""
+      <div style="margin:0 0 14px;padding:10px 12px;background:#f0f7ff;border-left:3px solid #3498db;font-size:13px;color:#444;">
+        <strong>이번 주 시장 트렌드 Top 3</strong>{date_html}<br>
+        <div style="margin-top:6px;">{rows_html}</div>
+        {summary_html}
+      </div>
+    """
+
+
 def opinion_email_body(
     changes: list[dict[str, Any]],
     buy_opinions: list[str] | None = None,
@@ -1129,6 +1240,10 @@ def opinion_email_body(
     sell_opinions: list[str] | None = None,
 ) -> str:
     changed_html = []
+    has_buy_transition = any(
+        (change.get("to") == "매수" and (change.get("from") != "매수" or "추가 매수" in change_display_to(change)))
+        for change in changes
+    )
     for index, change in enumerate(changes, start=1):
         from_label = change_display_from(change)
         to_label = change_display_to(change)
@@ -1159,12 +1274,16 @@ def opinion_email_body(
         )
 
     kst_label, et_label = now_labels()
+    macro_context_html = build_macro_context_html() if has_buy_transition else ""
+    trend_top3_html = build_trend_top3_html() if has_buy_transition else ""
     return f"""
     <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
       <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
         투자의견이 변경된 종목이 있습니다.
       </p>
       <div>{''.join(changed_html)}</div>
+      {macro_context_html}
+      {trend_top3_html}
       <p style="margin:0;"><strong>현재 매수 의견 종목:</strong> {html.escape(list_text(buy_opinions or []))}</p>
       <p style="margin:0;"><strong>보유 중 관망 종목:</strong> {html.escape(list_text(watch_holding_opinions or []))}</p>
       <p style="margin:0;"><strong>현재 매도 의견 종목:</strong> {html.escape(list_text(sell_opinions or []))}</p><br>

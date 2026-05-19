@@ -144,6 +144,48 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("추가 매수", body)
         self.assertNotIn("'매수'</span>", body)
         self.assertNotIn(">매수</strong><br>", body)
+        self.assertIn("매크로 참고", body)
+
+    def test_opinion_changes_labels_watch_to_buy_with_added_trade_as_additional_buy(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+            previous_trades = Path(temp_dir) / "trade-logs.before-refresh.json"
+            current_trades = Path(temp_dir) / "trade-logs.json"
+
+            previous.write_text(
+                json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "opinion": "관망"}]}),
+                encoding="utf-8",
+            )
+            current.write_text(
+                json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "opinion": "매수", "currentPrice": "$90.00"}]}),
+                encoding="utf-8",
+            )
+            technical.write_text(
+                json.dumps({"rows": {"MP": {"entrySignalCodes": "D", "현재가": "$90.00"}}}),
+                encoding="utf-8",
+            )
+            previous_trades.write_text(
+                json.dumps({"rows": [
+                    {"slotId": "MP_D_20260501_1", "ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"}
+                ]}),
+                encoding="utf-8",
+            )
+            current_trades.write_text(
+                json.dumps({"rows": [
+                    {"slotId": "MP_D_20260501_1", "ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"},
+                    {"slotId": "MP_D_20260519_1", "ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.19", "buyPrice": "$90.00", "status": "보유 중"},
+                ]}),
+                encoding="utf-8",
+            )
+
+            changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
+
+        self.assertEqual(1, len(changes))
+        self.assertEqual("매수(보유중)", changes[0]["fromLabel"])
+        self.assertEqual("추가 매수", changes[0]["toLabel"])
+        self.assertEqual("재진입 1회차 — 최초 진입가 $100.00", changes[0]["entryNote"])
 
     def test_send_notification_uses_slack_when_selected_and_connected(self) -> None:
         sent_slack: list[tuple[str, str, str]] = []
