@@ -201,36 +201,6 @@
       "holdingDays": "-",
       "status": "보유 중",
       "restoreWatchDate": "2026.05.19"
-    },
-    {
-      "slotId": "CRDO_F_20260519_1",
-      "ticker": "CRDO",
-      "name": "Credo Technology Group Holding",
-      "market": "US",
-      "currentPrice": "$156.27",
-      "strategy": "F. 200일선 상방 & BB 극단 저점",
-      "buyDate": "2026.05.19",
-      "buyPrice": "$155.79",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
-      "holdingDays": "-",
-      "status": "보유 중"
-    },
-    {
-      "slotId": "ETN_F_20260519_1",
-      "ticker": "ETN",
-      "name": "Eaton Corporation, PLC",
-      "market": "US",
-      "currentPrice": "$381.87",
-      "strategy": "F. 200일선 상방 & BB 극단 저점",
-      "buyDate": "2026.05.19",
-      "buyPrice": "$379.42",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
-      "holdingDays": "-",
-      "status": "보유 중"
     }
   ]
 }
