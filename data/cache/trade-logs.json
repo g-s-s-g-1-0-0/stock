@@ -2,8 +2,8 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-05-18T23:00:00Z",
-    "lastSuccessfulRun": "2026-05-18T23:00:00Z",
+    "updatedAt": "2026-05-19T01:00:00Z",
+    "lastSuccessfulRun": "2026-05-19T01:00:00Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
     "closedTrades": 0,
@@ -112,7 +112,7 @@
       "ticker": "278470",
       "name": "에이피알",
       "market": "KR",
-      "currentPrice": "₩402,000",
+      "currentPrice": "₩394,000",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.18",
       "buyPrice": "₩401,500",
@@ -120,14 +120,15 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.19"
     },
     {
       "slotId": "079550_F_20260518_1",
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "currentPrice": "₩839,000",
+      "currentPrice": "₩891,000",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.18",
       "buyPrice": "₩832,000",
@@ -135,14 +136,15 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.19"
     },
     {
       "slotId": "376900_F_20260518_1",
       "ticker": "376900",
       "name": "로킷헬스케어",
       "market": "KR",
-      "currentPrice": "₩59,900",
+      "currentPrice": "₩60,600",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.18",
       "buyPrice": "₩59,600",
@@ -150,14 +152,15 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.19"
     },
     {
       "slotId": "039030_F_20260518_1",
       "ticker": "039030",
       "name": "이오테크닉스",
       "market": "KR",
-      "currentPrice": "₩485,000",
+      "currentPrice": "₩481,000",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.18",
       "buyPrice": "₩482,500",
@@ -165,7 +168,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.19"
     },
     {
       "slotId": "AEHR_E_20260518_1",
