@@ -187,6 +187,46 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("추가 매수", changes[0]["toLabel"])
         self.assertEqual("재진입 1회차 — 최초 진입가 $100.00", changes[0]["entryNote"])
 
+    def test_opinion_changes_labels_watch_to_buy_with_open_trade_as_additional_buy(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+            previous_trades = Path(temp_dir) / "trade-logs.before-refresh.json"
+            current_trades = Path(temp_dir) / "trade-logs.json"
+
+            previous.write_text(
+                json.dumps({"rows": [{"ticker": "278470", "name": "에이피알", "opinion": "관망"}]}),
+                encoding="utf-8",
+            )
+            current.write_text(
+                json.dumps({"rows": [{"ticker": "278470", "name": "에이피알", "opinion": "매수", "currentPrice": "₩399,500"}]}),
+                encoding="utf-8",
+            )
+            technical.write_text(
+                json.dumps({"rows": {"278470": {"entrySignalCodes": "F", "현재가": "₩399,500", "저가%B": "1.95"}}}),
+                encoding="utf-8",
+            )
+            open_trade = {
+                "slotId": "278470_F_20260501_1",
+                "ticker": "278470",
+                "strategy": "F. 200일선 상방 & BB 극단 저점",
+                "buyDate": "2026.05.01",
+                "buyPrice": "₩410,000",
+                "status": "보유 중",
+            }
+            previous_trades.write_text(json.dumps({"rows": [open_trade]}), encoding="utf-8")
+            current_trades.write_text(json.dumps({"rows": [open_trade]}), encoding="utf-8")
+
+            changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
+            body = self.notifications.opinion_email_body(changes)
+
+        self.assertEqual(1, len(changes))
+        self.assertEqual("매수(보유중)", changes[0]["fromLabel"])
+        self.assertEqual("추가 매수", changes[0]["toLabel"])
+        self.assertEqual("재진입 1회차 — 최초 진입가 ₩410,000", changes[0]["entryNote"])
+        self.assertNotIn("보유 중 매수 복원", body)
+
     def test_send_notification_uses_slack_when_selected_and_connected(self) -> None:
         sent_slack: list[tuple[str, str, str]] = []
         sent_email: list[tuple[str, str, str]] = []
@@ -237,7 +277,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("email", channel)
         self.assertEqual([("user@example.com", "테스트", "<p>본문</p>")], sent_email)
 
-    def test_opinion_changes_marks_sell_to_buy_as_reentry_with_entry_price(self) -> None:
+    def test_opinion_changes_marks_sell_to_buy_without_open_slot_as_new_entry(self) -> None:
         with TemporaryDirectory() as temp_dir:
             previous = Path(temp_dir) / "previous.json"
             current = Path(temp_dir) / "current.json"
@@ -269,7 +309,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
             changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
 
         self.assertEqual(1, len(changes))
-        self.assertEqual("재진입 1회차 — 최초 진입가 $60.00", changes[0]["entryNote"])
+        self.assertEqual("신규 진입", changes[0]["entryNote"])
 
     def test_opinion_changes_detects_additional_buy_from_new_open_trade(self) -> None:
         with TemporaryDirectory() as temp_dir:

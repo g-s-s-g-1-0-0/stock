@@ -254,30 +254,10 @@ def buy_entry_note(
 ) -> str:
     previous_open = [row for row in previous_trade_rows if is_open_trade(row)]
     current_open = [row for row in current_trade_rows if is_open_trade(row)]
-    closed_history = []
-    closed_keys: set[tuple[str, str, str]] = set()
-    for row in previous_trade_rows + current_trade_rows:
-        key = trade_key(row)
-        if is_open_trade(row) or key in closed_keys:
-            continue
-        closed_keys.add(key)
-        closed_history.append(row)
 
-    if previous_open and not added_trades and old_opinion == "관망":
-        return "보유 중 매수 복원"
-
-    if previous_open or old_opinion == "매수":
+    if previous_open:
         reentry_count = max(len(previous_open), 1)
         entry_price = first_buy_price(previous_open + current_open)
-        return (
-            f"재진입 {reentry_count}회차 — 최초 진입가 {entry_price}"
-            if entry_price
-            else f"재진입 {reentry_count}회차"
-        )
-
-    if old_opinion == "매도" or closed_history:
-        reentry_count = max(len(closed_history), 1)
-        entry_price = first_buy_price(current_open + added_trades)
         return (
             f"재진입 {reentry_count}회차 — 최초 진입가 {entry_price}"
             if entry_price
@@ -345,11 +325,12 @@ def opinion_changes(
             "reason": concise_opinion_reason(old_opinion, new_opinion, previous_stock, current_stock, technical_row),
         }
         if new_opinion == "매수":
-            if added_for_ticker and any(is_open_trade(row) for row in previous_trade_rows):
-                added_trade = added_for_ticker[0]
+            if any(is_open_trade(row) for row in previous_trade_rows):
+                added_trade = added_for_ticker[0] if added_for_ticker else None
                 change["fromLabel"] = "매수(보유중)"
                 change["toLabel"] = "추가 매수"
-                change["reason"] = buy_reason_for_trade(added_trade, current_stock, technical_row)
+                if added_trade:
+                    change["reason"] = buy_reason_for_trade(added_trade, current_stock, technical_row)
             change["entryNote"] = buy_entry_note(
                 old_opinion=old_opinion,
                 previous_trade_rows=previous_trade_rows,

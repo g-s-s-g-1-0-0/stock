@@ -93,7 +93,7 @@ function processData(currentData, currentGlobalData, lastEvent, currentValidOpin
     if (c && c.eventType === "additional_buy" && c.ticker) additionalBuyTickers[c.ticker] = true;
   });
   const visibleChanges = changes.filter(c =>
-    !(c && c.entryNote === "보유 중 매수 복원" && c.ticker && additionalBuyTickers[c.ticker])
+    !(c && c.eventType === "holding_buy_signal" && c.ticker && additionalBuyTickers[c.ticker])
   );
 
   return { changes: visibleChanges, buyOpinions, watchHoldingOpinions, sellOpinions, updatedOpinions };
@@ -248,15 +248,26 @@ function handleOpinionChange(stockName, fromOpinion, toOpinion, row, currentGlob
   const hasRestoreWatch = !!(allProperties[`HOLD_WATCH_${stockName}`] || allProperties[`A_HOLD_WATCH_${stockName}`]);
   const isHoldingRestore = toOpinion === "매수" && fromOpinion === "관망" && existingEntry.price > 0 && hasRestoreWatch;
   let entryNote     = null;
+  let fromLabel     = null;
+  let toLabel       = null;
+  let eventType     = null;
 
   if (toOpinion === "매수") {
     props.deleteProperty(`UPPER_EXIT_ARM_${stockName}`);
     if (isHoldingRestore) {
-      entryNote = "보유 중 매수 복원";
+      const prevCount  = parseInt(allProperties[`REENTRY_COUNT_${stockName}`] || "0");
+      const newCount   = prevCount + 1;
+      const cyclePrice = parseFloat(allProperties[`CYCLE_ENTRY_${stockName}`] || "0") || existingEntry.price || price;
+      entryNote = cyclePrice > 0
+        ? `재진입 ${newCount}회차 — 최초 진입가 ${Utils.fmtPrice(cyclePrice, stockName)}`
+        : `재진입 ${newCount}회차`;
+      fromLabel = "매수(보유중)";
+      toLabel = "추가 매수";
+      eventType = "holding_buy_signal";
       console.log(`[진입 구분] ${displayName}: ${entryNote}`);
     } else {
-      const sellInfo   = allProperties[`SELL_${stockName}`];
-      const isNewTrade = fromOpinion === "초기값" || !sellInfo;
+      const hasOpenPosition = existingEntry.price > 0 || Utils.loadSlots(stockName, allProperties).length > 0;
+      const isNewTrade = !hasOpenPosition;
       if (isNewTrade) {
         entryNote = "신규 진입";
         props.setProperty(`REENTRY_COUNT_${stockName}`, "0");
@@ -289,7 +300,7 @@ function handleOpinionChange(stockName, fromOpinion, toOpinion, row, currentGlob
     Utils.clearAllSlotStateForStock(stockName, price, kstDate, props, allProperties, { keepStrategies: keepPeakStrategies });
   }
 
-  changes.push({ stock: displayName, ticker: stockName, from: fromOpinion, to: toOpinion, reason, price: fmtP, entryNote, stopLoss: "" });
+  changes.push({ stock: displayName, ticker: stockName, from: fromOpinion, to: toOpinion, fromLabel, toLabel, eventType, reason, price: fmtP, entryNote, stopLoss: "" });
 
   if (toOpinion === "매수" && fromOpinion !== "매수") {
     // 관망 상태도 포지션 보유 중 → 다른 전략 신호 충돌 감지 대상에 포함
@@ -302,7 +313,7 @@ function handleOpinionChange(stockName, fromOpinion, toOpinion, row, currentGlob
     if (hasConflictingPrimary) {
       console.log(`[멀티슬롯 위임] ${displayName}: 기존 ${existingEntry.strategyType}그룹 PRIMARY 보유 중 (${fromOpinion} 상태) → ${evaluatedStrategyType}그룹 신호는 processMultiSlots에 위임 (ENTRY_ 덮어쓰기 방지)`);
     } else if (isHoldingRestore) {
-      console.log(`[트레이딩로그 생략] ${displayName}: 기존 보유 포지션의 관망→매수 복원 — 신규/재진입 로깅 없음`);
+      console.log(`[트레이딩로그 위임] ${displayName}: 기존 보유 포지션의 관망→매수 신호 — 추가 슬롯 로깅은 processMultiSlots에서 처리`);
     } else {
       // 전략 타입 결정 우선순위: evaluatedStrategyType → ENTRY_ 키 → 시트 BC열
       // "F" 기본값 제거: 타이밍 차이로 evaluatedStrategyType이 null이더라도 기존 보유 전략 사용
@@ -1304,7 +1315,7 @@ const Utils = {
           if (currentOpinion === "매수") {
             return { opinion: "매수", reason: "보유 유지 (이벤트 기간, 기존 매수 유지)", strategyType: savedStrategy };
           }
-          return { opinion: "관망", reason: "보유 유지 (매수 조건 재충족, 이벤트 기간 — 복원 보류)", strategyType: savedStrategy };
+          return { opinion: "관망", reason: "보유 유지 (매수 조건 재충족, 이벤트 기간 — 추가 매수 보류)", strategyType: savedStrategy };
         }
         if (
           currentOpinion === "관망" &&

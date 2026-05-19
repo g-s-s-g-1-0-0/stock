@@ -143,7 +143,7 @@ function getHoldRestoreState(stockName, currentPrice, now, allProperties) {
   };
 }
 
-/** 보유 중 관망→매수 복원 허용 여부 (A-F 공통) */
+/** 보유 중 관망→추가 매수 신호 허용 여부 (A-F 공통) */
 function aHoldRestoreAllowed(stockName, strategyType, currentPrice, now, allProperties) {
   return getHoldRestoreState(stockName, currentPrice, now, allProperties).allowed;
 }
@@ -153,12 +153,12 @@ function buildHoldRestorePendingReason(stockName, strategyType, currentPrice, no
   const state = getHoldRestoreState(stockName, currentPrice, now, allProperties);
   const label = strategyType || "-";
   if (state.missingEntry) {
-    return `보유 유지 (${label}그룹 복원 대기: 전 진입가 정보 없음)`;
+    return `보유 유지 (${label}그룹 추가 매수 대기: 전 진입가 정보 없음)`;
   }
   if (state.missingWatch) {
-    return `보유 유지 (${label}그룹 복원 대기: 전 진입가 ${fmtPrice(state.entryPrice, stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 및 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 복원)`; 
+    return `보유 유지 (${label}그룹 추가 매수 대기: 전 진입가 ${fmtPrice(state.entryPrice, stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 및 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 허용)`; 
   }
-  return `보유 유지 (${label}그룹 복원 대기: 전 진입가 ${fmtPrice(state.entryPrice, stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 및 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 복원)`;
+  return `보유 유지 (${label}그룹 추가 매수 대기: 전 진입가 ${fmtPrice(state.entryPrice, stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 및 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 허용)`;
 }
 
 function ensureHoldRestoreWatchState(stockName, currentPrice, now, allProperties, props) {
@@ -911,7 +911,7 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
             );
           }
         } else {
-          if (buy.triggered) console.log(` → [보유 유지/관망] ${ind.displayName}: 이벤트 기간 중 복원 보류`);
+          if (buy.triggered) console.log(` → [보유 유지/관망] ${ind.displayName}: 이벤트 기간 중 추가 매수 보류`);
           else if (shouldDeferHoldingChange) console.log(` → [보유 유지/관망] ${ind.displayName}: 핵심 지표 결측으로 복원/해제 판단 유예`);
           else console.log(` → [보유 유지/관망] ${ind.displayName}: 이벤트 기간, 매도 조건 미충족으로 관망 유지`);
         }
@@ -963,7 +963,7 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
             newOpinion = "매수";
             clearAHoldRestoreProps(ind.stockName);
             const restoreBasis = `전 진입가 ${fmtPrice(restoreState.entryPrice, ind.stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 눌림 및 관망 ${restoreState.days}거래일 경과`;
-            console.log(` → [보유 유지/관망→매수 복원] ${ind.displayName}: 매수 조건 재충족 (${restoreBasis})`);
+            console.log(` → [보유 유지/관망→추가 매수 신호] ${ind.displayName}: 매수 조건 재충족 (${restoreBasis})`);
           } else {
             const repairedState = ensureHoldRestoreWatchState(ind.stockName, ind.currentPrice, now, allProperties, props);
             const restoreWait = repairedState.missingEntry
@@ -971,11 +971,11 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
               : repairedState.missingWatch
               ? "관망 시작 시각 복구 실패"
               : `전 진입가 ${fmtPrice(repairedState.entryPrice, ind.stockName)} 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 및 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일`;
-            console.log(` → [${saved.strategyType} 복원 보류] ${ind.displayName}: ${restoreWait} 충족 시에만 매수 복원`);
+            console.log(` → [${saved.strategyType} 추가 매수 보류] ${ind.displayName}: ${restoreWait} 충족 시에만 추가 매수 허용`);
           }
         } else if (shouldDeferHoldingChange) {
           console.log(` → [보유 유지/관망] ${ind.displayName}: 핵심 지표 결측으로 복원/해제 판단 유예`);
-        } else if (buy.triggered) console.log(` → [보유 유지/관망] ${ind.displayName}: 매수 조건 재충족이나 이벤트 당일 — 의견 복원 보류`);
+        } else if (buy.triggered) console.log(` → [보유 유지/관망] ${ind.displayName}: 매수 조건 재충족이나 이벤트 당일 — 추가 매수 보류`);
         else console.log(` → [보유 유지/관망] ${ind.displayName}: ${calcTradingDays(ind.entryDate, now)}거래일, 수익률 ${((ind.currentPrice - ind.entryPrice) / ind.entryPrice * 100).toFixed(2)}% — 매도 조건 미충족, 관망 유지`);
       }
     } else {
@@ -1302,7 +1302,7 @@ function logStockAnalysis(ind, vixD, ixicDist, event, buy, exit, now, isHolding,
     `\n[B그룹: 200일선 하방 & 공황 저점 (나스닥 필터 미적용)]` +
     `\n  ① 현재가(${fmtP(ind.currentPrice)}) < MA200(${fmtP(ind.ma200)}): ${buy.bCond1 ? "✅" : "❌"}` +
     `\n  ② VIX(${fmt(vixD)}) ≥ ${buy.vixThreshold}: ${buy.bCond2 ? "✅" : "❌"}` +
-    `\n  ③ RSI(${fn(ind.rsi, 2)}) < ${S.RSI_MAX}: ${buy.rsiOk ? "✅" : "❌"}  |  CCI(${fn(ind.cci, 2)}) < ${S.CCI_MIN}: ${buy.cciOk ? "✅" : "❌"}  → OR: ${(isHolding && strategyType === "B" ? buy.bCond3Hold : buy.bCond3) ? "✅" : "❌"}${isHolding && strategyType === "B" && ind.rsi === null && ind.cci === null ? " (결측 → 복원 보류)" : ""}` +
+    `\n  ③ RSI(${fn(ind.rsi, 2)}) < ${S.RSI_MAX}: ${buy.rsiOk ? "✅" : "❌"}  |  CCI(${fn(ind.cci, 2)}) < ${S.CCI_MIN}: ${buy.cciOk ? "✅" : "❌"}  → OR: ${(isHolding && strategyType === "B" ? buy.bCond3Hold : buy.bCond3) ? "✅" : "❌"}${isHolding && strategyType === "B" && ind.rsi === null && ind.cci === null ? " (결측 → 추가 매수 보류)" : ""}` +
     `\n  ④ LR추세선 기울기(${buy.lrSlope !== undefined ? buy.lrSlope.toFixed(6) : "-"}) > 0: ${buy.bCond4 ? "✅" : "❌"}` +
     `\n  ⑤ 저가(${fn(ind.candleLow, 2)}) ≤ 추세선(${fn(ind.lrTrendline, 2)}) × ${S.LR_TOUCH_RATIO.toFixed(2)}: ${buy.bCond5 ? "✅" : "❌"}` +
 
