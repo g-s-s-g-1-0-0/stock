@@ -6345,7 +6345,6 @@ function App() {
     ? watchlistSortOptions.filter((option) => option.value !== 'opinion_sell_first')
     : watchlistSortOptions
   const currentWatchlistSortOption = visibleWatchlistSortOptions.find((option) => option.value === watchlistSortSettings.primary) ?? visibleWatchlistSortOptions[0]
-  const activeNotificationChannelLabel = notificationChannelLabels[notificationPreferences.notificationChannel]
   const isEmailNotificationChannel = notificationPreferences.notificationChannel === 'email'
   const isNotificationIntegrationConnected = (channel: NotificationIntegrationChannel) => (
     channel === 'kakaoTalk' ? notificationPreferences.kakaoTalkConnected : notificationPreferences.slackConnected
@@ -7375,28 +7374,25 @@ function App() {
                         )
                       })}
                     </div>
+                    {isEmailNotificationChannel && (
+                      <label className="account-alert-email-field notification-channel-email-field">
+                        <span>알림 받을 이메일</span>
+                        <input
+                          autoComplete="email"
+                          inputMode="email"
+                          placeholder={userSession.email}
+                          type="email"
+                          value={notificationPreferences.recipientEmail}
+                          onChange={(event) => updateNotificationRecipientEmail(event.target.value)}
+                        />
+                        <small>비워두면 가입한 이메일({userSession.email})을 사용합니다.</small>
+                      </label>
+                    )}
                   </div>
                   <div className="account-alert-card">
                     <div className="account-alert-header">
                       <span>알림 설정</span>
                     </div>
-                    <label className={`account-alert-email-field ${isEmailNotificationChannel ? '' : 'disabled'}`}>
-                      <span>{isEmailNotificationChannel ? '알림 받을 이메일' : '백업 이메일'}</span>
-                      <input
-                        autoComplete="email"
-                        disabled={!isEmailNotificationChannel}
-                        inputMode="email"
-                        placeholder={userSession.email}
-                        type="email"
-                        value={notificationPreferences.recipientEmail}
-                        onChange={(event) => updateNotificationRecipientEmail(event.target.value)}
-                      />
-                      <small>
-                        {isEmailNotificationChannel
-                          ? `비워두면 가입한 이메일(${userSession.email})을 사용합니다.`
-                          : `${activeNotificationChannelLabel} 연동 중에는 백업 이메일만 저장됩니다.`}
-                      </small>
-                    </label>
                     {[...notificationOptions, ...(isAdminUser ? adminNotificationOptions : [])].map((option) => (
                       <label className="account-alert-toggle" key={option.key}>
                         <span>

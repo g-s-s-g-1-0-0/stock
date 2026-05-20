@@ -4649,6 +4649,11 @@
   padding: 10px 0 12px;
 }
 
+.notification-channel-email-field {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
 .account-alert-email-field span {
   color: var(--text-h);
   font-size: 12px;
@@ -4671,11 +4676,6 @@
   border-color: rgba(34, 136, 238, 0.55);
   outline: none;
   box-shadow: 0 0 0 3px rgba(34, 136, 238, 0.12);
-}
-
-.account-alert-email-field.disabled input {
-  cursor: not-allowed;
-  opacity: 0.62;
 }
 
 .account-alert-email-field small {
