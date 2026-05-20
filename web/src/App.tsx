@@ -341,11 +341,6 @@ const investmentProfileOptions: Array<{
     bullets: ['매수/관망/매도 신호 모두 보기', '수익 실현과 손절 기준 확인', '거래 기록으로 성과 확인'],
   },
 ]
-const notificationChannelLabels: Record<NotificationDeliveryChannel, string> = {
-  email: '이메일',
-  kakaoTalk: '카카오톡',
-  slack: '슬랙',
-}
 const notificationIntegrationOptions: Array<{
   channel: NotificationIntegrationChannel
   shortTitle: string
