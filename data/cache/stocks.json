@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-20T14:55:54+00:00",
-    "lastSuccessfulRun": "2026-05-20T14:55:54+00:00",
+    "updatedAt": "2026-05-20T15:01:42+00:00",
+    "lastSuccessfulRun": "2026-05-20T15:01:42+00:00",
     "failedReason": null
   },
   "rows": [
@@ -139,7 +139,7 @@
       "ticker": "011070",
       "name": "LG이노텍",
       "market": "KR",
-      "fairPrice": "₩288,380 ~ ₩432,570",
+      "fairPrice": "₩409,680 ~ ₩614,520",
       "fairPriceReason": null,
       "currentPrice": "₩760,000",
       "valuation": "고평가",
@@ -593,10 +593,10 @@
       "ticker": "012450",
       "name": "한화에어로스페이스",
       "market": "KR",
-      "fairPrice": "₩1,391,400 ~ ₩1,947,960",
+      "fairPrice": "₩465,240 ~ ₩620,320",
       "fairPriceReason": null,
       "currentPrice": "₩1,249,000",
-      "valuation": "저평가",
+      "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
