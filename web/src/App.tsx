@@ -515,21 +515,6 @@ function notificationSettingsDeepLinkMessage() {
   return ''
 }
 
-function notificationIntegrationDeepLinkMessage() {
-  const params = activePageHashParams()
-  const slackStatus = params.get('slack')
-  if (slackStatus === 'connected') {
-    return ''
-  }
-  if (slackStatus === 'error') {
-    const detail = params.get('detail')
-    return detail
-      ? `Slack 연동에 실패했습니다. ${detail.replace(/\+/g, ' ')}`
-      : 'Slack 연동에 실패했습니다. 잠시 후 다시 시도해 주세요.'
-  }
-  return ''
-}
-
 function hasNotificationSettingsDeepLink() {
   const params = activePageHashParams()
   return params.get('settings') === 'notifications' || params.get('notification') === 'unsubscribed'
@@ -4126,7 +4111,6 @@ function App() {
   const [loginError, setLoginError] = useState('')
   const [signupConfirmationEmail, setSignupConfirmationEmail] = useState('')
   const [isRecoverySent, setIsRecoverySent] = useState(false)
-  const [notificationChannelMessage, setNotificationChannelMessage] = useState(() => notificationIntegrationDeepLinkMessage())
   const [boardPosts, setBoardPosts] = useState<BoardPost[]>(initialBoardPosts)
   const [boardCategory, setBoardCategory] = useState<BoardCategory>('건의')
   const [boardContent, setBoardContent] = useState('')
@@ -4994,7 +4978,6 @@ function App() {
         setIsLoginOpen(true)
         setAuthMode('login')
         setAuthInfoMessage(notificationSettingsDeepLinkMessage())
-        setNotificationChannelMessage(notificationIntegrationDeepLinkMessage())
       } else if (!keepLoginModal && !authSuccessMessage) {
         setIsLoginOpen(false)
         setAuthMode('login')
@@ -5873,7 +5856,6 @@ function App() {
   const selectEmailNotificationChannel = () => {
     const nextPreferences = { ...notificationPreferences, notificationChannel: 'email' as const }
     setNotificationPreferences(nextPreferences)
-    setNotificationChannelMessage('')
     void persistUserSettings(watchlistSortSettings, nextPreferences)
   }
 
@@ -5881,7 +5863,6 @@ function App() {
     if (!isNotificationIntegrationConnected(channel)) return
     const nextPreferences = { ...notificationPreferences, notificationChannel: channel }
     setNotificationPreferences(nextPreferences)
-    setNotificationChannelMessage(`${notificationChannelLabels[channel]} 알림을 사용합니다.`)
     void persistUserSettings(watchlistSortSettings, nextPreferences)
   }
 
@@ -5898,7 +5879,6 @@ function App() {
     }
 
     setConnectingNotificationChannel(channel)
-    setNotificationChannelMessage('Slack 연동을 시작합니다. 새 창이 열리면 워크스페이스와 채널을 승인해 주세요.')
     const oauthWindow = window.open('about:blank', '_blank')
     try {
       const { data } = await supabase.auth.getSession()
@@ -5922,10 +5902,9 @@ function App() {
       } else {
         window.open(String(payload.url), '_blank', 'noopener,noreferrer')
       }
-      setNotificationChannelMessage('새 창에서 Slack 연동을 완료해 주세요. 완료 후 이 화면으로 돌아오면 슬랙이 자동 선택됩니다.')
     } catch (error) {
       oauthWindow?.close()
-      setNotificationChannelMessage(error instanceof Error ? error.message : 'Slack 연동을 시작하지 못했습니다.')
+      setAuthInfoMessage(error instanceof Error ? error.message : 'Slack 연동을 시작하지 못했습니다.')
     } finally {
       setConnectingNotificationChannel(null)
     }
@@ -5940,7 +5919,6 @@ function App() {
         : { slackConnected: false, slackConnectedAt: '' }),
     }
     setNotificationPreferences(nextPreferences)
-    setNotificationChannelMessage(channel === 'slack' ? 'Slack 연동을 해제하고 이메일 알림으로 돌아갑니다.' : '')
     void persistUserSettings(watchlistSortSettings, nextPreferences)
     if (channel !== 'slack' || !supabase) return
 
@@ -6263,7 +6241,6 @@ function App() {
       if (hasNotificationSettingsDeepLink()) {
         setAuthMode('login')
         setAuthInfoMessage(notificationSettingsDeepLinkMessage())
-        setNotificationChannelMessage(notificationIntegrationDeepLinkMessage())
         setIsLoginOpen(true)
         if (userSession) {
           void loadServiceData(userSession)
@@ -7403,9 +7380,6 @@ function App() {
                         )
                       })}
                     </div>
-                    {notificationChannelMessage && (
-                      <p className="notification-channel-status">{notificationChannelMessage}</p>
-                    )}
                   </div>
                   <div className="account-alert-card">
                     <div className="account-alert-header">
