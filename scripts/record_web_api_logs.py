@@ -24,6 +24,10 @@ API_DIR = ROOT_DIR / "web" / "public" / "api"
 PREVIOUS_STOCKS_PATH = Path(
     os.environ.get("PREVIOUS_STOCKS_PATH", str(ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"))
 )
+STOCK_CACHE_PATH = ROOT_DIR / "data" / "cache" / "stocks.json"
+STOCK_PUBLIC_PATH = API_DIR / "stocks.json"
+TECHNICAL_CACHE_PATH = ROOT_DIR / "data" / "cache" / "technical.json"
+TECHNICAL_PUBLIC_PATH = API_DIR / "technical.json"
 TRADE_LOG_CACHE_PATH = ROOT_DIR / "data" / "cache" / "trade-logs.json"
 TRADE_LOG_PUBLIC_PATH = API_DIR / "trade-logs.json"
 RUNTIME_STATE_PATH = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
@@ -229,6 +233,18 @@ def open_trades_by_slot(trades: list[dict[str, Any]]) -> dict[tuple[str, str], l
         if not key[0] or not key[1]:
             continue
         grouped.setdefault(key, []).append(trade)
+    return grouped
+
+
+def open_trades_by_ticker(trades: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for trade in trades:
+        if str(trade.get("status") or "") != "보유 중":
+            continue
+        ticker = str(trade.get("ticker") or "").strip().upper()
+        if not ticker:
+            continue
+        grouped.setdefault(ticker, []).append(trade)
     return grouped
 
 
@@ -494,12 +510,50 @@ def write_trade_logs(payload: dict[str, Any]) -> None:
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
+def write_stock_payload(payload: dict[str, Any]) -> None:
+    for path in (STOCK_CACHE_PATH, STOCK_PUBLIC_PATH):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def write_technical_payload(payload: dict[str, Any]) -> None:
+    for path in (TECHNICAL_CACHE_PATH, TECHNICAL_PUBLIC_PATH):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def suppress_held_buy_signal(stock: dict[str, Any], technical_row: dict[str, Any]) -> bool:
+    changed = False
+    if stock.get("opinion") != "관망":
+        stock["opinion"] = "관망"
+        changed = True
+    if stock.get("opinionReason") != "보유 중 추가매수 조건 미충족":
+        stock["opinionReason"] = "보유 중 추가매수 조건 미충족"
+        changed = True
+    if stock.get("strategies") != []:
+        stock["strategies"] = []
+        changed = True
+
+    updates = {
+        "opinion": "관망",
+        "opinionReason": "보유 중 추가매수 조건 미충족",
+        "entryStrategy": "-",
+        "entrySignalCodes": "",
+        "entrySignals": "",
+    }
+    for key, value in updates.items():
+        if technical_row.get(key) != value:
+            technical_row[key] = value
+            changed = True
+    return changed
+
+
 def update_trade_logs(
     stocks: list[dict[str, Any]],
     previous_stocks: dict[str, dict[str, Any]],
     technical: dict[str, Any],
     qqq_market_state: dict[str, Any] | None = None,
-) -> None:
+) -> bool:
     existing = load_json(TRADE_LOG_PUBLIC_PATH, load_json(TRADE_LOG_CACHE_PATH, {"rows": []}))
     rows = existing.get("rows", []) if isinstance(existing, dict) else []
     trades = [row for row in rows if isinstance(row, dict)]
@@ -510,6 +564,7 @@ def update_trade_logs(
     seed_after_reset = runtime_reset_requested()
     appended = 0
     closed = 0
+    signal_state_changed = False
 
     for trade in trades:
         ticker = str(trade.get("ticker") or "").strip().upper()
@@ -552,6 +607,7 @@ def update_trade_logs(
 
     current_open_counts = open_trade_counts(trades)
     current_open_trades = open_trades_by_slot(trades)
+    current_open_by_ticker = open_trades_by_ticker(trades)
 
     for stock in stocks:
         ticker = str(stock.get("ticker") or "").strip().upper()
@@ -565,33 +621,24 @@ def update_trade_logs(
         if current_opinion != "매수" or nasdaq_peak_alert:
             continue
         current_price = parse_price(stock.get("currentPrice") or tech_value(row, "현재가"))
+        open_for_ticker = current_open_by_ticker.get(ticker, [])
+        restore_candidates = [
+            trade
+            for trade in open_for_ticker
+            if hold_restore_allowed(trade, current_price, today_date)
+        ]
+        ticker_appended = False
+        if open_for_ticker and not restore_candidates:
+            signal_state_changed = suppress_held_buy_signal(stock, row) or signal_state_changed
+            continue
         for code in entry_signal_codes(row):
             slot_key = (ticker, code)
             open_count = current_open_counts.get(slot_key, 0)
             restore_source_trades: list[dict[str, Any]] = []
             if open_count >= MAX_OPEN_PER_STRATEGY:
                 continue
-            if open_count > 0:
-                restore_source_trades = [
-                    trade
-                    for trade in current_open_trades.get(slot_key, [])
-                    if hold_restore_allowed(trade, current_price, today_date)
-                ]
-                if not restore_source_trades:
-                    continue
-            family_trades = restore_family_open_trades(current_open_trades, ticker, code)
-            if family_trades:
-                family_restore_source_trades: list[dict[str, Any]] = []
-                for trade in family_trades:
-                    if not hold_restore_allowed(trade, current_price, today_date):
-                        mark_restore_watch(trade, today)
-                        set_restore_signal_count(trade, code, 0)
-                        continue
-                    if confirm_restore_signal(trade, code):
-                        family_restore_source_trades.append(trade)
-                if not family_restore_source_trades:
-                    continue
-                restore_source_trades.extend(family_restore_source_trades)
+            if open_for_ticker:
+                restore_source_trades = restore_candidates
             closed_trade = latest_closed_trade(trades, ticker, code)
             if not seed_after_reset and open_count == 0 and closed_trade is None and previous_opinion == "매수" and not restore_source_trades:
                 continue
@@ -618,7 +665,11 @@ def update_trade_logs(
                 set_restore_signal_count(trade, code, 0)
             current_open_counts[slot_key] = open_count + 1
             current_open_trades.setdefault(slot_key, []).append(new_trade)
+            current_open_by_ticker.setdefault(ticker, []).append(new_trade)
             appended += 1
+            ticker_appended = True
+        if open_for_ticker and not ticker_appended:
+            signal_state_changed = suppress_held_buy_signal(stock, row) or signal_state_changed
 
     deduped = list({trade_key(trade): trade for trade in trades}.values())
     refreshed_at = publish_iso()
@@ -636,6 +687,7 @@ def update_trade_logs(
         "rows": deduped,
     }
     write_trade_logs(payload)
+    return signal_state_changed
 
 
 def parse_log_tasks(argv: list[str]) -> set[str]:
@@ -902,7 +954,11 @@ def update_trade_logs_for_tasks(enabled_tasks: set[str]) -> bool:
     previous_stocks = stocks_by_ticker(previous_stocks_list)
     technical = technical_payload.get("rows", {}) if isinstance(technical_payload, dict) else {}
     qqq_market_state = technical_payload.get("qqqMarketState", {}) if isinstance(technical_payload, dict) else {}
-    update_trade_logs(stocks, previous_stocks, technical, qqq_market_state)
+    signal_state_changed = update_trade_logs(stocks, previous_stocks, technical, qqq_market_state)
+    if signal_state_changed:
+        write_stock_payload(stocks_payload)
+        write_technical_payload(technical_payload)
+        print("[trade_logs] adjusted held-position buy signals.")
     print("[trade_logs] updated trade logs.")
     return True
 

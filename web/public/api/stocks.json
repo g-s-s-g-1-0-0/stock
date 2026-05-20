@@ -193,12 +193,10 @@
       "fairPriceReason": null,
       "currentPrice": "₩390,000",
       "valuation": "보통",
-      "opinion": "매수",
-      "opinionReason": "-",
+      "opinion": "관망",
+      "opinionReason": "보유 중 추가매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [
-        "F. 200일선 상방 & BB 극단 저점"
-      ],
+      "strategies": [],
       "category": "성장주",
       "industry": "뷰티테크, 화장품·건기식, 홈 뷰티 디바이스, D2C 브랜드",
       "updatedAt": "2026-05-20T16:55:40+00:00"
@@ -243,12 +241,10 @@
       "fairPriceReason": null,
       "currentPrice": "$418.59",
       "valuation": "고평가",
-      "opinion": "매수",
-      "opinionReason": "-",
+      "opinion": "관망",
+      "opinionReason": "보유 중 추가매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [
-        "E. 200일선 상방 & 스퀴즈 저점"
-      ],
+      "strategies": [],
       "category": "혼합주",
       "industry": "반도체, 네트워크·AI 인프라, ASIC, 광트랜시버",
       "updatedAt": "2026-05-20T16:55:41+00:00"
@@ -501,12 +497,10 @@
       "fairPriceReason": "loss_making",
       "currentPrice": "$83.17",
       "valuation": "판단 불가",
-      "opinion": "매수",
-      "opinionReason": "-",
+      "opinion": "관망",
+      "opinionReason": "보유 중 추가매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [
-        "E. 200일선 상방 & 스퀴즈 저점"
-      ],
+      "strategies": [],
       "category": "성장주",
       "industry": "반도체, 반도체 테스트 장비, 후공정 검사",
       "updatedAt": "2026-05-20T16:55:50+00:00"
@@ -679,12 +673,10 @@
       "fairPriceReason": "loss_making",
       "currentPrice": "₩60,400",
       "valuation": "판단 불가",
-      "opinion": "매수",
-      "opinionReason": "-",
+      "opinion": "관망",
+      "opinionReason": "보유 중 추가매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [
-        "F. 200일선 상방 & BB 극단 저점"
-      ],
+      "strategies": [],
       "category": "성장주",
       "industry": "바이오, 3D 바이오프린팅, 재생의료",
       "updatedAt": "2026-05-20T16:55:57+00:00"
@@ -731,12 +723,10 @@
       "fairPriceReason": null,
       "currentPrice": "$380.72",
       "valuation": "고평가",
-      "opinion": "매수",
-      "opinionReason": "-",
+      "opinion": "관망",
+      "opinionReason": "보유 중 추가매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [
-        "F. 200일선 상방 & BB 극단 저점"
-      ],
+      "strategies": [],
       "category": "혼합주",
       "industry": "전력관리, 전기장비, 데이터센터 전력 인프라, 항공·차량 전장",
       "updatedAt": "2026-05-20T16:55:59+00:00"

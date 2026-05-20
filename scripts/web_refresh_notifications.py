@@ -327,10 +327,11 @@ def opinion_changes(
         if new_opinion == "매수":
             if any(is_open_trade(row) for row in previous_trade_rows):
                 added_trade = added_for_ticker[0] if added_for_ticker else None
+                if not added_trade:
+                    continue
                 change["fromLabel"] = "매수(보유중)"
                 change["toLabel"] = "추가 매수"
-                if added_trade:
-                    change["reason"] = buy_reason_for_trade(added_trade, current_stock, technical_row)
+                change["reason"] = buy_reason_for_trade(added_trade, current_stock, technical_row)
             change["entryNote"] = buy_entry_note(
                 old_opinion=old_opinion,
                 previous_trade_rows=previous_trade_rows,
