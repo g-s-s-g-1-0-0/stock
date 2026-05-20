@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 TECHNICAL_CACHE_PATH = ROOT_DIR / "data" / "cache" / "technical.json"
+VALUATION_CACHE_PATH = ROOT_DIR / "data" / "cache" / "valuation.json"
 STOCKS_CACHE_PATH = ROOT_DIR / "data" / "cache" / "stocks.json"
 HISTORY_DIR = Path(os.environ.get("SIGNAL_HISTORY_DIR", str(ROOT_DIR / "data" / "history")))
 KST = ZoneInfo("Asia/Seoul")
@@ -86,6 +87,7 @@ def build_snapshot_row(
     row: dict[str, Any],
     *,
     stock: dict[str, Any] | None,
+    valuation: dict[str, Any] | None,
     qqq_state: dict[str, Any],
     date_value: str,
     captured_value: str,
@@ -153,6 +155,8 @@ def build_snapshot_row(
         "qqqPeakTriggered": bool(qqq_state.get("peakTriggered")),
         "hBreakoutCandidate": h_candidate,
         "conditionSummary": row.get("conditionSummary") or "",
+        "technicalIndicators": row.copy(),
+        "valuationIndicators": valuation.copy() if isinstance(valuation, dict) else {},
     }
 
 
@@ -192,6 +196,10 @@ def record_daily_signal_snapshots(now: datetime | None = None) -> int:
         print("[signal_snapshots] technical cache has no rows; skipped.")
         return 0
 
+    valuation = load_json(VALUATION_CACHE_PATH, {})
+    valuation_rows = valuation.get("rows", {}) if isinstance(valuation, dict) else {}
+    if not isinstance(valuation_rows, dict):
+        valuation_rows = {}
     stocks = stocks_by_ticker(load_json(STOCKS_CACHE_PATH, {}))
     qqq_state = technical.get("qqqMarketState", {}) if isinstance(technical.get("qqqMarketState"), dict) else {}
     date_value = snapshot_date(now)
@@ -201,6 +209,7 @@ def record_daily_signal_snapshots(now: datetime | None = None) -> int:
             ticker,
             row,
             stock=stocks.get(ticker),
+            valuation=valuation_rows.get(ticker),
             qqq_state=qqq_state,
             date_value=date_value,
             captured_value=captured_value,

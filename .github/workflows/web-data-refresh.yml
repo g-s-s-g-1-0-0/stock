@@ -1,6 +1,9 @@
 name: Web data refresh
 
 on:
+  schedule:
+    # Weekday US market-close refresh, recorded as the next KST date.
+    - cron: "30 22 * * 1-5"
   workflow_dispatch:
     inputs:
       refresh_scope:
@@ -82,7 +85,7 @@ jobs:
       - name: Resolve refresh tasks
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            TASKS="technical"
+            TASKS="valuation technical"
             SEND_NOTIFICATIONS="true"
             PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0); publish_at = publish_at + timedelta(hours=1) if publish_at <= now else publish_at; print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z"))')"
           else

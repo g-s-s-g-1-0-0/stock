@@ -12,6 +12,7 @@ class SignalSnapshotsTest(unittest.TestCase):
 
     def test_record_daily_signal_snapshots_replaces_same_day_rows(self) -> None:
         original_technical_path = self.snapshots.TECHNICAL_CACHE_PATH
+        original_valuation_path = self.snapshots.VALUATION_CACHE_PATH
         original_stocks_path = self.snapshots.STOCKS_CACHE_PATH
         original_history_dir = self.snapshots.HISTORY_DIR
         original_snapshot_date = os.environ.get("SIGNAL_SNAPSHOT_DATE")
@@ -20,6 +21,7 @@ class SignalSnapshotsTest(unittest.TestCase):
             with TemporaryDirectory() as temp_dir:
                 root = Path(temp_dir)
                 technical_path = root / "technical.json"
+                valuation_path = root / "valuation.json"
                 stocks_path = root / "stocks.json"
                 history_dir = root / "history"
                 technical_path.write_text(
@@ -57,12 +59,25 @@ class SignalSnapshotsTest(unittest.TestCase):
                     }),
                     encoding="utf-8",
                 )
+                valuation_path.write_text(
+                    json.dumps({
+                        "rows": {
+                            "MU": {
+                                "per": "45.17",
+                                "pbr": "34.21",
+                                "roe": "101.49%",
+                            }
+                        }
+                    }),
+                    encoding="utf-8",
+                )
                 stocks_path.write_text(
                     json.dumps({"rows": [{"ticker": "MU", "name": "Micron", "market": "US"}]}),
                     encoding="utf-8",
                 )
 
                 self.snapshots.TECHNICAL_CACHE_PATH = technical_path
+                self.snapshots.VALUATION_CACHE_PATH = valuation_path
                 self.snapshots.STOCKS_CACHE_PATH = stocks_path
                 self.snapshots.HISTORY_DIR = history_dir
                 os.environ["SIGNAL_SNAPSHOT_DATE"] = "2026-05-12"
@@ -77,8 +92,11 @@ class SignalSnapshotsTest(unittest.TestCase):
                 self.assertEqual(111.63, row["pctB"])
                 self.assertEqual(1.68, row["volumeRatio20"])
                 self.assertIs(row["hBreakoutCandidate"], True)
+                self.assertEqual("111.63", row["technicalIndicators"]["볼린저밴드 %B (종가)"])
+                self.assertEqual("45.17", row["valuationIndicators"]["per"])
         finally:
             self.snapshots.TECHNICAL_CACHE_PATH = original_technical_path
+            self.snapshots.VALUATION_CACHE_PATH = original_valuation_path
             self.snapshots.STOCKS_CACHE_PATH = original_stocks_path
             self.snapshots.HISTORY_DIR = original_history_dir
             if original_snapshot_date is None:

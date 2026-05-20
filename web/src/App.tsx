@@ -7341,7 +7341,6 @@ function App() {
                         )
                       })}
                     </div>
-                    <p className="notification-channel-demo-note">슬랙은 승인 후 선택한 채널로 알림을 보냅니다. 연동이 없으면 이메일로 돌아갑니다.</p>
                     {notificationChannelMessage && (
                       <p className="notification-channel-status">{notificationChannelMessage}</p>
                     )}
