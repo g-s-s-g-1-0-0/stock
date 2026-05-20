@@ -3316,14 +3316,11 @@ function MarketTrendsPage({
         </div>
         <span className="section-heading-meta">총 {rows.length}개 <b>|</b> {updateLabel}</span>
       </div>
-      {isAdmin && (
+      {isAdmin && selectedRowCount > 0 && (
         <div className="admin-event-toolbar market-trends-admin-toolbar">
-          <span>어드민 모드: 삭제할 시장 트렌드 row를 선택한 뒤 삭제할 수 있습니다.</span>
           <button
-            aria-hidden={selectedRowCount === 0}
-            className={`remove-selected-button ${selectedRowCount === 0 ? 'reserved-action-button' : ''}`}
+            className="remove-selected-button"
             disabled={isSaving}
-            tabIndex={selectedRowCount === 0 ? -1 : 0}
             type="button"
             onClick={onDeleteSelected}
           >

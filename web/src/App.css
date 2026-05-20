@@ -1623,11 +1623,11 @@
 }
 
 .market-trends-table {
-  min-width: 3920px;
+  min-width: 3900px;
 }
 
 .admin-market-trends-table {
-  min-width: 3960px;
+  min-width: 3940px;
 }
 
 .market-trends-table th:first-child,
@@ -1635,9 +1635,9 @@
   position: sticky;
   left: 0;
   z-index: 3;
-  width: 108px;
-  min-width: 108px;
-  max-width: 108px;
+  width: 88px;
+  min-width: 88px;
+  max-width: 88px;
   background: var(--sheet-bg);
   border-right: 0;
   text-align: center !important;
@@ -1693,9 +1693,9 @@
   position: sticky;
   left: 42px;
   z-index: 3;
-  width: 108px;
-  min-width: 108px;
-  max-width: 108px;
+  width: 88px;
+  min-width: 88px;
+  max-width: 88px;
   background: var(--sheet-bg);
   border-right: 0;
   text-align: center !important;
@@ -1740,6 +1740,7 @@
 .trend-date-cell {
   font-weight: 700;
   text-align: center !important;
+  white-space: nowrap;
 }
 
 .trend-summary-cell {
