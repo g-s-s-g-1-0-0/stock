@@ -3331,6 +3331,14 @@ function MarketTrendsPage({
 
       <div className="sheet-wrap market-trends-sheet">
         <table className={`sheet-table market-trends-table ${isAdmin ? 'admin-market-trends-table' : ''}`}>
+          <colgroup>
+            {isAdmin && <col className="trend-select-col" />}
+            <col className="trend-date-col" />
+            {Array.from({ length: 10 }).map((_, index) => (
+              <col className="trend-rank-col" key={`trend-rank-col-${index + 1}`} />
+            ))}
+            <col className="trend-summary-col" />
+          </colgroup>
           <thead>
             <tr>
               {isAdmin && <th>선택</th>}

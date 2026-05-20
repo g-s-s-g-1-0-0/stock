@@ -1623,11 +1623,28 @@
 }
 
 .market-trends-table {
-  min-width: 3900px;
+  table-layout: fixed;
+  min-width: 2968px;
 }
 
 .admin-market-trends-table {
-  min-width: 3940px;
+  min-width: 3010px;
+}
+
+.market-trends-table .trend-select-col {
+  width: 42px;
+}
+
+.market-trends-table .trend-date-col {
+  width: 88px;
+}
+
+.market-trends-table .trend-rank-col {
+  width: 210px;
+}
+
+.market-trends-table .trend-summary-col {
+  width: 780px;
 }
 
 .market-trends-table th:first-child,
