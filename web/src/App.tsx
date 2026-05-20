@@ -6369,11 +6369,7 @@ function App() {
     : watchlistSortOptions
   const currentWatchlistSortOption = visibleWatchlistSortOptions.find((option) => option.value === watchlistSortSettings.primary) ?? visibleWatchlistSortOptions[0]
   const activeNotificationChannelLabel = notificationChannelLabels[notificationPreferences.notificationChannel]
-  const emailNotificationTarget = notificationPreferences.recipientEmail.trim() || userSession?.email || '가입 이메일'
   const isEmailNotificationChannel = notificationPreferences.notificationChannel === 'email'
-  const notificationDeliveryCopy = isEmailNotificationChannel
-    ? `${emailNotificationTarget}로 이메일을 발송합니다.`
-    : `이제 메일 대신 ${activeNotificationChannelLabel}으로 발송합니다.`
   const isNotificationIntegrationConnected = (channel: NotificationIntegrationChannel) => (
     channel === 'kakaoTalk' ? notificationPreferences.kakaoTalkConnected : notificationPreferences.slackConnected
   )
@@ -7333,12 +7329,10 @@ function App() {
                   <div className="account-alert-card notification-channel-card">
                     <div className="account-alert-header">
                       <span>알림 수신처</span>
-                      <small>{notificationDeliveryCopy}</small>
                     </div>
                     <div className="notification-channel-summary">
                       <div>
                         <strong>{activeNotificationChannelLabel}</strong>
-                        <small>{notificationDeliveryCopy}</small>
                       </div>
                     </div>
                     <div className="notification-channel-options">
@@ -7416,7 +7410,6 @@ function App() {
                   <div className="account-alert-card">
                     <div className="account-alert-header">
                       <span>알림 설정</span>
-                      <small>{notificationDeliveryCopy}</small>
                     </div>
                     <label className={`account-alert-email-field ${isEmailNotificationChannel ? '' : 'disabled'}`}>
                       <span>{isEmailNotificationChannel ? '알림 받을 이메일' : '백업 이메일'}</span>
@@ -7431,8 +7424,8 @@ function App() {
                       />
                       <small>
                         {isEmailNotificationChannel
-                          ? `비워두면 가입한 이메일(${userSession.email})로 발송됩니다.`
-                          : `${activeNotificationChannelLabel} 연동 중에는 메일 대신 ${activeNotificationChannelLabel}으로 발송됩니다.`}
+                          ? `비워두면 가입한 이메일(${userSession.email})을 사용합니다.`
+                          : `${activeNotificationChannelLabel} 연동 중에는 백업 이메일만 저장됩니다.`}
                       </small>
                     </label>
                     {[...notificationOptions, ...(isAdminUser ? adminNotificationOptions : [])].map((option) => (
