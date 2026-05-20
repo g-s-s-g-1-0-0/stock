@@ -255,6 +255,7 @@ const LEGACY_AUTH_SESSION_STORAGE_KEY = 'gongsu-user-session'
 const LOCAL_TEST_SESSION_STORAGE_KEY = 'gongsu-local-test-session'
 const WATCHLIST_STORAGE_KEY = 'gongsu-watchlist'
 const OPERATOR_WATCHLIST_STORAGE_KEY = 'gongsu-operator-watchlist'
+const OPERATOR_WATCHLIST_REMOTE_CACHE_STORAGE_KEY = 'gongsu-operator-watchlist-remote-cache-v1'
 const PERSONAL_TRADES_STORAGE_KEY = 'gongsu-personal-trades'
 const VIEW_MODE_STORAGE_KEY = 'gongsu-view-mode'
 const VIEW_MODE_HINT_STORAGE_KEY = 'gongsu-view-mode-hint-seen'
@@ -408,6 +409,24 @@ function readStoredOperatorWatchlist() {
     localStorage.removeItem(OPERATOR_WATCHLIST_STORAGE_KEY)
     return operatorTickers
   }
+}
+
+function readCachedRemoteOperatorWatchlist() {
+  const storedWatchlist = localStorage.getItem(OPERATOR_WATCHLIST_REMOTE_CACHE_STORAGE_KEY)
+  if (!storedWatchlist) return []
+
+  try {
+    const parsed = JSON.parse(storedWatchlist)
+    return Array.isArray(parsed) ? parsed.filter((ticker): ticker is string => typeof ticker === 'string') : []
+  } catch {
+    localStorage.removeItem(OPERATOR_WATCHLIST_REMOTE_CACHE_STORAGE_KEY)
+    return []
+  }
+}
+
+function storeRemoteOperatorWatchlist(tickers: string[]) {
+  localStorage.setItem(OPERATOR_WATCHLIST_STORAGE_KEY, JSON.stringify(tickers))
+  localStorage.setItem(OPERATOR_WATCHLIST_REMOTE_CACHE_STORAGE_KEY, JSON.stringify(tickers))
 }
 
 const APP_DATA_CACHE_STORAGE_KEY = 'gssg-app-data-cache-v1'
@@ -4045,7 +4064,7 @@ function App() {
     const storedWatchlist = readLegacyWatchlist(initialLocalTestSession)
     return storedWatchlist && storedWatchlist.length > 0 ? storedWatchlist : localTestWatchlist
   })
-  const [operatorWatchlist, setOperatorWatchlist] = useState<string[]>(() => isSupabaseConfigured ? [] : readStoredOperatorWatchlist())
+  const [operatorWatchlist, setOperatorWatchlist] = useState<string[]>(() => isSupabaseConfigured ? readCachedRemoteOperatorWatchlist() : readStoredOperatorWatchlist())
   const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(() => {
     if (!initialLocalTestSession) return readStoredPersonalTradeLogs()
     const storedTrades = readStoredPersonalTradeLogs(initialLocalTestSession)
@@ -4775,13 +4794,22 @@ function App() {
 
   async function loadServiceData(session: UserSession | null) {
     try {
-      const [personalTickers, operatorTickersFromDb, loadedSettings, loadedPortfolioState] = await Promise.all([
-        session ? loadWatchlist('personal', session) : Promise.resolve(null),
-        loadWatchlist('operator', session),
-        loadUserSettings(session),
-        loadPortfolioState(session),
-      ])
+      const personalTickersPromise = session ? loadWatchlist('personal', session) : Promise.resolve(null)
+      const loadedSettingsPromise = loadUserSettings(session)
+      const loadedPortfolioStatePromise = loadPortfolioState(session)
+      void loadBoardPosts().catch(() => undefined)
+
+      const operatorTickersFromDb = await loadWatchlist('operator', session)
       const operatorDefaultSort = operatorTickersFromDb?.watchlistSort
+      const nextOperatorTickers = operatorTickersFromDb?.tickers && operatorTickersFromDb.tickers.length > 0 ? operatorTickersFromDb.tickers : operatorTickers
+      setOperatorWatchlist(nextOperatorTickers)
+      storeRemoteOperatorWatchlist(nextOperatorTickers)
+
+      const [personalTickers, loadedSettings, loadedPortfolioState] = await Promise.all([
+        personalTickersPromise,
+        loadedSettingsPromise,
+        loadedPortfolioStatePromise,
+      ])
       const nextSortSettings = session ? loadedSettings.watchlistSort : operatorDefaultSort ?? loadedSettings.watchlistSort
       setWatchlistSortSettings(nextSortSettings)
       if (session && isConfiguredAdminEmail(session.email)) {
@@ -4793,16 +4821,12 @@ function App() {
       setInvestmentType(loadedSettings.investmentType)
       setContributionSettings(loadedPortfolioState.contributionSettings)
       setPersonalTradeLogs(loadedPortfolioState.personalTradeLogs)
-      await loadBoardPosts()
       const legacyTickers = session ? readLegacyWatchlist(session) : null
       const nextPersonalTickers = personalTickers?.tickers && personalTickers.tickers.length > 0
         ? personalTickers.tickers
         : legacyTickers ?? initialWatchlist
 
-      const nextOperatorTickers = operatorTickersFromDb?.tickers && operatorTickersFromDb.tickers.length > 0 ? operatorTickersFromDb.tickers : operatorTickers
       setWatchlist(session ? nextPersonalTickers : readStoredWatchlist(null))
-      setOperatorWatchlist(nextOperatorTickers)
-      localStorage.setItem(OPERATOR_WATCHLIST_STORAGE_KEY, JSON.stringify(nextOperatorTickers))
 
       if (session && (!personalTickers?.tickers || personalTickers.tickers.length === 0) && legacyTickers) {
         await persistWatchlist('personal', legacyTickers, session)
@@ -4836,16 +4860,13 @@ function App() {
       }
     }
 
-    const refreshTimer = window.setTimeout(() => {
-      void loadLatestData(true)
-    }, cachedAppData ? 900 : 0)
+    void loadLatestData(true)
     const refreshInterval = window.setInterval(loadLatestDataWhenVisible, APP_DATA_AUTO_REFRESH_INTERVAL_MS)
     window.addEventListener('focus', loadLatestDataWhenVisible)
     document.addEventListener('visibilitychange', loadLatestDataWhenVisible)
 
     return () => {
       isMounted = false
-      window.clearTimeout(refreshTimer)
       window.clearInterval(refreshInterval)
       window.removeEventListener('focus', loadLatestDataWhenVisible)
       document.removeEventListener('visibilitychange', loadLatestDataWhenVisible)
