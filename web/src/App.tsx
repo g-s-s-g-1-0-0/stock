@@ -3334,7 +3334,7 @@ function MarketTrendsPage({
           <thead>
             <tr>
               {isAdmin && <th>선택</th>}
-              <th>날짜</th>
+              <th className="trend-date-head">날짜</th>
               {Array.from({ length: 10 }).map((_, index) => (
                 <th key={`trend-rank-${index + 1}`}>{index + 1}위</th>
               ))}

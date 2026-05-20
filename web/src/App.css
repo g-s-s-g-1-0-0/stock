@@ -1743,6 +1743,13 @@
   white-space: nowrap;
 }
 
+.market-trends-table .trend-date-head,
+.market-trends-table .trend-date-cell {
+  width: 88px !important;
+  min-width: 88px !important;
+  max-width: 88px !important;
+}
+
 .trend-summary-cell {
   overflow: visible;
   line-height: 1.45;
