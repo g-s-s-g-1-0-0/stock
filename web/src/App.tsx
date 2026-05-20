@@ -4045,7 +4045,7 @@ function App() {
     const storedWatchlist = readLegacyWatchlist(initialLocalTestSession)
     return storedWatchlist && storedWatchlist.length > 0 ? storedWatchlist : localTestWatchlist
   })
-  const [operatorWatchlist, setOperatorWatchlist] = useState<string[]>(() => readStoredOperatorWatchlist())
+  const [operatorWatchlist, setOperatorWatchlist] = useState<string[]>(() => isSupabaseConfigured ? [] : readStoredOperatorWatchlist())
   const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(() => {
     if (!initialLocalTestSession) return readStoredPersonalTradeLogs()
     const storedTrades = readStoredPersonalTradeLogs(initialLocalTestSession)
@@ -4799,8 +4799,10 @@ function App() {
         ? personalTickers.tickers
         : legacyTickers ?? initialWatchlist
 
+      const nextOperatorTickers = operatorTickersFromDb?.tickers && operatorTickersFromDb.tickers.length > 0 ? operatorTickersFromDb.tickers : operatorTickers
       setWatchlist(session ? nextPersonalTickers : readStoredWatchlist(null))
-      setOperatorWatchlist(operatorTickersFromDb?.tickers && operatorTickersFromDb.tickers.length > 0 ? operatorTickersFromDb.tickers : operatorTickers)
+      setOperatorWatchlist(nextOperatorTickers)
+      localStorage.setItem(OPERATOR_WATCHLIST_STORAGE_KEY, JSON.stringify(nextOperatorTickers))
 
       if (session && (!personalTickers?.tickers || personalTickers.tickers.length === 0) && legacyTickers) {
         await persistWatchlist('personal', legacyTickers, session)
@@ -5029,7 +5031,7 @@ function App() {
     () => Array.from(new Set(systemTradeLogs.map((trade) => trade.ticker))).filter(Boolean),
     [systemTradeLogs],
   )
-  const effectiveOperatorWatchlist = operatorWatchlist.length > 0 ? operatorWatchlist : operatorFallbackTickers
+  const effectiveOperatorWatchlist = isSupabaseConfigured ? operatorWatchlist : operatorWatchlist.length > 0 ? operatorWatchlist : operatorFallbackTickers
   const operatorStocks = useMemo(
     () => effectiveOperatorWatchlist
       .map((ticker) => apiStocks.find((stock) => stock.ticker === ticker))
@@ -5451,8 +5453,8 @@ function App() {
 
   const resetSystemRecords = async () => {
     if (isAdminUser) {
-      setOperatorWatchlist([])
-      await persistWatchlist('operator', [])
+      setIsResetConfirmOpen(false)
+      return
     } else {
       setWatchlist([])
       await persistWatchlist('personal', [])
@@ -6500,7 +6502,7 @@ function App() {
             </div>
           )}
         </div>
-        {userSession && (
+        {userSession && !isAdminUser && (
           <button className="reset-button" type="button" onClick={() => setIsResetConfirmOpen(true)}>
             초기화
           </button>
