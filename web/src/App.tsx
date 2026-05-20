@@ -7307,11 +7307,6 @@ function App() {
                     <div className="account-alert-header">
                       <span>알림 수신처</span>
                     </div>
-                    <div className="notification-channel-summary">
-                      <div>
-                        <strong>{activeNotificationChannelLabel}</strong>
-                      </div>
-                    </div>
                     <div className="notification-channel-options">
                       <div className="notification-channel-option">
                         <button
