@@ -4364,7 +4364,11 @@ function App() {
     nextInvestmentType = investmentType,
     session = userSession,
   ) {
+    const nextSettings = { watchlistSort, notificationPreferences, investmentType: nextInvestmentType }
     storeUserSettings(session, watchlistSort, notificationPreferences, nextInvestmentType)
+    if (session && supabase) {
+      storeCachedRemoteUserSettings(nextSettings)
+    }
     if (!supabase || !session) return
 
     try {
