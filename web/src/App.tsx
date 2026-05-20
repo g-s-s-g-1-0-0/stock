@@ -3206,7 +3206,7 @@ function MarketEventsPage({
             <tr>
               {groups.map((group, groupIndex) => (
                 <Fragment key={group.title}>
-                  <th className={groupIndex > 0 ? 'event-group-start' : undefined}>발표일</th>
+                  <th className={groupIndex > 0 ? 'event-date-head event-group-start' : 'event-date-head'}>발표일</th>
                   <th>D-day</th>
                   <th>발표 시간</th>
                 </Fragment>

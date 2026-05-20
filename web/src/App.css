@@ -1546,8 +1546,21 @@
 }
 
 .market-events-table .event-date-cell {
+  width: 1%;
+  min-width: 0;
+  padding-right: 8px;
+  padding-left: 8px;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.market-events-table .event-date-head {
+  width: 1%;
+  min-width: 0;
+  padding-right: 8px;
+  padding-left: 8px;
+  white-space: nowrap;
 }
 
 .market-events-table .event-past-cell {
