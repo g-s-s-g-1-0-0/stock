@@ -1624,11 +1624,11 @@
 
 .market-trends-table {
   table-layout: fixed;
-  min-width: 2968px;
+  min-width: 2984px;
 }
 
 .admin-market-trends-table {
-  min-width: 3010px;
+  min-width: 3026px;
 }
 
 .market-trends-table .trend-select-col {
@@ -1636,7 +1636,7 @@
 }
 
 .market-trends-table .trend-date-col {
-  width: 88px;
+  width: 104px;
 }
 
 .market-trends-table .trend-rank-col {
@@ -1762,9 +1762,9 @@
 
 .market-trends-table .trend-date-head,
 .market-trends-table .trend-date-cell {
-  width: 88px !important;
-  min-width: 88px !important;
-  max-width: 88px !important;
+  width: 104px !important;
+  min-width: 104px !important;
+  max-width: 104px !important;
 }
 
 .trend-summary-cell {
