@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'gongsu-pwa-v2'
+const CACHE_VERSION = 'gongsu-pwa-v3'
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`
 const DATA_CACHE = `${CACHE_VERSION}-data`
 const APP_SHELL = ['/']
