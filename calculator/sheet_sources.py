@@ -88,6 +88,38 @@ def fetch_us_ohlcv(symbol: str, range_value: str = "1y") -> list[dict[str, float
     return rows
 
 
+def fetch_us_extended_price(symbol: str) -> float | None:
+    """Return the latest US pre/regular/post-market trade price when Yahoo has it."""
+
+    url = (
+        "https://query1.finance.yahoo.com/v8/finance/chart/"
+        f"{urllib.parse.quote(symbol)}?range=1d&interval=1m&includePrePost=true"
+    )
+    data = json.loads(fetch_text(url))
+    result = data.get("chart", {}).get("result", [{}])[0]
+    quote = result.get("indicators", {}).get("quote", [{}])[0]
+    closes = quote.get("close") or []
+    for value in reversed(closes):
+        if value is None:
+            continue
+        try:
+            price = float(value)
+        except (TypeError, ValueError):
+            continue
+        if price > 0:
+            return price
+
+    meta = result.get("meta", {})
+    for key in ("postMarketPrice", "preMarketPrice", "regularMarketPrice"):
+        try:
+            price = float(meta.get(key))
+        except (TypeError, ValueError):
+            continue
+        if price > 0:
+            return price
+    return None
+
+
 def fetch_ohlcv(ticker: str, count: int = 320) -> list[dict[str, float]]:
     if resolve_market(ticker) == "KR":
         return fetch_kr_ohlcv(ticker, count=count)

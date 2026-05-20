@@ -300,6 +300,61 @@ function isKoreanStock(stockName) {
   return /^\d{6}$/.test(String(stockName || "").trim());
 }
 
+function fetchUSExtendedCurrentPrice_(symbol) {
+  try {
+    const url = "https://query1.finance.yahoo.com/v8/finance/chart/" +
+      encodeURIComponent(symbol) + "?range=1d&interval=1m&includePrePost=true";
+    const response = UrlFetchApp.fetch(url, {
+      muteHttpExceptions: true,
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json",
+        "Cache-Control": "no-cache"
+      }
+    });
+    if (response.getResponseCode() !== 200) return null;
+
+    const data = JSON.parse(response.getContentText());
+    const result = data && data.chart && data.chart.result && data.chart.result[0];
+    if (!result) return null;
+
+    const quote = result.indicators && result.indicators.quote && result.indicators.quote[0];
+    const closes = quote && quote.close ? quote.close : [];
+    for (let i = closes.length - 1; i >= 0; i--) {
+      const price = Number(closes[i]);
+      if (Number.isFinite(price) && price > 0) return price;
+    }
+
+    const meta = result.meta || {};
+    for (const key of ["postMarketPrice", "preMarketPrice", "regularMarketPrice"]) {
+      const price = Number(meta[key]);
+      if (Number.isFinite(price) && price > 0) return price;
+    }
+  } catch (e) {
+    console.log(`[미국 확장 현재가 실패] ${symbol}: ${e}`);
+  }
+  return null;
+}
+
+function getUSExtendedSellPrice_(stockName, displayName, fallbackPrice, isKR, isHolding, context) {
+  if (isKR || !isHolding) return null;
+  const symbol = String(stockName || "").trim().toUpperCase();
+  if (!symbol) return null;
+
+  const cache = context.usExtendedPriceCache || (context.usExtendedPriceCache = {});
+  if (!Object.prototype.hasOwnProperty.call(cache, symbol)) {
+    cache[symbol] = fetchUSExtendedCurrentPrice_(symbol);
+  }
+
+  const price = Number(cache[symbol]);
+  if (!Number.isFinite(price) || price <= 0) return null;
+  const base = Number(fallbackPrice) || 0;
+  if (base > 0 && Math.abs(price - base) >= 0.01) {
+    console.log(`[미국 확장 현재가] ${displayName}: 정규장 기준 ${fmtPrice(base, stockName)} → 매도판단 ${fmtPrice(price, stockName)}`);
+  }
+  return price;
+}
+
 /** A~F 전략 코드 → 시트 표시용 전체 이름 */
 function strategyDisplayName(type) {
   const map = {
@@ -794,11 +849,15 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
 
     const isHolding = saved.price > 0;
     const buy  = evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding, isHolding ? saved.strategyType : null, allProperties, marketData.nasdaqBuyBlockMax);
+    const extendedSellPrice = getUSExtendedSellPrice_(ind.stockName, ind.displayName, ind.currentPrice, isKR, isHolding, marketData);
+    const exitInd = extendedSellPrice ? { ...ind, currentPrice: extendedSellPrice } : ind;
 
     if (saved.price > 0) {
       // ENTRY_ 키가 source of truth — 시트와 불일치하면 ENTRY_ 키 값으로 덮어씀
       ind.entryPrice = saved.price;
       ind.entryDate  = saved.date;
+      exitInd.entryPrice = saved.price;
+      exitInd.entryDate  = saved.date;
 
       const sheetPrice    = Number(row[C.entryPrice]) || 0;
       const sheetDateRaw  = row[C.entryDate];
@@ -822,10 +881,10 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
       }
     }
 
-    const exit = isHolding ? evaluateExitCondition(ind, now, nasdaqPeakAlert, saved.strategyType, allProperties) : { shouldExit: false, reason: null };
+    const exit = isHolding ? evaluateExitCondition(exitInd, now, nasdaqPeakAlert, saved.strategyType, allProperties) : { shouldExit: false, reason: null };
     const shouldDeferHoldingChange = isHolding && shouldDeferHoldingOpinionChange(saved.strategyType, ind, buy);
 
-    logStockAnalysis(ind, vixD, ixicDist, marketData.event, buy, exit, now, isHolding, nasdaqPeakAlert, saved.strategyType, isMarketOpen, isKR, sellInfo);
+    logStockAnalysis(exitInd, vixD, ixicDist, marketData.event, buy, exit, now, isHolding, nasdaqPeakAlert, saved.strategyType, isMarketOpen, isKR, sellInfo);
 
     let newOpinion    = ind.opinion;
     let newEntryPrice = ind.entryPrice;
@@ -837,14 +896,14 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
       if (typeof Utils !== "undefined" && typeof Utils.clearAllSlotStateForStock === "function") {
         Utils.clearAllSlotStateForStock(
           ind.stockName,
-          ind.currentPrice,
+          exitInd.currentPrice,
           Utilities.formatDate(now, "Asia/Seoul", "yyyy-MM-dd"),
           props,
           allProperties
         );
       }
       clearEntryInfo(ind.stockName);
-      saveSellInfo(ind.stockName, now, ind.currentPrice);
+      saveSellInfo(ind.stockName, now, exitInd.currentPrice);
       saveExitReason(ind.stockName, reason);
       entryStrategyWrites[i + 3] = "";  // BC열 초기화
     };
@@ -853,7 +912,7 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
       newEntryPrice = 0;
       newEntryDate = null;
       clearEntryInfo(ind.stockName);
-      saveSellInfo(ind.stockName, now, ind.currentPrice);
+      saveSellInfo(ind.stockName, now, exitInd.currentPrice);
       saveExitReason(ind.stockName, reason);
       entryStrategyWrites[i + 3] = "";
     };
@@ -863,7 +922,7 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
       const exitedPrimaryStrategy = saved.strategyType;
 
       if (typeof Utils !== "undefined" && typeof Utils.recordSellSignal === "function") {
-        Utils.recordSellSignal(ind.stockName, Utilities.formatDate(now, "Asia/Seoul", "yyyy-MM-dd"), ind.currentPrice, strategyDisplayName(exitedPrimaryStrategy));
+        Utils.recordSellSignal(ind.stockName, Utilities.formatDate(now, "Asia/Seoul", "yyyy-MM-dd"), exitInd.currentPrice, strategyDisplayName(exitedPrimaryStrategy));
       }
 
       saveEntryInfo(ind.stockName, promotedSlot.price, promotedSlot.date, promotedSlot.strategy);
@@ -925,7 +984,7 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
     } else if (isHolding) {
       if (exit.shouldExit) {
         if (nasdaqPeakAlert && nasdaqPeakExitApplies(saved.strategyType)) {
-          const closedPeakSlots = clearNasdaqPeakEligibleSlots(ind.stockName, activeSlots, props, now, ind.currentPrice);
+          const closedPeakSlots = clearNasdaqPeakEligibleSlots(ind.stockName, activeSlots, props, now, exitInd.currentPrice);
           activeSlots = getActiveSlotsFromProperties(ind.stockName, props.getProperties());
           if (!promoteSlotToPrimary(slot => isNasdaqPeakExitExemptStrategy(slot.strategy))) {
             liquidatePrimaryOnly(exit.reason);

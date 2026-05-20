@@ -120,13 +120,17 @@ function processMultiSlots(stockName, row, globalData, now, allProperties, kstDa
     :             "F그룹 [BB 극단 저점]";
 
   const activeSlots = Utils.loadSlots(stockName, allProperties);
+  const sellPrice = getUSExtendedSellPrice_(stockName, displayName, price, Utils.isKoreanStock(stockName), activeSlots.length > 0, globalData) || price;
+  const sellRow = sellPrice !== price ? row.slice() : row;
+  if (sellRow !== row) sellRow[C.currentPrice] = sellPrice;
+  const fmtSellP = Utils.fmtPrice(sellPrice, stockName);
 
   for (const slot of activeSlots) {
-    const slotExit = Utils.evaluateSlotExit(row, globalData, now, slot, slot.strategy, allProperties);
+    const slotExit = Utils.evaluateSlotExit(sellRow, globalData, now, slot, slot.strategy, allProperties);
     if (!slotExit) continue;
 
     const slotDateStr = slot.date ? Utilities.formatDate(slot.date, "Asia/Seoul", "yyyy.MM.dd") : "-";
-    const returnPct   = ((price - slot.price) / slot.price * 100).toFixed(2);
+    const returnPct   = ((sellPrice - slot.price) / slot.price * 100).toFixed(2);
     const entryInfo   = `진입가 ${Utils.fmtPrice(slot.price, stockName)} (${slotDateStr}) · 수익률 ${Number(returnPct) >= 0 ? "+" : ""}${returnPct}%`;
 
     Utils.clearSlot(stockName, slot.id, props);
@@ -145,12 +149,12 @@ function processMultiSlots(stockName, row, globalData, now, allProperties, kstDa
       from:  currentOpinion,
       to:    "매도",
       reason: `${stratShortLabel(slot.strategy)} ${slotExit.reason}`,
-      price: fmtP,
+      price: fmtSellP,
       entryNote: entryInfo + remainingNote,
       stopLoss: ""
     });
 
-    Utils.recordSlotSellSignal(stockName, slot.strategy, dateStr, price);
+    Utils.recordSlotSellSignal(stockName, slot.strategy, dateStr, sellPrice);
     console.log(`[슬롯 매도] ${displayName} ${slot.strategy}그룹: ${slotExit.reason}`);
   }
 
@@ -241,7 +245,9 @@ function handleOpinionChange(stockName, fromOpinion, toOpinion, row, currentGlob
   }
 
   const C           = Utils.COL_INDICES;
-  const price       = Number(row[C.currentPrice]) || 0;
+  const sheetPrice  = Number(row[C.currentPrice]) || 0;
+  const savedSellPrice = toOpinion === "매도" ? Utils.loadSellPriceFrom(stockName, allProperties) : 0;
+  const price       = savedSellPrice > 0 ? savedSellPrice : sheetPrice;
   const fmtP        = Utils.fmtPrice(price, stockName);
   const displayName = Utils.getDisplayName(stockName, row);
   const existingEntry = Utils.loadEntryInfoFrom(stockName, allProperties);

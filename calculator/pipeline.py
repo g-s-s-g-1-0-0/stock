@@ -24,7 +24,7 @@ from zoneinfo import ZoneInfo
 from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
 from .rules import IndicatorRow, compute_nasdaq_filter_active, evaluate_buy_condition, strategy_display_name
-from .sheet_sources import USER_AGENT, calc_rsi, calc_technical_row, fetch_ohlcv, fetch_text, fetch_us_ohlcv, fetch_valuation
+from .sheet_sources import USER_AGENT, calc_rsi, calc_technical_row, fetch_ohlcv, fetch_text, fetch_us_extended_price, fetch_us_ohlcv, fetch_valuation
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CACHE_DIR = ROOT_DIR / "data" / "cache"
@@ -519,6 +519,12 @@ def latest_technical_row(
 ) -> dict[str, str] | None:
     row = calc_technical_row(stock["ticker"])
     price = float(row["close"])
+    display_price = price
+    if stock["market"] == "US":
+        try:
+            display_price = fetch_us_extended_price(stock["ticker"]) or price
+        except Exception:  # noqa: BLE001 - extended quote is best-effort display data
+            display_price = price
     ind = IndicatorRow(
         stock_name=stock["ticker"],
         current_price=price,
@@ -594,7 +600,7 @@ def latest_technical_row(
         "name": clean_stock_name(stock["name"]),
         "market": stock["market"],
         "updatedAt": now_iso(),
-        "currentPrice": fmt_price(price, stock["market"]),
+        "currentPrice": fmt_price(display_price, stock["market"]),
         "opinion": opinion,
         "opinionReason": opinion_reason,
         "marketEvent": market_event,
@@ -643,7 +649,7 @@ def latest_technical_row(
         "볼린저밴드 폭 (D)": fmt_number(row["bbWidth"]),
         "볼린저밴드 폭 (D-1)": fmt_number(row["bbWidthD1"]),
         "지난 60일 볼린저밴드 폭 평균": fmt_number(row["bbWidthAvg60"]),
-        "현재가": fmt_price(row["close"], stock["market"]),
+        "현재가": fmt_price(display_price, stock["market"]),
         "5일 이동평균선": fmt_price(row["ma5"], stock["market"]),
         "20일 이동평균선": fmt_price(row["ma20"], stock["market"]),
         "60일 이동평균선": fmt_price(row["ma60"], stock["market"]),
