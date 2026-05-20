@@ -260,6 +260,7 @@ const PERSONAL_TRADES_STORAGE_KEY = 'gongsu-personal-trades'
 const VIEW_MODE_STORAGE_KEY = 'gongsu-view-mode'
 const VIEW_MODE_HINT_STORAGE_KEY = 'gongsu-view-mode-hint-seen'
 const USER_SETTINGS_STORAGE_KEY = 'gongsu-user-settings'
+const USER_SETTINGS_REMOTE_CACHE_STORAGE_KEY = 'gongsu-user-settings-remote-cache-v1'
 const OPERATOR_WATCHLIST_SORT_STORAGE_KEY = 'gongsu-operator-watchlist-sort'
 const CONTRIBUTION_SETTINGS_STORAGE_KEY = 'gongsu-contribution-settings'
 const API_LOGS_STORAGE_KEY = 'gongsu-api-logs'
@@ -775,6 +776,27 @@ function storeUserSettings(
   investmentType: InvestmentType | null,
 ) {
   localStorage.setItem(userSettingsStorageKey(session), JSON.stringify({ watchlistSort, notificationPreferences, investmentType }))
+}
+
+function readCachedRemoteUserSettings() {
+  const stored = localStorage.getItem(USER_SETTINGS_REMOTE_CACHE_STORAGE_KEY)
+  if (!stored) return null
+
+  try {
+    const parsed = JSON.parse(stored)
+    return {
+      watchlistSort: normalizeWatchlistSortSettings(parsed.watchlistSort),
+      notificationPreferences: normalizeNotificationPreferences(parsed.notificationPreferences),
+      investmentType: normalizeInvestmentType(parsed.investmentType),
+    }
+  } catch {
+    localStorage.removeItem(USER_SETTINGS_REMOTE_CACHE_STORAGE_KEY)
+    return null
+  }
+}
+
+function storeCachedRemoteUserSettings(settings: StoredUserSettings) {
+  localStorage.setItem(USER_SETTINGS_REMOTE_CACHE_STORAGE_KEY, JSON.stringify(settings))
 }
 
 function normalizeAllocationSettings(value: unknown, investmentType: InvestmentType): AllocationSettings {
@@ -4058,6 +4080,13 @@ function BoardPage({
 function App() {
   const cachedAppData = useMemo(() => readCachedAppData(), [])
   const initialLocalTestSession = useMemo(() => readStoredLocalTestSession(), [])
+  const initialUserSettings = useMemo(() => (
+    initialLocalTestSession
+      ? readStoredUserSettings(initialLocalTestSession)
+      : isSupabaseConfigured
+        ? readCachedRemoteUserSettings() ?? readStoredUserSettings(null)
+        : readStoredUserSettings(null)
+  ), [initialLocalTestSession])
   const [query, setQuery] = useState('')
   const [watchlist, setWatchlist] = useState<string[]>(() => {
     if (!initialLocalTestSession) return readStoredWatchlist()
@@ -4139,10 +4168,10 @@ function App() {
   const [isSavingTradeLogs, setIsSavingTradeLogs] = useState(false)
   const [isRefreshingData, setIsRefreshingData] = useState(false)
   const [refreshDataMessage, setRefreshDataMessage] = useState('')
-  const [watchlistSortSettings, setWatchlistSortSettings] = useState<WatchlistSortSettings>(() => readStoredUserSettings(initialLocalTestSession).watchlistSort)
-  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(() => readStoredUserSettings(initialLocalTestSession).notificationPreferences)
+  const [watchlistSortSettings, setWatchlistSortSettings] = useState<WatchlistSortSettings>(() => initialUserSettings.watchlistSort)
+  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(() => initialUserSettings.notificationPreferences)
   const [connectingNotificationChannel, setConnectingNotificationChannel] = useState<NotificationIntegrationChannel | null>(null)
-  const [investmentType, setInvestmentType] = useState<InvestmentType | null>(() => readStoredUserSettings(initialLocalTestSession).investmentType)
+  const [investmentType, setInvestmentType] = useState<InvestmentType | null>(() => initialUserSettings.investmentType)
   const [onboardingInvestmentType, setOnboardingInvestmentType] = useState<InvestmentType>(DEFAULT_INVESTMENT_TYPE)
   const [isWatchlistSortOpen, setIsWatchlistSortOpen] = useState(false)
   const [isOperatorImportOpen, setIsOperatorImportOpen] = useState(false)
@@ -4315,6 +4344,7 @@ function App() {
         investmentType: storedSettings.investmentType,
       }
       storeUserSettings(session, nextSettings.watchlistSort, nextSettings.notificationPreferences, nextSettings.investmentType)
+      storeCachedRemoteUserSettings(nextSettings)
       return nextSettings
     }
 
@@ -4324,6 +4354,7 @@ function App() {
       investmentType: normalizeInvestmentType(data?.investment_type),
     }
     storeUserSettings(session, nextSettings.watchlistSort, nextSettings.notificationPreferences, nextSettings.investmentType)
+    storeCachedRemoteUserSettings(nextSettings)
     return nextSettings
   }
 
@@ -4798,6 +4829,11 @@ function App() {
       const loadedSettingsPromise = loadUserSettings(session)
       const loadedPortfolioStatePromise = loadPortfolioState(session)
       void loadBoardPosts().catch(() => undefined)
+      void loadedSettingsPromise.then((settings) => {
+        setWatchlistSortSettings(settings.watchlistSort)
+        setNotificationPreferences(settings.notificationPreferences)
+        setInvestmentType(settings.investmentType)
+      }).catch(() => undefined)
 
       const operatorTickersFromDb = await loadWatchlist('operator', session)
       const operatorDefaultSort = operatorTickersFromDb?.watchlistSort
