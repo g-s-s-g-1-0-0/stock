@@ -42,7 +42,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from calculator.market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
 from calculator.rules import STRATEGY_RULES
-from calculator.sheet_sources import calc_rsi, calc_technical_row, fetch_us_ohlcv
+from calculator.sheet_sources import calc_cci, calc_rsi, calc_technical_row, fetch_ohlcv, fetch_us_ohlcv
 
 DEFAULT_PREVIOUS_STOCKS = ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"
 DEFAULT_CURRENT_STOCKS = ROOT_DIR / "web" / "public" / "api" / "stocks.json"
@@ -739,6 +739,7 @@ def notification_preference_label(preference_key: str) -> str:
         "nasdaqPeakEmail": "나스닥 고점 과열 알림",
         "weeklyTrendReport": "주간 트렌드 리포트",
         "earningsDayBefore": "실적발표 전날 알림",
+        "bbPullbackEmail": "BB 상단 눌림 반등 후보 알림",
         "adminAutoUpdateFailureEmail": "자동 업데이트 실패 알림",
     }
     return labels.get(preference_key, "이 알림")
@@ -1529,6 +1530,232 @@ def send_nasdaq_peak_notifications() -> int:
     return sent
 
 
+def pct_b_value(price: float, closes: list[float]) -> float | None:
+    if len(closes) < 20:
+        return None
+    window = closes[-20:]
+    sma = sum(window) / 20
+    variance = sum((value - sma) ** 2 for value in window) / 20
+    std = variance ** 0.5
+    upper = sma + 2 * std
+    lower = sma - 2 * std
+    if upper == lower:
+        return 100.0 if price > upper else 0.0 if price < lower else 50.0
+    return (price - lower) / (upper - lower) * 100
+
+
+def has_lower_wick_rebound(row: dict[str, float]) -> tuple[bool, float, float]:
+    open_ = float(row["open"])
+    high = float(row["high"])
+    low = float(row["low"])
+    close = float(row["close"])
+    candle_range = high - low
+    if candle_range <= 0:
+        return False, 0.0, 0.0
+    body = abs(close - open_)
+    lower_wick = min(open_, close) - low
+    lower_wick_ratio = lower_wick / candle_range
+    close_position = (close - low) / candle_range
+    triggered = lower_wick >= max(body, candle_range * 0.20) and close_position >= 0.50
+    return triggered, lower_wick_ratio, close_position
+
+
+def format_ohlcv_date(value: Any) -> str:
+    text = str(value or "").strip()
+    if re.fullmatch(r"\d{8}", text):
+        return f"{text[:4]}-{text[4:6]}-{text[6:8]}"
+    if re.fullmatch(r"\d{10}", text):
+        try:
+            return datetime.fromtimestamp(int(text), tz=ET).strftime("%Y-%m-%d")
+        except (OverflowError, ValueError):
+            return text
+    return text or "-"
+
+
+def bb_pullback_signal(ticker: str, stock: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    rows = fetch_ohlcv(ticker)
+    if len(rows) < 25:
+        return None
+    rows = [row for row in rows if all(row.get(key) is not None for key in ("open", "high", "low", "close", "volume"))]
+    if len(rows) < 25:
+        return None
+
+    previous = rows[-2]
+    latest = rows[-1]
+    closes_until_previous = [float(row["close"]) for row in rows[:-1]]
+    previous_close_pct_b = pct_b_value(float(previous["close"]), closes_until_previous)
+    previous_high_pct_b = pct_b_value(float(previous["high"]), closes_until_previous)
+    if previous_close_pct_b is None or previous_high_pct_b is None:
+        return None
+
+    previous_close = float(previous["close"])
+    latest_close = float(latest["close"])
+    pullback_percent = (latest_close / previous_close - 1) * 100 if previous_close else 0.0
+    wick_triggered, lower_wick_ratio, close_position = has_lower_wick_rebound(latest)
+
+    previous_volumes = [float(row["volume"]) for row in rows[-6:-1]]
+    if len(previous_volumes) < 5 or sum(previous_volumes) <= 0:
+        return None
+    volume_ratio_5 = float(latest["volume"]) / (sum(previous_volumes) / len(previous_volumes))
+
+    closes = [float(row["close"]) for row in rows]
+    rsi_values = calc_rsi(closes)
+    cci_values = calc_cci(rows, period=14)
+    if not rsi_values or not cci_values:
+        return None
+    rsi = float(rsi_values[-1])
+    cci = float(cci_values[-1])
+
+    triggered = (
+        previous_close_pct_b >= 100
+        and 120 <= previous_high_pct_b <= 160
+        and -3 <= pullback_percent <= 0
+        and wick_triggered
+        and 65 <= rsi <= 85
+        and 100 <= cci <= 250
+        and 1.0 <= volume_ratio_5 <= 2.0
+    )
+    if not triggered:
+        return None
+
+    market = str((stock or {}).get("market") or "").strip()
+    return {
+        "ticker": ticker.upper(),
+        "name": str((stock or {}).get("name") or ticker).strip(),
+        "market": market,
+        "date": format_ohlcv_date(latest.get("date")),
+        "price": latest_close,
+        "previousClosePctB": previous_close_pct_b,
+        "previousHighPctB": previous_high_pct_b,
+        "pullbackPercent": pullback_percent,
+        "volumeRatio5": volume_ratio_5,
+        "rsi": rsi,
+        "cci": cci,
+        "lowerWickRatio": lower_wick_ratio,
+        "closePosition": close_position,
+    }
+
+
+def bb_pullback_candidates(tickers: set[str], stocks: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    for ticker in sorted(tickers):
+        stock = stocks.get(ticker, {"ticker": ticker, "name": ticker})
+        try:
+            signal = bb_pullback_signal(ticker, stock)
+        except Exception as exc:  # noqa: BLE001 - one bad ticker should not block the alert batch
+            print(f"BB pullback check skipped for {ticker}: {exc}")
+            continue
+        if signal:
+            candidates.append(signal)
+    return candidates
+
+
+def bb_pullback_email_body(candidates: list[dict[str, Any]]) -> str:
+    kst_date, et_date = now_labels()
+    rows_html = []
+    for candidate in candidates:
+        label = display_stock(candidate, candidate["ticker"])
+        rows_html.append(
+            "<tr>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;\"><strong>{html.escape(label)}</strong><br><span style=\"color:#888;\">{html.escape(candidate['date'])}</span></td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{fmt_number(candidate['price'])}</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{fmt_number(candidate['previousHighPctB'])}</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{fmt_signed(candidate['pullbackPercent'], '%')}</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{fmt_number(candidate['volumeRatio5'])}x</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{fmt_number(candidate['rsi'])}</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{fmt_number(candidate['cci'])}</td>"
+            "</tr>"
+        )
+    return f"""
+    <div style="font-family:Arial,sans-serif;max-width:760px;color:#222;line-height:1.55;">
+      <h2 style="margin:0 0 12px 0;">BB 상단 눌림 반등 후보</h2>
+      <p style="margin:0 0 12px 0;">
+        전략 매수 신호에는 반영하지 않고, 관심종목 중 단기 반등 후보 조건만 별도로 감지했습니다.
+      </p>
+      <div style="margin:0 0 14px 0;padding:12px;border:1px solid #eee;border-radius:8px;background:#fafafa;">
+        조건: 전일 종가 %B ≥ 100, 전일 고가 %B 120~160, 당일 -3~0% 눌림,
+        아래꼬리 회복, RSI 65~85, CCI 100~250, 5일 평균 대비 거래량 1~2배
+      </div>
+      <table style="border-collapse:collapse;width:100%;font-size:14px;">
+        <thead>
+          <tr style="background:#f6f6f6;">
+            <th style="padding:8px;text-align:left;">종목</th>
+            <th style="padding:8px;text-align:right;">현재가</th>
+            <th style="padding:8px;text-align:right;">전일 고가%B</th>
+            <th style="padding:8px;text-align:right;">눌림</th>
+            <th style="padding:8px;text-align:right;">V5</th>
+            <th style="padding:8px;text-align:right;">RSI</th>
+            <th style="padding:8px;text-align:right;">CCI</th>
+          </tr>
+        </thead>
+        <tbody>{''.join(rows_html)}</tbody>
+      </table>
+      <p style="color:#888;font-size:12px;margin-top:14px;">
+        발송 시각 (한국): {html.escape(kst_date)}<br>
+        발송 시각 (미 동부): {html.escape(et_date)}
+      </p>
+    </div>
+    """
+
+
+def send_bb_pullback_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> int:
+    stocks = stock_rows_by_ticker(current)
+    watchlists = load_watchlists()
+    recipients = [
+        recipient
+        for recipient in load_recipients()
+        if enabled(recipient, "bbPullbackEmail")
+    ]
+    if not recipients:
+        print("No recipients for bbPullbackEmail.")
+        return 0
+
+    state = read_json(NOTIFICATION_STATE)
+    if not isinstance(state, dict):
+        state = {}
+    sent_keys = set(state.get("bbPullbackSignals", {}).get("sentKeys", [])) if isinstance(state.get("bbPullbackSignals"), dict) else set()
+
+    signal_cache: dict[str, dict[str, Any] | None] = {}
+    sent = 0
+    newly_sent_keys: set[str] = set()
+    for recipient in recipients:
+        tickers = watchlists.get(recipient.owner_id, set())
+        if not tickers:
+            continue
+        candidates: list[dict[str, Any]] = []
+        for ticker in sorted(tickers):
+            if ticker not in signal_cache:
+                stock = stocks.get(ticker, {"ticker": ticker, "name": ticker})
+                try:
+                    signal_cache[ticker] = bb_pullback_signal(ticker, stock)
+                except Exception as exc:  # noqa: BLE001
+                    print(f"BB pullback check skipped for {ticker}: {exc}")
+                    signal_cache[ticker] = None
+            signal = signal_cache[ticker]
+            if not signal:
+                continue
+            key = f"{recipient.owner_id}:{signal['ticker']}:{signal['date']}"
+            if key in sent_keys:
+                continue
+            candidates.append(signal)
+            newly_sent_keys.add(key)
+        if not candidates:
+            continue
+        subject = "[BB 눌림 반등 후보] " + ", ".join(candidate["ticker"] for candidate in candidates[:8])
+        send_notification(recipient, subject, append_notification_footer(bb_pullback_email_body(candidates), recipient, "bbPullbackEmail"))
+        sent += 1
+
+    if newly_sent_keys:
+        recent_keys = sorted((sent_keys | newly_sent_keys))[-500:]
+        state["bbPullbackSignals"] = {
+            "sentKeys": recent_keys,
+            "updatedAt": datetime.now().astimezone().isoformat(),
+        }
+        write_json(NOTIFICATION_STATE, state)
+    print(f"Sent BB pullback notifications: {sent}")
+    return sent
+
+
 def earnings_candidates(tickers: set[str], stocks: dict[str, dict[str, Any]], valuations: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     candidates: list[dict[str, Any]] = []
     for ticker in sorted(tickers):
@@ -1734,6 +1961,9 @@ def main() -> int:
     earnings_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
     earnings_parser.add_argument("--valuation", type=Path, default=DEFAULT_VALUATION)
 
+    bb_pullback_parser = subparsers.add_parser("bb-pullback")
+    bb_pullback_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
+
     subparsers.add_parser("nasdaq-peak")
     subparsers.add_parser("weekly-trend")
 
@@ -1754,6 +1984,9 @@ def main() -> int:
         return 0
     if args.command == "earnings":
         send_earnings_notifications(args.current, args.valuation)
+        return 0
+    if args.command == "bb-pullback":
+        send_bb_pullback_notifications(args.current)
         return 0
     if args.command == "nasdaq-peak":
         send_nasdaq_peak_notifications()
