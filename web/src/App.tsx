@@ -1124,7 +1124,7 @@ function mergeStocks(primary: Stock[], secondary: Stock[]) {
 const initialWatchlist: string[] = []
 
 const operatorTickers: string[] = []
-const strategyFilters = ['A', 'B', 'C', 'D', 'E', 'F']
+const strategyFilters = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
 const personalTrades: TradeLog[] = []
 const localTestWatchlist = ['AVGO', 'NVDA', 'MSFT', '005930']
 const localTestPersonalTrades: TradeLog[] = [
@@ -1568,6 +1568,7 @@ function strategyInfo(strategy: string) {
     D: '장기 평균선 위에서 상승 힘이 더 강해지는 구간입니다. 이미 강한 종목을 따라가는 전략입니다.',
     E: '상승 흐름은 유지되지만 가격이 잠시 눌린 구간입니다. 다시 들어갈 만한 저점 후보로 봅니다.',
     F: '상승 흐름 안에서 가격이 아래쪽까지 과하게 밀린 구간입니다. 반등을 노리지만 흔들림이 클 수 있습니다.',
+    G: '급락 후 회복장에서 20일선까지 눌렸다가 다시 회복하는 구간입니다. 회복장 눌림목만 선별합니다.',
   }
   return descriptions[strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
 }
@@ -1588,6 +1589,10 @@ function tradeCriteriaInfo(strategy: string) {
 
   if (code === 'D') {
     return 'D 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -25%에 닿으면 손절 실패이고, 30거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
+  }
+
+  if (code === 'G') {
+    return 'G 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -10%에 닿으면 손절 실패이고, 40거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
   }
 
   if (['E', 'F'].includes(code)) {
@@ -5135,7 +5140,7 @@ function App() {
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
     ? '장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 보유 종목에서 직접 처리합니다.'
-    : 'A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%)'
+    : 'A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%), G(+12%, -10%, 40일)'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,

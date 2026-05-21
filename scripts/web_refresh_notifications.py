@@ -327,11 +327,10 @@ def opinion_changes(
         if new_opinion == "매수":
             if any(is_open_trade(row) for row in previous_trade_rows):
                 added_trade = added_for_ticker[0] if added_for_ticker else None
-                if not added_trade:
-                    continue
+                reference_trade = added_trade or next((row for row in previous_trade_rows if is_open_trade(row)), None)
                 change["fromLabel"] = "매수(보유중)"
                 change["toLabel"] = "추가 매수"
-                change["reason"] = buy_reason_for_trade(added_trade, current_stock, technical_row)
+                change["reason"] = buy_reason_for_trade(reference_trade or {}, current_stock, technical_row)
             change["entryNote"] = buy_entry_note(
                 old_opinion=old_opinion,
                 previous_trade_rows=previous_trade_rows,
@@ -790,7 +789,7 @@ def tech_text(row: dict[str, Any], *keys: str) -> str:
 
 def strategy_code(value: Any) -> str:
     text = str(value or "").strip()
-    return text[:1] if text[:1] in {"A", "B", "C", "D", "E", "F"} else ""
+    return text[:1] if text[:1] in {"A", "B", "C", "D", "E", "F", "G"} else ""
 
 
 STRATEGY_LABELS = {
@@ -800,6 +799,7 @@ STRATEGY_LABELS = {
     "D": "D. 200일선 상방 & 상승 흐름 강화",
     "E": "E. 200일선 상방 & 스퀴즈 저점",
     "F": "F. 200일선 상방 & BB 극단 저점",
+    "G": "G. 급락 후 회복장 20일선 눌림",
 }
 
 
@@ -878,6 +878,9 @@ def buy_reason_detail(code: str, stock: dict[str, Any], technical_row: dict[str,
     bb_width = tech_text(technical_row, "볼린저밴드 폭 (D)", "BB폭")
     bb_width_avg = tech_text(technical_row, "지난 60일 볼린저밴드 폭 평균", "60일 BB폭")
     vol_ratio = tech_text(technical_row, "거래량비", "Volume Ratio")
+    ma20 = tech_text(technical_row, "20일 이동평균선", "MA20", "ma20")
+    ma20_slope = tech_text(technical_row, "MA20 5일 기울기", "ma20Slope5")
+    vol_ratio20 = tech_text(technical_row, "20일 평균 대비 거래량 (D)", "volRatio20")
 
     if code == "A":
         detail = f"현재가 {price} / MA200 {ma200} | 종가 %B {pct_b} | RSI {rsi} | MACD Hist {macd_hist}"
@@ -891,6 +894,8 @@ def buy_reason_detail(code: str, stock: dict[str, Any], technical_row: dict[str,
         detail = f"현재가 {price} / MA200 {ma200} | BB폭 {bb_width} / 60일평균 {bb_width_avg} | 저가 %B {pct_b_low}"
     elif code == "F":
         detail = f"현재가 {price} / MA200 {ma200} | 저가 %B {pct_b_low}"
+    elif code == "G":
+        detail = f"현재가 {price} / MA20 {ma20} / MA200 {ma200} | RSI {rsi} | MA20 5일 기울기 {ma20_slope} | 20일 거래량비 {vol_ratio20}"
     else:
         detail = f"현재가 {price} / MA200 {ma200}"
     return detail
@@ -943,11 +948,16 @@ def metric_context(current_stock: dict[str, Any], technical_row: dict[str, Any])
         "pct_b_num": metric_number(technical_row, "볼린저밴드 %B (종가)", "%B", "pctB"),
         "pct_b_low": metric_label(technical_row, "볼린저밴드 %B (저가)", "저가%B", "pctBLow"),
         "pct_b_low_num": metric_number(technical_row, "볼린저밴드 %B (저가)", "저가%B", "pctBLow"),
+        "ma20": metric_label(technical_row, "20일 이동평균선", "MA20", "ma20"),
+        "ma20_num": metric_number(technical_row, "20일 이동평균선", "MA20", "ma20"),
+        "ma20_slope": metric_label(technical_row, "MA20 5일 기울기", "ma20Slope5"),
+        "ma20_slope_num": metric_number(technical_row, "MA20 5일 기울기", "ma20Slope5"),
         "bb_width": metric_label(technical_row, "볼린저밴드 폭 (D)", "BB폭", "bbWidth"),
         "bb_width_num": metric_number(technical_row, "볼린저밴드 폭 (D)", "BB폭", "bbWidth"),
         "bb_width_avg": metric_label(technical_row, "지난 60일 볼린저밴드 폭 평균", "60일 BB폭", "bbWidthAvg60"),
         "bb_width_avg_num": metric_number(technical_row, "지난 60일 볼린저밴드 폭 평균", "60일 BB폭", "bbWidthAvg60"),
         "vol_ratio": metric_label(technical_row, "거래량비", "Volume Ratio", "거래량 (D)"),
+        "vol_ratio20": metric_label(technical_row, "20일 평균 대비 거래량 (D)", "volRatio20"),
         "plus_di": metric_label(technical_row, "+DI (DMI, 14)", "+DI"),
         "plus_di_num": metric_number(technical_row, "+DI (DMI, 14)", "+DI"),
         "minus_di": metric_label(technical_row, "-DI (DMI, 14)", "-DI"),
@@ -985,6 +995,8 @@ def watch_release_detail(strategy: str, current_stock: dict[str, Any], technical
     minus_di_num = c["minus_di_num"]
     bb_width_num = c["bb_width_num"]
     bb_width_avg_num = c["bb_width_avg_num"]
+    ma20_num = c["ma20_num"]
+    ma20_slope_num = c["ma20_slope_num"]
 
     if price_num is not None and ma200_num is not None and price_num <= ma200_num:
         return f"200일선 하방 이탈 (현재가 {c['price']} / MA200 {c['ma200']})"
@@ -1030,6 +1042,13 @@ def watch_release_detail(strategy: str, current_stock: dict[str, Any], technical
         if pct_b_low_num is not None and pct_b_low_num > float(s["SQUEEZE_PCT_B_MAX"]):
             return f"저가 %B 상승 ({c['pct_b_low']} > {s['SQUEEZE_PCT_B_MAX']})"
         return f"E그룹 저점 조건 이탈 (BB폭 {c['bb_width']} / 60일평균 {c['bb_width_avg']} / 저가 %B {c['pct_b_low']})"
+
+    if strategy == "G":
+        if ma20_num is not None and price_num is not None and price_num <= ma20_num:
+            return f"20일선 회복 실패 (현재가 {c['price']} / MA20 {c['ma20']})"
+        if ma20_slope_num is not None and ma20_slope_num < 0.5:
+            return f"MA20 기울기 둔화 ({c['ma20_slope']} < +0.5%)"
+        return f"G그룹 눌림 조건 이탈 (현재가 {c['price']} / MA20 {c['ma20']} / MA200 {c['ma200']})"
 
     if pct_b_low_num is not None and pct_b_low_num > float(s["BB_PCT_B_LOW_MAX"]):
         return f"BB 하단 눌림 해소 (저가 %B {c['pct_b_low']} > {s['BB_PCT_B_LOW_MAX']})"

@@ -41,9 +41,19 @@ STRATEGY_RULES: dict[str, float | int] = {
     "TARGET_PCT_F": 0.20,
     "CIRCUIT_PCT_F": 0.30,
     "BB_PCT_B_LOW_MAX": 5,
+    "TARGET_PCT_G": 0.12,
+    "CIRCUIT_PCT_G": 0.10,
+    "G_QQQ_DIST_MIN": 8,
+    "G_QQQ_DIST_MAX": 18,
+    "G_MA20_SLOPE5_MIN": 0.005,
+    "G_RSI_MIN": 45,
+    "G_RSI_MAX": 80,
+    "G_VOL_RATIO20_MAX": 2.0,
+    "G_MA200_OVERHEAT_MAX": 0.60,
     "HALF_EXIT_DAYS": 60,
     "MAX_HOLD_DAYS": 120,
     "MAX_HOLD_DAYS_D": 30,
+    "MAX_HOLD_DAYS_G": 40,
     "REENTRY_DAYS": 10,
     "NASDAQ_BUY_BLOCK_MAX": 9,
     "NASDAQ_DIST_UPPER": -3,
@@ -59,9 +69,10 @@ STRATEGY_LABELS = {
     "D": "200일선 상방 & 상승 흐름 강화",
     "E": "200일선 상방 & 스퀴즈 저점",
     "F": "200일선 상방 & BB 극단 저점",
+    "G": "급락 후 회복장 20일선 눌림",
 }
 
-NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES = {"A", "C", "E", "F"}
+NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES = {"A", "C", "E", "F", "G"}
 
 
 @dataclass(frozen=True)
@@ -76,10 +87,15 @@ class IndicatorRow:
     macd_hist_d2: float | None = None
     pct_b: float | None = None
     pct_b_low: float | None = None
+    ma20: float | None = None
+    ma20_d1: float | None = None
+    ma20_prev5: float | None = None
+    close_d1: float | None = None
     bb_width: float | None = None
     bb_width_d1: float | None = None
     bb_width_avg60: float | None = None
     vol_ratio: float | None = None
+    vol_ratio20: float | None = None
     plus_di: float | None = None
     minus_di: float | None = None
     adx: float | None = None
@@ -151,8 +167,9 @@ def evaluate_buy_condition(
     is_holding: bool = False,
     holding_strategy_type: str | None = None,
     nasdaq_buy_block_max: float | None = None,
+    is_recovery_market: bool = False,
 ) -> dict[str, Any]:
-    """Evaluate A-F entry/hold conditions in the same priority as the sheet."""
+    """Evaluate A-G entry/hold conditions in the same priority as the sheet."""
 
     s = STRATEGY_RULES
     vix_threshold = float(s["VIX_RELEASE"] if is_holding else s["VIX_MIN"])
@@ -212,24 +229,81 @@ def evaluate_buy_condition(
     f_cond2 = ind.pct_b_low is not None and ind.pct_b_low <= float(s["BB_PCT_B_LOW_MAX"])
     entry_f = not entry_a and not entry_b and not entry_c and not entry_d and not entry_e and f_cond1 and f_cond2 and nasdaq_bottom
 
+    g_cond1 = (
+        is_recovery_market
+        and ixic_dist is not None
+        and float(s["G_QQQ_DIST_MIN"]) <= ixic_dist <= float(s["G_QQQ_DIST_MAX"])
+        and not ixic_filter_active
+        and nasdaq_below_buy_block
+    )
+    g_cond2 = _gt(ind.current_price, ind.ma200)
+    g_cond3 = _gt(ind.ma20, ind.ma200)
+    g_cond4 = ind.candle_low is not None and ind.ma20 is not None and ind.candle_low <= ind.ma20
+    g_cond5 = _gt(ind.current_price, ind.ma20)
+    g_cond6 = _gt(ind.close_d1, ind.ma20_d1)
+    g_cond7 = (
+        ind.ma20 is not None
+        and ind.ma20_prev5 is not None
+        and ind.ma20_prev5 > 0
+        and (ind.ma20 / ind.ma20_prev5 - 1) >= float(s["G_MA20_SLOPE5_MIN"])
+    )
+    g_cond8 = _between(ind.rsi, float(s["G_RSI_MIN"]), float(s["G_RSI_MAX"]))
+    g_cond9 = ind.vol_ratio20 is not None and ind.vol_ratio20 <= float(s["G_VOL_RATIO20_MAX"])
+    g_cond10 = (
+        ind.current_price is not None
+        and ind.ma200 is not None
+        and ind.ma200 > 0
+        and (ind.current_price / ind.ma200 - 1) <= float(s["G_MA200_OVERHEAT_MAX"])
+    )
+    entry_g = (
+        not entry_a and not entry_b and not entry_c and not entry_d and not entry_e and not entry_f
+        and g_cond1 and g_cond2 and g_cond3 and g_cond4 and g_cond5
+        and g_cond6 and g_cond7 and g_cond8 and g_cond9 and g_cond10
+    )
+
     entry_strategy = (
-        "A" if entry_a else "B" if entry_b else "C" if entry_c else "D" if entry_d else "E" if entry_e else "F" if entry_f else None
+        "A" if entry_a else "B" if entry_b else "C" if entry_c else "D" if entry_d
+        else "E" if entry_e else "F" if entry_f else "G" if entry_g else None
     )
     triggered = entry_strategy is not None
 
     if is_holding and holding_strategy_type:
         if holding_strategy_type == "A":
-            triggered = a_cond1 and not ixic_filter_active and nasdaq_below_buy_block and ixic_dist is not None and ixic_dist >= float(s["NASDAQ_DIST_UPPER"]) and _gt(ind.macd_hist, 0)
+            triggered = (
+                a_cond1
+                and not ixic_filter_active
+                and nasdaq_below_buy_block
+                and ixic_dist is not None
+                and ixic_dist >= float(s["NASDAQ_DIST_UPPER"])
+                and _gt(ind.macd_hist, 0)
+            )
         elif holding_strategy_type == "B":
             triggered = b_cond1 and b_cond2 and b_cond3 and b_cond4 and nasdaq_below_buy_block
         elif holding_strategy_type == "C":
-            triggered = c_cond1 and not ixic_filter_active and nasdaq_below_buy_block and ixic_dist is not None and ixic_dist >= float(s["NASDAQ_DIST_UPPER"]) and _gt(ind.macd_hist, 0)
+            triggered = (
+                c_cond1
+                and not ixic_filter_active
+                and nasdaq_below_buy_block
+                and ixic_dist is not None
+                and ixic_dist >= float(s["NASDAQ_DIST_UPPER"])
+                and _gt(ind.macd_hist, 0)
+            )
         elif holding_strategy_type == "D":
-            triggered = d_cond1 and not ixic_filter_active and nasdaq_below_buy_block and ixic_dist is not None and ixic_dist >= float(s["NASDAQ_DIST_UPPER"]) and d_cond2 and _gt(ind.macd_hist, 0)
+            triggered = (
+                d_cond1
+                and not ixic_filter_active
+                and nasdaq_below_buy_block
+                and ixic_dist is not None
+                and ixic_dist >= float(s["NASDAQ_DIST_UPPER"])
+                and d_cond2
+                and _gt(ind.macd_hist, 0)
+            )
         elif holding_strategy_type == "E":
             triggered = e_cond1 and not ixic_filter_active and nasdaq_below_buy_block and bb_pair_ok and e_cond2 and e_cond3
         elif holding_strategy_type == "F":
             triggered = f_cond1 and not ixic_filter_active and nasdaq_below_buy_block and f_cond2
+        elif holding_strategy_type == "G":
+            triggered = g_cond1 and g_cond2 and g_cond3 and g_cond5 and g_cond6 and g_cond7 and g_cond8 and g_cond9 and g_cond10
 
     return {
         "triggered": triggered,
@@ -243,6 +317,7 @@ def evaluate_buy_condition(
             "D": [d_cond1, d_cond2, d_cond3, d_cond4, d_cond5, d_cond6, nasdaq_strict],
             "E": [e_cond1, e_cond2, e_cond3, nasdaq_bottom],
             "F": [f_cond1, f_cond2, nasdaq_bottom],
+            "G": [g_cond1, g_cond2, g_cond3, g_cond4, g_cond5, g_cond6, g_cond7, g_cond8, g_cond9, g_cond10],
         },
     }
 
@@ -269,7 +344,11 @@ def evaluate_exit_condition(
     s = STRATEGY_RULES
     target_pct = float(s.get(f"TARGET_PCT_{strategy_type}", s["TARGET_PCT_F"]))
     circuit_pct = float(s.get(f"CIRCUIT_PCT_{strategy_type}", s["CIRCUIT_PCT_F"]))
-    max_hold_days = int(s["MAX_HOLD_DAYS_D"] if strategy_type == "D" else s["MAX_HOLD_DAYS"])
+    max_hold_days = int(
+        s["MAX_HOLD_DAYS_D"] if strategy_type == "D"
+        else s["MAX_HOLD_DAYS_G"] if strategy_type == "G"
+        else s["MAX_HOLD_DAYS"]
+    )
     return_pct = (ind.current_price - ind.entry_price) / ind.entry_price
     is_ef_strategy = strategy_type in {"E", "F"}
 
@@ -283,7 +362,7 @@ def evaluate_exit_condition(
 
     if return_pct <= -circuit_pct:
         return {"shouldExit": True, "reason": "손절 기준 도달"}
-    if trading_days >= int(s["HALF_EXIT_DAYS"]) and return_pct > 0:
+    if strategy_type != "G" and trading_days >= int(s["HALF_EXIT_DAYS"]) and return_pct > 0:
         return {"shouldExit": True, "reason": "60거래일 경과 + 수익 중 자동 매도"}
     if trading_days >= max_hold_days:
         return {"shouldExit": True, "reason": "최대 보유 기간 초과 자동 매도"}
@@ -302,10 +381,15 @@ def indicator_from_mapping(values: dict[str, Any]) -> IndicatorRow:
         macd_hist_d2=_num(values.get("macdHistD2")),
         pct_b=_num(values.get("pctB")),
         pct_b_low=_num(values.get("pctBLow")),
+        ma20=_num(values.get("ma20")),
+        ma20_d1=_num(values.get("ma20D1")),
+        ma20_prev5=_num(values.get("ma20Prev5")),
+        close_d1=_num(values.get("closeD1")),
         bb_width=_num(values.get("bbWidth")),
         bb_width_d1=_num(values.get("bbWidthD1")),
         bb_width_avg60=_num(values.get("bbWidthAvg60")),
         vol_ratio=_num(values.get("volRatio")),
+        vol_ratio20=_num(values.get("volRatio20")),
         plus_di=_num(values.get("plusDI")),
         minus_di=_num(values.get("minusDI")),
         adx=_num(values.get("adx")),

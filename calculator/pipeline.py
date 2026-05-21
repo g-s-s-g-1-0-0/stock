@@ -536,10 +536,15 @@ def latest_technical_row(
         macd_hist_d2=row["macdHistD2"],
         pct_b=row["pctB"],
         pct_b_low=row["pctBLow"],
+        ma20=row["ma20"],
+        ma20_d1=row["ma20D1"],
+        ma20_prev5=row["ma20Prev5"],
+        close_d1=row["closeD1"],
         bb_width=row["bbWidth"],
         bb_width_d1=row["bbWidthD1"],
         bb_width_avg60=row["bbWidthAvg60"],
         vol_ratio=row["volRatio"],
+        vol_ratio20=row["volRatio20"],
         plus_di=row["plusDI"],
         minus_di=row["minusDI"],
         adx=row["adx"],
@@ -557,6 +562,7 @@ def latest_technical_row(
         ixic_dist=ixic_dist,
         ixic_filter_active=ixic_filter_active,
         nasdaq_buy_block_max=nasdaq_buy_block_max,
+        is_recovery_market=bool(qqq_market_state.get("isRecoveryMarket")) if qqq_market_state else False,
     )
     event_watch_active = market_event != "당분간 없음"
     opinion = "관망" if event_watch_active else "매수" if buy["entryTriggered"] else "관망"
@@ -564,7 +570,7 @@ def latest_technical_row(
     strategy = buy["strategyName"] if buy["entryTriggered"] else "-"
     entry_signal_codes = [
         group
-        for group in ("A", "B", "C", "D", "E", "F")
+        for group in ("A", "B", "C", "D", "E", "F", "G")
         if all(buy["conditions"].get(group, []))
     ]
     buy_block_label = f"나스닥 상단 차단 아님(≤{float(nasdaq_buy_block_max):.0f}%)" if nasdaq_buy_block_max is not None else "나스닥 상단 차단 아님"
@@ -575,6 +581,18 @@ def latest_technical_row(
         "D": ["현재가 > MA200", "+DI > -DI", "ADX > 30", "ADX 상승", "MACD Hist > 0", "종가%B 30~75", "나스닥 강세 필터"],
         "E": ["현재가 > MA200", "BB폭 압축", "저가%B <= 50", "나스닥 바닥/정상 필터"],
         "F": ["현재가 > MA200", f"저가%B <= {float(STRATEGY_RULES['BB_PCT_B_LOW_MAX']):.0f}", "나스닥 바닥/정상 필터"],
+        "G": [
+            "회복장 & QQQ 이격도 8~18",
+            "현재가 > MA200",
+            "MA20 > MA200",
+            "저가 MA20 터치",
+            "종가 MA20 회복",
+            "전일 종가 > 전일 MA20",
+            "MA20 5일 기울기 >= 0.5%",
+            "RSI 45~80",
+            "거래량 <= 20일평균 2.0x",
+            "MA200 이격 <= 60%",
+        ],
     }
     condition_summaries = []
     for group, labels in strategy_labels.items():
@@ -652,6 +670,9 @@ def latest_technical_row(
         "현재가": fmt_price(display_price, stock["market"]),
         "5일 이동평균선": fmt_price(row["ma5"], stock["market"]),
         "20일 이동평균선": fmt_price(row["ma20"], stock["market"]),
+        "20일 이동평균선 (D-1)": fmt_price(row["ma20D1"], stock["market"]),
+        "20일 이동평균선 (D-5)": fmt_price(row["ma20Prev5"], stock["market"]),
+        "MA20 5일 기울기": fmt_signed_percent((row["ma20"] / row["ma20Prev5"] - 1) * 100 if row["ma20Prev5"] else None),
         "60일 이동평균선": fmt_price(row["ma60"], stock["market"]),
         "144일 이동평균선": fmt_price(row["ma144"], stock["market"]),
         "200일 이동평균선": fmt_price(row["ma200"], stock["market"]),
@@ -811,7 +832,7 @@ def strategy_codes_from_technical(technical: dict[str, Any]) -> list[str]:
     codes: list[str] = []
     for value in values:
         code = str(value or "").split(".", 1)[0].strip().upper()
-        if code in {"A", "B", "C", "D", "E", "F"} and code not in codes:
+        if code in {"A", "B", "C", "D", "E", "F", "G"} and code not in codes:
             codes.append(code)
     return codes
 

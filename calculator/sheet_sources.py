@@ -316,6 +316,9 @@ def calc_technical_row(ticker: str) -> dict[str, float]:
     avg_volume_5 = sum(row["volume"] for row in rows[-5:]) / 5
     prev_avg_volume_5 = sum(row["volume"] for row in rows[-6:-1]) / 5
     avg_volume_20 = sum(row["volume"] for row in rows[-20:]) / 20
+    ma20 = sum(closes[-20:]) / 20
+    ma20_d1 = sum(closes[-21:-1]) / 20
+    ma20_prev5 = sum(closes[-25:-5]) / 20
     return {
         "open": open_,
         "high": high,
@@ -324,10 +327,13 @@ def calc_technical_row(ticker: str) -> dict[str, float]:
         "volume": latest["volume"],
         "prevVolume": prev["volume"],
         "ma5": sum(closes[-5:]) / 5,
-        "ma20": sum(closes[-20:]) / 20,
+        "ma20": ma20,
+        "ma20D1": ma20_d1,
+        "ma20Prev5": ma20_prev5,
         "ma60": sum(closes[-60:]) / 60,
         "ma144": sum(closes[-144:]) / 144,
         "ma200": sum(closes[-200:]) / 200,
+        "closeD1": prev["close"],
         "lowerTail": min(open_, close) - low,
         "upperTail": high - max(open_, close),
         "bodyLength": abs(close - open_),

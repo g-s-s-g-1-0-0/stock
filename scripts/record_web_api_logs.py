@@ -266,7 +266,7 @@ def return_pct(buy_price: Any, sell_price: Any) -> float:
 
 def target_return_pct(strategy: str) -> float:
     code = strategy_code(strategy)
-    if code == "D":
+    if code in {"D", "G"}:
         return 12.0
     if code in {"A", "B", "C", "E", "F"}:
         return 20.0
@@ -284,10 +284,10 @@ def strategy_code(value: Any) -> str:
     if not text:
         return ""
     first = text.split(".", 1)[0].strip().upper()
-    if first in {"A", "B", "C", "D", "E", "F"}:
+    if first in {"A", "B", "C", "D", "E", "F", "G"}:
         return first
     upper = text.upper()
-    return upper[0] if upper[:1] in {"A", "B", "C", "D", "E", "F"} else ""
+    return upper[0] if upper[:1] in {"A", "B", "C", "D", "E", "F", "G"} else ""
 
 
 def entry_signal_codes(row: dict[str, Any]) -> list[str]:
@@ -829,7 +829,7 @@ def formatted_technical_decision(decision: str, signal_codes: list[str]) -> list
             lines.extend(["[시장]", f"  {line.removeprefix('시장 국면:').strip()}"])
             continue
 
-        group_match = re.match(r"^([A-F])그룹\s+([0-9]+/[0-9]+)\s+-\s+(.+)$", line)
+        group_match = re.match(r"^([A-G])그룹\s+([0-9]+/[0-9]+)\s+-\s+(.+)$", line)
         if group_match:
             group, _score, details = group_match.groups()
             title = TECHNICAL_GROUP_TITLES.get(group, "전략 조건")
