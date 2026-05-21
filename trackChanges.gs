@@ -685,7 +685,7 @@ const Utils = {
     SQUEEZE_PCT_B_MAX: 50,
     TARGET_PCT_F:    0.20,
     CIRCUIT_PCT_F:   0.30,
-    BB_PCT_B_LOW_MAX: 3,
+    BB_PCT_B_LOW_MAX: 5,
     HALF_EXIT_DAYS:    60,
     MAX_HOLD_DAYS:     120,
     MAX_HOLD_DAYS_D:   30,

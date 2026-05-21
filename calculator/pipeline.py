@@ -23,7 +23,7 @@ from zoneinfo import ZoneInfo
 
 from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
-from .rules import IndicatorRow, compute_nasdaq_filter_active, evaluate_buy_condition, strategy_display_name
+from .rules import STRATEGY_RULES, IndicatorRow, compute_nasdaq_filter_active, evaluate_buy_condition, strategy_display_name
 from .sheet_sources import USER_AGENT, calc_rsi, calc_technical_row, fetch_ohlcv, fetch_text, fetch_us_extended_price, fetch_us_ohlcv, fetch_valuation
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -574,7 +574,7 @@ def latest_technical_row(
         "C": ["현재가 > MA200", "전일 BB 스퀴즈", "당일 BB 확장", "거래량 폭발", "종가%B > 55", "MACD Hist > 0", "나스닥 강세 필터"],
         "D": ["현재가 > MA200", "+DI > -DI", "ADX > 30", "ADX 상승", "MACD Hist > 0", "종가%B 30~75", "나스닥 강세 필터"],
         "E": ["현재가 > MA200", "BB폭 압축", "저가%B <= 50", "나스닥 바닥/정상 필터"],
-        "F": ["현재가 > MA200", "저가%B <= 3", "나스닥 바닥/정상 필터"],
+        "F": ["현재가 > MA200", f"저가%B <= {float(STRATEGY_RULES['BB_PCT_B_LOW_MAX']):.0f}", "나스닥 바닥/정상 필터"],
     }
     condition_summaries = []
     for group, labels in strategy_labels.items():
