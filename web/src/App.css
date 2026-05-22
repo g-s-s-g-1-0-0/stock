@@ -2891,7 +2891,8 @@
 }
 
 .stock-name-floating-tooltip {
-  width: 320px;
+  width: max-content;
+  max-width: min(520px, calc(100vw - 64px));
 }
 
 @media (max-width: 760px) {
@@ -2902,6 +2903,11 @@
     width: min(320px, calc(100vw - 40px));
     max-width: calc(100vw - 40px);
     transform: translate(-50%, -50%);
+  }
+
+  .mobile-floating-tooltip.stock-name-floating-tooltip {
+    width: max-content;
+    max-width: calc(100vw - 40px);
   }
 }
 

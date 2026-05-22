@@ -1749,9 +1749,12 @@ function AnalysisStockName({
     if (!textElement || textElement.scrollWidth <= textElement.clientWidth) return
 
     const rect = element.getBoundingClientRect()
-    const tooltipHalfWidth = Math.min(160, (window.innerWidth - 32) / 2)
-    const minX = tooltipHalfWidth + 16
-    const maxX = window.innerWidth - tooltipHalfWidth - 16
+    const edgePadding = window.innerWidth <= 760 ? 20 : 32
+    const maxTooltipWidth = window.innerWidth - edgePadding * 2
+    const tooltipWidth = Math.min(textElement.scrollWidth + 26, maxTooltipWidth)
+    const tooltipHalfWidth = tooltipWidth / 2
+    const minX = tooltipHalfWidth + edgePadding
+    const maxX = window.innerWidth - tooltipHalfWidth - edgePadding
     const centeredX = rect.left + rect.width / 2
 
     onTooltipOpen({
