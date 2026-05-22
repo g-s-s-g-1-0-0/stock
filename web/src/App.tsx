@@ -90,6 +90,7 @@ type TooltipState = {
   text: string
   x: number
   y: number
+  className?: string
 }
 
 type ActivePage = 'home' | 'value-analysis' | 'technical-analysis' | 'market-events' | 'market-trends' | 'board' | 'admin-logs'
@@ -1732,6 +1733,65 @@ function marketFlag(market: Market) {
   return market === 'KR' ? '🇰🇷' : '🇺🇸'
 }
 
+function AnalysisStockName({
+  stock,
+  onTooltipOpen,
+  onTooltipClose,
+}: {
+  stock: Stock
+  onTooltipOpen: (tooltip: TooltipState) => void
+  onTooltipClose: () => void
+}) {
+  const textRef = useRef<HTMLSpanElement>(null)
+
+  const openTooltip = (element: HTMLElement) => {
+    const textElement = textRef.current
+    if (!textElement || textElement.scrollWidth <= textElement.clientWidth) return
+
+    const rect = element.getBoundingClientRect()
+    const tooltipHalfWidth = Math.min(160, (window.innerWidth - 32) / 2)
+    const minX = tooltipHalfWidth + 16
+    const maxX = window.innerWidth - tooltipHalfWidth - 16
+    const centeredX = rect.left + rect.width / 2
+
+    onTooltipOpen({
+      text: stock.name,
+      x: Math.min(Math.max(centeredX, minX), maxX),
+      y: rect.top - 8,
+      className: 'stock-name-floating-tooltip',
+    })
+  }
+
+  return (
+    <div className="name-cell analysis-stock-name-cell">
+      <span className="market-flag" aria-hidden="true">{marketFlag(stock.market)}</span>
+      <span
+        aria-label={`${stock.name} 전체 종목명 보기`}
+        className="stock-name-tooltip-trigger"
+        role="button"
+        tabIndex={0}
+        title={stock.name}
+        onBlur={onTooltipClose}
+        onClick={(event) => {
+          event.stopPropagation()
+          openTooltip(event.currentTarget)
+        }}
+        onFocus={(event) => openTooltip(event.currentTarget)}
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return
+          event.preventDefault()
+          event.stopPropagation()
+          openTooltip(event.currentTarget)
+        }}
+        onMouseEnter={(event) => openTooltip(event.currentTarget)}
+        onMouseLeave={onTooltipClose}
+      >
+        <span className="stock-name-text" ref={textRef}>{stock.name}</span>
+      </span>
+    </div>
+  )
+}
+
 function StrategyTag({
   strategy,
   onTooltipOpen,
@@ -2849,10 +2909,7 @@ function ValueAnalysisPage({
               return (
                 <tr key={stock.ticker}>
                   <td className="name-data-cell">
-                    <div className="name-cell">
-                      <span className="market-flag" aria-hidden="true">{marketFlag(stock.market)}</span>
-                      <span>{stock.name}</span>
-                    </div>
+                    <AnalysisStockName stock={stock} onTooltipClose={onTooltipClose} onTooltipOpen={onTooltipOpen} />
                   </td>
                   <td className="ticker-cell">{stock.ticker}</td>
                   <td>{stock.category ?? (stock.market === 'KR' ? '성장주' : '혼합주')}</td>
@@ -3019,10 +3076,7 @@ function TechnicalAnalysisPage({
                 return (
                 <tr key={stock.ticker}>
                   <td className="name-data-cell">
-                    <div className="name-cell">
-                      <span className="market-flag" aria-hidden="true">{marketFlag(stock.market)}</span>
-                      <span>{stock.name}</span>
-                    </div>
+                    <AnalysisStockName stock={stock} onTooltipClose={onTooltipClose} onTooltipOpen={onTooltipOpen} />
                   </td>
                   <td className="ticker-cell">{stock.ticker}</td>
                   <td><span className={`status-badge ${statusClass(displayedOpinion)}`}>{displayedOpinion}</span></td>
@@ -7235,7 +7289,7 @@ function App() {
       )}
       {activeTooltip && (
         <div
-          className={`floating-tooltip mobile-floating-tooltip ${currentActivePage === 'market-events' ? 'market-events-floating-tooltip' : ''}`}
+          className={`floating-tooltip mobile-floating-tooltip ${currentActivePage === 'market-events' ? 'market-events-floating-tooltip' : ''} ${activeTooltip.className ?? ''}`}
           style={{
             left: activeTooltip.x,
             top: activeTooltip.y,
