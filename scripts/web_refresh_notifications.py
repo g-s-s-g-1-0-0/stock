@@ -1895,6 +1895,8 @@ def send_opinion_notifications(
         previous_trade_logs,
         current_trade_logs,
     )
+    if previous_trade_logs is not None and current_trade_logs is not None:
+        changes.extend(trade_exit_changes(previous_trade_logs, current_trade_logs))
     if not changes:
         print("No opinion changes.")
         if reset_active:

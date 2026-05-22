@@ -591,7 +591,7 @@ def latest_technical_row(
             "MA20 5일 기울기 >= 0.5%",
             "RSI 45~80",
             "거래량 <= 20일평균 2.0x",
-            "MA200 이격 <= 60%",
+            f"MA200 이격 <= {float(STRATEGY_RULES['G_MA200_OVERHEAT_MAX']) * 100:.0f}%",
         ],
     }
     condition_summaries = []
