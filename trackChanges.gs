@@ -702,6 +702,8 @@ const Utils = {
     G_RSI_MAX:       80,
     G_VOL_RATIO20_MAX: 2.0,
     G_MA200_OVERHEAT_MAX: 0.80,
+    STALLED_EXIT_DAYS: 5,
+    STALLED_EXIT_MIN_RETURN: 0.05,
     HALF_EXIT_DAYS:    60,
     MAX_HOLD_DAYS:     120,
     MAX_HOLD_DAYS_D:   30,
@@ -1362,6 +1364,13 @@ const Utils = {
       }
 
       if (returnPct <= -circuitPct)                           return { opinion: "매도", reason: `손절 기준 도달 -${Math.abs(returnPct * 100).toFixed(2)}% [${label}]`, strategyType: savedStrategy };
+      if (tradingDays >= S.STALLED_EXIT_DAYS && returnPct < S.STALLED_EXIT_MIN_RETURN) {
+        return {
+          opinion: "매도",
+          reason: `${S.STALLED_EXIT_DAYS}거래일 반등 미달 청산 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}% < +${(S.STALLED_EXIT_MIN_RETURN * 100).toFixed(0)}%)`,
+          strategyType: savedStrategy
+        };
+      }
       if (savedStrategy !== "G" && tradingDays >= S.HALF_EXIT_DAYS && returnPct > 0)  return { opinion: "매도", reason: "60거래일 경과 + 수익 중", strategyType: savedStrategy };
       if (tradingDays >= maxHoldDays)                        return { opinion: "매도", reason: `최대 보유 기간 초과 (${maxHoldDays}일)`, strategyType: savedStrategy };
 
@@ -2103,6 +2112,9 @@ const Utils = {
 
     if (globalData.nasdaqPeakAlert && typeof nasdaqPeakExitApplies === "function" && nasdaqPeakExitApplies(strategy)) return { reason: `나스닥 고점 청산/강제매도 — ${globalData.nasdaqPeakReason || "국면별 QQQ 과열 기준 충족"} [${label}]` };
     if (returnPct <= -circuitPct)                return { reason: `손절 기준 도달 -${Math.abs(returnPct * 100).toFixed(2)}% [${label}]` };
+    if (tradingDays >= S.STALLED_EXIT_DAYS && returnPct < S.STALLED_EXIT_MIN_RETURN) {
+      return { reason: `${S.STALLED_EXIT_DAYS}거래일 반등 미달 청산 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}% < +${(S.STALLED_EXIT_MIN_RETURN * 100).toFixed(0)}%) [${label}]` };
+    }
 
     if (isEfStrategy && returnPct >= targetPct && !upperExitArmDate) {
       Utils.saveSlotUpperExitArm(stockName, strategy, now);
