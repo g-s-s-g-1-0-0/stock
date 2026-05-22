@@ -50,6 +50,8 @@ STRATEGY_RULES: dict[str, float | int] = {
     "G_RSI_MAX": 80,
     "G_VOL_RATIO20_MAX": 2.0,
     "G_MA200_OVERHEAT_MAX": 0.80,
+    "STALLED_EXIT_DAYS": 5,
+    "STALLED_EXIT_MIN_RETURN": 0.05,
     "HALF_EXIT_DAYS": 60,
     "MAX_HOLD_DAYS": 120,
     "MAX_HOLD_DAYS_D": 30,
@@ -362,6 +364,14 @@ def evaluate_exit_condition(
 
     if return_pct <= -circuit_pct:
         return {"shouldExit": True, "reason": "손절 기준 도달"}
+    if trading_days >= int(s["STALLED_EXIT_DAYS"]) and return_pct < float(s["STALLED_EXIT_MIN_RETURN"]):
+        return {
+            "shouldExit": True,
+            "reason": (
+                f"{s['STALLED_EXIT_DAYS']}거래일 반등 미달 청산 "
+                f"({trading_days}일, {return_pct * 100:.2f}% < +{float(s['STALLED_EXIT_MIN_RETURN']) * 100:.0f}%)"
+            ),
+        }
     if strategy_type != "G" and trading_days >= int(s["HALF_EXIT_DAYS"]) and return_pct > 0:
         return {"shouldExit": True, "reason": "60거래일 경과 + 수익 중 자동 매도"}
     if trading_days >= max_hold_days:

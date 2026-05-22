@@ -66,6 +66,8 @@ const CONSTANTS = {
     G_RSI_MAX:       80,
     G_VOL_RATIO20_MAX: 2.0,
     G_MA200_OVERHEAT_MAX: 0.80,
+    STALLED_EXIT_DAYS: 5,
+    STALLED_EXIT_MIN_RETURN: 0.05,
     HALF_EXIT_DAYS:    60,
     MAX_HOLD_DAYS:     120,
     MAX_HOLD_DAYS_D:   30,
@@ -900,6 +902,12 @@ function evaluateExitCondition(ind, now, nasdaqPeakAlert, strategyType = "A", al
   }
 
   if (returnPct <= -circuitPct)    return { shouldExit: true, reason: `손절 기준 도달 -${Math.abs(returnPct * 100).toFixed(2)}% [손절 -${circuitPct * 100}%]` };
+  if (tradingDays >= S.STALLED_EXIT_DAYS && returnPct < S.STALLED_EXIT_MIN_RETURN) {
+    return {
+      shouldExit: true,
+      reason: `${S.STALLED_EXIT_DAYS}거래일 반등 미달 청산 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}% < +${(S.STALLED_EXIT_MIN_RETURN * 100).toFixed(0)}%)`
+    };
+  }
   if (strategyType !== "G" && tradingDays >= S.HALF_EXIT_DAYS && returnPct > 0) return { shouldExit: true, reason: `60거래일 경과 + 수익 중 자동 매도 (${tradingDays}일, +${(returnPct * 100).toFixed(2)}%)` };
   if (tradingDays >= maxHoldDays)  return { shouldExit: true, reason: `최대 보유 기간 초과 자동 매도 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}%) [한도 ${maxHoldDays}일]` };
 
