@@ -2479,11 +2479,14 @@
   min-width: 0;
   border-radius: 6px;
   color: inherit;
-  cursor: help;
   outline: none;
 }
 
-.stock-name-tooltip-trigger:focus-visible {
+.stock-name-tooltip-trigger.is-truncated {
+  cursor: help;
+}
+
+.stock-name-tooltip-trigger.is-truncated:focus-visible {
   box-shadow: 0 0 0 2px rgba(34, 136, 238, 0.22);
 }
 

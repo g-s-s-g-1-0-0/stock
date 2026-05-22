@@ -1743,10 +1743,36 @@ function AnalysisStockName({
   onTooltipClose: () => void
 }) {
   const textRef = useRef<HTMLSpanElement>(null)
+  const [isTruncated, setIsTruncated] = useState(false)
+
+  useLayoutEffect(() => {
+    const textElement = textRef.current
+    if (!textElement) return undefined
+
+    let frameId = 0
+    const updateTruncation = () => {
+      window.cancelAnimationFrame(frameId)
+      frameId = window.requestAnimationFrame(() => {
+        setIsTruncated(textElement.scrollWidth > textElement.clientWidth + 1)
+      })
+    }
+
+    updateTruncation()
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateTruncation)
+    observer?.observe(textElement)
+    if (textElement.parentElement) observer?.observe(textElement.parentElement)
+    window.addEventListener('resize', updateTruncation)
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      observer?.disconnect()
+      window.removeEventListener('resize', updateTruncation)
+    }
+  }, [stock.name])
 
   const openTooltip = (element: HTMLElement) => {
     const textElement = textRef.current
-    if (!textElement || textElement.scrollWidth <= textElement.clientWidth) return
+    if (!textElement || textElement.scrollWidth <= textElement.clientWidth + 1) return
 
     const rect = element.getBoundingClientRect()
     const edgePadding = window.innerWidth <= 760 ? 20 : 32
@@ -1768,29 +1794,35 @@ function AnalysisStockName({
   return (
     <div className="name-cell analysis-stock-name-cell">
       <span className="market-flag" aria-hidden="true">{marketFlag(stock.market)}</span>
-      <span
-        aria-label={`${stock.name} 전체 종목명 보기`}
-        className="stock-name-tooltip-trigger"
-        role="button"
-        tabIndex={0}
-        title={stock.name}
-        onBlur={onTooltipClose}
-        onClick={(event) => {
-          event.stopPropagation()
-          openTooltip(event.currentTarget)
-        }}
-        onFocus={(event) => openTooltip(event.currentTarget)}
-        onKeyDown={(event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return
-          event.preventDefault()
-          event.stopPropagation()
-          openTooltip(event.currentTarget)
-        }}
-        onMouseEnter={(event) => openTooltip(event.currentTarget)}
-        onMouseLeave={onTooltipClose}
-      >
-        <span className="stock-name-text" ref={textRef}>{stock.name}</span>
-      </span>
+      {isTruncated ? (
+        <span
+          aria-label={`${stock.name} 전체 종목명 보기`}
+          className="stock-name-tooltip-trigger is-truncated"
+          role="button"
+          tabIndex={0}
+          title={stock.name}
+          onBlur={onTooltipClose}
+          onClick={(event) => {
+            event.stopPropagation()
+            openTooltip(event.currentTarget)
+          }}
+          onFocus={(event) => openTooltip(event.currentTarget)}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return
+            event.preventDefault()
+            event.stopPropagation()
+            openTooltip(event.currentTarget)
+          }}
+          onMouseEnter={(event) => openTooltip(event.currentTarget)}
+          onMouseLeave={onTooltipClose}
+        >
+          <span className="stock-name-text" ref={textRef}>{stock.name}</span>
+        </span>
+      ) : (
+        <span className="stock-name-tooltip-trigger">
+          <span className="stock-name-text" ref={textRef}>{stock.name}</span>
+        </span>
+      )}
     </div>
   )
 }
