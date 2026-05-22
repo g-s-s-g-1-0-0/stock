@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-22T14:55:42+00:00",
-    "lastSuccessfulRun": "2026-05-22T14:55:42+00:00",
+    "updatedAt": "2026-05-22T15:01:23+00:00",
+    "lastSuccessfulRun": "2026-05-22T15:01:23+00:00",
     "failedReason": null
   },
   "rows": [
@@ -27,10 +27,10 @@
       "ticker": "005930",
       "name": "삼성전자",
       "market": "KR",
-      "fairPrice": "₩98,490 ~ ₩164,150",
+      "fairPrice": "₩185,595 ~ ₩309,325",
       "fairPriceReason": null,
       "currentPrice": "₩292,500",
-      "valuation": "고평가",
+      "valuation": "보통",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
@@ -107,7 +107,7 @@
       "ticker": "005380",
       "name": "현대자동차",
       "market": "KR",
-      "fairPrice": "₩352,460 ~ ₩528,690",
+      "fairPrice": "₩324,140 ~ ₩486,210",
       "fairPriceReason": null,
       "currentPrice": "₩655,000",
       "valuation": "고평가",
@@ -194,7 +194,9 @@
       "opinion": "관망",
       "opinionReason": "보유 중 추가매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "G. 급락 후 회복장 20일선 눌림"
+      ],
       "category": "혼합주",
       "industry": "AI, 광고, 클라우드, Waymo, TPU",
       "updatedAt": "2026-05-22T14:55:33+00:00"
@@ -210,7 +212,9 @@
       "opinion": "관망",
       "opinionReason": "보유 중 추가매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "E. 200일선 상방 & 스퀴즈 저점"
+      ],
       "category": "혼합주",
       "industry": "반도체, 네트워크·AI 인프라, ASIC, 광트랜시버",
       "updatedAt": "2026-05-22T14:55:33+00:00"
