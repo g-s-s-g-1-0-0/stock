@@ -49,7 +49,7 @@ STRATEGY_RULES: dict[str, float | int] = {
     "G_RSI_MIN": 45,
     "G_RSI_MAX": 80,
     "G_VOL_RATIO20_MAX": 2.0,
-    "G_MA200_OVERHEAT_MAX": 0.60,
+    "G_MA200_OVERHEAT_MAX": 0.80,
     "HALF_EXIT_DAYS": 60,
     "MAX_HOLD_DAYS": 120,
     "MAX_HOLD_DAYS_D": 30,

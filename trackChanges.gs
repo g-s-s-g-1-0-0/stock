@@ -175,7 +175,7 @@ function processMultiSlots(stockName, row, globalData, now, allProperties, kstDa
       continue;
     }
 
-    const canEnter = Utils.evaluateSlotEntry(row, globalData, strategy, stockName);
+    const canEnter = Utils.evaluateSlotEntry(row, globalData, strategy, stockName, allProperties);
     if (!canEnter) continue;
 
     const mergedProps = { ...allProperties, ...liveProps };
@@ -697,7 +697,7 @@ const Utils = {
     G_RSI_MIN:       45,
     G_RSI_MAX:       80,
     G_VOL_RATIO20_MAX: 2.0,
-    G_MA200_OVERHEAT_MAX: 0.60,
+    G_MA200_OVERHEAT_MAX: 0.80,
     HALF_EXIT_DAYS:    60,
     MAX_HOLD_DAYS:     120,
     MAX_HOLD_DAYS_D:   30,
@@ -1949,11 +1949,12 @@ const Utils = {
   },
 
   // 슬롯 진입 조건 체크 (strategy별 독립 평가 — 주 전략 제외 없음)
-  evaluateSlotEntry(row, globalData, strategy, stockName) {
+  evaluateSlotEntry(row, globalData, strategy, stockName, allProperties = {}) {
     const C            = Utils.COL_INDICES;
     const S            = Utils.STRATEGY;
     const currentPrice = Utils.toNum(row[C.currentPrice]);
     const ma200        = Utils.toNum(row[C.ma200]);
+    const ma20         = C.ma20 >= 0 ? Utils.toNum(row[C.ma20]) : null;
     const rsi          = Utils.toNum(row[C.rsi]);
     const cci          = Utils.toNum(row[C.cci]);
     const pctBLow      = Utils.toNum(row[C.pctBLow]);

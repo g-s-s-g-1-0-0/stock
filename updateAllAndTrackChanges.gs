@@ -31,6 +31,18 @@ function updateAllAndTrackChanges() {
     console.log(`[트리거 시작] updateAllAndTrackChanges (${new Date().toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })})`);
     setPipelineState_("running", "updateAllAndTrackChanges", null);
 
+    if (shouldRetryTrackChangesOnly_(previousPipelineState)) {
+      console.log(`[재시도] 이전 실행이 '${previousPipelineState.stage}' 단계에서 실패 — 시트 재계산 없이 변경 알림만 재시도`);
+      enterStage("trackChanges");
+      console.log(`[시작] trackChanges`);
+      trackChanges();
+      console.log(`[완료] trackChanges (${elapsed()})`);
+      setPipelineState_("completed", "done", null);
+      clearPipelineFailureState_();
+      console.log(`[트리거 종료] 변경 알림 재시도 완료 (총 ${elapsed()})`);
+      return;
+    }
+
     enterStage("batchPrefetchPrices");
     console.log(`[시작] batchPrefetchPrices`);
     batchPrefetchPrices();
@@ -145,6 +157,12 @@ function shouldPreserveLastValuesForRetry_(state) {
   // Apps Script INTERNAL처럼 변경 감지 직전/중간 실패가 의심되는 경우 1회 보존한다.
   const error = String(state.error || "");
   return stage === "updateAllAndTrackChanges" && error.indexOf("INTERNAL") !== -1;
+}
+
+function shouldRetryTrackChangesOnly_(state) {
+  if (!state || state.status !== "failed") return false;
+  const stage = String(state.stage || "");
+  return stage === "postUpdateWait" || stage === "trackChanges";
 }
 
 function getPipelineState_() {

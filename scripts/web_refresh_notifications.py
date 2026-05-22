@@ -345,33 +345,44 @@ def opinion_changes(
         if not ticker or ticker in buy_transition_tickers:
             continue
         current_stock = current.get(ticker)
-        previous_stock = previous.get(ticker)
-        if not current_stock or not previous_stock:
+        previous_stock = previous.get(ticker) or {**(current_stock or {}), "opinion": "관망"}
+        if not current_stock:
             continue
-        if str(current_stock.get("opinion") or "").strip() != "매수":
+        current_opinion = str(current_stock.get("opinion") or "").strip()
+        previous_opinion = str(previous_stock.get("opinion") or "").strip()
+        suppressed_held_buy = (
+            current_opinion == "관망"
+            and "추가매수 조건 미충족" in str(current_stock.get("opinionReason") or "")
+        )
+        if current_opinion != "매수" and not suppressed_held_buy:
             continue
-        if str(previous_stock.get("opinion") or "").strip() != "매수":
+        previous_trade_rows_for_ticker = previous_trades_by_ticker.get(ticker, [])
+        current_trade_rows_for_ticker = current_trades_by_ticker.get(ticker, [])
+        is_additional_buy = previous_opinion == "매수" or any(is_open_trade(row) for row in previous_trade_rows_for_ticker)
+        if current_opinion == "매수" and previous_opinion != "매수" and not is_additional_buy:
             continue
         technical_row = technical_rows.get(ticker, {})
-        changes.append({
+        change = {
             "ticker": ticker,
             "name": current_stock.get("name") or trade.get("name") or ticker,
-            "from": "매수",
+            "from": "매수" if is_additional_buy else (previous_opinion if previous_opinion in VALID_OPINIONS else "관망"),
             "to": "매수",
-            "fromLabel": "매수(보유중)",
-            "toLabel": "추가 매수",
             "price": current_stock.get("currentPrice") or trade.get("currentPrice") or "-",
             "valuation": current_stock.get("valuation") or "-",
             "industry": current_stock.get("industry") or "-",
             "strategies": current_stock.get("strategies") or [],
             "reason": buy_reason_for_trade(trade, current_stock, technical_row),
             "entryNote": buy_entry_note(
-                old_opinion="매수",
-                previous_trade_rows=previous_trades_by_ticker.get(ticker, []),
-                current_trade_rows=current_trades_by_ticker.get(ticker, []),
+                old_opinion="매수" if is_additional_buy else "관망",
+                previous_trade_rows=previous_trade_rows_for_ticker,
+                current_trade_rows=current_trade_rows_for_ticker,
                 added_trades=added_trades_by_ticker.get(ticker, []),
             ),
-        })
+        }
+        if is_additional_buy:
+            change["fromLabel"] = "매수(보유중)"
+            change["toLabel"] = "추가 매수"
+        changes.append(change)
     return changes
 
 

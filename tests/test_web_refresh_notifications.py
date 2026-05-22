@@ -434,6 +434,49 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("재진입 1회차 — 최초 진입가 $100.00", changes[0]["entryNote"])
         self.assertIn("F. 200일선 상방 & BB 극단 저점", changes[0]["reason"])
 
+    def test_opinion_changes_keeps_buy_email_when_signal_is_suppressed_after_trade_log(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+            previous_trades = Path(temp_dir) / "trade-logs.before-refresh.json"
+            current_trades = Path(temp_dir) / "trade-logs.json"
+
+            previous.write_text(
+                json.dumps({"rows": [{"ticker": "GOOGL", "name": "Alphabet", "opinion": "관망"}]}),
+                encoding="utf-8",
+            )
+            current.write_text(
+                json.dumps({"rows": [{
+                    "ticker": "GOOGL",
+                    "name": "Alphabet",
+                    "opinion": "관망",
+                    "opinionReason": "보유 중 추가매수 조건 미충족",
+                    "currentPrice": "$389.26",
+                }]}),
+                encoding="utf-8",
+            )
+            technical.write_text(
+                json.dumps({"rows": {"GOOGL": {"entrySignalCodes": "", "진입 전략": "G. 급락 후 회복장 20일선 눌림", "현재가": "$389.26"}}}),
+                encoding="utf-8",
+            )
+            previous_trades.write_text(json.dumps({"rows": []}), encoding="utf-8")
+            current_trades.write_text(
+                json.dumps({"rows": [
+                    {"slotId": "GOOGL_G_20260522_1", "ticker": "GOOGL", "strategy": "G. 급락 후 회복장 20일선 눌림", "buyDate": "2026.05.22", "buyPrice": "$388.55", "status": "보유 중"}
+                ]}),
+                encoding="utf-8",
+            )
+
+            changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
+
+        self.assertEqual(1, len(changes))
+        self.assertEqual("GOOGL", changes[0]["ticker"])
+        self.assertEqual("관망", changes[0]["from"])
+        self.assertEqual("매수", changes[0]["to"])
+        self.assertEqual("신규 진입", changes[0]["entryNote"])
+        self.assertNotIn("toLabel", changes[0])
+
     def test_opinion_changes_detects_all_valid_transitions(self) -> None:
         with TemporaryDirectory() as temp_dir:
             previous = Path(temp_dir) / "previous.json"
