@@ -2424,13 +2424,10 @@
 }
 
 .name-cell {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
+  display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  width: 100%;
-  min-width: 0;
   text-align: left;
 }
 
@@ -2471,7 +2468,10 @@
 }
 
 .analysis-stock-name-cell {
+  display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
 }
 
 .stock-name-tooltip-trigger {
