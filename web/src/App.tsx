@@ -3773,12 +3773,6 @@ function AdminLogsPage({
   const currentLogPage = Math.min(adminLogPage, totalLogPages)
   const pagedLogs = filteredLogs.slice((currentLogPage - 1) * ADMIN_LOGS_PAGE_SIZE, currentLogPage * ADMIN_LOGS_PAGE_SIZE)
 
-  useEffect(() => {
-    setAdminLogPage(1)
-    setExpandedLogId(null)
-    setCopiedLogId(null)
-  }, [activeLogTab])
-
   const copyLog = async (log: ApiLog) => {
     await navigator.clipboard.writeText(apiLogCopyText(log))
     setCopiedLogId(log.id)
@@ -3809,6 +3803,7 @@ function AdminLogsPage({
               onClick={() => {
                 setActiveLogTab(tab.key)
                 setExpandedLogId(null)
+                setCopiedLogId(null)
                 setAdminLogPage(1)
               }}
             >
@@ -4795,7 +4790,8 @@ function App() {
       return query.maybeSingle()
     }
 
-    let { data, error } = await selectWatchlist('tickers, watchlist_sort')
+    const { data: initialData, error } = await selectWatchlist('tickers, watchlist_sort')
+    let data = initialData
     if (error) {
       const fallback = await selectWatchlist('tickers')
       if (fallback.error) throw error
@@ -5031,6 +5027,7 @@ function App() {
         isMounted = false
       }
     }
+    const authClient = supabase
 
     const authErrorMessage = authCallbackMessage()
     const authSuccessMessage = authCallbackSuccessMessage()
@@ -5087,20 +5084,23 @@ function App() {
     }
 
     if (authErrorMessage) {
-      setAuthMode('login')
-      setAuthInfoMessage(authErrorMessage)
-      setIsLoginOpen(true)
-      clearAuthCallbackErrorFromUrl()
-      supabase.auth.signOut().then(() => {
-        void syncAuthUser(null, true)
+      Promise.resolve().then(() => {
+        if (!isMounted) return
+        setAuthMode('login')
+        setAuthInfoMessage(authErrorMessage)
+        setIsLoginOpen(true)
+        clearAuthCallbackErrorFromUrl()
+        authClient.auth.signOut().then(() => {
+          void syncAuthUser(null, true)
+        })
       })
     } else {
-      supabase.auth.getSession().then(({ data }) => {
+      authClient.auth.getSession().then(({ data }) => {
         void syncAuthUser(data.session?.user ?? null)
       })
     }
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: authListener } = authClient.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setAuthMode('reset')
         setLoginPassword('')
@@ -5191,10 +5191,14 @@ function App() {
   const isAdminUser = isConfiguredAdminEmail(userSession?.email)
 
   useEffect(() => {
-    if (isAdminUser) {
+    if (!isAdminUser) return undefined
+
+    const timeoutId = window.setTimeout(() => {
       setCanUseAccountSwitch(true)
       void loadApiLogs()
-    }
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
   }, [isAdminUser, userSession?.id])
 
   const effectiveViewMode = isAdminUser ? 'operator' : viewMode
@@ -6345,10 +6349,7 @@ function App() {
   }, [userSession?.id])
 
   const rawTableStocks = isOperatorDataMode ? operatorStocks : watchlistStocks
-  const tableStocks = useMemo(
-    () => sortWatchlistStocks(rawTableStocks, watchlistSortSettings, currentWatchlistTickers, scopedTrades),
-    [currentWatchlistTickers, rawTableStocks, scopedTrades, watchlistSortSettings],
-  )
+  const tableStocks = sortWatchlistStocks(rawTableStocks, watchlistSortSettings, currentWatchlistTickers, scopedTrades)
   const canEditCurrentWatchlist = effectiveViewMode === 'personal' || isAdminUser
   const isCurrentWatchlistEmpty = tableStocks.length === 0
   const isCurrentWatchlistFull = canEditCurrentWatchlist && currentWatchlistTickers.length >= MAX_WATCHLIST_ITEMS
