@@ -397,7 +397,10 @@ function fetchGMa20PullbackState_(symbol) {
   const cacheKey = "G_MA20_PULLBACK_" + String(symbol || "").trim().toUpperCase();
   const cached = cache.get(cacheKey);
   if (cached) {
-    try { return JSON.parse(cached); } catch (e) {}
+    try {
+      const parsed = JSON.parse(cached);
+      if (isCompleteGMa20PullbackState_(parsed)) return parsed;
+    } catch (e) {}
   }
 
   const resolved = resolveToTickerForRSI(symbol);
@@ -457,6 +460,32 @@ function fetchGMa20PullbackState_(symbol) {
   };
   cache.put(cacheKey, JSON.stringify(state), 900);
   return state;
+}
+
+function isFiniteGNumber_(value) {
+  return Number.isFinite(Number(value));
+}
+
+function isCompleteGMa20PullbackState_(state) {
+  return !!state
+    && isFiniteGNumber_(state.close)
+    && isFiniteGNumber_(state.low)
+    && isFiniteGNumber_(state.closeD1)
+    && isFiniteGNumber_(state.ma20)
+    && isFiniteGNumber_(state.ma20D1)
+    && isFiniteGNumber_(state.ma20Prev5)
+    && isFiniteGNumber_(state.ma20Slope5)
+    && isFiniteGNumber_(state.volRatio20);
+}
+
+function formatGMa20Slope_(gState) {
+  const slope = gState ? Number(gState.ma20Slope5) : NaN;
+  return Number.isFinite(slope) ? (slope * 100).toFixed(2) + "%" : "데이터 없음";
+}
+
+function formatGVolRatio20_(gState) {
+  const ratio = gState ? Number(gState.volRatio20) : NaN;
+  return Number.isFinite(ratio) ? ratio.toFixed(2) : "데이터 없음";
 }
 
 function checkMarketOpen(now, isKR = false) {
@@ -1279,7 +1308,11 @@ function _buildEntryLog(stratType, ind, vixD) {
       return `200일선 상방 & 스퀴즈 저점 — 현재가 ${fP(ind.currentPrice)} > MA200 ${fP(ind.ma200)}, BB폭 압축 ${sqRatio}, 저가%B ${fn(ind.pctBLow, 2)}`;
     }
     case "F": return `200일선 상방 & BB 극단 저점 — 현재가 ${fP(ind.currentPrice)} > MA200 ${fP(ind.ma200)}, 저가%B ${fn(ind.pctBLow, 2)}`;
-    case "G": return `급락 후 회복장 20일선 눌림 — 현재가 ${fP(ind.currentPrice)} > MA200 ${fP(ind.ma200)}, MA20 ${fP(ind.ma20)}, RSI ${fn(ind.rsi, 1)}`;
+    case "G": {
+      const gState = fetchGMa20PullbackState_(ind.stockName);
+      const gMa20 = gState && Number.isFinite(Number(gState.ma20)) ? Number(gState.ma20) : ind.ma20;
+      return `급락 후 회복장 20일선 눌림 — 현재가 ${fP(ind.currentPrice)} > MA200 ${fP(ind.ma200)}, MA20 ${fP(gMa20)}, RSI ${fn(ind.rsi, 1)}, MA20 기울기 ${formatGMa20Slope_(gState)}, 20일 거래량비 ${formatGVolRatio20_(gState)}`;
+    }
     default:  return `진입 — 현재가 ${fP(ind.currentPrice)}`;
   }
 }
@@ -1298,7 +1331,11 @@ function _buildChangeReasonBuy(stratType, ind, vixD) {
       return `200일선 상방 & 스퀴즈 저점 진입 — 현재가 ${fP(ind.currentPrice)} / MA200 ${fP(ind.ma200)} | BB폭 ${fn(ind.bbWidth, 2)} / 60일평균 ${fn(ind.bbWidthAvg60, 2)} (압축 ${sqRatio}) | 저가%B ${fn(ind.pctBLow, 2)}`;
     }
     case "F": return `200일선 상방 & BB 극단 저점 진입 — 현재가 ${fP(ind.currentPrice)} / MA200 ${fP(ind.ma200)} | 저가%B ${fn(ind.pctBLow, 2)}`;
-    case "G": return `급락 후 회복장 20일선 눌림 진입 — 현재가 ${fP(ind.currentPrice)} / MA20 ${fP(ind.ma20)} / MA200 ${fP(ind.ma200)} | RSI ${fn(ind.rsi, 1)}`;
+    case "G": {
+      const gState = fetchGMa20PullbackState_(ind.stockName);
+      const gMa20 = gState && Number.isFinite(Number(gState.ma20)) ? Number(gState.ma20) : ind.ma20;
+      return `급락 후 회복장 20일선 눌림 진입 — 현재가 ${fP(ind.currentPrice)} / MA20 ${fP(gMa20)} / MA200 ${fP(ind.ma200)} | RSI ${fn(ind.rsi, 1)} | MA20 기울기 ${formatGMa20Slope_(gState)} | 20일 거래량비 ${formatGVolRatio20_(gState)}`;
+    }
     default:  return `진입 — 현재가 ${fP(ind.currentPrice)}`;
   }
 }
