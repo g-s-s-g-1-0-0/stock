@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-23T14:55:40+00:00",
-    "lastSuccessfulRun": "2026-05-23T14:55:40+00:00",
+    "updatedAt": "2026-05-23T15:03:48+00:00",
+    "lastSuccessfulRun": "2026-05-23T15:03:48+00:00",
     "failedReason": null
   },
   "rows": [
@@ -445,7 +445,7 @@
       "ticker": "042700",
       "name": "한미반도체",
       "market": "KR",
-      "fairPrice": "₩33,480 ~ ₩44,640",
+      "fairPrice": "₩27,975 ~ ₩37,300",
       "fairPriceReason": null,
       "currentPrice": "₩320,500",
       "valuation": "고평가",
@@ -541,7 +541,7 @@
       "ticker": "039030",
       "name": "이오테크닉스",
       "market": "KR",
-      "fairPrice": "₩92,880 ~ ₩139,320",
+      "fairPrice": "₩240,360 ~ ₩300,450",
       "fairPriceReason": null,
       "currentPrice": "₩573,000",
       "valuation": "고평가",
@@ -564,7 +564,9 @@
       "opinion": "관망",
       "opinionReason": "보유 중 추가매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "G. 급락 후 회복장 20일선 눌림"
+      ],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
       "updatedAt": "2026-05-23T14:55:39+00:00"
