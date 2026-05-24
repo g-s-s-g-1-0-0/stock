@@ -2,11 +2,11 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-05-24T15:00:00Z",
-    "lastSuccessfulRun": "2026-05-24T15:00:00Z",
+    "updatedAt": "2026-05-24T17:00:00Z",
+    "lastSuccessfulRun": "2026-05-24T17:00:00Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
-    "closedTrades": 0,
+    "closedTrades": 2,
     "nasdaqPeakLiquidation": false
   },
   "rows": [
@@ -121,12 +121,13 @@
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.18",
       "buyPrice": "₩401,500",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
+      "sellDate": "2026.05.25",
+      "sellPrice": "₩391,000",
+      "returnPct": -2.62,
       "holdingDays": "-",
-      "status": "보유 중",
-      "restoreWatchDate": "2026.05.19"
+      "status": "손절",
+      "sellTimestamp": "2026-05-24T17:00:00Z",
+      "exitReason": "5거래일 반등 미달 청산 (5일, -2.62% < +5%)"
     },
     {
       "slotId": "079550_F_20260518_1",
@@ -153,12 +154,13 @@
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.18",
       "buyPrice": "₩59,600",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
+      "sellDate": "2026.05.25",
+      "sellPrice": "₩53,700",
+      "returnPct": -9.9,
       "holdingDays": "-",
-      "status": "보유 중",
-      "restoreWatchDate": "2026.05.19"
+      "status": "손절",
+      "sellTimestamp": "2026-05-24T17:00:00Z",
+      "exitReason": "5거래일 반등 미달 청산 (5일, -9.90% < +5%)"
     },
     {
       "slotId": "039030_F_20260518_1",
