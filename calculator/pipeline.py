@@ -15,6 +15,7 @@ import os
 import re
 import urllib.error
 import urllib.request
+from collections import Counter
 from datetime import date, datetime, timezone
 from html import unescape
 from pathlib import Path
@@ -37,6 +38,26 @@ NEWS_SOURCES = [
     "https://finance.yahoo.com/news/rssindex",
     "https://trends.google.com/trending/rss?geo=US",
 ]
+
+MEGA_TREND_RULES: tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...] = (
+    ("AI 인프라", ("AI 인프라", "데이터센터", "GPU 클라우드", "GPU 클러스터", "HPC", "액침냉각", "UPS"), ("데이터센터", "전력·냉각", "GPU 클러스터", "HPC", "AI 클라우드")),
+    ("AI 반도체", ("AI GPU", "AI칩", "AI 칩", "CUDA", "HBM", "ASIC", "GPU", "파운드리", "반도체", "첨단패키징"), ("AI칩", "GPU", "HBM", "ASIC", "첨단패키징")),
+    ("우주항공", ("우주", "위성", "발사체", "항공우주", "항공엔진", "LEO", "D2D", "SpaceX", "Rocket Lab", "AST SpaceMobile", "Planet Labs"), ("위성", "발사체", "위성통신", "지구관측", "SpaceX")),
+    ("방산·드론", ("방산", "국방", "드론", "무인기", "무인체계", "유도무기", "레이더", "자율무기"), ("방산", "드론", "무인체계", "유도무기", "레이더")),
+    ("전력 인프라", ("전력", "전력망", "전기장비", "가스터빈", "원전", "SMR", "연료전지", "수소", "에너지 저장"), ("전력망", "원전", "SMR", "데이터센터 전력", "에너지 저장")),
+    ("광통신·네트워크", ("광통신", "광트랜시버", "트랜시버", "광케이블", "광송수신기", "광인터커넥트", "스위칭", "이더넷"), ("광통신", "트랜시버", "광케이블", "AI 네트워킹", "이더넷 스위치")),
+    ("로봇·자동화", ("로봇", "로보틱스", "협동로봇", "자동화", "휴머노이드", "Optimus"), ("로봇", "자동화", "휴머노이드", "협동로봇", "로보틱스")),
+    ("양자컴퓨팅", ("양자", "이온트랩", "Quantum", "양자 네트워크"), ("양자컴퓨팅", "이온트랩", "양자 네트워크", "양자칩", "양자보안")),
+    ("암호화폐·핀테크", ("가상화폐", "비트코인", "이더리움", "Solana", "스테이블코인", "USDC", "Coinbase", "블록체인"), ("스테이블코인", "비트코인", "블록체인", "이더리움", "디지털 자산")),
+    ("전기차·배터리", ("전기차", "배터리", "2차전지", "리튬", "양극재", "자율주행", "로보택시"), ("전기차", "배터리", "리튬", "자율주행", "로보택시")),
+    ("바이오·헬스케어", ("바이오", "제약", "헬스케어", "의료", "재생의료", "바이오프린팅", "Therapeutics"), ("바이오", "제약", "의료 AI", "재생의료", "진단장비")),
+    ("원자재·희토류", ("희토류", "리튬", "구리", "알루미늄", "광산", "금속", "자석"), ("희토류", "리튬", "구리", "알루미늄", "자석 소재")),
+)
+
+GENERIC_TREND_TOKENS = {
+    "성장주", "혼합주", "가치주", "스윙주", "기술", "산업", "테마", "상장기업",
+    "해외 보통주", "개별 사업영역 추가 확인 필요", "ETF", "서비스",
+}
 
 GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_MARKET_TREND_MODEL = os.environ.get("GROQ_MARKET_TREND_MODEL", "").strip() or "llama-3.3-70b-versatile"
@@ -925,6 +946,217 @@ def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str
     }
 
 
+def normalize_trend_token(value: Any) -> str:
+    return re.sub(r"[\s·,|/()&+\-_'\".]+", "", str(value or "").lower())
+
+
+def split_trend_tokens(value: Any) -> list[str]:
+    tokens: list[str] = []
+    for raw in re.split(r"[,·|/()\s]+", str(value or "")):
+        token = raw.strip()
+        if len(token) < 2 or token in GENERIC_TREND_TOKENS:
+            continue
+        if token not in tokens:
+            tokens.append(token)
+    return tokens
+
+
+def stock_trend_themes(stock: dict[str, Any]) -> list[str]:
+    haystack = " ".join(str(stock.get(key) or "") for key in ("ticker", "name", "category", "industry", "rawIndustry", "products"))
+    normalized_haystack = normalize_trend_token(haystack)
+    themes: list[str] = []
+    for label, keywords, _ in MEGA_TREND_RULES:
+        if any(normalize_trend_token(keyword) in normalized_haystack for keyword in keywords):
+            themes.append(label)
+
+    if themes:
+        return themes[:3]
+
+    fallback_tokens = split_trend_tokens(stock.get("industry"))
+    return fallback_tokens[:1]
+
+
+def parse_metric_number(value: Any) -> float | None:
+    if isinstance(value, (int, float)):
+        parsed = float(value)
+        return parsed if parsed == parsed else None
+    text = str(value or "").strip()
+    if not text or text == "-":
+        return None
+    if "%" in text:
+        return parse_percent(text)
+    return parse_amount(text)
+
+
+def technical_trend_score(technical: dict[str, Any]) -> float:
+    current_price = parse_metric_number(technical.get("현재가") or technical.get("currentPrice"))
+    ma20 = parse_metric_number(technical.get("20일 이동평균선"))
+    ma200 = parse_metric_number(technical.get("200일 이동평균선"))
+    ma20_slope = parse_metric_number(technical.get("MA20 5일 기울기"))
+    pct_b = parse_metric_number(technical.get("볼린저밴드 %B (종가)"))
+    rsi = parse_metric_number(technical.get("RSI (D)"))
+    adx = parse_metric_number(technical.get("ADX (14, D)"))
+    plus_di = parse_metric_number(technical.get("+DI (DMI, 14)"))
+    minus_di = parse_metric_number(technical.get("-DI (DMI, 14)"))
+    macd_hist = parse_metric_number(technical.get("MACD Histogram (D)"))
+    vol_ratio20 = parse_metric_number(technical.get("20일 평균 대비 거래량 (D)"))
+
+    score = 0.0
+    if current_price is not None and ma200 is not None and current_price > ma200:
+        score += 1.5
+    if current_price is not None and ma20 is not None and current_price > ma20:
+        score += 1.0
+    if ma20_slope is not None and ma20_slope > 0:
+        score += min(ma20_slope, 12.0) / 2.0
+    if pct_b is not None:
+        if pct_b >= 100:
+            score += 2.5
+        elif pct_b >= 80:
+            score += 2.0
+        elif pct_b >= 55:
+            score += 1.0
+    if rsi is not None:
+        if 55 <= rsi <= 80:
+            score += min((rsi - 50) / 10, 3.0)
+        elif rsi > 80:
+            score += 2.0
+    if adx is not None and adx >= 30:
+        score += 1.5
+    if plus_di is not None and minus_di is not None and plus_di > minus_di:
+        score += 1.0
+    if macd_hist is not None and macd_hist > 0:
+        score += 1.0
+    if vol_ratio20 is not None:
+        if vol_ratio20 >= 120:
+            score += min((vol_ratio20 - 100) / 25, 2.0)
+        elif vol_ratio20 >= 100:
+            score += 0.5
+    if str(technical.get("opinion") or "") == "매수":
+        score += 3.0
+    if strategy_codes_from_technical(technical):
+        score += 2.0
+    return score
+
+
+def default_theme_keywords(theme: str) -> list[str]:
+    for label, _, keywords in MEGA_TREND_RULES:
+        if label == theme:
+            return list(keywords)
+    return []
+
+
+def build_market_trend_signal_rows(
+    stocks: list[Any] | None = None,
+    technical_rows: dict[str, Any] | None = None,
+) -> list[dict[str, Any]]:
+    stock_rows = stocks
+    if stock_rows is None:
+        loaded_stocks = read_cache("stocks").get("rows", [])
+        stock_rows = loaded_stocks if isinstance(loaded_stocks, list) else []
+    if technical_rows is None:
+        loaded_technical = read_cache("technical").get("rows", {})
+        technical_rows = loaded_technical if isinstance(loaded_technical, dict) else {}
+
+    aggregates: dict[str, dict[str, Any]] = {}
+    for stock in stock_rows:
+        if not isinstance(stock, dict):
+            continue
+        ticker = str(stock.get("ticker") or "").strip().upper()
+        technical = technical_rows.get(ticker) if ticker else {}
+        if not isinstance(technical, dict):
+            technical = {}
+        score = technical_trend_score(technical)
+        if score < 3.5:
+            continue
+        themes = stock_trend_themes(stock)
+        if not themes:
+            continue
+        tokens = split_trend_tokens(stock.get("industry"))
+        for theme in themes:
+            aggregate = aggregates.setdefault(theme, {"score": 0.0, "stocks": [], "keywords": Counter()})
+            aggregate["score"] += score
+            aggregate["stocks"].append({
+                "ticker": ticker,
+                "name": clean_stock_name(stock.get("name")),
+                "score": score,
+            })
+            for token in tokens:
+                aggregate["keywords"][token] += 1
+
+    rows: list[dict[str, Any]] = []
+    for theme, aggregate in aggregates.items():
+        stocks_for_theme = sorted(aggregate["stocks"], key=lambda item: item["score"], reverse=True)
+        stock_count = len(stocks_for_theme)
+        final_score = float(aggregate["score"]) + min(stock_count, 5) * 0.75
+        if final_score < 5 and stock_count < 2:
+            continue
+
+        keywords: list[str] = []
+        for keyword in default_theme_keywords(theme):
+            if keyword not in keywords:
+                keywords.append(keyword)
+        for keyword, _ in aggregate["keywords"].most_common(5):
+            if keyword not in keywords and keyword not in GENERIC_TREND_TOKENS:
+                keywords.append(keyword)
+            if len(keywords) >= 5:
+                break
+
+        rows.append({
+            "rankText": f"{theme} | {', '.join(keywords[:5])}",
+            "score": round(final_score, 2),
+            "stockCount": stock_count,
+            "tickers": [stock["ticker"] for stock in stocks_for_theme[:5] if stock["ticker"]],
+            "stockNames": [stock["name"] for stock in stocks_for_theme[:5] if stock["name"] and stock["name"] != "-"],
+        })
+
+    return sorted(rows, key=lambda row: (row["score"], row["stockCount"]), reverse=True)
+
+
+def market_trend_sector_key(rank_text: str) -> str:
+    return normalize_trend_token(str(rank_text).split("|", 1)[0])
+
+
+def merge_market_trend_ranks(ranks: list[str], signal_rows: list[dict[str, Any]]) -> list[str]:
+    merged: list[str] = []
+    seen: set[str] = set()
+
+    def add(rank_text: Any) -> None:
+        text = sanitize_market_trend_text(str(rank_text or ""))
+        if not isinstance(text, str) or not text:
+            return
+        key = market_trend_sector_key(text)
+        if key in seen:
+            return
+        seen.add(key)
+        merged.append(text)
+
+    for row in signal_rows[:5]:
+        add(row.get("rankText"))
+    for rank in ranks:
+        add(rank)
+    return merged[:10]
+
+
+def market_trend_signal_evidence_text(signal_rows: list[dict[str, Any]]) -> str:
+    if not signal_rows:
+        return "관심종목 기반 가격·기술 모멘텀 신호 없음"
+    return "\n".join(
+        f"- {row['rankText']} (점수 {row['score']}, 강세 종목 {row['stockCount']}개: {', '.join(row.get('stockNames', []))})"
+        for row in signal_rows[:10]
+    )
+
+
+def market_trend_row_from_signals(signal_rows: list[dict[str, Any]], failed_reason: str | None = None) -> dict[str, Any]:
+    summary = "관심종목의 가격·기술 모멘텀에서 강하게 확인된 메가트렌드를 우선 반영했습니다."
+    if failed_reason:
+        summary += f" RSS/LLM 분석은 실패해 내부 신호 기준으로 대체했습니다: {failed_reason}"
+    return {
+        "date": datetime.now().astimezone().strftime("%Y.%m.%d"),
+        "ranks": [str(row["rankText"]) for row in signal_rows[:10]],
+        "summary": summary,
+    }
+
+
 def sanitize_market_trend_text(value: Any) -> Any:
     if not isinstance(value, str):
         return value
@@ -1012,12 +1244,17 @@ def parse_market_trend_analysis(text: str) -> dict[str, Any]:
     }
 
 
-def analyze_market_trends_with_groq(news_text: str, api_key: str) -> dict[str, Any]:
+def analyze_market_trends_with_groq(news_text: str, api_key: str, signal_rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    signal_rows = signal_rows or []
+    signal_evidence = market_trend_signal_evidence_text(signal_rows)
     prompt = f"""다음은 이번 주 미국 금융·기술 뉴스 헤드라인입니다.
 주식 시장에서 현재 가장 주목받는 섹터/테마를 1위부터 10위까지 순위를 매겨주세요.
 
 [분석 기준]
 - 단순 언급 빈도가 아닌, 실제 자금이 몰리고 있는 테마 중심
+- 아래 "관심종목 가격·기술 모멘텀 신호"는 실제 가격·기술 데이터 기반이므로 뉴스 헤드라인보다 우선 반영
+- 여러 종목이 같은 산업에서 동시에 강한 추세를 보이면 그 산업을 메가트렌드로 승격
+- 특정 기업명이 다른 섹터에 잘못 묶이지 않도록 실제 사업 테마로 정규화
 - "AI 인프라" 같은 넓은 개념도 이번 주 특히 주목받는 세부 요소로 구체화
   예) "AI인프라 | 광통신, 트랜시버" / "AI인프라 | 전력인프라, 데이터센터냉각"
 - 각 순위마다 섹터명과 핵심 키워드 3~5개
@@ -1028,6 +1265,9 @@ def analyze_market_trends_with_groq(news_text: str, api_key: str) -> dict[str, A
 ...
 10위: 섹터명 | 키워드1, 키워드2, 키워드3
 요약: 이번 주 전체 시장 분위기 한 줄
+
+[관심종목 가격·기술 모멘텀 신호]
+{signal_evidence}
 
 [뉴스 헤드라인]
 {news_text[:6000]}"""
@@ -1061,6 +1301,7 @@ def analyze_market_trends_with_groq(news_text: str, api_key: str) -> dict[str, A
         raise RuntimeError("Groq 분석 결과에서 10개 순위를 파싱하지 못했습니다.")
     if not parsed["summary"]:
         raise RuntimeError("Groq 분석 결과에서 시장요약을 파싱하지 못했습니다.")
+    parsed["ranks"] = merge_market_trend_ranks(parsed["ranks"], signal_rows)
     return parsed
 
 
@@ -1085,8 +1326,23 @@ def build_market_trends_cache() -> dict[str, Any]:
     existing = read_cache("market-trends")
     rows = sanitize_market_trend_rows(existing.get("rows", [])) if isinstance(existing.get("rows"), list) else []
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
+    signal_rows = build_market_trend_signal_rows()
 
     if not api_key:
+        if signal_rows:
+            new_row = market_trend_row_from_signals(signal_rows, "GROQ_API_KEY 환경변수가 설정되어 있지 않습니다.")
+            rows = upsert_market_trend_row(rows, new_row)
+            return {
+                "meta": {
+                    **existing.get("meta", {}),
+                    "kind": "market-trends",
+                    "schedule": "0 0 * * 1",
+                    "updatedAt": now_iso(),
+                    "lastSuccessfulRun": now_iso(),
+                    "failedReason": "GROQ_API_KEY 환경변수가 없어 LLM 분석 없이 내부 가격·기술 모멘텀 신호로 시장 트렌드를 갱신했습니다.",
+                },
+                "rows": rows,
+            }
         return {
             "meta": {
                 **existing.get("meta", {}),
@@ -1103,9 +1359,23 @@ def build_market_trends_cache() -> dict[str, Any]:
         news_text = fetch_market_trend_news()
         if not news_text:
             raise RuntimeError("RSS 뉴스 헤드라인을 수집하지 못했습니다.")
-        new_row = analyze_market_trends_with_groq(news_text, api_key)
+        new_row = analyze_market_trends_with_groq(news_text, api_key, signal_rows)
         rows = upsert_market_trend_row(rows, new_row)
     except urllib.error.HTTPError as exc:
+        if signal_rows:
+            new_row = market_trend_row_from_signals(signal_rows, http_error_detail(exc))
+            rows = upsert_market_trend_row(rows, new_row)
+            return {
+                "meta": {
+                    **existing.get("meta", {}),
+                    "kind": "market-trends",
+                    "schedule": "0 0 * * 1",
+                    "updatedAt": now_iso(),
+                    "lastSuccessfulRun": now_iso(),
+                    "failedReason": f"Groq API 호출 실패 후 내부 가격·기술 모멘텀 신호로 대체했습니다: {http_error_detail(exc)}",
+                },
+                "rows": rows,
+            }
         return {
             "meta": {
                 **existing.get("meta", {}),
@@ -1118,6 +1388,20 @@ def build_market_trends_cache() -> dict[str, Any]:
             "rows": rows,
         }
     except Exception as exc:  # noqa: BLE001 - web cache should preserve the last successful trend data
+        if signal_rows:
+            new_row = market_trend_row_from_signals(signal_rows, str(exc))
+            rows = upsert_market_trend_row(rows, new_row)
+            return {
+                "meta": {
+                    **existing.get("meta", {}),
+                    "kind": "market-trends",
+                    "schedule": "0 0 * * 1",
+                    "updatedAt": now_iso(),
+                    "lastSuccessfulRun": now_iso(),
+                    "failedReason": f"RSS/Groq 분석 실패 후 내부 가격·기술 모멘텀 신호로 대체했습니다: {exc}",
+                },
+                "rows": rows,
+            }
         return {
             "meta": {
                 **existing.get("meta", {}),
