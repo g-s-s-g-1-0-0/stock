@@ -1203,6 +1203,16 @@ function mergeStocks(primary: Stock[], secondary: Stock[]) {
   return [...rowsByTicker.values()]
 }
 
+function resolveStockForTicker(ticker: string, primaryStocks: Stock[], fallbackStocks: Stock[] = []) {
+  const normalized = ticker.trim().toUpperCase()
+  const matchesTicker = (stock: Stock) => stock.ticker.trim().toUpperCase() === normalized
+  const fromPrimary = primaryStocks.find(matchesTicker)
+  if (fromPrimary) return withDisplayStockName(fromPrimary)
+  const fromFallback = fallbackStocks.find(matchesTicker)
+  if (fromFallback) return withDisplayStockName(fromFallback)
+  return null
+}
+
 const initialWatchlist: string[] = []
 
 const operatorTickers: string[] = []
@@ -4339,6 +4349,7 @@ function App() {
   const watchlistSheetRef = useRef<HTMLDivElement | null>(null)
   const holdingSheetRef = useRef<HTMLDivElement | null>(null)
   const apiMetasRef = useRef<AppDataMetas>(apiMetas)
+  const resetSyncGenerationRef = useRef(0)
 
   const resetHomeSheetScroll = () => {
     const reset = () => {
@@ -5278,9 +5289,9 @@ function App() {
 
   const watchlistStocks = useMemo(
     () => watchlist
-      .map((ticker) => apiStocks.find((stock) => stock.ticker === ticker))
+      .map((ticker) => resolveStockForTicker(ticker, apiStocks, apiSearchStocks))
       .filter((stock): stock is Stock => Boolean(stock)),
-    [apiStocks, watchlist],
+    [apiSearchStocks, apiStocks, watchlist],
   )
 
   const operatorFallbackTickers = useMemo(
@@ -5290,9 +5301,9 @@ function App() {
   const effectiveOperatorWatchlist = isSupabaseConfigured ? operatorWatchlist : operatorWatchlist.length > 0 ? operatorWatchlist : operatorFallbackTickers
   const operatorStocks = useMemo(
     () => effectiveOperatorWatchlist
-      .map((ticker) => apiStocks.find((stock) => stock.ticker === ticker))
+      .map((ticker) => resolveStockForTicker(ticker, apiStocks, apiSearchStocks))
       .filter((stock): stock is Stock => Boolean(stock)),
-    [apiStocks, effectiveOperatorWatchlist],
+    [apiSearchStocks, apiStocks, effectiveOperatorWatchlist],
   )
 
   const searchResults = useMemo(() => {
@@ -5486,18 +5497,24 @@ function App() {
       return
     }
 
-    if (isOperatorDataMode) {
-      const nextWatchlist = operatorWatchlist.includes(ticker) ? operatorWatchlist : [...operatorWatchlist, ticker]
-      setOperatorWatchlist(nextWatchlist)
-      await persistWatchlist('operator', nextWatchlist)
-    } else {
-      const nextWatchlist = watchlist.includes(ticker) ? watchlist : [...watchlist, ticker]
-      setWatchlist(nextWatchlist)
-      await persistWatchlist('personal', nextWatchlist)
+    resetSyncGenerationRef.current += 1
+
+    const stockToAdd = resolveStockForTicker(ticker, apiStocks, apiSearchStocks)
+    if (stockToAdd) {
+      setApiStocks((currentStocks) => mergeStocks(currentStocks, [stockToAdd]))
     }
-    const searchedStock = apiSearchStocks.find((stock) => stock.ticker === ticker)
-    if (searchedStock && !apiStocks.some((stock) => stock.ticker === ticker)) {
-      setApiStocks((currentStocks) => [...currentStocks, searchedStock])
+    const resolvedTicker = stockToAdd?.ticker ?? ticker
+
+    if (isOperatorDataMode) {
+      const nextWatchlist = operatorWatchlist.includes(resolvedTicker)
+        ? operatorWatchlist
+        : [...operatorWatchlist, resolvedTicker]
+      setOperatorWatchlist(nextWatchlist)
+      void persistWatchlist('operator', nextWatchlist)
+    } else {
+      const nextWatchlist = watchlist.includes(resolvedTicker) ? watchlist : [...watchlist, resolvedTicker]
+      setWatchlist(nextWatchlist)
+      void persistWatchlist('personal', nextWatchlist)
     }
     setQuery('')
     setIsAddingStock(true)
@@ -5738,11 +5755,14 @@ function App() {
 
     if (!session || !supabase || isLocalTestSession(session)) return
 
+    resetSyncGenerationRef.current += 1
+    const syncGeneration = resetSyncGenerationRef.current
     const ownerId = session.id
     void Promise.all([
       persistWatchlist('personal', [], session),
       persistPortfolioState(emptyTrades, contributionSettings, session),
     ]).catch(() => {
+      if (resetSyncGenerationRef.current !== syncGeneration) return
       if (userSession?.id !== ownerId) return
       storePendingPersonalWatchlist(session, [])
     })
@@ -6619,7 +6639,8 @@ function App() {
       {query && (
         <div className="inline-results">
           {searchResults.length > 0 ? searchResults.slice(0, 50).map((stock) => {
-            const isAlreadyAdded = currentWatchlistTickers.includes(stock.ticker)
+            const watchlistTickerSet = new Set(currentWatchlistTickers.map((item) => item.trim().toUpperCase()))
+            const isAlreadyAdded = watchlistTickerSet.has(stock.ticker.trim().toUpperCase())
 
             return (
               <button
