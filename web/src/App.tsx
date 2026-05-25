@@ -663,6 +663,26 @@ function hasStoredPersonalTradeLogs(session: UserSession | null = null) {
   return Boolean(localStorage.getItem(personalTradeLogsStorageKey(session)))
 }
 
+function hasStoredWatchlist(session: UserSession | null = null) {
+  if (!session) return false
+  return Boolean(
+    localStorage.getItem(personalWatchlistStorageKey(session))
+    ?? localStorage.getItem(WATCHLIST_STORAGE_KEY),
+  )
+}
+
+function resolveLocalTestWatchlist(session: UserSession) {
+  if (isConfiguredAdminEmail(session.email)) return readStoredWatchlist(session)
+  if (!hasStoredWatchlist(session)) return localTestWatchlist
+  return readLegacyWatchlist(session) ?? initialWatchlist
+}
+
+function resolveLocalTestPersonalTrades(session: UserSession) {
+  if (isConfiguredAdminEmail(session.email)) return readStoredPersonalTradeLogs(session)
+  if (!hasStoredPersonalTradeLogs(session)) return localTestPersonalTrades
+  return readStoredPersonalTradeLogs(session)
+}
+
 function normalizeWatchlistSortSettings(value: unknown): WatchlistSortSettings {
   const allowed: WatchlistSortKey[] = [
     'registered',
@@ -4218,17 +4238,13 @@ function App() {
         : readStoredUserSettings(null)
   ), [initialLocalTestSession])
   const [query, setQuery] = useState('')
-  const [watchlist, setWatchlist] = useState<string[]>(() => {
-    if (!initialLocalTestSession) return readStoredWatchlist()
-    const storedWatchlist = readLegacyWatchlist(initialLocalTestSession)
-    return storedWatchlist && storedWatchlist.length > 0 ? storedWatchlist : localTestWatchlist
-  })
+  const [watchlist, setWatchlist] = useState<string[]>(() => (
+    initialLocalTestSession ? resolveLocalTestWatchlist(initialLocalTestSession) : readStoredWatchlist()
+  ))
   const [operatorWatchlist, setOperatorWatchlist] = useState<string[]>(() => isSupabaseConfigured ? readCachedRemoteOperatorWatchlist() : readStoredOperatorWatchlist())
-  const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(() => {
-    if (!initialLocalTestSession) return readStoredPersonalTradeLogs()
-    const storedTrades = readStoredPersonalTradeLogs(initialLocalTestSession)
-    return storedTrades.length > 0 ? storedTrades : localTestPersonalTrades
-  })
+  const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(() => (
+    initialLocalTestSession ? resolveLocalTestPersonalTrades(initialLocalTestSession) : readStoredPersonalTradeLogs()
+  ))
   const [systemTradeLogs, setSystemTradeLogs] = useState<TradeLog[]>(() => cachedAppData?.tradeLogs?.rows ?? operatorTrades)
   const [isAddingStock, setIsAddingStock] = useState(false)
   const [viewMode, setViewMode] = useState<'personal' | 'operator'>(() => readStoredViewMode())
@@ -4655,17 +4671,15 @@ function App() {
 
   const applyLocalTestSessionData = (session: UserSession) => {
     const isLocalAdmin = isConfiguredAdminEmail(session.email)
-    const storedWatchlist = readStoredWatchlist(session)
-    const nextWatchlist = !isLocalAdmin && storedWatchlist.length === 0 ? localTestWatchlist : storedWatchlist
+    const nextWatchlist = resolveLocalTestWatchlist(session)
     setWatchlist(nextWatchlist)
-    if (!isLocalAdmin && storedWatchlist.length === 0) {
+    if (!isLocalAdmin && !hasStoredWatchlist(session)) {
       localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(nextWatchlist))
     }
 
-    const storedPersonalTrades = readStoredPersonalTradeLogs(session)
-    const nextPersonalTrades = !isLocalAdmin && storedPersonalTrades.length === 0 ? localTestPersonalTrades : storedPersonalTrades
+    const nextPersonalTrades = resolveLocalTestPersonalTrades(session)
     setPersonalTradeLogs(nextPersonalTrades)
-    if (!isLocalAdmin && storedPersonalTrades.length === 0) {
+    if (!isLocalAdmin && !hasStoredPersonalTradeLogs(session)) {
       storePersonalTradeLogs(session, nextPersonalTrades)
     }
 
@@ -5697,11 +5711,33 @@ function App() {
     if (isAdminUser) {
       setIsResetConfirmOpen(false)
       return
-    } else {
-      setWatchlist([])
-      await persistWatchlist('personal', [])
-      commitPersonalTradeLogs(() => [])
     }
+
+    const session = userSession
+    const emptyTrades: TradeLog[] = []
+
+    try {
+      setWatchlist([])
+      await persistWatchlist('personal', [], session)
+      storePersonalTradeLogs(session, emptyTrades)
+      await persistPortfolioState(emptyTrades, contributionSettings, session)
+      setPersonalTradeLogs(emptyTrades)
+      setRefreshDataMessage('본인 기록을 초기화했습니다.')
+    } catch (error) {
+      storePersonalTradeLogs(session, emptyTrades)
+      setPersonalTradeLogs(emptyTrades)
+      setWatchlist([])
+      if (session) {
+        localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify([]))
+        clearPendingPersonalWatchlist(session)
+      }
+      setRefreshDataMessage(
+        error instanceof Error
+          ? `초기화를 완료하지 못했습니다.\n${error.message}`
+          : '초기화를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+      )
+    }
+
     setSelectedTickers([])
     setSelectedHoldingTradeKeys([])
     setQuery('')
