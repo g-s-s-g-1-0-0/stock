@@ -256,6 +256,7 @@ const MAX_WATCHLIST_ITEMS = 50
 const LEGACY_AUTH_SESSION_STORAGE_KEY = 'gongsu-user-session'
 const LOCAL_TEST_SESSION_STORAGE_KEY = 'gongsu-local-test-session'
 const WATCHLIST_STORAGE_KEY = 'gongsu-watchlist'
+const PERSONAL_WATCHLIST_PENDING_STORAGE_KEY = 'gongsu-watchlist-pending-v1'
 const OPERATOR_WATCHLIST_STORAGE_KEY = 'gongsu-operator-watchlist'
 const OPERATOR_WATCHLIST_REMOTE_CACHE_STORAGE_KEY = 'gongsu-operator-watchlist-remote-cache-v1'
 const OPERATOR_WATCHLIST_PENDING_STORAGE_KEY = 'gongsu-operator-watchlist-pending-v1'
@@ -380,6 +381,10 @@ function personalWatchlistStorageKey(session: UserSession | null) {
   return `${WATCHLIST_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
 }
 
+function personalWatchlistPendingStorageKey(session: UserSession | null) {
+  return `${PERSONAL_WATCHLIST_PENDING_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
+}
+
 function readLegacyWatchlist(session: UserSession | null) {
   const scopedKey = personalWatchlistStorageKey(session)
   const storedWatchlist = localStorage.getItem(scopedKey) ?? localStorage.getItem(WATCHLIST_STORAGE_KEY)
@@ -433,27 +438,46 @@ function storeRemoteOperatorWatchlist(tickers: string[]) {
   localStorage.setItem(OPERATOR_WATCHLIST_REMOTE_CACHE_STORAGE_KEY, JSON.stringify(tickers))
 }
 
-function readPendingOperatorWatchlist() {
-  const storedWatchlist = localStorage.getItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
+function readPendingWatchlist(storageKey: string) {
+  const storedWatchlist = localStorage.getItem(storageKey)
   if (!storedWatchlist) return null
 
   try {
     const parsed = JSON.parse(storedWatchlist) as { tickers?: unknown; updatedAt?: unknown }
     const updatedAt = typeof parsed.updatedAt === 'number' ? parsed.updatedAt : 0
     if (!updatedAt || Date.now() - updatedAt > PENDING_WATCHLIST_MAX_AGE_MS) {
-      localStorage.removeItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
+      localStorage.removeItem(storageKey)
       return null
     }
     return normalizeWatchlistTickers(parsed.tickers)
   } catch {
-    localStorage.removeItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
+    localStorage.removeItem(storageKey)
     return null
   }
+}
+
+function readPendingPersonalWatchlist(session: UserSession | null) {
+  return session ? readPendingWatchlist(personalWatchlistPendingStorageKey(session)) : null
+}
+
+function readPendingOperatorWatchlist() {
+  return readPendingWatchlist(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
+}
+
+function storePendingPersonalWatchlist(session: UserSession | null, tickers: string[]) {
+  if (!session) return
+  localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(tickers))
+  localStorage.setItem(personalWatchlistPendingStorageKey(session), JSON.stringify({ tickers, updatedAt: Date.now() }))
 }
 
 function storePendingOperatorWatchlist(tickers: string[]) {
   storeRemoteOperatorWatchlist(tickers)
   localStorage.setItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY, JSON.stringify({ tickers, updatedAt: Date.now() }))
+}
+
+function clearPendingPersonalWatchlist(session: UserSession | null) {
+  if (!session) return
+  localStorage.removeItem(personalWatchlistPendingStorageKey(session))
 }
 
 function clearPendingOperatorWatchlist() {
@@ -4845,24 +4869,33 @@ function App() {
   async function persistWatchlist(scope: 'personal' | 'operator', tickers: string[], session = userSession) {
     if (scope === 'operator') {
       storePendingOperatorWatchlist(tickers)
+    } else if (session) {
+      storePendingPersonalWatchlist(session, tickers)
     }
 
     if (!supabase) {
       if (scope === 'operator') {
         storeRemoteOperatorWatchlist(tickers)
         clearPendingOperatorWatchlist()
-      } else {
+      } else if (session) {
         localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(tickers))
+        clearPendingPersonalWatchlist(session)
       }
       return
     }
 
     if (scope === 'personal' && !session) return
     const client = supabase
-    const markOperatorPersisted = () => {
-      if (scope !== 'operator') return
-      storeRemoteOperatorWatchlist(tickers)
-      clearPendingOperatorWatchlist()
+    const markWatchlistPersisted = () => {
+      if (scope === 'operator') {
+        storeRemoteOperatorWatchlist(tickers)
+        clearPendingOperatorWatchlist()
+        return
+      }
+      if (session) {
+        localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(tickers))
+        clearPendingPersonalWatchlist(session)
+      }
     }
 
     const payload = scope === 'operator'
@@ -4890,7 +4923,7 @@ function App() {
     }
     if (error) throw error
     if (data && data.length > 0) {
-      markOperatorPersisted()
+      markWatchlistPersisted()
       return
     }
 
@@ -4903,7 +4936,7 @@ function App() {
       .from('watchlists')
       .insert(insertPayload as never)
     if (!insertError) {
-      markOperatorPersisted()
+      markWatchlistPersisted()
       return
     }
     if (scope !== 'operator') throw insertError
@@ -4916,7 +4949,7 @@ function App() {
         tickers,
       })
     if (fallbackInsertError) throw fallbackInsertError
-    markOperatorPersisted()
+    markWatchlistPersisted()
   }
 
   async function persistOperatorWatchlistSort(watchlistSort: WatchlistSortSettings, session = userSession) {
@@ -4995,13 +5028,21 @@ function App() {
       setContributionSettings(loadedPortfolioState.contributionSettings)
       setPersonalTradeLogs(loadedPortfolioState.personalTradeLogs)
       const legacyTickers = session ? readLegacyWatchlist(session) : null
-      const nextPersonalTickers = personalTickers?.tickers
-        ? personalTickers.tickers
-        : legacyTickers ?? initialWatchlist
+      const remotePersonalTickers = personalTickers?.tickers
+      const pendingPersonalTickers = readPendingPersonalWatchlist(session)
+      const resolvedPersonalTickers = pendingPersonalTickers ?? remotePersonalTickers
+      const nextPersonalTickers = resolvedPersonalTickers ?? legacyTickers ?? initialWatchlist
 
       setWatchlist(session ? nextPersonalTickers : readStoredWatchlist(null))
+      if (session && pendingPersonalTickers) {
+        if (sameWatchlistTickers(remotePersonalTickers, pendingPersonalTickers)) {
+          clearPendingPersonalWatchlist(session)
+        } else {
+          void persistWatchlist('personal', pendingPersonalTickers, session).catch(() => undefined)
+        }
+      }
 
-      if (session && (!personalTickers?.tickers || personalTickers.tickers.length === 0) && legacyTickers) {
+      if (session && !pendingPersonalTickers && !remotePersonalTickers && legacyTickers) {
         await persistWatchlist('personal', legacyTickers, session)
       }
     } finally {
@@ -5684,6 +5725,7 @@ function App() {
   const clearSessionLocalData = (session: UserSession | null) => {
     if (!session) return
     localStorage.removeItem(personalWatchlistStorageKey(session))
+    localStorage.removeItem(personalWatchlistPendingStorageKey(session))
     localStorage.removeItem(personalTradeLogsStorageKey(session))
     localStorage.removeItem(contributionSettingsStorageKey(session))
     localStorage.removeItem(userSettingsStorageKey(session))
@@ -6732,7 +6774,7 @@ function App() {
               <div className="log-meta">
                 <p>총 투자 기간 {investingDays}일</p>
                 {!isLongTermInvestor && <p>승률: {visibleWinRates}</p>}
-                <p>성공/실패 기준: {strategyCriteriaLine}</p>
+                <p>성공/실패: {strategyCriteriaLine}</p>
               </div>
               <button
                 className="sort-button"
