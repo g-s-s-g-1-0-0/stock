@@ -131,25 +131,25 @@ def test_strategy_g_uses_twelve_percent_target_and_ten_percent_stop():
     assert "손절" in stop["reason"]
 
 
-def test_all_strategies_exit_when_five_day_rebound_stalls():
-    row = IndicatorRow(stock_name="MSFT", current_price=104.99, entry_price=100)
+def test_all_strategies_exit_when_fifteen_day_rebound_stalls():
+    row = IndicatorRow(stock_name="MSFT", current_price=107.99, entry_price=100)
 
     for strategy in ("A", "B", "C", "D", "E", "F", "G"):
-        result = evaluate_exit_condition(row, strategy_type=strategy, trading_days=5)
+        result = evaluate_exit_condition(row, strategy_type=strategy, trading_days=15)
 
         assert result["shouldExit"] is True
-        assert "5거래일 반등 미달" in result["reason"]
+        assert "15거래일 반등 미달" in result["reason"]
 
 
-def test_stalled_rebound_exit_waits_until_day_five_and_below_five_percent():
-    day_four_row = IndicatorRow(stock_name="MSFT", current_price=104, entry_price=100)
-    five_pct_row = IndicatorRow(stock_name="MSFT", current_price=105, entry_price=100)
+def test_stalled_rebound_exit_waits_until_day_fifteen_and_below_eight_percent():
+    day_fourteen_row = IndicatorRow(stock_name="MSFT", current_price=104, entry_price=100)
+    eight_pct_row = IndicatorRow(stock_name="MSFT", current_price=108, entry_price=100)
 
-    day_four = evaluate_exit_condition(day_four_row, strategy_type="A", trading_days=4)
-    five_pct = evaluate_exit_condition(five_pct_row, strategy_type="A", trading_days=5)
+    day_fourteen = evaluate_exit_condition(day_fourteen_row, strategy_type="A", trading_days=14)
+    eight_pct = evaluate_exit_condition(eight_pct_row, strategy_type="A", trading_days=15)
 
-    assert day_four["shouldExit"] is False
-    assert five_pct["shouldExit"] is False
+    assert day_fourteen["shouldExit"] is False
+    assert eight_pct["shouldExit"] is False
 
 
 def test_exit_condition_for_ef_waits_for_macd_turn():
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     test_nasdaq_peak_exit_still_applies_to_b_and_d()
     test_strategy_g_recovery_ma20_pullback_signal()
     test_strategy_g_uses_twelve_percent_target_and_ten_percent_stop()
-    test_all_strategies_exit_when_five_day_rebound_stalls()
-    test_stalled_rebound_exit_waits_until_day_five_and_below_five_percent()
+    test_all_strategies_exit_when_fifteen_day_rebound_stalls()
+    test_stalled_rebound_exit_waits_until_day_fifteen_and_below_eight_percent()
     test_exit_condition_for_ef_waits_for_macd_turn()
     print("strategy parity smoke tests passed")

@@ -1585,19 +1585,19 @@ function tradeCriteriaInfo(strategy: string) {
   const code = strategyCode(strategy)
 
   if (['A', 'B', 'C'].includes(code)) {
-    return `${code} 전략 기준: 성공은 매수가 대비 +20% 도달 시 즉시 익절입니다. -30%에 닿으면 손절 실패이고, 매수 후 5거래일 종가 수익률이 +5% 미만이면 반등 미달로 청산합니다. 60거래일 경과 후 수익 중이거나 120거래일 최대 보유 기간에 걸려 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.`
+    return `${code} 전략 기준: 성공은 매수가 대비 +20% 도달 시 즉시 익절입니다. -30%에 닿으면 손절 실패이고, 매수 후 15거래일 종가 수익률이 +8% 미만이면 반등 미달로 청산합니다. 60거래일 경과 후 수익 중이거나 120거래일 최대 보유 기간에 걸려 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.`
   }
 
   if (code === 'D') {
-    return 'D 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -25%에 닿으면 손절 실패이고, 매수 후 5거래일 종가 수익률이 +5% 미만이면 반등 미달로 청산합니다. 30거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
+    return 'D 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -25%에 닿으면 손절 실패이고, 매수 후 15거래일 종가 수익률이 +8% 미만이면 반등 미달로 청산합니다. 30거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
   }
 
   if (code === 'G') {
-    return 'G 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -10%에 닿으면 손절 실패이고, 매수 후 5거래일 종가 수익률이 +5% 미만이면 반등 미달로 청산합니다. 40거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
+    return 'G 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -10%에 닿으면 손절 실패이고, 매수 후 15거래일 종가 수익률이 +8% 미만이면 반등 미달로 청산합니다. 40거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
   }
 
   if (['E', 'F'].includes(code)) {
-    return `${code} 전략 기준: 성공은 +20% 도달 후 MACD 둔화 신호가 나오거나 목표 도달 후 5거래일 대기 만료 시 청산입니다. -30%에 닿으면 손절 실패이고, 매수 후 5거래일 종가 수익률이 +5% 미만이면 반등 미달로 청산합니다. 60거래일 수익 중 청산이나 120거래일 최대 보유 기간 청산은 조건 충족 여부에 따라 수익이어도 실패(익절)로 볼 수 있습니다.`
+    return `${code} 전략 기준: 성공은 +20% 도달 후 MACD 둔화 신호가 나오거나 목표 도달 후 5거래일 대기 만료 시 청산입니다. -30%에 닿으면 손절 실패이고, 매수 후 15거래일 종가 수익률이 +8% 미만이면 반등 미달로 청산합니다. 60거래일 수익 중 청산이나 120거래일 최대 보유 기간 청산은 조건 충족 여부에 따라 수익이어도 실패(익절)로 볼 수 있습니다.`
   }
 
   return '전략별 성공/실패 기준 정보가 준비 중입니다.'
@@ -4914,7 +4914,7 @@ function App() {
 
       const operatorTickersFromDb = await loadWatchlist('operator', session)
       const operatorDefaultSort = operatorTickersFromDb?.watchlistSort
-      const nextOperatorTickers = operatorTickersFromDb?.tickers && operatorTickersFromDb.tickers.length > 0 ? operatorTickersFromDb.tickers : operatorTickers
+      const nextOperatorTickers = operatorTickersFromDb?.tickers ?? operatorTickers
       setOperatorWatchlist(nextOperatorTickers)
       storeRemoteOperatorWatchlist(nextOperatorTickers)
 
@@ -5233,7 +5233,7 @@ function App() {
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
     ? '장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 보유 종목에서 직접 처리합니다.'
-    : '공통: 5거래일 +5% 미달 청산. A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%), G(+12%, -10%, 40일)'
+    : '공통: 15거래일 +8% 미달 청산. A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%), G(+12%, -10%, 40일)'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,

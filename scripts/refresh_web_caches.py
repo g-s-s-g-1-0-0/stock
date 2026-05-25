@@ -42,7 +42,7 @@ def supabase_request(path: str) -> list[dict]:
 
 
 def load_watchlist_tickers() -> list[str]:
-    rows = supabase_request("/rest/v1/watchlists?select=tickers")
+    rows = supabase_request("/rest/v1/watchlists?select=tickers&scope=eq.operator&owner_id=is.null")
     tickers: list[str] = []
     for row in rows:
         values = row.get("tickers")

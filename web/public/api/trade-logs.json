@@ -45,23 +45,6 @@
       "exitReason": "목표 수익 달성 즉시 매도"
     },
     {
-      "slotId": "AVGO_E_20260514_1",
-      "ticker": "AVGO",
-      "name": "Broadcom",
-      "market": "US",
-      "currentPrice": "$412.85",
-      "strategy": "E. 200일선 상방 & 스퀴즈 저점",
-      "buyDate": "2026.05.14",
-      "buyPrice": "$414.33",
-      "sellDate": "2026.05.23",
-      "sellPrice": "$413.72",
-      "returnPct": -0.15,
-      "holdingDays": "-",
-      "status": "손절",
-      "sellTimestamp": "2026-05-22T17:00:00Z",
-      "exitReason": "5거래일 반등 미달 청산 (6일, -0.15% < +5%)"
-    },
-    {
       "slotId": "IREN_D_20260515_1",
       "ticker": "IREN",
       "name": "IREN",
@@ -70,13 +53,11 @@
       "strategy": "D. 200일선 상방 & 상승 흐름 강화",
       "buyDate": "2026.05.15",
       "buyPrice": "$54.29",
-      "sellDate": "2026.05.23",
-      "sellPrice": "$56.74",
-      "returnPct": 4.51,
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
       "holdingDays": "-",
-      "status": "실패 익절",
-      "sellTimestamp": "2026-05-22T21:00:00Z",
-      "exitReason": "5거래일 반등 미달 청산 (5일, 4.51% < +5%)"
+      "status": "보유 중"
     },
     {
       "slotId": "CRDO_E_20260515_1",
@@ -104,13 +85,11 @@
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.17",
       "buyPrice": "$399.44",
-      "sellDate": "2026.05.23",
-      "sellPrice": "$390.68",
-      "returnPct": -2.19,
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
       "holdingDays": "-",
-      "status": "손절",
-      "sellTimestamp": "2026-05-22T17:00:00Z",
-      "exitReason": "5거래일 반등 미달 청산 (5일, -2.19% < +5%)"
+      "status": "보유 중"
     },
     {
       "slotId": "278470_F_20260518_1",
@@ -121,13 +100,11 @@
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.18",
       "buyPrice": "₩401,500",
-      "sellDate": "2026.05.25",
-      "sellPrice": "₩391,000",
-      "returnPct": -2.62,
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
       "holdingDays": "-",
-      "status": "손절",
-      "sellTimestamp": "2026-05-24T17:00:00Z",
-      "exitReason": "5거래일 반등 미달 청산 (5일, -2.62% < +5%)"
+      "status": "보유 중"
     },
     {
       "slotId": "079550_F_20260518_1",
@@ -154,13 +131,11 @@
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.18",
       "buyPrice": "₩59,600",
-      "sellDate": "2026.05.25",
-      "sellPrice": "₩53,700",
-      "returnPct": -9.9,
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
       "holdingDays": "-",
-      "status": "손절",
-      "sellTimestamp": "2026-05-24T17:00:00Z",
-      "exitReason": "5거래일 반등 미달 청산 (5일, -9.90% < +5%)"
+      "status": "보유 중"
     },
     {
       "slotId": "039030_F_20260518_1",

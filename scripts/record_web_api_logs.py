@@ -146,7 +146,7 @@ def reset_api_logs() -> None:
 
 
 def load_watchlist_tickers(stocks: list[dict[str, Any]]) -> list[str]:
-    rows = supabase_request("/rest/v1/watchlists?select=tickers")
+    rows = supabase_request("/rest/v1/watchlists?select=tickers&scope=eq.operator&owner_id=is.null")
     tickers: list[str] = []
     if isinstance(rows, list):
         for row in rows:
@@ -159,6 +159,8 @@ def load_watchlist_tickers(stocks: list[dict[str, Any]]) -> list[str]:
                     tickers.append(ticker)
     if tickers:
         return tickers[:MAX_LOG_ROWS]
+    if os.environ.get("SUPABASE_URL", "").strip() and os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip():
+        return []
 
     tickers = [
         str(stock.get("ticker", "")).strip().upper()
@@ -558,6 +560,7 @@ def update_trade_logs(
     rows = existing.get("rows", []) if isinstance(existing, dict) else []
     trades = [row for row in rows if isinstance(row, dict)]
     stocks_by_symbol = stocks_by_ticker(stocks)
+    entry_tickers = set(load_watchlist_tickers(stocks))
     today = kst_trade_date()
     today_date = parse_trade_date(today) or datetime.now(timezone.utc).astimezone(KST).date()
     nasdaq_peak_alert = bool((qqq_market_state or {}).get("peakTriggered"))
@@ -612,6 +615,8 @@ def update_trade_logs(
     for stock in stocks:
         ticker = str(stock.get("ticker") or "").strip().upper()
         if not ticker:
+            continue
+        if ticker not in entry_tickers:
             continue
         current_opinion = str(stock.get("opinion") or "").strip()
         previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "").strip()
