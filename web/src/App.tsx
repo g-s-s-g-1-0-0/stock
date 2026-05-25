@@ -3493,7 +3493,7 @@ function MarketTrendsPage({
         <span className="section-heading-meta">총 {rows.length}개 <b>|</b> {updateLabel}</span>
       </div>
       {isAdmin && selectedRowCount > 0 && (
-        <div className="admin-event-toolbar market-trends-admin-toolbar">
+        <div className="market-trends-table-actions">
           <button
             className="remove-selected-button"
             disabled={isSaving}

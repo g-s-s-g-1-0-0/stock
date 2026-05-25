@@ -1615,6 +1615,12 @@
   gap: 14px;
 }
 
+.market-trends-table-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: -4px 0 -6px;
+}
+
 .market-trends-sheet {
   height: auto;
   overflow-x: auto;
