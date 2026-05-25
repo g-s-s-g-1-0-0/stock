@@ -5333,7 +5333,7 @@ function App() {
       .map((code) => formatWinRate(code, scopedTrades.filter((trade) => strategyCode(trade.strategy) === code))),
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
-    ? '장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 보유 종목에서 직접 처리합니다.'
+    ? "장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 '보유중인 종목' 표에서 직접 처리합니다."
     : '공통: 15거래일 +8% 미달 청산. A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%), G(+12%, -10%, 40일)'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
@@ -7237,7 +7237,7 @@ function App() {
               </div>
             </div>
 
-            <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다</p>
+            <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다.</p>
 
             <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetRef}>
               <table
