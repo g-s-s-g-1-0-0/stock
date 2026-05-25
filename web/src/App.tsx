@@ -258,6 +258,7 @@ const LOCAL_TEST_SESSION_STORAGE_KEY = 'gongsu-local-test-session'
 const WATCHLIST_STORAGE_KEY = 'gongsu-watchlist'
 const OPERATOR_WATCHLIST_STORAGE_KEY = 'gongsu-operator-watchlist'
 const OPERATOR_WATCHLIST_REMOTE_CACHE_STORAGE_KEY = 'gongsu-operator-watchlist-remote-cache-v1'
+const OPERATOR_WATCHLIST_PENDING_STORAGE_KEY = 'gongsu-operator-watchlist-pending-v1'
 const PERSONAL_TRADES_STORAGE_KEY = 'gongsu-personal-trades'
 const VIEW_MODE_STORAGE_KEY = 'gongsu-view-mode'
 const VIEW_MODE_HINT_STORAGE_KEY = 'gongsu-view-mode-hint-seen'
@@ -423,13 +424,45 @@ function readCachedRemoteOperatorWatchlist() {
   }
 }
 
+function sameWatchlistTickers(a: string[] | null | undefined, b: string[] | null | undefined) {
+  return JSON.stringify(a ?? []) === JSON.stringify(b ?? [])
+}
+
 function storeRemoteOperatorWatchlist(tickers: string[]) {
   localStorage.setItem(OPERATOR_WATCHLIST_STORAGE_KEY, JSON.stringify(tickers))
   localStorage.setItem(OPERATOR_WATCHLIST_REMOTE_CACHE_STORAGE_KEY, JSON.stringify(tickers))
 }
 
+function readPendingOperatorWatchlist() {
+  const storedWatchlist = localStorage.getItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
+  if (!storedWatchlist) return null
+
+  try {
+    const parsed = JSON.parse(storedWatchlist) as { tickers?: unknown; updatedAt?: unknown }
+    const updatedAt = typeof parsed.updatedAt === 'number' ? parsed.updatedAt : 0
+    if (!updatedAt || Date.now() - updatedAt > PENDING_WATCHLIST_MAX_AGE_MS) {
+      localStorage.removeItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
+      return null
+    }
+    return normalizeWatchlistTickers(parsed.tickers)
+  } catch {
+    localStorage.removeItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
+    return null
+  }
+}
+
+function storePendingOperatorWatchlist(tickers: string[]) {
+  storeRemoteOperatorWatchlist(tickers)
+  localStorage.setItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY, JSON.stringify({ tickers, updatedAt: Date.now() }))
+}
+
+function clearPendingOperatorWatchlist() {
+  localStorage.removeItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
+}
+
 const APP_DATA_CACHE_STORAGE_KEY = 'gssg-app-data-cache-v1'
 const APP_DATA_AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000
+const PENDING_WATCHLIST_MAX_AGE_MS = 24 * 60 * 60 * 1000
 
 type GssgAppData = AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>
 type AppDataMetas = {
@@ -4810,9 +4843,14 @@ function App() {
   }
 
   async function persistWatchlist(scope: 'personal' | 'operator', tickers: string[], session = userSession) {
+    if (scope === 'operator') {
+      storePendingOperatorWatchlist(tickers)
+    }
+
     if (!supabase) {
       if (scope === 'operator') {
-        localStorage.setItem(OPERATOR_WATCHLIST_STORAGE_KEY, JSON.stringify(tickers))
+        storeRemoteOperatorWatchlist(tickers)
+        clearPendingOperatorWatchlist()
       } else {
         localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(tickers))
       }
@@ -4821,6 +4859,11 @@ function App() {
 
     if (scope === 'personal' && !session) return
     const client = supabase
+    const markOperatorPersisted = () => {
+      if (scope !== 'operator') return
+      storeRemoteOperatorWatchlist(tickers)
+      clearPendingOperatorWatchlist()
+    }
 
     const payload = scope === 'operator'
       ? { tickers, watchlist_sort: watchlistSortSettings }
@@ -4846,7 +4889,10 @@ function App() {
       error = fallback.error
     }
     if (error) throw error
-    if (data && data.length > 0) return
+    if (data && data.length > 0) {
+      markOperatorPersisted()
+      return
+    }
 
     const insertPayload = {
       owner_id: scope === 'operator' ? null : session?.id,
@@ -4856,16 +4902,21 @@ function App() {
     const { error: insertError } = await client
       .from('watchlists')
       .insert(insertPayload as never)
-    if (!insertError) return
+    if (!insertError) {
+      markOperatorPersisted()
+      return
+    }
     if (scope !== 'operator') throw insertError
 
-    await client
+    const { error: fallbackInsertError } = await client
       .from('watchlists')
       .insert({
         owner_id: null,
         scope,
         tickers,
       })
+    if (fallbackInsertError) throw fallbackInsertError
+    markOperatorPersisted()
   }
 
   async function persistOperatorWatchlistSort(watchlistSort: WatchlistSortSettings, session = userSession) {
@@ -4914,9 +4965,18 @@ function App() {
 
       const operatorTickersFromDb = await loadWatchlist('operator', session)
       const operatorDefaultSort = operatorTickersFromDb?.watchlistSort
-      const nextOperatorTickers = operatorTickersFromDb?.tickers ?? operatorTickers
+      const remoteOperatorTickers = operatorTickersFromDb?.tickers
+      const pendingOperatorTickers = readPendingOperatorWatchlist()
+      const nextOperatorTickers = pendingOperatorTickers ?? remoteOperatorTickers ?? operatorTickers
       setOperatorWatchlist(nextOperatorTickers)
       storeRemoteOperatorWatchlist(nextOperatorTickers)
+      if (pendingOperatorTickers) {
+        if (sameWatchlistTickers(remoteOperatorTickers, pendingOperatorTickers)) {
+          clearPendingOperatorWatchlist()
+        } else if (session && isConfiguredAdminEmail(session.email)) {
+          void persistWatchlist('operator', pendingOperatorTickers, session).catch(() => undefined)
+        }
+      }
 
       const [personalTickers, loadedSettings, loadedPortfolioState] = await Promise.all([
         personalTickersPromise,
@@ -4935,7 +4995,7 @@ function App() {
       setContributionSettings(loadedPortfolioState.contributionSettings)
       setPersonalTradeLogs(loadedPortfolioState.personalTradeLogs)
       const legacyTickers = session ? readLegacyWatchlist(session) : null
-      const nextPersonalTickers = personalTickers?.tickers && personalTickers.tickers.length > 0
+      const nextPersonalTickers = personalTickers?.tickers
         ? personalTickers.tickers
         : legacyTickers ?? initialWatchlist
 
