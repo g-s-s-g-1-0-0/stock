@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-25T14:55:41+00:00",
-    "lastSuccessfulRun": "2026-05-25T14:55:41+00:00",
+    "updatedAt": "2026-05-25T15:01:40+00:00",
+    "lastSuccessfulRun": "2026-05-25T15:01:40+00:00",
     "failedReason": null
   },
   "rows": [
@@ -155,10 +155,10 @@
       "ticker": "MU",
       "name": "Micron Technology",
       "market": "US",
-      "fairPrice": "-",
+      "fairPrice": "$317.70 ~ $529.50",
       "fairPriceReason": null,
       "currentPrice": "$745.56",
-      "valuation": "보통",
+      "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
@@ -466,7 +466,9 @@
       "opinion": "관망",
       "opinionReason": "보유 중 추가매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "G. 급락 후 회복장 20일선 눌림"
+      ],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
       "updatedAt": "2026-05-25T14:55:38+00:00"
@@ -491,10 +493,10 @@
       "ticker": "ETN",
       "name": "Eaton Corporation, PLC",
       "market": "US",
-      "fairPrice": "-",
+      "fairPrice": "$153.45 ~ $255.75",
       "fairPriceReason": null,
       "currentPrice": "$390.53",
-      "valuation": "보통",
+      "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
