@@ -6460,6 +6460,7 @@ function App() {
   const tableStocks = sortWatchlistStocks(rawTableStocks, watchlistSortSettings, currentWatchlistTickers, scopedTrades)
   const canEditCurrentWatchlist = effectiveViewMode === 'personal' || isAdminUser
   const isCurrentWatchlistEmpty = tableStocks.length === 0
+  const shouldDimPanelsForFirstVisitGuide = isCurrentWatchlistEmpty && scopedTrades.length === 0
   const isCurrentWatchlistFull = canEditCurrentWatchlist && currentWatchlistTickers.length >= MAX_WATCHLIST_ITEMS
   const personalRemainingSlots = Math.max(0, MAX_WATCHLIST_ITEMS - watchlist.length)
   const operatorImportCandidates = useMemo(
@@ -6758,7 +6759,7 @@ function App() {
 
       {currentActivePage === 'home' ? (
       <section className={`dashboard-grid ${isLongTermInvestor ? 'long-term-home-grid' : 'swing-home-grid'}`}>
-        <section className={`panel trading-log-panel ${isCurrentWatchlistEmpty ? 'dimmed-panel' : ''}`}>
+        <section className={`panel trading-log-panel ${shouldDimPanelsForFirstVisitGuide ? 'dimmed-panel' : ''}`}>
           <div className="log-header">
             <div className="log-title-row">
               <h2>트레이딩 로그</h2>
@@ -7201,7 +7202,7 @@ function App() {
             </div>
           </section>
 
-          <section className={`panel ${isCurrentWatchlistEmpty ? 'dimmed-panel' : ''}`}>
+          <section className={`panel ${shouldDimPanelsForFirstVisitGuide ? 'dimmed-panel' : ''}`}>
             <div className="section-heading">
               <div className="section-title-inline">
                 <h2>보유중인 종목 (전략 단위)</h2>
