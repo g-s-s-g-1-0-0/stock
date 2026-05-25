@@ -1335,12 +1335,23 @@ def market_events_review_body(payload: dict[str, Any]) -> str:
     verification = meta.get("verification") if isinstance(meta.get("verification"), dict) else {}
     issues = verification.get("needsManualReview") if isinstance(verification.get("needsManualReview"), list) else []
     changes = verification.get("autoUpdated") if isinstance(verification.get("autoUpdated"), list) else []
-    failed_reason = str(meta.get("failedReason") or "시장 주요 이벤트 중 수동 확인이 필요한 항목이 있습니다.")
+    failed_reason = str(meta.get("failedReason") or "").strip()
+    has_issues = bool(issues)
+    has_changes = bool(changes)
+    headline = "시장 주요 이벤트 수동 확인 필요" if has_issues else "시장 주요 이벤트 자동 수정 완료"
+    headline_color = "#d32f2f" if has_issues else "#1b5e20"
+    border_color = "#ffcdd2" if has_issues else "#c8e6c9"
+    summary_bg = "#fff3e0" if has_issues else "#f1f8e9"
+    summary_border = "#ff9800" if has_issues else "#43a047"
+    summary = (
+        failed_reason
+        or ("공식 출처에서 날짜와 시간이 명확히 확인된 시장 주요 이벤트 일정이 자동 수정됐습니다." if has_changes else "시장 주요 이벤트 공식 일정 검증이 완료됐습니다.")
+    )
 
     issues_html = "".join(
         f"<li>{html.escape(str(issue))}</li>"
         for issue in issues[:20]
-    ) or "<li>세부 항목이 없습니다. 캐시의 meta.failedReason을 확인해 주세요.</li>"
+    ) or "<li>수동 확인이 필요한 항목은 없습니다.</li>"
     changes_html = "".join(
         f"<li>{html.escape(str(change))}</li>"
         for change in changes[:20]
@@ -1348,11 +1359,11 @@ def market_events_review_body(payload: dict[str, Any]) -> str:
 
     return f"""
     <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7;max-width:720px;">
-      <p style="font-size:16px;font-weight:bold;color:#d32f2f;border-bottom:2px solid #ffcdd2;padding-bottom:8px;">
-        시장 주요 이벤트 수동 확인 필요
+      <p style="font-size:16px;font-weight:bold;color:{headline_color};border-bottom:2px solid {border_color};padding-bottom:8px;">
+        {html.escape(headline)}
       </p>
-      <div style="margin:14px 0;padding:12px 16px;background:#fff3e0;border-left:3px solid #ff9800;color:#333;">
-        {html.escape(failed_reason)}
+      <div style="margin:14px 0;padding:12px 16px;background:{summary_bg};border-left:3px solid {summary_border};color:#333;">
+        {html.escape(summary)}
       </div>
       <p style="margin:12px 0 6px 0;font-weight:bold;">확실해서 자동 반영된 항목</p>
       <ul style="margin-top:0;padding-left:20px;">{changes_html}</ul>
@@ -1360,7 +1371,7 @@ def market_events_review_body(payload: dict[str, Any]) -> str:
       <ul style="margin-top:0;padding-left:20px;">{issues_html}</ul>
       <p style="margin:12px 0 0 0;color:#555;">
         자동 수정은 공식 출처에서 날짜와 시간이 명확히 확인된 항목에만 적용했습니다.
-        위 항목은 관리자 화면에서 확인 후 필요하면 직접 수정해 주세요.
+        {html.escape("확인이 필요한 항목은 관리자 화면에서 확인 후 필요하면 직접 수정해 주세요." if has_issues else "이번 메일은 자동 수정 내역 공유용이며 추가 조치가 필요하지 않습니다.")}
       </p>
       <p style="color:#888;font-size:12px;margin-top:18px;">발송 시각: {html.escape(now)}</p>
     </div>
@@ -2019,8 +2030,10 @@ def send_market_events_review_notification(path: Path = DEFAULT_MARKET_EVENTS) -
     payload = read_json(path)
     meta = payload.get("meta") if isinstance(payload, dict) else {}
     failed_reason = str(meta.get("failedReason") or "").strip()
-    if not failed_reason:
-        print("Market event verification has no manual review items.")
+    verification = meta.get("verification") if isinstance(meta.get("verification"), dict) else {}
+    changes = verification.get("autoUpdated") if isinstance(verification.get("autoUpdated"), list) else []
+    if not failed_reason and not changes:
+        print("Market event verification has no changes or manual review items.")
         return 0
 
     recipients = [
@@ -2034,7 +2047,7 @@ def send_market_events_review_notification(path: Path = DEFAULT_MARKET_EVENTS) -
         print("No admin recipients for market event review.")
         return 0
 
-    subject = "[확인 필요] 시장 주요 이벤트 공식 일정 검증"
+    subject = "[확인 필요] 시장 주요 이벤트 공식 일정 검증" if failed_reason else "[자동 수정] 시장 주요 이벤트 공식 일정 반영"
     body = market_events_review_body(payload)
     sent = 0
     for recipient in recipients:
