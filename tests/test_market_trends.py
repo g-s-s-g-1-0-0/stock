@@ -89,6 +89,13 @@ class MarketTrendsTest(unittest.TestCase):
         self.assertEqual("우주항공 | 위성, 발사체, SpaceX", merged[0])
         self.assertIn("AI 인프라 | 데이터센터, 광통신, 전력", merged)
 
+    def test_market_trend_summary_uses_polite_style(self) -> None:
+        summary = "이번 주 전체 시장 분위기는 우주항공과 로봇·자동화 분야도 주목을 받고 있다."
+
+        normalized = self.pipeline.normalize_market_trend_summary(summary)
+
+        self.assertEqual("이번 주 전체 시장 분위기는 우주항공과 로봇·자동화 분야도 주목을 받고 있습니다.", normalized)
+
 
 if __name__ == "__main__":
     unittest.main()

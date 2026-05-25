@@ -1185,6 +1185,7 @@ def normalize_market_trend_summary(value: Any) -> str:
         (r"집중됐다\.$", "집중됐습니다."),
         (r"이어졌다\.$", "이어졌습니다."),
         (r"받았다\.$", "받았습니다."),
+        (r"받고 있다\.$", "받고 있습니다."),
     ]
     for pattern, replacement in replacements:
         sanitized = re.sub(pattern, replacement, sanitized)
