@@ -1630,11 +1630,11 @@
 
 .market-trends-table {
   table-layout: fixed;
-  min-width: 2984px;
+  min-width: 3524px;
 }
 
 .admin-market-trends-table {
-  min-width: 3026px;
+  min-width: 3566px;
 }
 
 .market-trends-table .trend-select-col {
@@ -1650,7 +1650,7 @@
 }
 
 .market-trends-table .trend-summary-col {
-  width: 780px;
+  width: 1320px;
 }
 
 .market-trends-table th:first-child,
@@ -1693,9 +1693,9 @@
 
 .market-trends-table th:last-child,
 .market-trends-table td:last-child {
-  width: 780px;
-  min-width: 780px;
-  max-width: 780px;
+  width: 1320px;
+  min-width: 1320px;
+  max-width: 1320px;
 }
 
 .admin-market-trends-table th:first-child,
