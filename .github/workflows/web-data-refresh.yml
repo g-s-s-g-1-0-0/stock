@@ -4,6 +4,8 @@ on:
   schedule:
     # Weekday US market-close refresh, recorded as the next KST date.
     - cron: "30 22 * * 1-5"
+    # Weekly market trend report and official market-event verification.
+    - cron: "0 0 * * 1"
   workflow_dispatch:
     inputs:
       refresh_scope:
@@ -85,7 +87,11 @@ jobs:
       - name: Resolve refresh tasks
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            TASKS="valuation technical"
+            if [ "${{ github.event.schedule }}" = "0 0 * * 1" ]; then
+              TASKS="market-trends market-events"
+            else
+              TASKS="valuation technical"
+            fi
             SEND_NOTIFICATIONS="true"
             PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0); publish_at = publish_at + timedelta(hours=1) if publish_at <= now else publish_at; print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z"))')"
           else
@@ -190,6 +196,10 @@ jobs:
       - name: Send weekly trend report emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
         run: python scripts/web_refresh_notifications.py weekly-trend
+
+      - name: Notify admins for market event review
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'market-events') }}
+        run: python scripts/web_refresh_notifications.py market-events-review
 
       - name: Commit refreshed caches and notification state
         if: ${{ env.SKIP_REFRESH != 'true' }}

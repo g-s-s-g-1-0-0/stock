@@ -18,6 +18,7 @@ import urllib.request
 from collections import Counter
 from datetime import date, datetime, timezone
 from html import unescape
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -65,6 +66,76 @@ CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graph
 FAIR_PRICE_UNAVAILABLE_LABEL = "적자 상태라 판단 불가"
 MAX_REFRESH_UNIVERSE = int(os.environ.get("MAX_REFRESH_UNIVERSE", "200"))
 KST = ZoneInfo("Asia/Seoul")
+ET = ZoneInfo("America/New_York")
+MARKET_EVENTS_WEEKLY_SCHEDULE = "0 0 * * 1"
+FED_FOMC_SCHEDULE_URL = "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm"
+BLS_RELEASE_SCHEDULE_URLS = {
+    "고용보고서 발표": "https://www.bls.gov/schedule/news_release/empsit.htm",
+    "CPI 발표": "https://www.bls.gov/schedule/news_release/cpi.htm",
+    "PPI 발표": "https://www.bls.gov/schedule/news_release/ppi.htm",
+}
+BEA_RELEASE_SCHEDULE_URL = "https://www.bea.gov/news/schedule"
+US_MONTHS = {
+    "jan": 1,
+    "january": 1,
+    "feb": 2,
+    "february": 2,
+    "mar": 3,
+    "march": 3,
+    "apr": 4,
+    "april": 4,
+    "may": 5,
+    "jun": 6,
+    "june": 6,
+    "jul": 7,
+    "july": 7,
+    "aug": 8,
+    "august": 8,
+    "sep": 9,
+    "sept": 9,
+    "september": 9,
+    "oct": 10,
+    "october": 10,
+    "nov": 11,
+    "november": 11,
+    "dec": 12,
+    "december": 12,
+}
+
+
+class HtmlTableParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.rows: list[list[str]] = []
+        self._in_row = False
+        self._in_cell = False
+        self._row: list[str] = []
+        self._cell: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == "tr":
+            self._in_row = True
+            self._row = []
+        if self._in_row and tag in ("td", "th"):
+            self._in_cell = True
+            self._cell = []
+        if self._in_cell and tag == "br":
+            self._cell.append(" ")
+
+    def handle_data(self, data: str) -> None:
+        if self._in_cell:
+            self._cell.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in ("td", "th") and self._in_row and self._in_cell:
+            self._row.append(" ".join("".join(self._cell).split()))
+            self._cell = []
+            self._in_cell = False
+        if tag == "tr" and self._in_row:
+            if self._row:
+                self.rows.append(self._row)
+            self._row = []
+            self._in_row = False
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
@@ -1427,23 +1498,332 @@ def build_market_trends_cache() -> dict[str, Any]:
     }
 
 
+def html_table_rows(html_text: str) -> list[list[str]]:
+    parser = HtmlTableParser()
+    parser.feed(html_text)
+    return parser.rows
+
+
+def parse_us_month(value: str) -> int | None:
+    key = re.sub(r"[^A-Za-z]", "", value).lower()
+    return US_MONTHS.get(key)
+
+
+def parse_release_month(entry: dict[str, Any]) -> int | None:
+    match = re.match(r"^(\d{1,2})월$", str(entry.get("month") or "").strip())
+    if not match:
+        return None
+    month = int(match.group(1))
+    return month if 1 <= month <= 12 else None
+
+
+def market_event_year(payload: dict[str, Any], today: date | None = None) -> int:
+    meta = payload.get("meta") if isinstance(payload.get("meta"), dict) else {}
+    match = re.search(r"\d{4}", str(meta.get("yearLabel") or ""))
+    if match:
+        return int(match.group(0))
+
+    groups = payload.get("groups") if isinstance(payload.get("groups"), list) else []
+    years: list[int] = []
+    for group in groups:
+        entries = group.get("entries") if isinstance(group, dict) else None
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            parsed = parse_market_event_date(entry.get("date")) if isinstance(entry, dict) else None
+            if parsed:
+                years.append(parsed.year)
+    if years:
+        return Counter(years).most_common(1)[0][0]
+    return (today or datetime.now(KST).date()).year
+
+
+def format_market_event_date(value: date) -> str:
+    return f"{value.year}. {value.month}. {value.day}"
+
+
+def format_market_event_time(value: datetime) -> str:
+    return f"{value.hour}:{value.minute:02d}"
+
+
+def format_market_event_d_day(value: Any, today: date | None = None) -> str:
+    parsed = parse_market_event_date(value)
+    if not parsed:
+        return "-"
+    today = today or datetime.now(KST).date()
+    return str((parsed - today).days)
+
+
+def parse_us_date_text(value: str, default_year: int | None = None) -> date | None:
+    text = " ".join(value.replace(".", "").replace(",", " ").split())
+    match = re.match(r"^([A-Za-z]+)\s+(\d{1,2})(?:\s+(\d{4}))?$", text)
+    if not match:
+        return None
+    month = parse_us_month(match.group(1))
+    year = int(match.group(3)) if match.group(3) else default_year
+    if month is None or year is None:
+        return None
+    try:
+        return date(year, month, int(match.group(2)))
+    except ValueError:
+        return None
+
+
+def parse_us_time_text(value: str) -> tuple[int, int] | None:
+    text = " ".join(value.strip().upper().split())
+    match = re.match(r"^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$", text)
+    if not match:
+        return None
+    hour = int(match.group(1))
+    minute = int(match.group(2) or "0")
+    meridiem = match.group(3)
+    if hour < 1 or hour > 12 or minute > 59:
+        return None
+    if meridiem == "PM" and hour != 12:
+        hour += 12
+    if meridiem == "AM" and hour == 12:
+        hour = 0
+    return hour, minute
+
+
+def market_event_source_value(release_date: date, release_time: str) -> dict[str, str] | None:
+    parsed_time = parse_us_time_text(release_time)
+    if parsed_time is None:
+        return None
+    released_at = datetime(
+        release_date.year,
+        release_date.month,
+        release_date.day,
+        parsed_time[0],
+        parsed_time[1],
+        tzinfo=ET,
+    ).astimezone(KST)
+    return {
+        "date": format_market_event_date(released_at.date()),
+        "time": format_market_event_time(released_at),
+    }
+
+
+def add_unique_market_event_source(
+    target: dict[int, dict[str, str]],
+    issues: list[str],
+    title: str,
+    month: int,
+    value: dict[str, str] | None,
+) -> None:
+    if month < 1 or month > 12 or value is None:
+        issues.append(f"{title} 공식 일정의 날짜/시간을 해석하지 못했습니다.")
+        return
+    previous = target.get(month)
+    if previous and previous != value:
+        issues.append(
+            f"{title} {month}월 공식 일정이 복수 값으로 충돌합니다: "
+            f"{previous['date']} {previous['time']} / {value['date']} {value['time']}"
+        )
+        return
+    target[month] = value
+
+
+def fetch_fomc_market_events(year: int, issues: list[str]) -> dict[int, dict[str, str]]:
+    result: dict[int, dict[str, str]] = {}
+    try:
+        html_text = fetch_text(FED_FOMC_SCHEDULE_URL)
+    except Exception as exc:  # noqa: BLE001 - external source should not block cache generation
+        issues.append(f"Federal Reserve FOMC 일정 조회 실패: {exc}")
+        return result
+
+    plain = re.sub(r"<[^>]+>", " ", html_text)
+    plain = " ".join(unescape(plain).split())
+    marker = f"For {year}:"
+    start = plain.find(marker)
+    if start < 0:
+        issues.append(f"Federal Reserve FOMC {year}년 공식 일정 구간을 찾지 못했습니다.")
+        return result
+    section = plain[start + len(marker):]
+    end = section.find("The Committee releases")
+    if end >= 0:
+        section = section[:end]
+
+    for match in re.finditer(
+        r"and\s+[A-Za-z]+,\s+([A-Za-z]+)\s+(\d{1,2})(?:,\s+(\d{4}))?",
+        section,
+    ):
+        event_year = int(match.group(3) or year)
+        if event_year != year:
+            continue
+        month = parse_us_month(match.group(1))
+        if month is None:
+            issues.append(f"Federal Reserve FOMC 날짜의 월을 해석하지 못했습니다: {match.group(0)}")
+            continue
+        try:
+            second_day = date(event_year, month, int(match.group(2)))
+        except ValueError:
+            issues.append(f"Federal Reserve FOMC 날짜를 해석하지 못했습니다: {match.group(0)}")
+            continue
+        value = market_event_source_value(second_day, "2:00 PM")
+        value_date = parse_market_event_date(value.get("date") if value else None)
+        add_unique_market_event_source(result, issues, "금리 발표", value_date.month if value_date else 0, value)
+
+    if not result:
+        issues.append(f"Federal Reserve FOMC {year}년 공식 일정에서 검증 가능한 발표일을 찾지 못했습니다.")
+    return result
+
+
+def fetch_bls_market_events(title: str, url: str, year: int, issues: list[str]) -> dict[int, dict[str, str]]:
+    result: dict[int, dict[str, str]] = {}
+    try:
+        rows = html_table_rows(fetch_text(url))
+    except Exception as exc:  # noqa: BLE001 - ambiguous by design when the official page cannot be read
+        issues.append(f"BLS {title} 공식 일정 조회 실패: {exc}")
+        return result
+
+    for row in rows:
+        if len(row) < 3 or row[0].lower().startswith("reference"):
+            continue
+        release_date = parse_us_date_text(row[1], year)
+        if release_date is None or release_date.year != year:
+            continue
+        value = market_event_source_value(release_date, row[2])
+        add_unique_market_event_source(result, issues, title, release_date.month, value)
+
+    if not result:
+        issues.append(f"BLS {title} {year}년 공식 일정에서 검증 가능한 발표일을 찾지 못했습니다.")
+    return result
+
+
+def fetch_pce_market_events(year: int, issues: list[str]) -> dict[int, dict[str, str]]:
+    result: dict[int, dict[str, str]] = {}
+    try:
+        rows = html_table_rows(fetch_text(BEA_RELEASE_SCHEDULE_URL))
+    except Exception as exc:  # noqa: BLE001
+        issues.append(f"BEA PCE 공식 일정 조회 실패: {exc}")
+        return result
+
+    for row in rows:
+        if len(row) < 3 or "Personal Income and Outlays" not in row[2]:
+            continue
+        title_match = re.search(r"Personal Income and Outlays,\s+([A-Za-z]+)\s+(\d{4})", row[2])
+        date_match = re.match(r"^([A-Za-z]+)\s+(\d{1,2})\s+(\d{1,2}:\d{2}\s*[AP]M)$", row[0], flags=re.IGNORECASE)
+        if not title_match or not date_match:
+            issues.append(f"BEA PCE 공식 일정 행을 해석하지 못했습니다: {' | '.join(row)}")
+            continue
+        reference_month = parse_us_month(title_match.group(1))
+        reference_year = int(title_match.group(2))
+        release_month = parse_us_month(date_match.group(1))
+        if reference_month is None or release_month is None:
+            continue
+        release_year = reference_year
+        if release_month < reference_month:
+            release_year += 1
+        if release_year != year:
+            continue
+        release_date = date(release_year, release_month, int(date_match.group(2)))
+        value = market_event_source_value(release_date, date_match.group(3))
+        add_unique_market_event_source(result, issues, "PCE 발표", release_date.month, value)
+
+    if not result:
+        issues.append(f"BEA PCE {year}년 공식 일정에서 검증 가능한 발표일을 찾지 못했습니다.")
+    return result
+
+
+def official_market_event_sources(year: int) -> tuple[dict[str, dict[int, dict[str, str]]], list[str]]:
+    issues: list[str] = []
+    sources: dict[str, dict[int, dict[str, str]]] = {
+        "금리 발표": fetch_fomc_market_events(year, issues),
+    }
+    for title, url in BLS_RELEASE_SCHEDULE_URLS.items():
+        sources[title] = fetch_bls_market_events(title, url, year, issues)
+    sources["PCE 발표"] = fetch_pce_market_events(year, issues)
+    return sources, issues
+
+
+def apply_market_event_verification(payload: dict[str, Any]) -> tuple[dict[str, Any], list[str], list[str]]:
+    year = market_event_year(payload)
+    today = datetime.now(KST).date()
+    sources, issues = official_market_event_sources(year)
+    groups = payload.get("groups") if isinstance(payload.get("groups"), list) else []
+    changes: list[str] = []
+
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        title = str(group.get("title") or "").strip()
+        entries = group.get("entries")
+        if not isinstance(entries, list):
+            continue
+        group_sources = sources.get(title, {})
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            entry["dday"] = format_market_event_d_day(entry.get("date"), today)
+            month = parse_release_month(entry)
+            if month is None or title not in sources:
+                continue
+            source_value = group_sources.get(month)
+            if not source_value:
+                cached_date = parse_market_event_date(entry.get("date"))
+                if group_sources and cached_date and cached_date >= today:
+                    issues.append(f"{title} {month}월 공식 일정 확인값이 없어 자동 수정하지 않았습니다.")
+                continue
+
+            cached_date = parse_market_event_date(entry.get("date"))
+            if cached_date and cached_date < today:
+                continue
+            old_date = str(entry.get("date") or "-").strip() or "-"
+            old_time = str(entry.get("time") or "-").strip() or "-"
+            if old_date != source_value["date"] or old_time != source_value["time"]:
+                entry["date"] = source_value["date"]
+                entry["time"] = source_value["time"]
+                entry["dday"] = format_market_event_d_day(entry.get("date"), today)
+                changes.append(
+                    f"{title} {month}월: {old_date} {old_time} -> "
+                    f"{source_value['date']} {source_value['time']}"
+                )
+
+    return payload, changes, issues
+
+
+def market_event_failed_reason(changes: list[str], issues: list[str]) -> str | None:
+    if not issues:
+        return None
+    issue_text = "; ".join(issues[:8])
+    if len(issues) > 8:
+        issue_text += f"; 외 {len(issues) - 8}건"
+    prefix = "일부 확실한 일정은 자동 수정했지만, " if changes else ""
+    return prefix + "시장 주요 이벤트 검증에 수동 확인이 필요한 항목이 있습니다: " + issue_text
+
+
 def build_market_events_cache() -> dict[str, Any]:
     existing = read_cache("market-events")
     if isinstance(existing.get("groups"), list) and existing["groups"]:
+        existing, changes, issues = apply_market_event_verification(existing)
+        failed_reason = market_event_failed_reason(changes, issues)
+        checked_at = now_iso()
         existing["meta"] = {
             **existing.get("meta", {}),
             "kind": "market-events",
-            "schedule": "manual",
-            "updatedAt": now_iso(),
-            "lastSuccessfulRun": now_iso(),
-            "failedReason": None,
+            "schedule": MARKET_EVENTS_WEEKLY_SCHEDULE,
+            "updatedAt": checked_at,
+            "lastSuccessfulRun": checked_at if failed_reason is None else existing.get("meta", {}).get("lastSuccessfulRun"),
+            "failedReason": failed_reason,
+            "verification": {
+                "checkedAt": checked_at,
+                "sourcePolicy": "official-only-auto-update",
+                "autoUpdated": changes,
+                "needsManualReview": issues,
+                "sources": {
+                    "fomc": FED_FOMC_SCHEDULE_URL,
+                    "bls": list(BLS_RELEASE_SCHEDULE_URLS.values()),
+                    "beaPce": BEA_RELEASE_SCHEDULE_URL,
+                },
+            },
         }
         return existing
 
     return {
         "meta": {
             "kind": "market-events",
-            "schedule": "manual",
+            "schedule": MARKET_EVENTS_WEEKLY_SCHEDULE,
             "updatedAt": now_iso(),
             "lastSuccessfulRun": now_iso(),
             "failedReason": None,

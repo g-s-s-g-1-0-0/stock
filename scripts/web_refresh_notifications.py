@@ -49,6 +49,7 @@ DEFAULT_CURRENT_STOCKS = ROOT_DIR / "web" / "public" / "api" / "stocks.json"
 DEFAULT_TECHNICAL = ROOT_DIR / "web" / "public" / "api" / "technical.json"
 DEFAULT_VALUATION = ROOT_DIR / "web" / "public" / "api" / "valuation.json"
 DEFAULT_MARKET_TRENDS = ROOT_DIR / "web" / "public" / "api" / "market-trends.json"
+DEFAULT_MARKET_EVENTS = ROOT_DIR / "web" / "public" / "api" / "market-events.json"
 DEFAULT_PREVIOUS_TRADE_LOGS = ROOT_DIR / "data" / "cache" / "trade-logs.before-refresh.json"
 DEFAULT_CURRENT_TRADE_LOGS = ROOT_DIR / "web" / "public" / "api" / "trade-logs.json"
 NOTIFICATION_STATE = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
@@ -1328,6 +1329,44 @@ def admin_failure_body(message: str) -> str:
     """
 
 
+def market_events_review_body(payload: dict[str, Any]) -> str:
+    now = datetime.now().astimezone().strftime("%Y.%m.%d %H:%M")
+    meta = payload.get("meta") if isinstance(payload.get("meta"), dict) else {}
+    verification = meta.get("verification") if isinstance(meta.get("verification"), dict) else {}
+    issues = verification.get("needsManualReview") if isinstance(verification.get("needsManualReview"), list) else []
+    changes = verification.get("autoUpdated") if isinstance(verification.get("autoUpdated"), list) else []
+    failed_reason = str(meta.get("failedReason") or "시장 주요 이벤트 중 수동 확인이 필요한 항목이 있습니다.")
+
+    issues_html = "".join(
+        f"<li>{html.escape(str(issue))}</li>"
+        for issue in issues[:20]
+    ) or "<li>세부 항목이 없습니다. 캐시의 meta.failedReason을 확인해 주세요.</li>"
+    changes_html = "".join(
+        f"<li>{html.escape(str(change))}</li>"
+        for change in changes[:20]
+    ) or "<li>이번 실행에서 자동 수정된 확정 일정은 없습니다.</li>"
+
+    return f"""
+    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7;max-width:720px;">
+      <p style="font-size:16px;font-weight:bold;color:#d32f2f;border-bottom:2px solid #ffcdd2;padding-bottom:8px;">
+        시장 주요 이벤트 수동 확인 필요
+      </p>
+      <div style="margin:14px 0;padding:12px 16px;background:#fff3e0;border-left:3px solid #ff9800;color:#333;">
+        {html.escape(failed_reason)}
+      </div>
+      <p style="margin:12px 0 6px 0;font-weight:bold;">확실해서 자동 반영된 항목</p>
+      <ul style="margin-top:0;padding-left:20px;">{changes_html}</ul>
+      <p style="margin:12px 0 6px 0;font-weight:bold;">확인이 필요한 항목</p>
+      <ul style="margin-top:0;padding-left:20px;">{issues_html}</ul>
+      <p style="margin:12px 0 0 0;color:#555;">
+        자동 수정은 공식 출처에서 날짜와 시간이 명확히 확인된 항목에만 적용했습니다.
+        위 항목은 관리자 화면에서 확인 후 필요하면 직접 수정해 주세요.
+      </p>
+      <p style="color:#888;font-size:12px;margin-top:18px;">발송 시각: {html.escape(now)}</p>
+    </div>
+    """
+
+
 def latest_market_trend() -> dict[str, Any]:
     payload = read_json(DEFAULT_MARKET_TRENDS)
     rows = payload.get("rows") if isinstance(payload, dict) else []
@@ -1976,6 +2015,35 @@ def send_admin_failure(message: str) -> int:
     return sent
 
 
+def send_market_events_review_notification(path: Path = DEFAULT_MARKET_EVENTS) -> int:
+    payload = read_json(path)
+    meta = payload.get("meta") if isinstance(payload, dict) else {}
+    failed_reason = str(meta.get("failedReason") or "").strip()
+    if not failed_reason:
+        print("Market event verification has no manual review items.")
+        return 0
+
+    recipients = [
+        recipient
+        for recipient in load_recipients()
+        if recipient.is_admin and enabled(recipient, "adminAutoUpdateFailureEmail")
+    ] or fallback_admin_recipients()
+
+    recipients = dedupe_recipients(recipients)
+    if not recipients:
+        print("No admin recipients for market event review.")
+        return 0
+
+    subject = "[확인 필요] 시장 주요 이벤트 공식 일정 검증"
+    body = market_events_review_body(payload)
+    sent = 0
+    for recipient in recipients:
+        send_notification(recipient, subject, append_notification_footer(body, recipient, "adminAutoUpdateFailureEmail"))
+        sent += 1
+    print(f"Sent market event review notifications: {sent}")
+    return sent
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -1999,6 +2067,8 @@ def main() -> int:
 
     subparsers.add_parser("nasdaq-peak")
     subparsers.add_parser("weekly-trend")
+    market_events_parser = subparsers.add_parser("market-events-review")
+    market_events_parser.add_argument("--path", type=Path, default=DEFAULT_MARKET_EVENTS)
 
     failure_parser = subparsers.add_parser("admin-failure")
     failure_parser.add_argument("--message", default="자동 업데이트 작업이 실패했습니다.")
@@ -2026,6 +2096,9 @@ def main() -> int:
         return 0
     if args.command == "weekly-trend":
         send_weekly_trend_notifications()
+        return 0
+    if args.command == "market-events-review":
+        send_market_events_review_notification(args.path)
         return 0
     if args.command == "admin-failure":
         send_admin_failure(args.message)
