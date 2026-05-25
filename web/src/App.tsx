@@ -683,6 +683,10 @@ function resolveLocalTestPersonalTrades(session: UserSession) {
   return readStoredPersonalTradeLogs(session)
 }
 
+function isLocalTestSession(session: UserSession | null) {
+  return Boolean(session?.id.startsWith('local-test-'))
+}
+
 function normalizeWatchlistSortSettings(value: unknown): WatchlistSortSettings {
   const allowed: WatchlistSortKey[] = [
     'registered',
@@ -5707,7 +5711,7 @@ function App() {
     selectInvestmentType(DEFAULT_INVESTMENT_TYPE)
   }
 
-  const resetSystemRecords = async () => {
+  const resetSystemRecords = () => {
     if (isAdminUser) {
       setIsResetConfirmOpen(false)
       return
@@ -5716,26 +5720,11 @@ function App() {
     const session = userSession
     const emptyTrades: TradeLog[] = []
 
-    try {
-      setWatchlist([])
-      await persistWatchlist('personal', [], session)
-      storePersonalTradeLogs(session, emptyTrades)
-      await persistPortfolioState(emptyTrades, contributionSettings, session)
-      setPersonalTradeLogs(emptyTrades)
-      setRefreshDataMessage('본인 기록을 초기화했습니다.')
-    } catch (error) {
-      storePersonalTradeLogs(session, emptyTrades)
-      setPersonalTradeLogs(emptyTrades)
-      setWatchlist([])
-      if (session) {
-        localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify([]))
-        clearPendingPersonalWatchlist(session)
-      }
-      setRefreshDataMessage(
-        error instanceof Error
-          ? `초기화를 완료하지 못했습니다.\n${error.message}`
-          : '초기화를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.',
-      )
+    setWatchlist([])
+    setPersonalTradeLogs(emptyTrades)
+    storePersonalTradeLogs(session, emptyTrades)
+    if (session) {
+      storePendingPersonalWatchlist(session, [])
     }
 
     setSelectedTickers([])
@@ -5746,6 +5735,17 @@ function App() {
     setIsResetConfirmOpen(false)
     setIsHoldingDeleteConfirmOpen(false)
     setIsHoldingLiquidationOpen(false)
+
+    if (!session || !supabase || isLocalTestSession(session)) return
+
+    const ownerId = session.id
+    void Promise.all([
+      persistWatchlist('personal', [], session),
+      persistPortfolioState(emptyTrades, contributionSettings, session),
+    ]).catch(() => {
+      if (userSession?.id !== ownerId) return
+      storePendingPersonalWatchlist(session, [])
+    })
   }
 
   const clearAuthForm = () => {
@@ -5985,6 +5985,7 @@ function App() {
 
   const switchTestSession = (mode: 'admin' | 'user') => {
     closeLoginModalAfterAccountSwitch()
+    setRefreshDataMessage('')
     const adminEmail = configuredAdminEmails()[0] ?? DEFAULT_ADMIN_EMAILS[0]
     const nextSession = mode === 'admin'
       ? {
@@ -6465,6 +6466,10 @@ function App() {
     document.addEventListener('keydown', handleModalEscape)
     return () => document.removeEventListener('keydown', handleModalEscape)
   })
+
+  useEffect(() => {
+    setRefreshDataMessage('')
+  }, [userSession?.id])
 
   useEffect(() => {
     if (hasAuthCallbackPayload()) return
