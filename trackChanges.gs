@@ -1364,6 +1364,7 @@ const Utils = {
       }
 
       if (returnPct <= -circuitPct)                           return { opinion: "매도", reason: `손절 기준 도달 -${Math.abs(returnPct * 100).toFixed(2)}% [${label}]`, strategyType: savedStrategy };
+      // 반등 미달 청산은 기간 내 터치 여부가 아니라 판단 시점의 현재 수익률로 판정한다.
       if (tradingDays >= S.STALLED_EXIT_DAYS && returnPct < S.STALLED_EXIT_MIN_RETURN) {
         return {
           opinion: "매도",
@@ -2112,6 +2113,7 @@ const Utils = {
 
     if (globalData.nasdaqPeakAlert && typeof nasdaqPeakExitApplies === "function" && nasdaqPeakExitApplies(strategy)) return { reason: `나스닥 고점 청산/강제매도 — ${globalData.nasdaqPeakReason || "국면별 QQQ 과열 기준 충족"} [${label}]` };
     if (returnPct <= -circuitPct)                return { reason: `손절 기준 도달 -${Math.abs(returnPct * 100).toFixed(2)}% [${label}]` };
+    // 반등 미달 청산은 기간 내 터치 여부가 아니라 판단 시점의 현재 수익률로 판정한다.
     if (tradingDays >= S.STALLED_EXIT_DAYS && returnPct < S.STALLED_EXIT_MIN_RETURN) {
       return { reason: `${S.STALLED_EXIT_DAYS}거래일 반등 미달 청산 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}% < +${(S.STALLED_EXIT_MIN_RETURN * 100).toFixed(0)}%) [${label}]` };
     }
