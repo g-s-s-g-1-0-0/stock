@@ -2,8 +2,8 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-05-25T05:00:00Z",
-    "lastSuccessfulRun": "2026-05-25T05:00:00Z",
+    "updatedAt": "2026-05-25T07:00:00Z",
+    "lastSuccessfulRun": "2026-05-25T07:00:00Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
     "closedTrades": 0,
@@ -57,7 +57,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.25"
     },
     {
       "slotId": "CRDO_E_20260515_1",
@@ -89,7 +90,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.25"
     },
     {
       "slotId": "278470_F_20260518_1",
@@ -104,7 +106,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.25"
     },
     {
       "slotId": "079550_F_20260518_1",
@@ -135,7 +138,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.05.25"
     },
     {
       "slotId": "039030_F_20260518_1",
