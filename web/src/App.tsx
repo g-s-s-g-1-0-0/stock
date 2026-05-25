@@ -6168,9 +6168,15 @@ function App() {
   const removeSelectedMarketTrendRows = async () => {
     if (!isAdminUser || pendingMarketTrendDeleteKeys.length === 0) return
     const deleteKeys = new Set(pendingMarketTrendDeleteKeys)
+    const deletedRowCount = pendingMarketTrendDeleteKeys.length
+    const previousRows = apiMarketTrendRows
+    const previousSelectedRowKeys = selectedMarketTrendRowKeys
     const nextRows = apiMarketTrendRows.filter((row) => !deleteKeys.has(marketTrendRowKey(row)))
 
     setIsSavingMarketTrends(true)
+    setApiMarketTrendRows(nextRows)
+    setSelectedMarketTrendRowKeys((current) => current.filter((key) => !deleteKeys.has(key)))
+    setPendingMarketTrendDeleteKeys([])
     try {
       const { data: authData } = supabase ? await supabase.auth.getSession() : { data: { session: null } }
       const saved = await saveMarketTrends(nextRows, apiMetas.marketTrends, {
@@ -6178,11 +6184,11 @@ function App() {
       })
       setApiMarketTrendRows(saved.rows)
       setApiMetas((current) => ({ ...current, marketTrends: saved.meta }))
-      setSelectedMarketTrendRowKeys((current) => current.filter((key) => !deleteKeys.has(key)))
-      setPendingMarketTrendDeleteKeys([])
-      await recordApiLog('market-trends', 'success', '시장 트렌드 row를 삭제했습니다.', { rows: pendingMarketTrendDeleteKeys.length })
+      void recordApiLog('market-trends', 'success', '시장 트렌드 row를 삭제했습니다.', { rows: deletedRowCount })
     } catch (error) {
-      await recordApiLog('market-trends', 'failure', error instanceof Error ? error.message : '시장 트렌드 삭제에 실패했습니다.')
+      setApiMarketTrendRows(previousRows)
+      setSelectedMarketTrendRowKeys(previousSelectedRowKeys)
+      void recordApiLog('market-trends', 'failure', error instanceof Error ? error.message : '시장 트렌드 삭제에 실패했습니다.')
     } finally {
       setIsSavingMarketTrends(false)
     }

@@ -1777,7 +1777,9 @@
   overflow: visible;
   line-height: 1.45;
   text-overflow: clip;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .market-trends-pagination {
