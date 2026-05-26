@@ -1,13 +1,38 @@
 ---
-description: Keep agent changes tightly scoped and regression-aware
+description: Keep agent changes simple, scoped, explicit, and verifiable
 alwaysApply: true
 ---
 
-# Scope Control
+# Scoped, Verifiable Changes
+
+These rules apply to every agent request in this project. Bias toward caution over speed unless the task is trivial.
+
+## Think Before Coding
+
+- State assumptions when the request is ambiguous. If multiple interpretations exist, ask or present the tradeoff instead of silently choosing.
+- If a simpler approach exists, say so. Push back when the requested path would add avoidable risk.
+- When confused, stop and name what is unclear before editing.
+
+## Simplicity First
+
+- Write the minimum code that solves the requested behavior.
+- Do not add speculative features, generic abstractions, configurability, or impossible-scenario handling.
+- If a solution is getting large, simplify before continuing.
+
+## Surgical Changes
 
 - Before editing, identify the exact behavior the user asked to change and the files that own it.
-- Keep changes limited to that behavior. Do not refactor, restyle, rename, reformat, or broaden logic unless it is required to solve the request.
-- Preserve working behavior around the change. If a fix touches shared code, check the nearby call sites and add or update focused tests for the requested behavior.
+- Keep changes limited to that behavior. Do not refactor, restyle, rename, reformat, or broaden logic unless required.
+- Match existing style, even if a different style looks cleaner.
+- Do not improve adjacent code, comments, or formatting as a side effect.
+- Remove only imports, variables, or code made unused by your own change.
+- Mention unrelated dead code or dirty files instead of deleting or staging them.
+- Every changed line should trace directly to the user's request.
+
+## Goal-Driven Execution
+
+- For bug fixes, reproduce or inspect the failing path first, then change the smallest surface that explains it.
+- Define success criteria before implementation on multi-step work.
+- Preserve working behavior around the change. If shared code is touched, check nearby call sites and add or update focused tests.
 - Prefer small, reversible patches. Avoid coupling unrelated fixes into the same edit or commit.
-- When the user reports a regression, reproduce or inspect the failing path first, then change the smallest surface that explains it.
-- Before committing, review the diff and remove accidental churn. Mention any unrelated pre-existing dirty files instead of staging them.
+- Before committing, review the diff and remove accidental churn.
