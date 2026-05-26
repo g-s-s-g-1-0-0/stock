@@ -5290,6 +5290,8 @@
   .trading-log-table,
   .watchlist-table,
   .holding-table {
+    table-layout: fixed;
+    --home-select-left: 0px;
     --home-select-width: 40px;
     --home-no-width: 48px;
     --home-name-width: 136px;
@@ -5298,7 +5300,7 @@
   .watchlist-table.readonly-home-table,
   .holding-table.readonly-home-table,
   .trading-log-table {
-    --home-no-left: 0;
+    --home-no-left: 0px;
     --home-name-left: 48px;
   }
 
@@ -5319,54 +5321,106 @@
   .watchlist-table.editable-home-table th:nth-child(1),
   .watchlist-table.editable-home-table td:nth-child(1),
   .holding-table.editable-home-table th:nth-child(1),
-  .holding-table.editable-home-table td:nth-child(1) {
-    width: 40px;
-    min-width: 40px;
-    max-width: 40px;
+  .holding-table.editable-home-table td:nth-child(1),
+  .watchlist-table.pinned-home-table.editable-home-table th:nth-child(1),
+  .watchlist-table.pinned-home-table.editable-home-table td:nth-child(1),
+  .holding-table.pinned-home-table.editable-home-table th:nth-child(1),
+  .holding-table.pinned-home-table.editable-home-table td:nth-child(1) {
+    width: var(--home-select-width);
+    min-width: var(--home-select-width);
+    max-width: var(--home-select-width);
+    box-sizing: border-box;
   }
 
   .trading-log-table th:nth-child(1),
   .trading-log-table td:nth-child(1),
+  .trading-log-table.pinned-home-table th:nth-child(1),
+  .trading-log-table.pinned-home-table td:nth-child(1),
   .watchlist-table.readonly-home-table th:nth-child(1),
   .watchlist-table.readonly-home-table td:nth-child(1),
+  .watchlist-table.pinned-home-table.readonly-home-table th:nth-child(1),
+  .watchlist-table.pinned-home-table.readonly-home-table td:nth-child(1),
   .watchlist-table.editable-home-table th:nth-child(2),
   .watchlist-table.editable-home-table td:nth-child(2),
+  .watchlist-table.pinned-home-table.editable-home-table th:nth-child(2),
+  .watchlist-table.pinned-home-table.editable-home-table td:nth-child(2),
   .holding-table.readonly-home-table th:nth-child(1),
   .holding-table.readonly-home-table td:nth-child(1),
+  .holding-table.pinned-home-table.readonly-home-table th:nth-child(1),
+  .holding-table.pinned-home-table.readonly-home-table td:nth-child(1),
   .holding-table.editable-home-table th:nth-child(2),
-  .holding-table.editable-home-table td:nth-child(2) {
-    width: 48px;
-    min-width: 48px;
-    max-width: 48px;
+  .holding-table.editable-home-table td:nth-child(2),
+  .holding-table.pinned-home-table.editable-home-table th:nth-child(2),
+  .holding-table.pinned-home-table.editable-home-table td:nth-child(2) {
+    width: var(--home-no-width);
+    min-width: var(--home-no-width);
+    max-width: var(--home-no-width);
+    box-sizing: border-box;
   }
 
   .trading-log-table th:nth-child(2),
   .trading-log-table td:nth-child(2),
+  .trading-log-table.pinned-home-table th:nth-child(2),
+  .trading-log-table.pinned-home-table td:nth-child(2),
   .watchlist-table.readonly-home-table th:nth-child(2),
   .watchlist-table.readonly-home-table td:nth-child(2),
+  .watchlist-table.pinned-home-table.readonly-home-table th:nth-child(2),
+  .watchlist-table.pinned-home-table.readonly-home-table td:nth-child(2),
   .watchlist-table.editable-home-table th:nth-child(3),
   .watchlist-table.editable-home-table td:nth-child(3),
+  .watchlist-table.pinned-home-table.editable-home-table th:nth-child(3),
+  .watchlist-table.pinned-home-table.editable-home-table td:nth-child(3),
   .holding-table.readonly-home-table th:nth-child(2),
   .holding-table.readonly-home-table td:nth-child(2),
+  .holding-table.pinned-home-table.readonly-home-table th:nth-child(2),
+  .holding-table.pinned-home-table.readonly-home-table td:nth-child(2),
   .holding-table.editable-home-table th:nth-child(3),
-  .holding-table.editable-home-table td:nth-child(3) {
-    width: 136px;
-    min-width: 136px;
-    max-width: 136px;
+  .holding-table.editable-home-table td:nth-child(3),
+  .holding-table.pinned-home-table.editable-home-table th:nth-child(3),
+  .holding-table.pinned-home-table.editable-home-table td:nth-child(3) {
+    width: var(--home-name-width);
+    min-width: var(--home-name-width);
+    max-width: var(--home-name-width);
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .sheet-table .name-data-cell {
-    width: 136px;
-    min-width: 136px;
-    max-width: 136px;
+  .watchlist-table.editable-home-table .checkbox-cell,
+  .holding-table.editable-home-table .checkbox-cell {
+    width: var(--home-select-width) !important;
+    min-width: var(--home-select-width) !important;
+    max-width: var(--home-select-width) !important;
+    box-sizing: border-box;
   }
 
-  .sheet-table .analysis-stock-name-cell {
+  .trading-log-table .numbering-cell,
+  .watchlist-table .numbering-cell,
+  .holding-table .numbering-cell {
+    width: var(--home-no-width) !important;
+    min-width: var(--home-no-width) !important;
+    max-width: var(--home-no-width) !important;
+    box-sizing: border-box;
+  }
+
+  .trading-log-table .name-data-cell,
+  .watchlist-table .name-data-cell,
+  .holding-table .name-data-cell {
+    width: var(--home-name-width);
+    min-width: var(--home-name-width);
+    max-width: var(--home-name-width);
+    box-sizing: border-box;
+  }
+
+  .trading-log-table .analysis-stock-name-cell,
+  .watchlist-table .analysis-stock-name-cell,
+  .holding-table .analysis-stock-name-cell {
     width: 100%;
-    max-width: 136px;
+    max-width: var(--home-name-width);
   }
 
   .home-name-header {
+    box-sizing: border-box;
     padding-right: 24px !important;
     padding-left: 20px !important;
   }

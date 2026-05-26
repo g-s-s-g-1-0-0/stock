@@ -4385,21 +4385,21 @@ function App() {
   }
 
   const homePinnedStyleFor = (sheet: HTMLDivElement | null, type: 'trading' | 'watchlist' | 'holding') => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 760) {
+      return {} as CSSProperties
+    }
+
     const table = sheet?.querySelector<HTMLTableElement>('table')
     const headers = Array.from(table?.querySelectorAll<HTMLTableCellElement>('thead th') ?? [])
     const width = (index: number, fallback: number) => Math.ceil(headers[index]?.getBoundingClientRect().width || fallback)
     const isEditable = table?.classList.contains('editable-home-table') ?? true
-    const isMobile = window.innerWidth <= 760
     const noIndex = type === 'trading' ? 0 : isEditable ? 1 : 0
     const tickerIndex = type === 'holding' ? (isEditable ? 3 : 2) : -1
     const tickerWidth = tickerIndex >= 0 ? width(tickerIndex, 92) : 0
     const nameIndex = type === 'trading' ? 1 : type === 'watchlist' || type === 'holding' ? (isEditable ? 2 : 1) : (isEditable ? 3 : 2)
-    const mobileSelectWidth = 40
-    const mobileNoWidth = 48
-    const mobileNameWidth = 136
-    const selectWidth = type === 'trading' ? 0 : isEditable ? (isMobile ? mobileSelectWidth : width(0, mobileSelectWidth)) : 0
-    const noWidth = isMobile ? mobileNoWidth : width(noIndex, mobileNoWidth)
-    const nameWidth = isMobile ? mobileNameWidth : width(nameIndex, 220)
+    const selectWidth = type === 'trading' ? 0 : isEditable ? width(0, 40) : 0
+    const noWidth = width(noIndex, 48)
+    const nameWidth = width(nameIndex, 220)
     const vars: Record<string, string> = {
       '--home-select-width': `${selectWidth}px`,
       '--home-no-left': `${selectWidth}px`,
@@ -4417,6 +4417,8 @@ function App() {
   }
 
   const scheduleHomePinnedStyleRefresh = (type: 'trading' | 'watchlist' | 'holding') => {
+    if (typeof window !== 'undefined' && window.innerWidth <= 760) return
+
     const measure = () => {
       const sheet =
         type === 'trading'
@@ -4436,7 +4438,7 @@ function App() {
   const toggleTradingPinned = () => {
     setIsTradingPinned((current) => {
       const next = !current
-      if (next) scheduleHomePinnedStyleRefresh('trading')
+      if (next && window.innerWidth > 760) scheduleHomePinnedStyleRefresh('trading')
       return next
     })
   }
@@ -4444,7 +4446,7 @@ function App() {
   const toggleWatchlistPinned = () => {
     setIsWatchlistPinned((current) => {
       const next = !current
-      if (next) scheduleHomePinnedStyleRefresh('watchlist')
+      if (next && window.innerWidth > 760) scheduleHomePinnedStyleRefresh('watchlist')
       return next
     })
   }
@@ -4452,7 +4454,7 @@ function App() {
   const toggleHoldingPinned = () => {
     setIsHoldingPinned((current) => {
       const next = !current
-      if (next) scheduleHomePinnedStyleRefresh('holding')
+      if (next && window.innerWidth > 760) scheduleHomePinnedStyleRefresh('holding')
       return next
     })
   }
@@ -6658,14 +6660,20 @@ function App() {
   const isNotificationIntegrationConnected = (channel: NotificationIntegrationChannel) => (
     channel === 'kakaoTalk' ? notificationPreferences.kakaoTalkConnected : notificationPreferences.slackConnected
   )
-  const watchlistPinnedStyle = isWatchlistPinned ? homePinnedStyles.watchlist : undefined
-  const holdingPinnedStyle = isHoldingPinned ? homePinnedStyles.holding : undefined
-  const tradingPinnedStyle = isTradingPinned ? homePinnedStyles.trading : undefined
+  const shouldApplyHomePinnedInlineStyle = typeof window !== 'undefined' && window.innerWidth > 760
+  const watchlistPinnedStyle = isWatchlistPinned && shouldApplyHomePinnedInlineStyle ? homePinnedStyles.watchlist : undefined
+  const holdingPinnedStyle = isHoldingPinned && shouldApplyHomePinnedInlineStyle ? homePinnedStyles.holding : undefined
+  const tradingPinnedStyle = isTradingPinned && shouldApplyHomePinnedInlineStyle ? homePinnedStyles.trading : undefined
 
   useEffect(() => {
     if (!isTradingPinned && !isWatchlistPinned && !isHoldingPinned) return
 
     const refreshAllPinnedStyles = () => {
+      if (window.innerWidth <= 760) {
+        setHomePinnedStyles({})
+        return
+      }
+
       setHomePinnedStyles((current) => ({
         trading: isTradingPinned ? homePinnedStyleFor(tradingLogScrollRef.current, 'trading') : current.trading,
         watchlist: isWatchlistPinned ? homePinnedStyleFor(watchlistSheetRef.current, 'watchlist') : current.watchlist,
