@@ -1824,12 +1824,14 @@ function marketFlag(market: Market) {
   return market === 'KR' ? '🇰🇷' : '🇺🇸'
 }
 
-function AnalysisStockName({
-  stock,
+function StockNameCell({
+  name,
+  market,
   onTooltipOpen,
   onTooltipClose,
 }: {
-  stock: Stock
+  name: string
+  market: Market
   onTooltipOpen: (tooltip: TooltipState) => void
   onTooltipClose: () => void
 }) {
@@ -1859,7 +1861,7 @@ function AnalysisStockName({
       observer?.disconnect()
       window.removeEventListener('resize', updateTruncation)
     }
-  }, [stock.name])
+  }, [name])
 
   const openTooltip = (element: HTMLElement) => {
     const textElement = textRef.current
@@ -1875,7 +1877,7 @@ function AnalysisStockName({
     const centeredX = rect.left + rect.width / 2
 
     onTooltipOpen({
-      text: stock.name,
+      text: name,
       x: Math.min(Math.max(centeredX, minX), maxX),
       y: rect.top - 8,
       className: 'stock-name-floating-tooltip',
@@ -1884,14 +1886,14 @@ function AnalysisStockName({
 
   return (
     <div className="name-cell analysis-stock-name-cell">
-      <span className="market-flag" aria-hidden="true">{marketFlag(stock.market)}</span>
+      <span className="market-flag" aria-hidden="true">{marketFlag(market)}</span>
       {isTruncated ? (
         <span
-          aria-label={`${stock.name} 전체 종목명 보기`}
+          aria-label={`${name} 전체 종목명 보기`}
           className="stock-name-tooltip-trigger is-truncated"
           role="button"
           tabIndex={0}
-          title={stock.name}
+          title={name}
           onBlur={onTooltipClose}
           onClick={(event) => {
             event.stopPropagation()
@@ -1907,14 +1909,33 @@ function AnalysisStockName({
           onMouseEnter={(event) => openTooltip(event.currentTarget)}
           onMouseLeave={onTooltipClose}
         >
-          <span className="stock-name-text" ref={textRef}>{stock.name}</span>
+          <span className="stock-name-text" ref={textRef}>{name}</span>
         </span>
       ) : (
         <span className="stock-name-tooltip-trigger">
-          <span className="stock-name-text" ref={textRef}>{stock.name}</span>
+          <span className="stock-name-text" ref={textRef}>{name}</span>
         </span>
       )}
     </div>
+  )
+}
+
+function AnalysisStockName({
+  stock,
+  onTooltipOpen,
+  onTooltipClose,
+}: {
+  stock: Stock
+  onTooltipOpen: (tooltip: TooltipState) => void
+  onTooltipClose: () => void
+}) {
+  return (
+    <StockNameCell
+      market={stock.market}
+      name={stock.name}
+      onTooltipClose={onTooltipClose}
+      onTooltipOpen={onTooltipOpen}
+    />
   )
 }
 
@@ -4374,7 +4395,8 @@ function App() {
     const tickerIndex = type === 'holding' ? (isEditable ? 3 : 2) : -1
     const tickerWidth = tickerIndex >= 0 ? width(tickerIndex, 92) : 0
     const nameIndex = type === 'trading' ? 1 : type === 'watchlist' || type === 'holding' ? (isEditable ? 2 : 1) : (isEditable ? 3 : 2)
-    const nameWidth = width(nameIndex, 220)
+    const nameWidthCap = window.innerWidth <= 760 ? 136 : 220
+    const nameWidth = Math.min(width(nameIndex, nameWidthCap), nameWidthCap)
     const vars: Record<string, string> = {
       '--home-select-width': `${selectWidth}px`,
       '--home-no-left': `${selectWidth}px`,
@@ -6892,7 +6914,7 @@ function App() {
               <div className="log-meta">
                 <p>총 투자 기간 {investingDays}일</p>
                 {!isLongTermInvestor && <p>승률: {visibleWinRates}</p>}
-                <p>성공/실패: {strategyCriteriaLine}</p>
+                <p className="log-criteria-line">성공/실패: {strategyCriteriaLine}</p>
               </div>
               <button
                 className="sort-button"
@@ -7003,10 +7025,12 @@ function App() {
                   <tr className="example-row">
                     <td className="numbering-cell">예시</td>
                     <td className="name-data-cell">
-                      <div className="name-cell">
-                        <span className="market-flag" aria-hidden="true">{marketFlag(exampleStock.market)}</span>
-                        <span>{exampleStock.name}</span>
-                      </div>
+                      <StockNameCell
+                        market={exampleStock.market}
+                        name={exampleStock.name}
+                        onTooltipClose={() => setActiveTooltip(null)}
+                        onTooltipOpen={setActiveTooltip}
+                      />
                     </td>
                     <td className="ticker-cell">{exampleStock.ticker}</td>
                     <td>신호 발생 시</td>
@@ -7031,10 +7055,12 @@ function App() {
                     <tr key={tradeKey(trade)}>
                       <td className="numbering-cell">{rowNumber}</td>
                       <td className="name-data-cell">
-                        <div className="name-cell">
-                          <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>
-                          <span>{tradeName(trade)}</span>
-                        </div>
+                        <StockNameCell
+                          market={tradeMarket(trade)}
+                          name={tradeName(trade)}
+                          onTooltipClose={() => setActiveTooltip(null)}
+                          onTooltipOpen={setActiveTooltip}
+                        />
                       </td>
                       <td className="ticker-cell">{trade.ticker}</td>
                       <td>{trade.buyDate}</td>
@@ -7255,10 +7281,12 @@ function App() {
                           <span>{index + 1}</span>
                         </td>
                         <td className="name-data-cell">
-                          <div className="name-cell">
-                            <span className="market-flag" aria-hidden="true">{marketFlag(stock.market)}</span>
-                            <span>{stock.name}</span>
-                          </div>
+                          <StockNameCell
+                            market={stock.market}
+                            name={stock.name}
+                            onTooltipClose={() => setActiveTooltip(null)}
+                            onTooltipOpen={setActiveTooltip}
+                          />
                         </td>
                         <td className="ticker-cell">{stock.ticker}</td>
                         <td className="industry-cell">{displayIndustryLabel(stock.industry)}</td>
@@ -7388,10 +7416,12 @@ function App() {
                       {canManageHoldingTrades && <td></td>}
                       <td className="numbering-cell">예시</td>
                       <td className="name-data-cell">
-                        <div className="name-cell">
-                          <span className="market-flag" aria-hidden="true">{marketFlag(exampleStock.market)}</span>
-                          <span>{exampleStock.name}</span>
-                        </div>
+                        <StockNameCell
+                          market={exampleStock.market}
+                          name={exampleStock.name}
+                          onTooltipClose={() => setActiveTooltip(null)}
+                          onTooltipOpen={setActiveTooltip}
+                        />
                       </td>
                       <td className="ticker-cell">{exampleStock.ticker}</td>
                       <td>신호 발생 시</td>
@@ -7420,10 +7450,12 @@ function App() {
                         )}
                         <td className="numbering-cell">{index + 1}</td>
                         <td className="name-data-cell">
-                          <div className="name-cell">
-                            <span className="market-flag" aria-hidden="true">{marketFlag(tradeMarket(trade))}</span>
-                            <span>{tradeName(trade)}</span>
-                          </div>
+                          <StockNameCell
+                            market={tradeMarket(trade)}
+                            name={tradeName(trade)}
+                            onTooltipClose={() => setActiveTooltip(null)}
+                            onTooltipOpen={setActiveTooltip}
+                          />
                         </td>
                         <td className="ticker-cell">{trade.ticker}</td>
                         <td>{trade.buyDate}</td>
