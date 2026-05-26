@@ -4389,13 +4389,17 @@ function App() {
     const headers = Array.from(table?.querySelectorAll<HTMLTableCellElement>('thead th') ?? [])
     const width = (index: number, fallback: number) => Math.ceil(headers[index]?.getBoundingClientRect().width || fallback)
     const isEditable = table?.classList.contains('editable-home-table') ?? true
-    const selectWidth = type === 'trading' ? 0 : isEditable ? width(0, 40) : 0
+    const isMobile = window.innerWidth <= 760
     const noIndex = type === 'trading' ? 0 : isEditable ? 1 : 0
-    const noWidth = width(noIndex, 48)
     const tickerIndex = type === 'holding' ? (isEditable ? 3 : 2) : -1
     const tickerWidth = tickerIndex >= 0 ? width(tickerIndex, 92) : 0
     const nameIndex = type === 'trading' ? 1 : type === 'watchlist' || type === 'holding' ? (isEditable ? 2 : 1) : (isEditable ? 3 : 2)
-    const nameWidth = window.innerWidth <= 760 ? 136 : width(nameIndex, 220)
+    const mobileSelectWidth = 40
+    const mobileNoWidth = 48
+    const mobileNameWidth = 136
+    const selectWidth = type === 'trading' ? 0 : isEditable ? (isMobile ? mobileSelectWidth : width(0, mobileSelectWidth)) : 0
+    const noWidth = isMobile ? mobileNoWidth : width(noIndex, mobileNoWidth)
+    const nameWidth = isMobile ? mobileNameWidth : width(nameIndex, 220)
     const vars: Record<string, string> = {
       '--home-select-width': `${selectWidth}px`,
       '--home-no-left': `${selectWidth}px`,
@@ -7341,13 +7345,10 @@ function App() {
           </section>
 
           <section className={`panel ${shouldDimPanelsForFirstVisitGuide ? 'dimmed-panel' : ''}`}>
-            <div className="section-heading section-heading-with-note">
-              <div className="section-heading-main">
-                <div className="section-title-inline">
-                  <h2>보유중인 종목 (전략 단위)</h2>
-                  <span>총 {scopedOpenTrades.length}개</span>
-                </div>
-                <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다.</p>
+            <div className="section-heading">
+              <div className="section-title-inline">
+                <h2>보유중인 종목 (전략 단위)</h2>
+                <span>총 {scopedOpenTrades.length}개</span>
               </div>
               <div className="heading-actions">
                 {canManageHoldingTrades && (
@@ -7378,6 +7379,8 @@ function App() {
                 )}
               </div>
             </div>
+
+            <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다.</p>
 
             <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetRef}>
               <table
