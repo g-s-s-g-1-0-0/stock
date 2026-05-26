@@ -740,7 +740,8 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("투자의견 변경 알림 (MP)", sent_messages[0][1])
         self.assertIn("MP Materials", sent_messages[0][2])
         self.assertIn("매도", sent_messages[0][2])
-        self.assertIn("목표 수익 달성 즉시 매도", sent_messages[0][2])
+        self.assertIn("목표 수익 달성 즉시 매도 +11.23%", sent_messages[0][2])
+        self.assertIn("상승 흐름 강화 기준 +12%", sent_messages[0][2])
         self.assertIn("이유:", sent_messages[0][2])
         self.assertNotIn("매도 사유", sent_messages[0][2])
 

@@ -127,8 +127,20 @@ def test_strategy_g_uses_twelve_percent_target_and_ten_percent_stop():
 
     assert target["shouldExit"] is True
     assert "목표 수익" in target["reason"]
+    assert "급락 후 회복장 20일선 눌림 기준 +12%" in target["reason"]
     assert stop["shouldExit"] is True
     assert "손절" in stop["reason"]
+
+
+def test_strategy_d_target_exit_reason_includes_return_and_strategy_target():
+    row = IndicatorRow(stock_name="PL", current_price=117.7, entry_price=100)
+
+    result = evaluate_exit_condition(row, strategy_type="D", trading_days=10)
+
+    assert result["shouldExit"] is True
+    assert result["reason"] == (
+        "목표 수익 달성 즉시 매도 +17.70% [200일선 상방 & 상승 흐름 강화 기준 +12%]"
+    )
 
 
 def test_all_strategies_exit_when_fifteen_day_rebound_stalls():

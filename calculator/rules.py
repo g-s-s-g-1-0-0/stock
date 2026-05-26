@@ -330,6 +330,56 @@ def macd_hist_turn(ind: IndicatorRow) -> bool:
     return (ind.macd_hist - ind.macd_hist_d1) < (ind.macd_hist_d1 - ind.macd_hist_d2)
 
 
+def format_return_pct(return_pct: float, *, signed: bool = True) -> str:
+    value = return_pct * 100
+    if signed:
+        return f"{value:+.2f}%"
+    return f"{value:.2f}%"
+
+
+def strategy_target_criterion_label(strategy_type: str) -> str:
+    target_pct = float(
+        STRATEGY_RULES.get(f"TARGET_PCT_{strategy_type}", STRATEGY_RULES["TARGET_PCT_F"])
+    )
+    base = STRATEGY_LABELS.get(strategy_type, STRATEGY_LABELS["F"])
+    target_display = int(round(target_pct * 100))
+    return f"{base} 기준 +{target_display}%"
+
+
+def enrich_profit_exit_reason(
+    reason: str,
+    strategy_type: str,
+    return_pct: float | None = None,
+    *,
+    return_pct_is_percent: bool = True,
+) -> str:
+    text = str(reason or "").strip()
+    if not text or "기준 +" in text:
+        return text or "시스템 매도"
+    if strategy_type not in STRATEGY_LABELS:
+        return text
+
+    strat_label = strategy_target_criterion_label(strategy_type)
+    return_ratio = (
+        return_pct / 100
+        if return_pct is not None and return_pct_is_percent
+        else return_pct
+    )
+    signed = format_return_pct(return_ratio) if return_ratio is not None else ""
+    unsigned = format_return_pct(return_ratio, signed=False) if return_ratio is not None else ""
+    wait_days = int(STRATEGY_RULES["UPPER_EXIT_MAX_WAIT_DAYS"])
+
+    if text == "목표 수익 달성 즉시 매도":
+        return f"목표 수익 달성 즉시 매도 {signed} [{strat_label}]".strip()
+    if text == "목표 수익 구간 + MACD 히스토그램 둔화전환 매도":
+        return f"목표 수익 구간 + MACD 히스토그램 둔화전환 매도 {signed} [{strat_label}]".strip()
+    if text == "목표 수익 도달 후 대기 만료 매도" or (
+        text.startswith("목표 수익 도달 후") and "대기 만료 매도" in text and "기준 +" not in text
+    ):
+        return f"목표 수익 도달 후 {wait_days}거래일 대기 만료 매도 {unsigned} [{strat_label}]".strip()
+    return text
+
+
 def evaluate_exit_condition(
     ind: IndicatorRow,
     *,
@@ -353,14 +403,27 @@ def evaluate_exit_condition(
     )
     return_pct = (ind.current_price - ind.entry_price) / ind.entry_price
     is_ef_strategy = strategy_type in {"E", "F"}
+    strat_label = strategy_target_criterion_label(strategy_type)
+    return_signed = format_return_pct(return_pct)
+    return_unsigned = format_return_pct(return_pct, signed=False)
+    wait_days = int(s["UPPER_EXIT_MAX_WAIT_DAYS"])
 
     if is_ef_strategy and return_pct >= target_pct:
         if macd_hist_turn(ind):
-            return {"shouldExit": True, "reason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도"}
-        if upper_exit_wait_days is not None and upper_exit_wait_days >= int(s["UPPER_EXIT_MAX_WAIT_DAYS"]):
-            return {"shouldExit": True, "reason": "목표 수익 도달 후 대기 만료 매도"}
+            return {
+                "shouldExit": True,
+                "reason": f"목표 수익 구간 + MACD 히스토그램 둔화전환 매도 {return_signed} [{strat_label}]",
+            }
+        if upper_exit_wait_days is not None and upper_exit_wait_days >= wait_days:
+            return {
+                "shouldExit": True,
+                "reason": f"목표 수익 도달 후 {wait_days}거래일 대기 만료 매도 {return_unsigned} [{strat_label}]",
+            }
     elif return_pct >= target_pct:
-        return {"shouldExit": True, "reason": "목표 수익 달성 즉시 매도"}
+        return {
+            "shouldExit": True,
+            "reason": f"목표 수익 달성 즉시 매도 {return_signed} [{strat_label}]",
+        }
 
     if return_pct <= -circuit_pct:
         return {"shouldExit": True, "reason": "손절 기준 도달"}

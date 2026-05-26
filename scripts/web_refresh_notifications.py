@@ -33,6 +33,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Any
+
+from calculator.rules import enrich_profit_exit_reason
 from zoneinfo import ZoneInfo
 
 
@@ -409,6 +411,16 @@ def trade_exit_changes(previous_path: Path, current_path: Path) -> list[dict[str
             result_text = str(result or "-")
         buy_price = current.get("buyPrice") or previous_trade.get("buyPrice") or "-"
         buy_date = current.get("buyDate") or previous_trade.get("buyDate") or "-"
+        strategy = current.get("strategy") or previous_trade.get("strategy") or "-"
+        try:
+            return_pct_value = float(result)
+        except (TypeError, ValueError):
+            return_pct_value = None
+        exit_reason = enrich_profit_exit_reason(
+            str(current.get("exitReason") or current_status or "시스템 매도"),
+            strategy_code(strategy),
+            return_pct_value,
+        )
         changes.append({
             "ticker": current.get("ticker") or key[0],
             "name": current.get("name") or previous_trade.get("name") or key[0],
@@ -417,8 +429,8 @@ def trade_exit_changes(previous_path: Path, current_path: Path) -> list[dict[str
             "price": current.get("sellPrice") or current.get("currentPrice") or "-",
             "buyPrice": buy_price,
             "returnPct": current.get("returnPct", 0),
-            "strategy": current.get("strategy") or previous_trade.get("strategy") or "-",
-            "reason": current.get("exitReason") or current_status or "시스템 매도",
+            "strategy": strategy,
+            "reason": exit_reason,
             "entryNote": f"진입가 {buy_price} ({buy_date}) · 수익률 {result_text}",
             "status": current_status,
         })
@@ -1094,7 +1106,17 @@ def sell_reason(current_stock: dict[str, Any], technical_row: dict[str, Any]) ->
         technical_row.get("매도 사유"),
     )
     if explicit_reason != "-":
-        return explicit_reason
+        return_pct_value = parse_metric_number(current_stock.get("returnPct"))
+        return enrich_profit_exit_reason(
+            explicit_reason,
+            strategy_code(
+                current_stock.get("entryStrategy")
+                or current_stock.get("strategy")
+                or technical_row.get("entryStrategy")
+                or technical_row.get("strategy")
+            ),
+            return_pct_value,
+        )
     c = metric_context(current_stock, technical_row)
     return append_market_context(
         f"매도 조건 충족 — 현재가 {c['price']} / MA200 {c['ma200']} | RSI {c['rsi']} | MACD Hist {c['macd']}",
