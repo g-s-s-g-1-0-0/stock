@@ -34,17 +34,14 @@ from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Any
 
-from calculator.rules import enrich_profit_exit_reason
-from zoneinfo import ZoneInfo
-
-
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from calculator.market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
-from calculator.rules import STRATEGY_RULES
+from calculator.rules import STRATEGY_RULES, enrich_profit_exit_reason
 from calculator.sheet_sources import calc_cci, calc_rsi, calc_technical_row, fetch_ohlcv, fetch_us_ohlcv
+from zoneinfo import ZoneInfo
 
 DEFAULT_PREVIOUS_STOCKS = ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"
 DEFAULT_CURRENT_STOCKS = ROOT_DIR / "web" / "public" / "api" / "stocks.json"
