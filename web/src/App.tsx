@@ -4391,25 +4391,45 @@ function App() {
     return vars as CSSProperties
   }
 
-  const toggleTradingPinned = () => {
-    if (!isTradingPinned) {
-      setHomePinnedStyles((current) => ({ ...current, trading: homePinnedStyleFor(tradingLogScrollRef.current, 'trading') }))
+  const scheduleHomePinnedStyleRefresh = (type: 'trading' | 'watchlist' | 'holding') => {
+    const measure = () => {
+      const sheet =
+        type === 'trading'
+          ? tradingLogScrollRef.current
+          : type === 'watchlist'
+            ? watchlistSheetRef.current
+            : holdingSheetRef.current
+      const style = homePinnedStyleFor(sheet, type)
+      setHomePinnedStyles((current) => ({ ...current, [type]: style }))
     }
-    setIsTradingPinned((current) => !current)
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(measure)
+    })
+  }
+
+  const toggleTradingPinned = () => {
+    setIsTradingPinned((current) => {
+      const next = !current
+      if (next) scheduleHomePinnedStyleRefresh('trading')
+      return next
+    })
   }
 
   const toggleWatchlistPinned = () => {
-    if (!isWatchlistPinned) {
-      setHomePinnedStyles((current) => ({ ...current, watchlist: homePinnedStyleFor(watchlistSheetRef.current, 'watchlist') }))
-    }
-    setIsWatchlistPinned((current) => !current)
+    setIsWatchlistPinned((current) => {
+      const next = !current
+      if (next) scheduleHomePinnedStyleRefresh('watchlist')
+      return next
+    })
   }
 
   const toggleHoldingPinned = () => {
-    if (!isHoldingPinned) {
-      setHomePinnedStyles((current) => ({ ...current, holding: homePinnedStyleFor(holdingSheetRef.current, 'holding') }))
-    }
-    setIsHoldingPinned((current) => !current)
+    setIsHoldingPinned((current) => {
+      const next = !current
+      if (next) scheduleHomePinnedStyleRefresh('holding')
+      return next
+    })
   }
 
   const applyLoadedData = (data: GssgAppData) => {
@@ -6616,6 +6636,35 @@ function App() {
   const watchlistPinnedStyle = isWatchlistPinned ? homePinnedStyles.watchlist : undefined
   const holdingPinnedStyle = isHoldingPinned ? homePinnedStyles.holding : undefined
   const tradingPinnedStyle = isTradingPinned ? homePinnedStyles.trading : undefined
+
+  useEffect(() => {
+    if (!isTradingPinned && !isWatchlistPinned && !isHoldingPinned) return
+
+    const refreshAllPinnedStyles = () => {
+      setHomePinnedStyles((current) => ({
+        trading: isTradingPinned ? homePinnedStyleFor(tradingLogScrollRef.current, 'trading') : current.trading,
+        watchlist: isWatchlistPinned ? homePinnedStyleFor(watchlistSheetRef.current, 'watchlist') : current.watchlist,
+        holding: isHoldingPinned ? homePinnedStyleFor(holdingSheetRef.current, 'holding') : current.holding,
+      }))
+    }
+
+    refreshAllPinnedStyles()
+    const onResize = () => refreshAllPinnedStyles()
+    window.addEventListener('resize', onResize)
+    window.addEventListener('orientationchange', onResize)
+    return () => {
+      window.removeEventListener('resize', onResize)
+      window.removeEventListener('orientationchange', onResize)
+    }
+  }, [
+    isTradingPinned,
+    isWatchlistPinned,
+    isHoldingPinned,
+    canManageHoldingTrades,
+    canEditCurrentWatchlist,
+    isLongTermInvestor,
+  ])
+
   const addStockInlineControl = isAddingStock && canEditCurrentWatchlist && !isCurrentWatchlistFull ? (
     <div className="inline-add analysis-inline-add" ref={inlineAddRef}>
       {canShowOperatorImport && (
@@ -7265,10 +7314,13 @@ function App() {
           </section>
 
           <section className={`panel ${shouldDimPanelsForFirstVisitGuide ? 'dimmed-panel' : ''}`}>
-            <div className="section-heading">
-              <div className="section-title-inline">
-                <h2>보유중인 종목 (전략 단위)</h2>
-                <span>총 {scopedOpenTrades.length}개</span>
+            <div className="section-heading section-heading-with-note">
+              <div className="section-heading-main">
+                <div className="section-title-inline">
+                  <h2>보유중인 종목 (전략 단위)</h2>
+                  <span>총 {scopedOpenTrades.length}개</span>
+                </div>
+                <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다.</p>
               </div>
               <div className="heading-actions">
                 {canManageHoldingTrades && (
@@ -7299,8 +7351,6 @@ function App() {
                 )}
               </div>
             </div>
-
-            <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다.</p>
 
             <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetRef}>
               <table
