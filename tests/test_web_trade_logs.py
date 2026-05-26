@@ -62,6 +62,43 @@ def test_nasdaq_peak_liquidates_only_non_exempt_strategy_slots(monkeypatch, tmp_
     assert updated["meta"]["nasdaqPeakLiquidation"] is True
 
 
+def test_exit_updates_stock_and_technical_opinion_to_sell(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "ticker": "WULF",
+                "name": "TeraWulf",
+                "strategy": "D. 200일선 상방 & 상승 흐름 강화",
+                "buyDate": "2026.05.23",
+                "buyPrice": "$22.84",
+                "currentPrice": "$25.84",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+    stocks = [{"ticker": "WULF", "name": "TeraWulf", "market": "US", "currentPrice": "$25.84", "opinion": "관망", "strategies": []}]
+    technical = {"WULF": {"opinion": "관망", "opinionReason": "-", "entrySignalCodes": "", "현재가": "$25.84"}}
+
+    changed = logs.update_trade_logs(stocks, {}, technical, {"peakTriggered": True})
+
+    updated = logs.load_json(cache_path, {})
+    assert changed is True
+    assert updated["rows"][0]["status"] == "익절"
+    assert stocks[0]["opinion"] == "매도"
+    assert stocks[0]["opinionReason"] == "나스닥 고점 청산/강제매도"
+    assert stocks[0]["strategies"] == []
+    assert technical["WULF"]["opinion"] == "매도"
+    assert technical["WULF"]["opinionReason"] == "나스닥 고점 청산/강제매도"
+    assert technical["WULF"]["exitReason"] == "나스닥 고점 청산/강제매도"
+    assert technical["WULF"]["entrySignalCodes"] == ""
+
+
 def test_nasdaq_peak_uses_existing_trade_price_when_stock_cache_omits_ticker(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     payload = {

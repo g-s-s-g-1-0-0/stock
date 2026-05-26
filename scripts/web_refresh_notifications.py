@@ -422,9 +422,7 @@ def trade_exit_changes(previous_path: Path, current_path: Path) -> list[dict[str
             "ticker": current.get("ticker") or key[0],
             "name": current.get("name") or previous_trade.get("name") or key[0],
             "from": "보유 중",
-            "to": "청산",
-            "toLabel": f"{current_status} 청산" if current_status else "청산",
-            "eventType": "trade_exit",
+            "to": "매도",
             "price": current.get("sellPrice") or current.get("currentPrice") or "-",
             "buyPrice": buy_price,
             "returnPct": current.get("returnPct", 0),
@@ -1292,7 +1290,6 @@ def opinion_email_body(
 ) -> str:
     changed_html = []
     sell_opinion_labels = list(sell_opinions or [])
-    exit_labels: list[str] = []
     has_buy_transition = any(
         (change.get("to") == "매수" and (change.get("from") != "매수" or "추가 매수" in change_display_to(change)))
         for change in changes
@@ -1301,18 +1298,13 @@ def opinion_email_body(
         from_label = change_display_from(change)
         to_label = change_display_to(change)
         is_buy = change["to"] == "매수" or "매수" in to_label
-        is_exit = change.get("eventType") == "trade_exit" or change["to"] == "청산" or "청산" in to_label
         is_sell = change["to"] == "매도" or "매도" in to_label
-        if is_sell or is_exit:
-            label = display_stock(change)
         if is_sell:
-            sell_label = label
+            sell_label = display_stock(change)
             if sell_label not in sell_opinion_labels:
                 sell_opinion_labels.append(sell_label)
-        if is_exit and label not in exit_labels:
-            exit_labels.append(label)
-        border = "#2ecc71" if is_buy else "#e74c3c" if (is_sell or is_exit) else "#95a5a6"
-        color = "#27ae60" if is_buy else "#c0392b" if (is_sell or is_exit) else "#7f8c8d"
+        border = "#2ecc71" if is_buy else "#e74c3c" if is_sell else "#95a5a6"
+        color = "#27ae60" if is_buy else "#c0392b" if is_sell else "#7f8c8d"
         entry_note = str(change.get("entryNote") or "").strip()
         entry_note_html = ""
         if entry_note:
@@ -1338,11 +1330,6 @@ def opinion_email_body(
     kst_label, et_label = now_labels()
     macro_context_html = build_macro_context_html() if has_buy_transition else ""
     trend_top3_html = build_trend_top3_html() if has_buy_transition else ""
-    exit_summary_html = (
-        f'<p style="margin:0;"><strong>이번 청산 종목:</strong> {html.escape(list_text(exit_labels))}</p>'
-        if exit_labels
-        else ""
-    )
     return f"""
     <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
       <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
@@ -1353,8 +1340,7 @@ def opinion_email_body(
       {trend_top3_html}
       <p style="margin:0;"><strong>현재 매수 의견 종목:</strong> {html.escape(list_text(buy_opinions or []))}</p>
       <p style="margin:0;"><strong>보유 중 관망 종목:</strong> {html.escape(list_text(watch_holding_opinions or []))}</p>
-      <p style="margin:0;"><strong>현재 매도 의견 종목:</strong> {html.escape(list_text(sell_opinion_labels))}</p>
-      {exit_summary_html}<br>
+      <p style="margin:0;"><strong>현재 매도 의견/청산 종목:</strong> {html.escape(list_text(sell_opinion_labels))}</p><br>
       <p style="color:#888;font-size:12px;">
         발송 시각 (한국): {html.escape(kst_label)}<br>
         발송 시각 (미 동부): {html.escape(et_label)}
@@ -1992,6 +1978,12 @@ def send_opinion_notifications(
     current_trade_logs: Path | None = None,
 ) -> int:
     reset_active = bool(runtime_reset_state())
+    exit_changes = (
+        trade_exit_changes(previous_trade_logs, current_trade_logs)
+        if previous_trade_logs is not None and current_trade_logs is not None
+        else []
+    )
+    exit_tickers = {str(change.get("ticker") or "").strip().upper() for change in exit_changes}
     changes = opinion_changes(
         previous,
         current,
@@ -1999,8 +1991,16 @@ def send_opinion_notifications(
         previous_trade_logs,
         current_trade_logs,
     )
-    if previous_trade_logs is not None and current_trade_logs is not None:
-        changes.extend(trade_exit_changes(previous_trade_logs, current_trade_logs))
+    if exit_tickers:
+        changes = [
+            change
+            for change in changes
+            if not (
+                str(change.get("ticker") or "").strip().upper() in exit_tickers
+                and change.get("to") == "매도"
+            )
+        ]
+    changes.extend(exit_changes)
     if not changes:
         print("No opinion changes.")
         if reset_active:

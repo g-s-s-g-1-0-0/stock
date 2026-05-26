@@ -550,6 +550,34 @@ def suppress_held_buy_signal(stock: dict[str, Any], technical_row: dict[str, Any
     return changed
 
 
+def mark_exit_opinion(stock: dict[str, Any], technical_row: dict[str, Any], reason: str) -> bool:
+    changed = False
+    updates = {
+        "opinion": "매도",
+        "opinionReason": reason,
+        "strategies": [],
+    }
+    for key, value in updates.items():
+        if stock.get(key) != value:
+            stock[key] = value
+            changed = True
+
+    if isinstance(technical_row, dict):
+        technical_updates = {
+            "opinion": "매도",
+            "opinionReason": reason,
+            "exitReason": reason,
+            "entryStrategy": "-",
+            "entrySignalCodes": "",
+            "entrySignals": "",
+        }
+        for key, value in technical_updates.items():
+            if technical_row.get(key) != value:
+                technical_row[key] = value
+                changed = True
+    return changed
+
+
 def update_trade_logs(
     stocks: list[dict[str, Any]],
     previous_stocks: dict[str, dict[str, Any]],
@@ -596,7 +624,10 @@ def update_trade_logs(
             upper_exit_wait_days=upper_wait_days,
         )
         if exit_result["shouldExit"]:
-            close_trade(trade, sell_price=sell_price, today=today, reason=str(exit_result.get("reason") or "시스템 매도"))
+            exit_reason = str(exit_result.get("reason") or "시스템 매도")
+            close_trade(trade, sell_price=sell_price, today=today, reason=exit_reason)
+            if stock:
+                signal_state_changed = mark_exit_opinion(stock, row, exit_reason) or signal_state_changed
             closed += 1
             continue
         strategy = strategy_code(trade.get("strategy"))
