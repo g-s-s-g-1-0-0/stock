@@ -463,13 +463,13 @@
       "fairPriceReason": "loss_making",
       "currentPrice": "$25.84",
       "valuation": "판단 불가",
-      "opinion": "관망",
-      "opinionReason": "-",
+      "opinion": "매도",
+      "opinionReason": "목표 수익 달성 즉시 매도 +13.13% [급락 후 회복장 20일선 눌림 기준 +12%]",
       "marketEvent": "당분간 없음",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
-      "updatedAt": "2026-05-26T14:55:36+00:00"
+      "updatedAt": "2026-05-26T15:00:00Z"
     },
     {
       "ticker": "CIFR",
