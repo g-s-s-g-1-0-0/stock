@@ -1148,14 +1148,11 @@
   --home-no-width: 48px;
   --home-name-left: 88px;
   --home-name-width: 220px;
-  --home-ticker-left: 308px;
-  --home-ticker-width: 92px;
 }
 
 .holding-table.readonly-home-table {
   --home-no-left: 0px;
   --home-name-left: 48px;
-  --home-ticker-left: 268px;
 }
 
 .value-analysis-panel {
@@ -1303,29 +1300,16 @@
   text-overflow: ellipsis;
 }
 
-.holding-table.pinned-home-table.readonly-home-table th:nth-child(3),
-.holding-table.pinned-home-table.readonly-home-table td:nth-child(3),
-.holding-table.pinned-home-table.editable-home-table th:nth-child(4),
-.holding-table.pinned-home-table.editable-home-table td:nth-child(4) {
-  position: sticky;
-  left: var(--home-ticker-left);
-  z-index: 3;
-  width: var(--home-ticker-width);
-  min-width: var(--home-ticker-width);
-  max-width: var(--home-ticker-width);
-  background: var(--sheet-bg);
-}
-
 .watchlist-table.pinned-home-table.readonly-home-table th:nth-child(2),
 .watchlist-table.pinned-home-table.readonly-home-table td:nth-child(2),
 .trading-log-table.pinned-home-table th:nth-child(2),
 .trading-log-table.pinned-home-table td:nth-child(2),
 .watchlist-table.pinned-home-table.editable-home-table th:nth-child(3),
 .watchlist-table.pinned-home-table.editable-home-table td:nth-child(3),
-.holding-table.pinned-home-table.readonly-home-table th:nth-child(3),
-.holding-table.pinned-home-table.readonly-home-table td:nth-child(3),
-.holding-table.pinned-home-table.editable-home-table th:nth-child(4),
-.holding-table.pinned-home-table.editable-home-table td:nth-child(4) {
+.holding-table.pinned-home-table.readonly-home-table th:nth-child(2),
+.holding-table.pinned-home-table.readonly-home-table td:nth-child(2),
+.holding-table.pinned-home-table.editable-home-table th:nth-child(3),
+.holding-table.pinned-home-table.editable-home-table td:nth-child(3) {
   box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
 }
 
@@ -1335,10 +1319,10 @@
 .trading-log-table.pinned-home-table td:nth-child(2)::after,
 .watchlist-table.pinned-home-table.editable-home-table th:nth-child(3)::after,
 .watchlist-table.pinned-home-table.editable-home-table td:nth-child(3)::after,
-.holding-table.pinned-home-table.readonly-home-table th:nth-child(3)::after,
-.holding-table.pinned-home-table.readonly-home-table td:nth-child(3)::after,
-.holding-table.pinned-home-table.editable-home-table th:nth-child(4)::after,
-.holding-table.pinned-home-table.editable-home-table td:nth-child(4)::after {
+.holding-table.pinned-home-table.readonly-home-table th:nth-child(2)::after,
+.holding-table.pinned-home-table.readonly-home-table td:nth-child(2)::after,
+.holding-table.pinned-home-table.editable-home-table th:nth-child(3)::after,
+.holding-table.pinned-home-table.editable-home-table td:nth-child(3)::after {
   position: absolute;
   top: 0;
   right: 0;
@@ -1353,8 +1337,8 @@
 .watchlist-table.pinned-home-table.editable-home-table th:nth-child(-n + 3),
 .watchlist-table.pinned-home-table.readonly-home-table th:nth-child(-n + 2),
 .trading-log-table.pinned-home-table th:nth-child(-n + 2),
-.holding-table.pinned-home-table.editable-home-table th:nth-child(-n + 4),
-.holding-table.pinned-home-table.readonly-home-table th:nth-child(-n + 3) {
+.holding-table.pinned-home-table.editable-home-table th:nth-child(-n + 3),
+.holding-table.pinned-home-table.readonly-home-table th:nth-child(-n + 2) {
   z-index: 6;
   background: var(--sheet-head) !important;
 }
@@ -5262,35 +5246,9 @@
     min-width: 0;
   }
 
-  .holding-table.pinned-home-table.editable-home-table th:nth-child(4),
-  .holding-table.pinned-home-table.editable-home-table td:nth-child(4),
-  .holding-table.pinned-home-table.readonly-home-table th:nth-child(3),
-  .holding-table.pinned-home-table.readonly-home-table td:nth-child(3) {
-    position: static;
-    width: auto;
-    min-width: 0;
-    max-width: none;
-    box-shadow: none;
-  }
-
-  .holding-table.pinned-home-table.editable-home-table th:nth-child(4)::after,
-  .holding-table.pinned-home-table.editable-home-table td:nth-child(4)::after,
-  .holding-table.pinned-home-table.readonly-home-table th:nth-child(3)::after,
-  .holding-table.pinned-home-table.readonly-home-table td:nth-child(3)::after {
-    display: none;
-  }
-
-  .holding-table.pinned-home-table.editable-home-table th:nth-child(3)::after,
-  .holding-table.pinned-home-table.editable-home-table td:nth-child(3)::after,
-  .holding-table.pinned-home-table.readonly-home-table th:nth-child(2)::after,
-  .holding-table.pinned-home-table.readonly-home-table td:nth-child(2)::after {
-    width: 2px;
-  }
-
   .trading-log-table,
   .watchlist-table,
   .holding-table {
-    table-layout: fixed;
     --home-select-left: 0px;
     --home-select-width: 40px;
     --home-no-width: 48px;
@@ -5308,14 +5266,6 @@
   .holding-table.editable-home-table {
     --home-no-left: 40px;
     --home-name-left: 88px;
-  }
-
-  .holding-table.readonly-home-table {
-    --home-ticker-left: 184px;
-  }
-
-  .holding-table.editable-home-table {
-    --home-ticker-left: 224px;
   }
 
   .watchlist-table.editable-home-table th:nth-child(1),

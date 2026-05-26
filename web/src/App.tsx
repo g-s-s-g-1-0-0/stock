@@ -4384,6 +4384,14 @@ function App() {
     window.setTimeout(reset, 80)
   }
 
+  const homeSheetFor = (type: 'trading' | 'watchlist' | 'holding') => (
+    type === 'trading'
+      ? tradingLogScrollRef.current
+      : type === 'watchlist'
+        ? watchlistSheetRef.current
+        : holdingSheetRef.current
+  )
+
   const homePinnedStyleFor = (sheet: HTMLDivElement | null, type: 'trading' | 'watchlist' | 'holding') => {
     if (typeof window !== 'undefined' && window.innerWidth <= 760) {
       return {} as CSSProperties
@@ -4394,8 +4402,6 @@ function App() {
     const width = (index: number, fallback: number) => Math.ceil(headers[index]?.getBoundingClientRect().width || fallback)
     const isEditable = table?.classList.contains('editable-home-table') ?? true
     const noIndex = type === 'trading' ? 0 : isEditable ? 1 : 0
-    const tickerIndex = type === 'holding' ? (isEditable ? 3 : 2) : -1
-    const tickerWidth = tickerIndex >= 0 ? width(tickerIndex, 92) : 0
     const nameIndex = type === 'trading' ? 1 : type === 'watchlist' || type === 'holding' ? (isEditable ? 2 : 1) : (isEditable ? 3 : 2)
     const selectWidth = type === 'trading' ? 0 : isEditable ? width(0, 40) : 0
     const noWidth = width(noIndex, 48)
@@ -4408,55 +4414,29 @@ function App() {
       '--home-name-width': `${nameWidth}px`,
     }
 
-    if (type === 'holding') {
-      vars['--home-ticker-left'] = `${selectWidth + noWidth + nameWidth}px`
-      vars['--home-ticker-width'] = `${tickerWidth}px`
-    }
-
     return vars as CSSProperties
   }
 
-  const scheduleHomePinnedStyleRefresh = (type: 'trading' | 'watchlist' | 'holding') => {
+  const refreshHomePinnedStyle = (type: 'trading' | 'watchlist' | 'holding') => {
     if (typeof window !== 'undefined' && window.innerWidth <= 760) return
 
-    const measure = () => {
-      const sheet =
-        type === 'trading'
-          ? tradingLogScrollRef.current
-          : type === 'watchlist'
-            ? watchlistSheetRef.current
-            : holdingSheetRef.current
-      const style = homePinnedStyleFor(sheet, type)
-      setHomePinnedStyles((current) => ({ ...current, [type]: style }))
-    }
-
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(measure)
-    })
+    const style = homePinnedStyleFor(homeSheetFor(type), type)
+    setHomePinnedStyles((current) => ({ ...current, [type]: style }))
   }
 
   const toggleTradingPinned = () => {
-    setIsTradingPinned((current) => {
-      const next = !current
-      if (next && window.innerWidth > 760) scheduleHomePinnedStyleRefresh('trading')
-      return next
-    })
+    if (!isTradingPinned && window.innerWidth > 760) refreshHomePinnedStyle('trading')
+    setIsTradingPinned((current) => !current)
   }
 
   const toggleWatchlistPinned = () => {
-    setIsWatchlistPinned((current) => {
-      const next = !current
-      if (next && window.innerWidth > 760) scheduleHomePinnedStyleRefresh('watchlist')
-      return next
-    })
+    if (!isWatchlistPinned && window.innerWidth > 760) refreshHomePinnedStyle('watchlist')
+    setIsWatchlistPinned((current) => !current)
   }
 
   const toggleHoldingPinned = () => {
-    setIsHoldingPinned((current) => {
-      const next = !current
-      if (next && window.innerWidth > 760) scheduleHomePinnedStyleRefresh('holding')
-      return next
-    })
+    if (!isHoldingPinned && window.innerWidth > 760) refreshHomePinnedStyle('holding')
+    setIsHoldingPinned((current) => !current)
   }
 
   const applyLoadedData = (data: GssgAppData) => {
