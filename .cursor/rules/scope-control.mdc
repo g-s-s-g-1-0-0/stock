@@ -1,0 +1,13 @@
+---
+description: Keep agent changes tightly scoped and regression-aware
+alwaysApply: true
+---
+
+# Scope Control
+
+- Before editing, identify the exact behavior the user asked to change and the files that own it.
+- Keep changes limited to that behavior. Do not refactor, restyle, rename, reformat, or broaden logic unless it is required to solve the request.
+- Preserve working behavior around the change. If a fix touches shared code, check the nearby call sites and add or update focused tests for the requested behavior.
+- Prefer small, reversible patches. Avoid coupling unrelated fixes into the same edit or commit.
+- When the user reports a regression, reproduce or inspect the failing path first, then change the smallest surface that explains it.
+- Before committing, review the diff and remove accidental churn. Mention any unrelated pre-existing dirty files instead of staging them.

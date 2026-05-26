@@ -1273,6 +1273,7 @@ def opinion_email_body(
     sell_opinions: list[str] | None = None,
 ) -> str:
     changed_html = []
+    sell_opinion_labels = list(sell_opinions or [])
     has_buy_transition = any(
         (change.get("to") == "매수" and (change.get("from") != "매수" or "추가 매수" in change_display_to(change)))
         for change in changes
@@ -1282,6 +1283,10 @@ def opinion_email_body(
         to_label = change_display_to(change)
         is_buy = change["to"] == "매수" or "매수" in to_label
         is_sell = change["to"] == "매도" or "매도" in to_label
+        if is_sell:
+            sell_label = display_stock(change)
+            if sell_label not in sell_opinion_labels:
+                sell_opinion_labels.append(sell_label)
         border = "#2ecc71" if is_buy else "#e74c3c" if is_sell else "#95a5a6"
         color = "#27ae60" if is_buy else "#c0392b" if is_sell else "#7f8c8d"
         entry_note = str(change.get("entryNote") or "").strip()
@@ -1319,7 +1324,7 @@ def opinion_email_body(
       {trend_top3_html}
       <p style="margin:0;"><strong>현재 매수 의견 종목:</strong> {html.escape(list_text(buy_opinions or []))}</p>
       <p style="margin:0;"><strong>보유 중 관망 종목:</strong> {html.escape(list_text(watch_holding_opinions or []))}</p>
-      <p style="margin:0;"><strong>현재 매도 의견 종목:</strong> {html.escape(list_text(sell_opinions or []))}</p><br>
+      <p style="margin:0;"><strong>현재 매도 의견 종목:</strong> {html.escape(list_text(sell_opinion_labels))}</p><br>
       <p style="color:#888;font-size:12px;">
         발송 시각 (한국): {html.escape(kst_label)}<br>
         발송 시각 (미 동부): {html.escape(et_label)}
