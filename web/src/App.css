@@ -2950,6 +2950,7 @@
 
 @media (max-width: 760px) {
   .mobile-floating-tooltip {
+    left: 50% !important;
     z-index: 1300;
     width: min(320px, calc(100vw - 40px));
     max-width: calc(100vw - 40px);
@@ -5306,11 +5307,44 @@
     width: 2px;
   }
 
+  .trading-log-table,
+  .watchlist-table,
+  .holding-table {
+    --home-name-width: 136px;
+  }
+
+  .watchlist-table.readonly-home-table {
+    --home-name-left: 48px;
+  }
+
+  .holding-table.readonly-home-table {
+    --home-name-left: 48px;
+    --home-ticker-left: 184px;
+  }
+
+  .trading-log-table th:nth-child(2),
+  .trading-log-table td:nth-child(2),
+  .watchlist-table.readonly-home-table th:nth-child(2),
+  .watchlist-table.readonly-home-table td:nth-child(2),
+  .watchlist-table.editable-home-table th:nth-child(3),
+  .watchlist-table.editable-home-table td:nth-child(3),
+  .holding-table.readonly-home-table th:nth-child(2),
+  .holding-table.readonly-home-table td:nth-child(2),
+  .holding-table.editable-home-table th:nth-child(3),
+  .holding-table.editable-home-table td:nth-child(3) {
+    width: 136px;
+    min-width: 136px;
+    max-width: 136px;
+  }
+
   .sheet-table .name-data-cell {
+    width: 136px;
+    min-width: 136px;
     max-width: 136px;
   }
 
   .sheet-table .analysis-stock-name-cell {
+    width: 100%;
     max-width: 136px;
   }
 

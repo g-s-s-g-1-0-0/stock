@@ -4395,8 +4395,7 @@ function App() {
     const tickerIndex = type === 'holding' ? (isEditable ? 3 : 2) : -1
     const tickerWidth = tickerIndex >= 0 ? width(tickerIndex, 92) : 0
     const nameIndex = type === 'trading' ? 1 : type === 'watchlist' || type === 'holding' ? (isEditable ? 2 : 1) : (isEditable ? 3 : 2)
-    const nameWidthCap = window.innerWidth <= 760 ? 136 : 220
-    const nameWidth = Math.min(width(nameIndex, nameWidthCap), nameWidthCap)
+    const nameWidth = window.innerWidth <= 760 ? 136 : width(nameIndex, 220)
     const vars: Record<string, string> = {
       '--home-select-width': `${selectWidth}px`,
       '--home-no-left': `${selectWidth}px`,
