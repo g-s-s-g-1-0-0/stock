@@ -146,22 +146,25 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertNotIn(">매수</strong><br>", body)
         self.assertIn("매크로 참고", body)
 
-    def test_opinion_email_body_includes_trade_exit_in_sell_summary(self) -> None:
+    def test_opinion_email_body_separates_trade_exit_from_sell_opinion_summary(self) -> None:
         body = self.notifications.opinion_email_body([
             {
                 "ticker": "WULF",
                 "name": "TeraWulf",
                 "from": "보유 중",
-                "to": "매도",
+                "to": "청산",
+                "toLabel": "익절 청산",
+                "eventType": "trade_exit",
                 "price": "$25.84",
                 "reason": "목표 수익 달성 즉시 매도 +13.13% [급락 후 회복장 20일선 눌림 기준 +12%]",
                 "entryNote": "진입가 $22.84 (2026.05.23) · 수익률 +13.13%",
             }
         ], sell_opinions=[])
 
-        self.assertIn("현재 매도 의견/청산 종목", body)
+        self.assertIn("익절 청산", body)
+        self.assertIn("현재 매도 의견 종목:</strong> 없음", body)
+        self.assertIn("이번 청산 종목:</strong> TeraWulf (WULF)", body)
         self.assertIn("TeraWulf (WULF)", body)
-        self.assertNotIn("현재 매도 의견/청산 종목:</strong> 없음", body)
 
     def test_opinion_changes_labels_watch_to_buy_with_added_trade_as_additional_buy(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -716,9 +719,10 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("Axcelis Technologies", sent_messages[0][2])
         self.assertIn("이오테크닉스", sent_messages[0][2])
         self.assertIn("매수", sent_messages[0][2])
-        self.assertIn("매도", sent_messages[0][2])
+        self.assertIn("익절 청산", sent_messages[0][2])
         self.assertIn("목표 수익 구간 + MACD 히스토그램 둔화전환 매도", sent_messages[0][2])
-        self.assertIn("현재 매도 의견/청산 종목:</strong> 이오테크닉스 (039030)", sent_messages[0][2])
+        self.assertIn("현재 매도 의견 종목:</strong> 없음", sent_messages[0][2])
+        self.assertIn("이번 청산 종목:</strong> 이오테크닉스 (039030)", sent_messages[0][2])
 
     def test_trade_exit_change_sends_sell_email_end_to_end(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
@@ -757,11 +761,12 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("user@example.com", sent_messages[0][0])
         self.assertEqual("투자의견 변경 알림 (MP)", sent_messages[0][1])
         self.assertIn("MP Materials", sent_messages[0][2])
-        self.assertIn("매도", sent_messages[0][2])
+        self.assertIn("익절 청산", sent_messages[0][2])
         self.assertIn("목표 수익 달성 즉시 매도 +11.23%", sent_messages[0][2])
         self.assertIn("상승 흐름 강화 기준 +12%", sent_messages[0][2])
         self.assertIn("이유:", sent_messages[0][2])
-        self.assertIn("현재 매도 의견/청산 종목:</strong> MP Materials (MP)", sent_messages[0][2])
+        self.assertIn("현재 매도 의견 종목:</strong> 없음", sent_messages[0][2])
+        self.assertIn("이번 청산 종목:</strong> MP Materials (MP)", sent_messages[0][2])
         self.assertNotIn("매도 사유", sent_messages[0][2])
 
 
