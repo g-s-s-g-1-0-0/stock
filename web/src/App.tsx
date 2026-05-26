@@ -4553,9 +4553,6 @@ function App() {
   ) {
     const nextSettings = { watchlistSort, notificationPreferences, investmentType: nextInvestmentType }
     storeUserSettings(session, watchlistSort, notificationPreferences, nextInvestmentType)
-    if (session && supabase) {
-      storeCachedRemoteUserSettings(nextSettings)
-    }
     if (!supabase || !session) return
 
     try {
@@ -4567,17 +4564,24 @@ function App() {
           notification_preferences: notificationPreferences,
           investment_type: nextInvestmentType,
         })
-      if (!error) return
+      if (!error) {
+        storeCachedRemoteUserSettings(nextSettings)
+        setAuthInfoMessage('')
+        return
+      }
 
-      await supabase
+      const fallback = await supabase
         .from('user_settings')
         .upsert({
           owner_id: session.id,
           watchlist_sort: watchlistSort,
           notification_preferences: notificationPreferences,
         })
+      if (fallback.error) throw fallback.error
+      storeCachedRemoteUserSettings(nextSettings)
+      setAuthInfoMessage('')
     } catch {
-      // Local storage already has the latest value.
+      setAuthInfoMessage('알림 설정을 서버에 저장하지 못했습니다.\n화면의 선택값과 실제 자동 알림 설정이 다를 수 있으니 잠시 후 다시 저장해 주세요.')
     }
   }
 

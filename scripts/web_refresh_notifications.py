@@ -569,7 +569,15 @@ def email_sender() -> tuple[str, str]:
     return from_email, from_name
 
 
-def send_smtp_email(to_email: str, subject: str, html_body: str) -> None:
+def masked_email(value: str) -> str:
+    local, sep, domain = value.partition("@")
+    if not sep:
+        return "***"
+    visible = local[:2] if len(local) > 2 else local[:1]
+    return f"{visible}***@{domain}"
+
+
+def send_smtp_email(to_email: str, subject: str, html_body: str) -> str:
     smtp_user = os.environ.get("SMTP_USER", "").strip()
     smtp_password = os.environ.get("SMTP_PASSWORD", "").strip()
     smtp_host = (os.environ.get("SMTP_HOST") or "smtp.gmail.com").strip()
@@ -589,16 +597,17 @@ def send_smtp_email(to_email: str, subject: str, html_body: str) -> None:
     if port == 465:
         with smtplib.SMTP_SSL(smtp_host, port, context=context, timeout=30) as server:
             server.login(smtp_user, smtp_password)
-            server.sendmail(from_email, [to_email], message.as_string())
-        return
+            refused = server.sendmail(from_email, [to_email], message.as_string())
+        return f"smtp accepted; refused={len(refused)}"
 
     with smtplib.SMTP(smtp_host, port, timeout=30) as server:
         server.starttls(context=context)
         server.login(smtp_user, smtp_password)
-        server.sendmail(from_email, [to_email], message.as_string())
+        refused = server.sendmail(from_email, [to_email], message.as_string())
+    return f"smtp accepted; refused={len(refused)}"
 
 
-def send_brevo_email(to_email: str, subject: str, html_body: str) -> None:
+def send_brevo_email(to_email: str, subject: str, html_body: str) -> str:
     api_key = os.environ.get("BREVO_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("BREVO_API_KEY 설정이 필요합니다.")
@@ -622,8 +631,15 @@ def send_brevo_email(to_email: str, subject: str, html_body: str) -> None:
     )
     try:
         with urllib.request.urlopen(request, timeout=30) as response:
+            raw = response.read().decode("utf-8", errors="replace")
             if response.status >= 300:
                 raise RuntimeError(f"Brevo email request failed with {response.status}.")
+            try:
+                payload = json.loads(raw) if raw else {}
+            except json.JSONDecodeError:
+                payload = {}
+            message_id = str(payload.get("messageId") or "").strip()
+            return f"brevo accepted; messageId={message_id or '-'}"
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")
         raise RuntimeError(f"Brevo email request failed with HTTP {exc.code}: {detail}") from exc
@@ -666,7 +682,7 @@ def send_slack_message(webhook_url: str, subject: str, html_body: str) -> None:
             raise RuntimeError(f"Slack webhook request failed with {response.status}.")
 
 
-def send_email(to_email: str, subject: str, html_body: str) -> None:
+def send_email(to_email: str, subject: str, html_body: str) -> str:
     provider = os.environ.get("EMAIL_PROVIDER", "").strip().lower() or "smtp"
     try:
         attempts = int(os.environ.get("EMAIL_SEND_ATTEMPTS", "3"))
@@ -677,11 +693,9 @@ def send_email(to_email: str, subject: str, html_body: str) -> None:
     for attempt in range(1, attempts + 1):
         try:
             if provider == "smtp":
-                send_smtp_email(to_email, subject, html_body)
-                return
+                return send_smtp_email(to_email, subject, html_body)
             if provider == "brevo":
-                send_brevo_email(to_email, subject, html_body)
-                return
+                return send_brevo_email(to_email, subject, html_body)
             raise RuntimeError(f"지원하지 않는 EMAIL_PROVIDER입니다: {provider}")
         except Exception as exc:
             message = str(exc)
@@ -705,6 +719,7 @@ def send_notification(recipient: Recipient, subject: str, html_body: str) -> str
     if delivery_channel(recipient) == "slack":
         try:
             send_slack_message(recipient.slack_webhook_url, subject, html_body)
+            print(f"Notification sent via slack to owner={recipient.owner_id or '-'} channel={recipient.slack_channel_name or '-'}")
             return "slack"
         except Exception as exc:
             if not recipient.email:
@@ -713,7 +728,8 @@ def send_notification(recipient: Recipient, subject: str, html_body: str) -> str
 
     if not recipient.email:
         raise RuntimeError("이메일 수신처가 없어 알림을 보낼 수 없습니다.")
-    send_email(recipient.email, subject, html_body)
+    detail = send_email(recipient.email, subject, html_body)
+    print(f"Notification sent via email to {masked_email(recipient.email)} ({detail})")
     return "email"
 
 
@@ -1324,7 +1340,7 @@ def opinion_email_body(
       {trend_top3_html}
       <p style="margin:0;"><strong>현재 매수 의견 종목:</strong> {html.escape(list_text(buy_opinions or []))}</p>
       <p style="margin:0;"><strong>보유 중 관망 종목:</strong> {html.escape(list_text(watch_holding_opinions or []))}</p>
-      <p style="margin:0;"><strong>현재 매도 의견 종목:</strong> {html.escape(list_text(sell_opinion_labels))}</p><br>
+      <p style="margin:0;"><strong>현재 매도 의견/청산 종목:</strong> {html.escape(list_text(sell_opinion_labels))}</p><br>
       <p style="color:#888;font-size:12px;">
         발송 시각 (한국): {html.escape(kst_label)}<br>
         발송 시각 (미 동부): {html.escape(et_label)}

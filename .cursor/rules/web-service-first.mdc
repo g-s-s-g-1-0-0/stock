@@ -1,0 +1,19 @@
+---
+description: Default to web service context before Apps Script
+alwaysApply: true
+---
+
+# Web Service First
+
+Unless the user explicitly asks about GAS, Apps Script, spreadsheet scripts, or a specific `.gs` file, assume requests in this project are about the web service.
+
+## Default Interpretation
+
+- Start investigations from the web service code, runtime logs, deployment/configuration, API routes, scheduled jobs, and email/notification pipeline.
+- Do not use currently open `.gs` files as evidence that the task is about GAS.
+- If the target is ambiguous, ask whether the user means the web service or GAS before editing.
+
+## GAS Boundary
+
+- Only inspect or modify GAS/Apps Script files when the user explicitly names GAS, Apps Script, spreadsheet automation, or a `.gs` file.
+- If GAS looks related but was not requested, mention it as a possible separate area instead of editing it.
