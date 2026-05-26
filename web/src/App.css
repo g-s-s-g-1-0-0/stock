@@ -1124,7 +1124,7 @@
   --home-no-left: 0px;
   --home-no-width: 48px;
   --home-name-left: 48px;
-  --home-name-width: 220px;
+  --home-name-width: 260px;
 }
 
 .watchlist-table {
@@ -1133,7 +1133,7 @@
   --home-no-left: 40px;
   --home-no-width: 48px;
   --home-name-left: 88px;
-  --home-name-width: 220px;
+  --home-name-width: 260px;
 }
 
 .watchlist-table.readonly-home-table {
@@ -1153,6 +1153,17 @@
 .holding-table.readonly-home-table {
   --home-no-left: 0px;
   --home-name-left: 48px;
+}
+
+.trading-log-table th:nth-child(2),
+.trading-log-table td:nth-child(2),
+.watchlist-table.readonly-home-table th:nth-child(2),
+.watchlist-table.readonly-home-table td:nth-child(2),
+.watchlist-table.editable-home-table th:nth-child(3),
+.watchlist-table.editable-home-table td:nth-child(3) {
+  width: var(--home-name-width);
+  min-width: var(--home-name-width);
+  max-width: var(--home-name-width);
 }
 
 .value-analysis-panel {
