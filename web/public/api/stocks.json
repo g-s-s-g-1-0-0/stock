@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-26T14:55:40+00:00",
-    "lastSuccessfulRun": "2026-05-26T14:55:40+00:00",
+    "updatedAt": "2026-05-26T15:01:30+00:00",
+    "lastSuccessfulRun": "2026-05-26T15:01:30+00:00",
     "failedReason": null
   },
   "rows": [
@@ -539,10 +539,10 @@
       "ticker": "VST",
       "name": "Vistra",
       "market": "US",
-      "fairPrice": "-",
+      "fairPrice": "$89.85 ~ $119.80",
       "fairPriceReason": null,
       "currentPrice": "$166.73",
-      "valuation": "보통",
+      "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
