@@ -8,6 +8,12 @@ function json(res, statusCode, payload) {
   res.end(JSON.stringify(payload))
 }
 
+function dispatchError(message, statusCode = 500) {
+  const error = new Error(message)
+  error.statusCode = statusCode
+  return error
+}
+
 function readAdminEmails() {
   return (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || '')
     .split(',')
@@ -77,7 +83,7 @@ async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = ''
   const ref = process.env.GITHUB_REFRESH_REF || 'main'
 
   if (!token) {
-    throw new Error('GITHUB_ACTIONS_TOKEN is missing.')
+    throw dispatchError('GITHUB_ACTIONS_TOKEN is missing.')
   }
 
   const response = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/${workflowId}/dispatches`, {
@@ -101,7 +107,10 @@ async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = ''
 
   if (!response.ok) {
     const detail = await response.text().catch(() => '')
-    throw new Error(detail || `GitHub workflow dispatch failed with ${response.status}.`)
+    throw dispatchError(
+      detail || `GitHub workflow dispatch failed with ${response.status}.`,
+      502
+    )
   }
 
   return {
@@ -114,18 +123,19 @@ async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = ''
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('allow', 'POST')
-    return json(res, 405, { error: 'Method not allowed.' })
-  }
-
-  const scope = readRequestScope(req)
-  if (!scope) {
-    return json(res, 400, { error: '지원하지 않는 갱신 범위입니다.' })
-  }
-
   try {
     const isCronRequest = isValidCronRequest(req)
+    const allowsCronGet = req.method === 'GET' && isCronRequest
+    if (req.method !== 'POST' && !allowsCronGet) {
+      res.setHeader('allow', 'GET, POST')
+      return json(res, 405, { error: 'Method not allowed.' })
+    }
+
+    const scope = readRequestScope(req)
+    if (!scope) {
+      return json(res, 400, { error: '지원하지 않는 갱신 범위입니다.' })
+    }
+
     if (!isCronRequest) {
       const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim()
       if (!accessToken) {
@@ -154,7 +164,12 @@ export default async function handler(req, res) {
       ...workflow,
     })
   } catch (error) {
-    return json(res, 500, {
+    const statusCode = Number(error?.statusCode) || 500
+    console.error('[trigger-refresh] workflow dispatch failed', {
+      statusCode,
+      message: error instanceof Error ? error.message : String(error),
+    })
+    return json(res, statusCode, {
       error: error instanceof Error ? error.message : '즉시 갱신 실행에 실패했습니다.',
     })
   }
