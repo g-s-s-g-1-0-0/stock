@@ -357,6 +357,19 @@ def latest_closed_trade(trades: list[dict[str, Any]], ticker: str, strategy: str
     return max(matches, key=lambda trade: parse_trade_date(trade.get("sellDate")) or date.min)
 
 
+def latest_closed_trade_for_ticker(trades: list[dict[str, Any]], ticker: str) -> dict[str, Any] | None:
+    matches = [
+        trade
+        for trade in trades
+        if str(trade.get("status") or "") != "보유 중"
+        and str(trade.get("ticker") or "").strip().upper() == ticker
+        and parse_trade_date(trade.get("sellDate")) is not None
+    ]
+    if not matches:
+        return None
+    return max(matches, key=lambda trade: parse_trade_datetime(trade.get("sellTimestamp")) or parse_trade_datetime(trade.get("sellDate")) or datetime.min.replace(tzinfo=KST))
+
+
 def sell_reentry_allowed(closed_trade: dict[str, Any] | None, current_price: float | None, today_date: date) -> bool:
     if not closed_trade:
         return True
@@ -371,6 +384,19 @@ def sell_reentry_allowed(closed_trade: dict[str, Any] | None, current_price: flo
     if trading_days_since(closed_trade.get("sellDate"), today_date) <= REENTRY_DAYS:
         return bool(sell_price and current_price is not None and current_price <= sell_price * (1 - REENTRY_DROP))
     return True
+
+
+def preserve_recent_sell_opinion(
+    stock: dict[str, Any],
+    technical_row: dict[str, Any],
+    closed_trade: dict[str, Any] | None,
+    current_price: float | None,
+    today_date: date,
+) -> bool:
+    if not closed_trade or sell_reentry_allowed(closed_trade, current_price, today_date):
+        return False
+    reason = str(closed_trade.get("exitReason") or closed_trade.get("status") or "매도 후 재진입 대기").strip()
+    return mark_exit_opinion(stock, technical_row, reason)
 
 
 def mark_restore_watch(trade: dict[str, Any], today: str) -> None:
@@ -647,6 +673,20 @@ def update_trade_logs(
         ticker = str(stock.get("ticker") or "").strip().upper()
         if not ticker:
             continue
+        row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
+        if not isinstance(row, dict):
+            row = {}
+        current_price = parse_price(stock.get("currentPrice") or tech_value(row, "현재가"))
+        closed_trade = latest_closed_trade_for_ticker(trades, ticker)
+        signal_state_changed = (
+            preserve_recent_sell_opinion(stock, row, closed_trade, current_price, today_date)
+            or signal_state_changed
+        )
+
+    for stock in stocks:
+        ticker = str(stock.get("ticker") or "").strip().upper()
+        if not ticker:
+            continue
         if ticker not in entry_tickers:
             continue
         current_opinion = str(stock.get("opinion") or "").strip()
@@ -675,6 +715,14 @@ def update_trade_logs(
                 continue
             if open_for_ticker:
                 restore_source_trades = restore_candidates
+            family_restore_sources = [
+                trade
+                for trade in restore_source_trades
+                if strategy_code(trade.get("strategy")) in RESTORE_FAMILY_STRATEGIES
+                and strategy_code(trade.get("strategy")) != code
+            ]
+            if family_restore_sources and not any(confirm_restore_signal(trade, code) for trade in family_restore_sources):
+                continue
             closed_trade = latest_closed_trade(trades, ticker, code)
             if not seed_after_reset and open_count == 0 and closed_trade is None and previous_opinion == "매수" and not restore_source_trades:
                 continue

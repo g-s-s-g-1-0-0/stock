@@ -99,6 +99,43 @@ def test_exit_updates_stock_and_technical_opinion_to_sell(monkeypatch, tmp_path)
     assert technical["WULF"]["entrySignalCodes"] == ""
 
 
+def test_recent_closed_trade_preserves_sell_opinion_during_reentry_cooldown(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    today = logs.kst_trade_date()
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "ticker": "WULF",
+                "name": "TeraWulf",
+                "strategy": "G. 급락 후 회복장 20일선 눌림",
+                "buyDate": "2026.05.23",
+                "buyPrice": "$22.84",
+                "currentPrice": "$24.59",
+                "sellDate": today,
+                "sellTimestamp": f"{today.replace('.', '-')}T15:00:00+09:00",
+                "sellPrice": "$25.84",
+                "returnPct": 13.13,
+                "holdingDays": "-",
+                "status": "익절",
+                "exitReason": "목표 수익 달성 즉시 매도 +13.13% [급락 후 회복장 20일선 눌림 기준 +12%]",
+            }
+        ]
+    }), encoding="utf-8")
+    stocks = [{"ticker": "WULF", "name": "TeraWulf", "market": "US", "currentPrice": "$24.59", "opinion": "관망", "strategies": []}]
+    technical = {"WULF": {"opinion": "관망", "opinionReason": "-", "entrySignalCodes": "", "현재가": "$24.59"}}
+
+    changed = logs.update_trade_logs(stocks, {"WULF": {"opinion": "매도"}}, technical, {"peakTriggered": False})
+
+    updated = logs.load_json(cache_path, {})
+    assert changed is True
+    assert updated["meta"]["appendedOpenTrades"] == 0
+    assert stocks[0]["opinion"] == "매도"
+    assert stocks[0]["opinionReason"] == "목표 수익 달성 즉시 매도 +13.13% [급락 후 회복장 20일선 눌림 기준 +12%]"
+    assert technical["WULF"]["opinion"] == "매도"
+    assert technical["WULF"]["opinionReason"] == "목표 수익 달성 즉시 매도 +13.13% [급락 후 회복장 20일선 눌림 기준 +12%]"
+
+
 def test_nasdaq_peak_uses_existing_trade_price_when_stock_cache_omits_ticker(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     payload = {
@@ -180,13 +217,14 @@ def test_buy_signals_append_one_open_trade_per_strategy(monkeypatch, tmp_path):
 
 def test_same_strategy_does_not_duplicate_while_signal_never_left(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    today = logs.kst_trade_date()
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
         "rows": [
             {
                 "ticker": "MP",
                 "strategy": "D. 200일선 상방 & 상승 흐름 강화",
-                "buyDate": "2026.05.01",
+                "buyDate": today,
                 "buyPrice": "$100.00",
                 "currentPrice": "$101.00",
                 "sellDate": "보유 중",
@@ -212,13 +250,14 @@ def test_same_strategy_does_not_duplicate_while_signal_never_left(monkeypatch, t
 
 def test_same_strategy_adds_slot_after_ten_percent_drop_and_ten_days(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    today = logs.kst_trade_date()
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
         "rows": [
             {
                 "ticker": "MP",
                 "strategy": "D. 200일선 상방 & 상승 흐름 강화",
-                "buyDate": "2026.05.01",
+                "buyDate": today,
                 "buyPrice": "$100.00",
                 "currentPrice": "$90.00",
                 "restoreWatchDate": "2026.05.01",
@@ -248,13 +287,14 @@ def test_same_strategy_adds_slot_after_ten_percent_drop_and_ten_days(monkeypatch
 
 def test_ef_family_blocks_cross_strategy_slot_until_restore_condition(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    today = logs.kst_trade_date()
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
         "rows": [
             {
                 "ticker": "DL",
                 "strategy": "E. 200일선 상방 & 스퀴즈 저점",
-                "buyDate": "2026.05.01",
+                "buyDate": today,
                 "buyPrice": "$100.00",
                 "currentPrice": "$99.00",
                 "sellDate": "보유 중",
@@ -283,13 +323,14 @@ def test_ef_family_blocks_cross_strategy_slot_until_restore_condition(monkeypatc
 
 def test_ef_family_adds_cross_strategy_slot_after_ten_percent_drop_ten_days_and_two_signals(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    today = logs.kst_trade_date()
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
         "rows": [
             {
                 "ticker": "DL",
                 "strategy": "E. 200일선 상방 & 스퀴즈 저점",
-                "buyDate": "2026.05.01",
+                "buyDate": today,
                 "buyPrice": "$100.00",
                 "currentPrice": "$90.00",
                 "restoreWatchDate": "2026.05.01",
