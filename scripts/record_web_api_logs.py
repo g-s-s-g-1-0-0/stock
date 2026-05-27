@@ -696,6 +696,12 @@ def update_trade_logs(
         if not preserved and isinstance(row, dict) and row.get("exitReason"):
             if not closed_trade or sell_reentry_allowed(closed_trade, current_price, today_date):
                 row.pop("exitReason")
+                row.pop("opinionReason", None)
+                if row.get("opinion") == "매도":
+                    row["opinion"] = "관망"
+                if stock.get("opinion") == "매도":
+                    stock["opinion"] = "관망"
+                    stock.pop("opinionReason", None)
                 signal_state_changed = True
         signal_state_changed = preserved or signal_state_changed
 
