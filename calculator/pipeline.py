@@ -817,6 +817,16 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 market_event=market_event,
             )
             if row:
+                existing_row = existing_rows.get(stock["ticker"], {})
+                if isinstance(existing_row, dict):
+                    exit_reason = str(existing_row.get("exitReason") or "").strip()
+                    if exit_reason:
+                        row = {
+                            **row,
+                            "opinion": "매도",
+                            "opinionReason": existing_row.get("opinionReason") or exit_reason,
+                            "exitReason": exit_reason,
+                        }
                 rows[stock["ticker"]] = row
                 successful_rows += 1
         except Exception as exc:  # noqa: BLE001 - batch should preserve partial success

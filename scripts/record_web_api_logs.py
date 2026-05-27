@@ -692,10 +692,12 @@ def update_trade_logs(
             row = {}
         current_price = parse_price(stock.get("currentPrice") or tech_value(row, "현재가"))
         closed_trade = latest_closed_trade_for_ticker(trades, ticker)
-        signal_state_changed = (
-            preserve_recent_sell_opinion(stock, row, closed_trade, current_price, today_date)
-            or signal_state_changed
-        )
+        preserved = preserve_recent_sell_opinion(stock, row, closed_trade, current_price, today_date)
+        if not preserved and isinstance(row, dict) and row.get("exitReason"):
+            if not closed_trade or sell_reentry_allowed(closed_trade, current_price, today_date):
+                row.pop("exitReason")
+                signal_state_changed = True
+        signal_state_changed = preserved or signal_state_changed
 
     for stock in stocks:
         ticker = str(stock.get("ticker") or "").strip().upper()
