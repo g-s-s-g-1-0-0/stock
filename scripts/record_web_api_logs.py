@@ -396,6 +396,20 @@ def preserve_recent_sell_opinion(
     if not closed_trade or sell_reentry_allowed(closed_trade, current_price, today_date):
         return False
     reason = str(closed_trade.get("exitReason") or closed_trade.get("status") or "매도 후 재진입 대기").strip()
+    
+    # Format older short reasons to include strategy and percentage
+    if reason in ["목표 수익 달성 즉시 매도", "목표 수익 구간 + MACD 히스토그램 둔화전환 매도"]:
+        from calculator.rules import enrich_profit_exit_reason
+        strategy_full = closed_trade.get("strategy", "")
+        strategy_type = strategy_full.split(".")[0] if "." in strategy_full else "A"
+        return_pct = closed_trade.get("returnPct")
+        reason = enrich_profit_exit_reason(
+            reason,
+            strategy_type=strategy_type,
+            return_pct=return_pct,
+            return_pct_is_percent=True
+        )
+        
     return mark_exit_opinion(stock, technical_row, reason)
 
 

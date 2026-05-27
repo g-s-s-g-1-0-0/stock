@@ -1340,7 +1340,7 @@ def opinion_email_body(
       {trend_top3_html}
       <p style="margin:0;"><strong>현재 매수 의견 종목:</strong> {html.escape(list_text(buy_opinions or []))}</p>
       <p style="margin:0;"><strong>보유 중 관망 종목:</strong> {html.escape(list_text(watch_holding_opinions or []))}</p>
-      <p style="margin:0;"><strong>현재 매도 의견/청산 종목:</strong> {html.escape(list_text(sell_opinion_labels))}</p><br>
+      <p style="margin:0;"><strong>현재 매도 의견 종목:</strong> {html.escape(list_text(sell_opinion_labels))}</p><br>
       <p style="color:#888;font-size:12px;">
         발송 시각 (한국): {html.escape(kst_label)}<br>
         발송 시각 (미 동부): {html.escape(et_label)}

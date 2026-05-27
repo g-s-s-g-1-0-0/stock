@@ -42,7 +42,7 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-05-13T15:02:34.374256Z",
-      "exitReason": "목표 수익 달성 즉시 매도"
+      "exitReason": "목표 수익 달성 즉시 매도 +16.48% [200일선 상방 & 상승 흐름 강화 기준 +12%]"
     },
     {
       "slotId": "IREN_D_20260515_1",
@@ -157,7 +157,7 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-05-22T05:00:00Z",
-      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도"
+      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +20.21% [200일선 상방 & BB 극단 저점 기준 +20%]"
     },
     {
       "slotId": "AEHR_E_20260518_1",
@@ -191,7 +191,7 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-05-26T09:00:00Z",
-      "exitReason": "목표 수익 달성 즉시 매도"
+      "exitReason": "목표 수익 달성 즉시 매도 +17.38% [200일선 상방 & 상승 흐름 강화 기준 +12%]"
     },
     {
       "slotId": "GOOGL_G_20260522_1",
