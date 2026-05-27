@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-27T14:55:50+00:00",
-    "lastSuccessfulRun": "2026-05-27T14:55:50+00:00",
+    "updatedAt": "2026-05-27T15:01:37+00:00",
+    "lastSuccessfulRun": "2026-05-27T15:01:37+00:00",
     "failedReason": null
   },
   "rows": [
@@ -75,7 +75,7 @@
       "ticker": "000150",
       "name": "두산",
       "market": "KR",
-      "fairPrice": "₩52,290 ~ ₩69,720",
+      "fairPrice": "₩84,740 ~ ₩127,110",
       "fairPriceReason": null,
       "currentPrice": "₩1,715,000",
       "valuation": "고평가",
@@ -107,7 +107,7 @@
       "ticker": "009150",
       "name": "삼성전기",
       "market": "KR",
-      "fairPrice": "₩136,485 ~ ₩227,475",
+      "fairPrice": "₩158,805 ~ ₩264,675",
       "fairPriceReason": null,
       "currentPrice": "₩1,630,000",
       "valuation": "고평가",
@@ -139,7 +139,7 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "fairPrice": "₩345,480 ~ ₩460,640",
+      "fairPrice": "₩421,440 ~ ₩561,920",
       "fairPriceReason": null,
       "currentPrice": "₩875,000",
       "valuation": "고평가",
