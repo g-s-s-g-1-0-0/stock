@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-05-28T14:55:41+00:00",
-    "lastSuccessfulRun": "2026-05-28T14:55:41+00:00",
+    "updatedAt": "2026-05-28T15:01:24+00:00",
+    "lastSuccessfulRun": "2026-05-28T15:01:24+00:00",
     "failedReason": null
   },
   "rows": [
@@ -336,6 +336,7 @@
       "currentPrice": "$219.37",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "-",
       "marketEvent": "PCE 발표",
       "strategies": [],
       "category": "성장주",
