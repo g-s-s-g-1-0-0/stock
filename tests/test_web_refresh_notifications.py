@@ -3,9 +3,10 @@ from __future__ import annotations
 import importlib
 import json
 import unittest
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from zoneinfo import ZoneInfo
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -865,6 +866,22 @@ class WebMarketEventPipelineTest(unittest.TestCase):
         label = self.pipeline.current_market_event_label(payload, today=date(2026, 5, 13))
 
         self.assertEqual("PPI 발표", label)
+
+    def test_current_market_event_label_clears_after_release_time(self) -> None:
+        payload = {
+            "groups": [
+                {
+                    "title": "PCE 발표",
+                    "entries": [{"date": "2026. 5. 28", "time": "9:30"}],
+                },
+            ],
+        }
+        kst = ZoneInfo("Asia/Seoul")
+        before = datetime(2026, 5, 28, 9, 0, tzinfo=kst)
+        after = datetime(2026, 5, 28, 10, 0, tzinfo=kst)
+
+        self.assertEqual("PCE 발표", self.pipeline.current_market_event_label(payload, now=before))
+        self.assertEqual("당분간 없음", self.pipeline.current_market_event_label(payload, now=after))
 
 
 if __name__ == "__main__":

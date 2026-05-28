@@ -16,7 +16,7 @@ import re
 import urllib.error
 import urllib.request
 from collections import Counter
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timezone
 from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
@@ -231,13 +231,54 @@ def parse_market_event_date(value: Any) -> date | None:
         return None
 
 
-def current_market_event_label(payload: dict[str, Any] | None = None, today: date | None = None) -> str:
+def parse_market_event_clock(value: Any) -> tuple[int, int] | None:
+    text = str(value or "").strip()
+    if not text or text == "-":
+        return None
+    match = re.match(r"^(\d{1,2}):(\d{2})$", text)
+    if not match:
+        return None
+    hour = int(match.group(1))
+    minute = int(match.group(2))
+    if hour > 23 or minute > 59:
+        return None
+    return hour, minute
+
+
+def is_market_event_active(entry: dict[str, Any], now: datetime) -> bool:
+    event_date = parse_market_event_date(entry.get("date"))
+    if event_date is None or now.date() != event_date:
+        return False
+
+    clock = parse_market_event_clock(entry.get("time"))
+    if clock is None:
+        return True
+
+    release_at = datetime(event_date.year, event_date.month, event_date.day, clock[0], clock[1], tzinfo=KST)
+    return now < release_at
+
+
+def current_market_event_label(
+    payload: dict[str, Any] | None = None,
+    *,
+    now: datetime | None = None,
+    today: date | None = None,
+) -> str:
     payload = payload if payload is not None else read_cache("market-events")
     groups = payload.get("groups") if isinstance(payload, dict) else []
     if not isinstance(groups, list):
         return "당분간 없음"
 
-    today = today or datetime.now(KST).date()
+    if now is None:
+        if today is not None:
+            now = datetime.combine(today, time(hour=12), tzinfo=KST)
+        else:
+            now = datetime.now(KST)
+    elif now.tzinfo is None:
+        now = now.replace(tzinfo=KST)
+    else:
+        now = now.astimezone(KST)
+
     active_titles: list[str] = []
     for group in groups:
         if not isinstance(group, dict):
@@ -246,7 +287,7 @@ def current_market_event_label(payload: dict[str, Any] | None = None, today: dat
         entries = group.get("entries")
         if not title or not isinstance(entries, list):
             continue
-        if any(isinstance(entry, dict) and parse_market_event_date(entry.get("date")) == today for entry in entries):
+        if any(isinstance(entry, dict) and is_market_event_active(entry, now) for entry in entries):
             if title not in active_titles:
                 active_titles.append(title)
 

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import unittest
+from datetime import date, datetime
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 from calculator import pipeline
+
+KST = ZoneInfo("Asia/Seoul")
 
 
 class MarketEventsTest(unittest.TestCase):
@@ -72,6 +76,34 @@ class MarketEventsTest(unittest.TestCase):
         self.assertEqual(result[1], {"date": "2026. 1. 29", "time": "4:00"})
         self.assertEqual(result[3], {"date": "2026. 3. 19", "time": "3:00"})
         self.assertEqual(issues, [])
+
+    def test_current_market_event_label_is_active_before_release_time(self) -> None:
+        payload = {
+            "groups": [
+                {
+                    "title": "PCE 발표",
+                    "entries": [{"date": "2026. 5. 28", "time": "21:30"}],
+                },
+            ],
+        }
+        before = datetime(2026, 5, 28, 21, 0, tzinfo=KST)
+        after = datetime(2026, 5, 28, 22, 0, tzinfo=KST)
+
+        self.assertEqual("PCE 발표", pipeline.current_market_event_label(payload, now=before))
+        self.assertEqual("당분간 없음", pipeline.current_market_event_label(payload, now=after))
+
+    def test_current_market_event_label_keeps_same_day_fallback_without_time(self) -> None:
+        payload = {
+            "groups": [
+                {
+                    "title": "PPI 발표",
+                    "entries": [{"date": "2026. 5. 13"}],
+                },
+            ],
+        }
+        noon = datetime(2026, 5, 13, 12, 0, tzinfo=KST)
+
+        self.assertEqual("PPI 발표", pipeline.current_market_event_label(payload, now=noon))
 
 
 if __name__ == "__main__":
