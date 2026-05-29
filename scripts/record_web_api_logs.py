@@ -386,14 +386,28 @@ def sell_reentry_allowed(closed_trade: dict[str, Any] | None, current_price: flo
     return True
 
 
+def within_sell_hold(closed_trade: dict[str, Any] | None) -> bool:
+    """Return True while a closed trade is inside the fixed post-sale hold window.
+
+    The 매도 opinion is displayed only during this time-based window so the opinion
+    stays monotonic (매도 → 관망) instead of flapping with the live price. Price-based
+    reentry blocking still applies separately in the buy loop via sell_reentry_allowed.
+    """
+    if not closed_trade:
+        return False
+    sell_time = parse_trade_datetime(closed_trade.get("sellTimestamp")) or parse_trade_datetime(closed_trade.get("sellDate"))
+    if sell_time is None:
+        return False
+    now = datetime.now(timezone.utc).astimezone(KST)
+    return (now - sell_time.astimezone(KST)).total_seconds() < SELL_HOLD_DAYS * 24 * 60 * 60
+
+
 def preserve_recent_sell_opinion(
     stock: dict[str, Any],
     technical_row: dict[str, Any],
     closed_trade: dict[str, Any] | None,
-    current_price: float | None,
-    today_date: date,
 ) -> bool:
-    if not closed_trade or sell_reentry_allowed(closed_trade, current_price, today_date):
+    if not within_sell_hold(closed_trade):
         return False
     reason = str(closed_trade.get("exitReason") or closed_trade.get("status") or "매도 후 재진입 대기").strip()
     
@@ -690,20 +704,19 @@ def update_trade_logs(
         row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
         if not isinstance(row, dict):
             row = {}
-        current_price = parse_price(stock.get("currentPrice") or tech_value(row, "현재가"))
         closed_trade = latest_closed_trade_for_ticker(trades, ticker)
-        preserved = preserve_recent_sell_opinion(stock, row, closed_trade, current_price, today_date)
-        if not preserved and isinstance(row, dict) and row.get("exitReason"):
-            if not closed_trade or sell_reentry_allowed(closed_trade, current_price, today_date):
-                row.pop("exitReason")
-                row.pop("opinionReason", None)
-                if row.get("opinion") == "매도":
-                    row["opinion"] = "관망"
-                if stock.get("opinion") == "매도":
-                    stock["opinion"] = "관망"
-                    stock.pop("opinionReason", None)
-                signal_state_changed = True
-        signal_state_changed = preserved or signal_state_changed
+        preserved = preserve_recent_sell_opinion(stock, row, closed_trade)
+        if within_sell_hold(closed_trade):
+            signal_state_changed = preserved or signal_state_changed
+        elif isinstance(row, dict) and row.get("exitReason"):
+            row.pop("exitReason")
+            row.pop("opinionReason", None)
+            if row.get("opinion") == "매도":
+                row["opinion"] = "관망"
+            if stock.get("opinion") == "매도":
+                stock["opinion"] = "관망"
+                stock.pop("opinionReason", None)
+            signal_state_changed = True
 
     for stock in stocks:
         ticker = str(stock.get("ticker") or "").strip().upper()

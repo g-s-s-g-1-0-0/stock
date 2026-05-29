@@ -136,6 +136,51 @@ def test_recent_closed_trade_preserves_sell_opinion_during_reentry_cooldown(monk
     assert technical["WULF"]["opinionReason"] == "목표 수익 달성 즉시 매도 +13.13% [급락 후 회복장 20일선 눌림 기준 +12%]"
 
 
+def test_sell_opinion_turns_watch_after_hold_even_when_price_recovers(monkeypatch, tmp_path):
+    """After the fixed post-sale hold window, opinion must move 매도→관망 monotonically.
+
+    Regression: a sold position whose price recovered above the reentry threshold used
+    to flap 매도↔관망 because clearing was gated on price-based sell_reentry_allowed.
+    Now the displayed opinion is purely time-based, so a recovered price stays 관망.
+    """
+    from datetime import timedelta
+
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    sell_time = logs.datetime.now(logs.timezone.utc).astimezone(logs.KST) - timedelta(days=3)
+    today = logs.kst_trade_date()
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "ticker": "CRDO",
+                "name": "Credo Technology Group Holding",
+                "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+                "buyDate": "2026.05.15",
+                "buyPrice": "$174.37",
+                "currentPrice": "$229.00",
+                "sellDate": sell_time.strftime("%Y.%m.%d"),
+                "sellTimestamp": sell_time.isoformat(),
+                "sellPrice": "$229.00",
+                "returnPct": 31.33,
+                "holdingDays": "-",
+                "status": "익절",
+                "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도",
+            }
+        ]
+    }), encoding="utf-8")
+    # Price recovered well above the sell price (no reentry-drop), yet hold window expired.
+    stocks = [{"ticker": "CRDO", "name": "Credo Technology Group Holding", "market": "US", "currentPrice": "$240.00", "opinion": "매도", "opinionReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도", "strategies": []}]
+    technical = {"CRDO": {"opinion": "매도", "opinionReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도", "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도", "entrySignalCodes": "", "현재가": "$240.00"}}
+
+    changed = logs.update_trade_logs(stocks, {}, technical, {"peakTriggered": False})
+
+    assert changed is True
+    assert stocks[0]["opinion"] == "관망"
+    assert "opinionReason" not in stocks[0]
+    assert technical["CRDO"]["opinion"] == "관망"
+    assert "exitReason" not in technical["CRDO"]
+
+
 def test_nasdaq_peak_uses_existing_trade_price_when_stock_cache_omits_ticker(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     payload = {
