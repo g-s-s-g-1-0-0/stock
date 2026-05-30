@@ -97,6 +97,8 @@ type TradeLog = {
   returnPct: number
   holdingDays: number | '-'
   status: TradeStatus
+  // 가치투자에서 개인이 직접 청산한 거래임을 표시. 자동 매도 신호와 구분해 로그/현금 계산에 포함한다.
+  manualExit?: boolean
 }
 
 type TooltipState = {
@@ -825,6 +827,7 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     returnPct: typeof candidate.returnPct === 'number' && Number.isFinite(candidate.returnPct) ? candidate.returnPct : 0,
     holdingDays: typeof candidate.holdingDays === 'number' || candidate.holdingDays === '-' ? candidate.holdingDays : '-',
     status: ['익절', '손절', '실패 익절', '보유 중'].includes(normalizedStatus) ? normalizedStatus as TradeStatus : '보유 중',
+    manualExit: candidate.manualExit === true ? true : undefined,
   }
 }
 
@@ -5478,8 +5481,9 @@ function App() {
       : systemTradeLogs
     : personalTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
+  // 가치투자는 자동 매도 신호는 숨기되, 개인이 직접 청산한 거래(manualExit)는 로그에 남겨 재투자 현금 흐름을 추적할 수 있게 한다.
   const visibleProfileTrades = isLongTermInvestor && !(isAdminUser && isOperatorDataMode)
-    ? scopedOpenTrades
+    ? scopedTrades.filter((trade) => trade.status === '보유 중' || trade.manualExit)
     : scopedTrades
   const filteredTrades = visibleProfileTrades
     .filter((trade) => selectedStrategy === '전체' || strategyCode(trade.strategy) === selectedStrategy)
@@ -5842,6 +5846,7 @@ function App() {
           returnPct,
           holdingDays,
           status: returnPct >= 0 ? '익절' : '손절',
+          manualExit: true,
         }
       }))
       setSelectedHoldingTradeKeys([])
