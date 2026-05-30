@@ -5509,7 +5509,8 @@ function App() {
     : personalTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   // 가치투자는 자동 매도 신호는 숨기되, 개인이 직접 청산한 거래(manualExit)는 로그에 남겨 재투자 현금 흐름을 추적할 수 있게 한다.
-  const visibleProfileTrades = isLongTermInvestor && !(isAdminUser && isOperatorDataMode)
+  // 어드민 미리보기에도 동일 규칙을 적용해야 트레이딩 로그와 '보유중인 종목' 표가 일치한다(가치투자엔 자동매도가 없음).
+  const visibleProfileTrades = isLongTermInvestor
     ? scopedTrades.filter((trade) => trade.status === '보유 중' || trade.manualExit)
     : scopedTrades
   const filteredTrades = visibleProfileTrades
