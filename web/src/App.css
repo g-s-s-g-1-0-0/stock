@@ -1056,6 +1056,7 @@
   min-width: 0;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: none;
   border: 1px solid var(--sheet-border);
   border-radius: 8px;
   background: var(--sheet-bg);
@@ -1192,8 +1193,7 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
-  overscroll-behavior-x: contain;
-  overscroll-behavior-y: auto;
+  overscroll-behavior: none;
   background-color: var(--sheet-bg);
 }
 
@@ -1636,7 +1636,7 @@
   height: auto;
   overflow-x: auto;
   overflow-y: visible;
-  overscroll-behavior-x: contain;
+  overscroll-behavior-x: none;
 }
 
 .market-trends-table {
@@ -4942,8 +4942,7 @@
 
   .sheet-wrap {
     overflow: auto;
-    overscroll-behavior-x: contain;
-    overscroll-behavior-y: auto;
+    overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x pan-y;
   }
