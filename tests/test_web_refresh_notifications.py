@@ -673,6 +673,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 email="user@example.com",
                 is_admin=False,
                 preferences={"opinionChangeEmail": True},
+                investment_type="swing",
             )
         ]
         self.notifications.send_email = lambda email, subject, body: sent_messages.append((email, subject, body))
@@ -724,6 +725,86 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("매도", sent_messages[0][2])
         self.assertIn("목표 수익 구간 + MACD 히스토그램 둔화전환 매도", sent_messages[0][2])
         self.assertIn("현재 매도 의견 종목:</strong> 이오테크닉스 (039030)", sent_messages[0][2])
+
+    def test_opinion_notification_branches_by_investment_type(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        original_load_recipients = self.notifications.load_recipients
+        original_send_email = self.notifications.send_email
+        self.notifications.load_recipients = lambda: [
+            self.notifications.Recipient(
+                owner_id="swing-user",
+                email="swing@example.com",
+                is_admin=False,
+                preferences={"opinionChangeEmail": True},
+                investment_type="swing",
+            ),
+            self.notifications.Recipient(
+                owner_id="value-user",
+                email="value@example.com",
+                is_admin=False,
+                preferences={"opinionChangeEmail": True},
+                investment_type="long_term",
+            ),
+        ]
+        self.notifications.send_email = lambda email, subject, body: sent_messages.append((email, subject, body))
+
+        try:
+            with TemporaryDirectory() as temp_dir:
+                previous = Path(temp_dir) / "stocks.before-refresh.json"
+                current = Path(temp_dir) / "stocks.json"
+                previous_trades = Path(temp_dir) / "trade-logs.before-refresh.json"
+                current_trades = Path(temp_dir) / "trade-logs.json"
+
+                previous.write_text(
+                    json.dumps({"rows": [
+                        {"ticker": "ACLS", "name": "Axcelis Technologies", "opinion": "관망"},
+                        {"ticker": "TSLA", "name": "Tesla", "opinion": "매수"},
+                    ]}),
+                    encoding="utf-8",
+                )
+                current.write_text(
+                    json.dumps({"rows": [
+                        {"ticker": "ACLS", "name": "Axcelis Technologies", "opinion": "매수"},
+                        {"ticker": "039030", "name": "이오테크닉스", "opinion": "매도"},
+                        {"ticker": "TSLA", "name": "Tesla", "opinion": "관망"},
+                    ]}),
+                    encoding="utf-8",
+                )
+                previous_trades.write_text(
+                    json.dumps({"rows": [{"ticker": "039030", "name": "이오테크닉스", "strategy": "F. 200일선 상방 & BB 극단 저점", "buyDate": "2026.05.18", "buyPrice": "₩482,500", "status": "보유 중"}]}),
+                    encoding="utf-8",
+                )
+                current_trades.write_text(
+                    json.dumps({"rows": [{"ticker": "039030", "name": "이오테크닉스", "strategy": "F. 200일선 상방 & BB 극단 저점", "buyDate": "2026.05.18", "buyPrice": "₩482,500", "sellPrice": "₩580,000", "returnPct": 20.21, "status": "익절", "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도"}]}),
+                    encoding="utf-8",
+                )
+
+                sent = self.notifications.send_opinion_notifications(
+                    previous,
+                    current,
+                    previous_trades,
+                    current_trades,
+                )
+        finally:
+            self.notifications.load_recipients = original_load_recipients
+            self.notifications.send_email = original_send_email
+
+        self.assertEqual(2, sent)
+        by_email = {message[0]: message for message in sent_messages}
+        self.assertIn("swing@example.com", by_email)
+        self.assertIn("value@example.com", by_email)
+
+        swing_body = by_email["swing@example.com"][2]
+        self.assertIn("이오테크닉스", swing_body)
+        self.assertIn("현재 매도 의견 종목:", swing_body)
+
+        value_subject, value_body = by_email["value@example.com"][1], by_email["value@example.com"][2]
+        # 가치투자: 매수(ACLS)와 매수→관망(TSLA)은 포함, 매도 전환(039030)과 청산은 제외
+        self.assertEqual("투자의견 변경 알림 (ACLS, TSLA)", value_subject)
+        self.assertIn("Axcelis Technologies", value_body)
+        self.assertIn("Tesla", value_body)
+        self.assertNotIn("이오테크닉스", value_body)
+        self.assertNotIn("현재 매도 의견 종목:", value_body)
 
     def test_trade_exit_change_sends_sell_email_end_to_end(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []

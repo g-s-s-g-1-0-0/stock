@@ -311,6 +311,12 @@
   line-height: 1.35;
 }
 
+.inline-add-toolbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .inline-add-toolbar .import-operator-button {
   flex: none;
 }
@@ -3039,6 +3045,38 @@
   background: var(--accent-soft);
   color: var(--accent-strong);
   padding: 10px 12px;
+}
+
+.operator-import-status-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.operator-import-select-all {
+  border: 1px solid rgba(34, 136, 238, 0.3);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--accent-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.operator-import-select-all:hover:not(:disabled),
+.operator-import-select-all:focus-visible {
+  border-color: rgba(34, 136, 238, 0.5);
+  background: #dbeafe;
+  outline: none;
+}
+
+.operator-import-select-all:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .operator-import-status strong {

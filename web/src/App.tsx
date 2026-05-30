@@ -1,5 +1,5 @@
 import './App.css'
-import { Fragment, type CSSProperties, type FormEvent, type ReactNode, type WheelEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, type CSSProperties, type FormEvent, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, saveTradeLogs, type AppData, type RuntimeMeta } from './api'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
@@ -276,9 +276,14 @@ const LEGACY_AUTH_SESSION_STORAGE_KEY = 'gongsu-user-session'
 const LOCAL_TEST_SESSION_STORAGE_KEY = 'gongsu-local-test-session'
 const WATCHLIST_STORAGE_KEY = 'gongsu-watchlist'
 const PERSONAL_WATCHLIST_PENDING_STORAGE_KEY = 'gongsu-watchlist-pending-v1'
+// 가치투자(long_term)/스윙투자(swing)의 관심종목을 로컬에서 분리 보관한다.
+// 로컬 우선 프리뷰 단계라 원격 스키마는 그대로 두고, 분리 데이터는 이 키로만 관리한다.
+const PERSONAL_WATCHLIST_BY_TYPE_STORAGE_KEY = 'gongsu-watchlist-by-type-v1'
 const OPERATOR_WATCHLIST_STORAGE_KEY = 'gongsu-operator-watchlist'
 const OPERATOR_WATCHLIST_REMOTE_CACHE_STORAGE_KEY = 'gongsu-operator-watchlist-remote-cache-v1'
 const OPERATOR_WATCHLIST_PENDING_STORAGE_KEY = 'gongsu-operator-watchlist-pending-v1'
+// 운영자(어드민) 관심종목도 가치투자/스윙투자 유형별로 분리 보관한다. (로컬 우선 프리뷰, 세션 비종속 단일 키)
+const OPERATOR_WATCHLIST_BY_TYPE_STORAGE_KEY = 'gongsu-operator-watchlist-by-type-v1'
 const PERSONAL_TRADES_STORAGE_KEY = 'gongsu-personal-trades'
 const VIEW_MODE_STORAGE_KEY = 'gongsu-view-mode'
 const VIEW_MODE_HINT_STORAGE_KEY = 'gongsu-view-mode-hint-seen'
@@ -529,6 +534,52 @@ function clearPendingPersonalWatchlist(session: UserSession | null) {
 
 function clearPendingOperatorWatchlist() {
   localStorage.removeItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
+}
+
+function personalWatchlistByTypeStorageKey(session: UserSession | null) {
+  return `${PERSONAL_WATCHLIST_BY_TYPE_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
+}
+
+function readPersonalWatchlistByType(session: UserSession | null): Partial<Record<InvestmentType, string[]>> | null {
+  const stored = localStorage.getItem(personalWatchlistByTypeStorageKey(session))
+  if (!stored) return null
+  try {
+    const parsed = JSON.parse(stored) as Partial<Record<InvestmentType, unknown>> | null
+    const result: Partial<Record<InvestmentType, string[]>> = {}
+    const longTerm = normalizeWatchlistTickers(parsed?.long_term)
+    const swing = normalizeWatchlistTickers(parsed?.swing)
+    if (longTerm) result.long_term = longTerm
+    if (swing) result.swing = swing
+    return result
+  } catch {
+    localStorage.removeItem(personalWatchlistByTypeStorageKey(session))
+    return null
+  }
+}
+
+function storePersonalWatchlistByType(session: UserSession | null, store: Record<InvestmentType, string[]>) {
+  localStorage.setItem(personalWatchlistByTypeStorageKey(session), JSON.stringify(store))
+}
+
+function readOperatorWatchlistByType(): Partial<Record<InvestmentType, string[]>> | null {
+  const stored = localStorage.getItem(OPERATOR_WATCHLIST_BY_TYPE_STORAGE_KEY)
+  if (!stored) return null
+  try {
+    const parsed = JSON.parse(stored) as Partial<Record<InvestmentType, unknown>> | null
+    const result: Partial<Record<InvestmentType, string[]>> = {}
+    const longTerm = normalizeWatchlistTickers(parsed?.long_term)
+    const swing = normalizeWatchlistTickers(parsed?.swing)
+    if (longTerm) result.long_term = longTerm
+    if (swing) result.swing = swing
+    return result
+  } catch {
+    localStorage.removeItem(OPERATOR_WATCHLIST_BY_TYPE_STORAGE_KEY)
+    return null
+  }
+}
+
+function storeOperatorWatchlistByType(store: Record<InvestmentType, string[]>) {
+  localStorage.setItem(OPERATOR_WATCHLIST_BY_TYPE_STORAGE_KEY, JSON.stringify(store))
 }
 
 const APP_DATA_CACHE_STORAGE_KEY = 'gssg-app-data-cache-v1'
@@ -1677,8 +1728,9 @@ let lastWheelTimestamp = 0
 let lastWheelAbsDeltaY = 0
 let releaseScrollToPage = false
 
-function releaseVerticalScrollAtEdge(event: WheelEvent<HTMLElement>) {
-  const container = event.currentTarget
+function releaseVerticalScrollAtEdge(event: globalThis.WheelEvent) {
+  const container = event.currentTarget as HTMLElement | null
+  if (!container) return
   if (Math.abs(event.deltaY) < Math.abs(event.deltaX) || container.scrollHeight <= container.clientHeight) return
 
   const now = event.timeStamp
@@ -1714,6 +1766,21 @@ function releaseVerticalScrollAtEdge(event: WheelEvent<HTMLElement>) {
     activeElement.blur()
   }
   window.scrollBy({ top: event.deltaY, behavior: 'auto' })
+}
+
+// React의 onWheel은 루트에 passive로 등록돼 내부 preventDefault가 무시되고 경고를 쏟는다.
+// 비-passive 네이티브 wheel 리스너를 직접 붙여 가장자리 스크롤 제어를 정상 동작시킨다.
+function useEdgeScrollWheelRef(externalRef?: RefObject<HTMLDivElement | null>) {
+  const cleanupRef = useRef<(() => void) | null>(null)
+  return useCallback((node: HTMLDivElement | null) => {
+    cleanupRef.current?.()
+    cleanupRef.current = null
+    if (externalRef) externalRef.current = node
+    if (node) {
+      node.addEventListener('wheel', releaseVerticalScrollAtEdge, { passive: false })
+      cleanupRef.current = () => node.removeEventListener('wheel', releaseVerticalScrollAtEdge)
+    }
+  }, [externalRef])
 }
 
 function statusClass(value: Valuation | Opinion | TradeStatus) {
@@ -1914,6 +1981,11 @@ function formatTradePrice(trade: TradeLog, value: number | null, fallback: strin
 
 function marketFlag(market: Market) {
   return market === 'KR' ? '🇰🇷' : '🇺🇸'
+}
+
+// 종목 불러오기 목록 정렬용: 한국 종목 먼저, 그 다음 미국 종목.
+function marketSortRank(market: Market) {
+  return market === 'KR' ? 0 : 1
 }
 
 function StockNameCell({
@@ -2154,6 +2226,8 @@ function holdingPeriodDays(trade: TradeLog) {
 }
 
 function parsePriceValue(value: string) {
+  // 원격 JSON 행은 타입상 string이지만 실제로는 값이 비어 올 수 있어 방어한다.
+  if (typeof value !== 'string') return null
   const parsed = Number(value.replace(/[^0-9.-]/g, ''))
   return Number.isFinite(parsed) ? parsed : null
 }
@@ -2226,6 +2300,7 @@ function formatPriceWithReturn(price: string, returnPct: number | null) {
 
 function valuationFromPriceRange(currentPrice: string, fairPrice: string): Valuation | null {
   const current = parsePriceValue(currentPrice)
+  if (typeof fairPrice !== 'string') return null
   const [lowText, highText] = fairPrice.split('~').map((value) => value.trim())
   const low = parsePriceValue(lowText ?? '')
   const high = parsePriceValue(highText ?? '')
@@ -2498,7 +2573,7 @@ const watchlistSortOptions: Array<{ value: WatchlistSortKey; label: string; desc
 const notificationOptions: Array<{ key: NotificationPreferenceKey; title: string; description: string }> = [
   { key: 'opinionChangeEmail', title: '투자의견 변경', description: '관심종목의 매수/관망/매도 신호가 바뀔 때' },
   { key: 'nasdaqPeakEmail', title: '나스닥 고점 과열', description: 'QQQ 과열과 RSI 둔화가 동시에 감지될 때' },
-  { key: 'regimeShiftEmail', title: 'QQQ 시장 국면 전환', description: '회복장↔비회복장이 바뀌어 매수 차단선·예외 전략이 달라질 때' },
+  { key: 'regimeShiftEmail', title: '시장 국면 전환', description: '회복장↔비회복장이 바뀌어 매수 차단선·예외 전략이 달라질 때' },
   { key: 'bbPullbackEmail', title: 'BB 눌림 반등 후보', description: '관심종목이 BB 상단 돌파 후 얕은 눌림 반등 후보로 잡힐 때' },
   { key: 'weeklyTrendReport', title: '주간 트렌드 리포트', description: '시장 트렌드와 관심종목 흐름을 주 1회 정리' },
   { key: 'earningsDayBefore', title: '실적발표 전날', description: '관심종목 실적발표 전 리스크 점검' },
@@ -2899,6 +2974,8 @@ function nextMidnightUpdateLabel(date = new Date()) {
 }
 
 function isPendingValue(value: string) {
+  // 원격 JSON 행은 타입상 string이지만 값이 비어 올 수 있어 방어한다.
+  if (typeof value !== 'string') return true
   return value.trim() === '-'
 }
 
@@ -3074,6 +3151,7 @@ function ValueAnalysisPage({
   const visibleStocks = stocks.slice(0, MAX_WATCHLIST_ITEMS)
   const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleStocks.length, 0)
   const isEmpty = stocks.length === 0
+  const sheetWheelRef = useEdgeScrollWheelRef()
 
   return (
     <section className="panel value-analysis-panel">
@@ -3101,7 +3179,7 @@ function ValueAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet" onWheel={releaseVerticalScrollAtEdge}>
+        <div className="sheet-wrap value-analysis-sheet" ref={sheetWheelRef}>
           <table className="sheet-table value-analysis-table">
           <thead>
             <tr>
@@ -3209,6 +3287,7 @@ function TechnicalAnalysisPage({
   const visibleStocks = stocks.slice(0, MAX_WATCHLIST_ITEMS)
   const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleStocks.length, 0)
   const isEmpty = stocks.length === 0
+  const sheetWheelRef = useEdgeScrollWheelRef()
   const vixSnapshot = marketSnapshot.find(([label]) => label === 'VIX (변동성지수) 당일·전날')?.[1] ?? '16.99 / 16.89'
   const fearGreedSnapshot = marketSnapshot.find(([label]) => label === 'CNN 공포·탐욕지수 당일·전날')?.[1]
   const tnxSnapshot = marketSnapshot.find(([label]) => label === '미국 10년물 금리')?.[1] ?? '4.378'
@@ -3288,7 +3367,7 @@ function TechnicalAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet" onWheel={releaseVerticalScrollAtEdge}>
+        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet" ref={sheetWheelRef}>
           <table className="sheet-table value-analysis-table technical-analysis-table">
             <thead>
               <tr>
@@ -4369,7 +4448,24 @@ function App() {
   const [watchlist, setWatchlist] = useState<string[]>(() => (
     initialLocalTestSession ? resolveLocalTestWatchlist(initialLocalTestSession) : readStoredWatchlist()
   ))
+  // 가치투자/스윙투자 관심종목을 유형별로 보관한다. 활성 유형의 리스트는 watchlist와 동기화되며,
+  // 비활성 유형 리스트는 '상대 유형 불러오기'의 원본으로 쓰인다. (로컬 우선 프리뷰)
+  const [personalWatchlistByType, setPersonalWatchlistByType] = useState<Record<InvestmentType, string[]>>(() => {
+    const stored = readPersonalWatchlistByType(initialLocalTestSession)
+    return {
+      long_term: stored?.long_term ?? [],
+      swing: stored?.swing ?? [],
+    }
+  })
   const [operatorWatchlist, setOperatorWatchlist] = useState<string[]>(() => isSupabaseConfigured ? readCachedRemoteOperatorWatchlist() : readStoredOperatorWatchlist())
+  // 운영자 관심종목의 유형별 보관소. 활성 유형은 operatorWatchlist와 동기화되고, 비활성 유형은 불러오기 원본이 된다.
+  const [operatorWatchlistByType, setOperatorWatchlistByType] = useState<Record<InvestmentType, string[]>>(() => {
+    const stored = readOperatorWatchlistByType()
+    return {
+      long_term: stored?.long_term ?? [],
+      swing: stored?.swing ?? [],
+    }
+  })
   const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(() => (
     initialLocalTestSession ? resolveLocalTestPersonalTrades(initialLocalTestSession) : readStoredPersonalTradeLogs()
   ))
@@ -4449,6 +4545,8 @@ function App() {
   const [isWatchlistSortOpen, setIsWatchlistSortOpen] = useState(false)
   const [isOperatorImportOpen, setIsOperatorImportOpen] = useState(false)
   const [operatorImportTickers, setOperatorImportTickers] = useState<string[]>([])
+  const [isWatchlistTypeImportOpen, setIsWatchlistTypeImportOpen] = useState(false)
+  const [watchlistTypeImportTickers, setWatchlistTypeImportTickers] = useState<string[]>([])
   const [apiLogs, setApiLogs] = useState<ApiLog[]>(() => readStoredApiLogs())
   const [isLoadingApiLogs, setIsLoadingApiLogs] = useState(false)
   const [activePage, setActivePage] = useState<ActivePage>(() => readInitialActivePage())
@@ -4462,6 +4560,10 @@ function App() {
   const tradingLogScrollRef = useRef<HTMLDivElement | null>(null)
   const watchlistSheetRef = useRef<HTMLDivElement | null>(null)
   const holdingSheetRef = useRef<HTMLDivElement | null>(null)
+  // 기존 스크롤 ref를 유지하면서 비-passive wheel 리스너를 함께 붙인다.
+  const tradingLogWheelRef = useEdgeScrollWheelRef(tradingLogScrollRef)
+  const watchlistSheetWheelRef = useEdgeScrollWheelRef(watchlistSheetRef)
+  const holdingSheetWheelRef = useEdgeScrollWheelRef(holdingSheetRef)
   const apiMetasRef = useRef<AppDataMetas>(apiMetas)
   const resetSyncGenerationRef = useRef(0)
 
@@ -5028,7 +5130,9 @@ function App() {
       storePendingPersonalWatchlist(session, tickers)
     }
 
-    if (!supabase) {
+    // 로컬 테스트 세션은 원격 인증 세션이 없어 원격 저장이 항상 실패한다.
+    // 다른 동기화와 동일하게 로컬 저장만 하고 성공 처리한다. (잘못된 만료 알림 방지)
+    if (!supabase || isLocalTestSession(session)) {
       if (scope === 'operator') {
         storeRemoteOperatorWatchlist(tickers)
         clearPendingOperatorWatchlist()
@@ -5502,14 +5606,21 @@ function App() {
   // Admins are forced into operator data, but the operator preview still needs profile-specific views.
   const shouldApplyInvestmentTypeView = isOperatorDataMode || !isAdminUser
   const isLongTermInvestor = shouldApplyInvestmentTypeView && displayedInvestmentType === 'long_term'
-  const scopedTrades = isOperatorDataMode
+  const rawScopedTrades = isOperatorDataMode
     ? shouldApplyInvestmentTypeView
       ? systemTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
       : systemTradeLogs
     : personalTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
+  // 가치투자는 자동 매도(청산)를 시스템상 수행하지 않는다. 공용 트레이딩 로그에서 자동 청산된 거래는
+  // 보유 중으로 되돌려 보유 종목·로그·포트폴리오에서 계속 보유한 것으로 취급한다.
+  // 단, 개인이 직접 청산한 거래(manualExit)는 실제 청산으로 그대로 둔다.
+  const scopedTrades = isLongTermInvestor
+    ? rawScopedTrades.map((trade) => (trade.status !== '보유 중' && !trade.manualExit
+      ? { ...trade, status: '보유 중' as TradeStatus, sellDate: '-', sellPrice: '-', returnPct: 0, holdingDays: '-' as const }
+      : trade))
+    : rawScopedTrades
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
-  // 가치투자는 자동 매도 신호는 숨기되, 개인이 직접 청산한 거래(manualExit)는 로그에 남겨 재투자 현금 흐름을 추적할 수 있게 한다.
-  // 어드민 미리보기에도 동일 규칙을 적용해야 트레이딩 로그와 '보유중인 종목' 표가 일치한다(가치투자엔 자동매도가 없음).
+  // 가치투자는 자동 매도가 없으므로 보유 중 + 개인 수동 청산(manualExit)만 로그에 노출한다.
   const visibleProfileTrades = isLongTermInvestor
     ? scopedTrades.filter((trade) => trade.status === '보유 중' || trade.manualExit)
     : scopedTrades
@@ -5886,7 +5997,60 @@ function App() {
     }
   }
 
+  // 세션이 바뀌면(로그인/로그아웃/계정 전환) 해당 세션의 유형별 보관소를 다시 읽어온다.
+  // (아래 동기화 effect보다 먼저 정의해 마운트/세션 전환 시 활성 유형 값이 덮어써지지 않게 한다.)
+  useEffect(() => {
+    const stored = readPersonalWatchlistByType(userSession)
+    setPersonalWatchlistByType({
+      long_term: stored?.long_term ?? [],
+      swing: stored?.swing ?? [],
+    })
+    // 활성 유형은 아래 동기화 effect가 watchlist 기준으로 곧바로 채운다.
+  }, [userSession?.id])
+
+  // 활성 유형의 관심종목(watchlist)을 유형별 보관소에 계속 반영해 둔다.
+  useEffect(() => {
+    setPersonalWatchlistByType((prev) => {
+      if (sameWatchlistTickers(prev[displayedInvestmentType], watchlist)) return prev
+      const next = { ...prev, [displayedInvestmentType]: watchlist }
+      storePersonalWatchlistByType(userSession, next)
+      return next
+    })
+  }, [watchlist, displayedInvestmentType, userSession?.id])
+
+  // 운영자 모드에서도 활성 유형의 관심종목(operatorWatchlist)을 유형별 보관소에 반영해 둔다.
+  useEffect(() => {
+    if (!isOperatorDataMode) return
+    setOperatorWatchlistByType((prev) => {
+      if (sameWatchlistTickers(prev[displayedInvestmentType], effectiveOperatorWatchlist)) return prev
+      const next = { ...prev, [displayedInvestmentType]: effectiveOperatorWatchlist }
+      storeOperatorWatchlistByType(next)
+      return next
+    })
+  }, [effectiveOperatorWatchlist, displayedInvestmentType, isOperatorDataMode])
+
   const selectInvestmentType = (nextInvestmentType: InvestmentType) => {
+    const currentType = investmentType ?? DEFAULT_INVESTMENT_TYPE
+    // 유형을 바꾸면 관심종목도 유형별로 스왑한다. 운영자(어드민) 모드와 개인 모드를 각각의 보관소로 처리한다.
+    if (nextInvestmentType !== currentType) {
+      if (isOperatorDataMode) {
+        const saved: Record<InvestmentType, string[]> = { ...operatorWatchlistByType, [currentType]: effectiveOperatorWatchlist }
+        const nextList = saved[nextInvestmentType] ?? []
+        setOperatorWatchlistByType(saved)
+        storeOperatorWatchlistByType(saved)
+        setOperatorWatchlist(nextList)
+        void persistWatchlist('operator', nextList).then(notifyWatchlistPersistFailure)
+      } else {
+        const saved: Record<InvestmentType, string[]> = { ...personalWatchlistByType, [currentType]: watchlist }
+        const nextList = saved[nextInvestmentType] ?? []
+        setPersonalWatchlistByType(saved)
+        storePersonalWatchlistByType(userSession, saved)
+        setWatchlist(nextList)
+        if (userSession) {
+          void persistWatchlist('personal', nextList).then(notifyWatchlistPersistFailure)
+        }
+      }
+    }
     setInvestmentType(nextInvestmentType)
     void persistUserSettings(watchlistSortSettings, notificationPreferences, nextInvestmentType)
     resetHomeSheetScroll()
@@ -5910,6 +6074,9 @@ function App() {
     const emptyTrades: TradeLog[] = []
 
     setWatchlist([])
+    const emptyWatchlistByType: Record<InvestmentType, string[]> = { long_term: [], swing: [] }
+    setPersonalWatchlistByType(emptyWatchlistByType)
+    storePersonalWatchlistByType(session, emptyWatchlistByType)
     setPersonalTradeLogs(emptyTrades)
     storePersonalTradeLogs(session, emptyTrades)
     if (session) {
@@ -6624,6 +6791,10 @@ function App() {
       closeInvestmentProfileOnboarding()
       return
     }
+    if (isWatchlistTypeImportOpen) {
+      closeWatchlistTypeImportModal()
+      return
+    }
     if (isOperatorImportOpen) {
       closeOperatorImportModal()
     }
@@ -6700,7 +6871,8 @@ function App() {
     () => effectiveOperatorWatchlist
       .filter((ticker) => !watchlist.includes(ticker))
       .map((ticker) => apiStocks.find((stock) => stock.ticker === ticker) ?? apiSearchStocks.find((stock) => stock.ticker === ticker))
-      .filter((stock): stock is Stock => Boolean(stock)),
+      .filter((stock): stock is Stock => Boolean(stock))
+      .sort((a, b) => marketSortRank(a.market) - marketSortRank(b.market)),
     [apiSearchStocks, apiStocks, effectiveOperatorWatchlist, watchlist],
   )
   const isOperatorImportSelectionFull = operatorImportTickers.length >= personalRemainingSlots
@@ -6711,6 +6883,13 @@ function App() {
       if (current.length >= personalRemainingSlots) return current
       return [...current, ticker]
     })
+  }
+  // 남은 슬롯 한도 안에서 선택 가능한 종목 전체를 토글한다.
+  const operatorImportSelectableTickers = operatorImportCandidates.slice(0, personalRemainingSlots).map((stock) => stock.ticker)
+  const isAllOperatorImportSelected = operatorImportSelectableTickers.length > 0
+    && operatorImportSelectableTickers.every((ticker) => operatorImportTickers.includes(ticker))
+  const toggleSelectAllOperatorImport = () => {
+    setOperatorImportTickers(isAllOperatorImportSelected ? [] : operatorImportSelectableTickers)
   }
   const importOperatorStocks = async () => {
     if (!userSession || operatorImportTickers.length === 0 || personalRemainingSlots <= 0) return
@@ -6738,6 +6917,75 @@ function App() {
     }
     closeOperatorImportModal()
   }
+
+  // 상대 투자 유형(가치투자 ↔ 스윙투자)의 관심종목을 현재 유형으로 불러오는 기능.
+  const otherInvestmentType: InvestmentType = displayedInvestmentType === 'long_term' ? 'swing' : 'long_term'
+  const investmentTypeLabel = (type: InvestmentType) => (type === 'swing' ? '스윙 투자' : '가치 투자')
+  const otherInvestmentTypeLabel = investmentTypeLabel(otherInvestmentType)
+  const currentInvestmentTypeLabel = investmentTypeLabel(displayedInvestmentType)
+  // 운영자(어드민)는 운영자 보관소를, 개인은 개인 보관소를 원본으로 사용한다.
+  const activeWatchlistByType = isOperatorDataMode ? operatorWatchlistByType : personalWatchlistByType
+  const otherTypeWatchlistTickers = activeWatchlistByType[otherInvestmentType] ?? []
+  const activeWatchlistRemainingSlots = Math.max(0, MAX_WATCHLIST_ITEMS - currentWatchlistTickers.length)
+  const watchlistTypeImportCandidates = useMemo(
+    () => otherTypeWatchlistTickers
+      .filter((ticker) => !currentWatchlistTickers.includes(ticker))
+      .map((ticker) => resolveStockForTicker(ticker, apiStocks, apiSearchStocks))
+      .sort((a, b) => marketSortRank(a.market) - marketSortRank(b.market)),
+    [apiSearchStocks, apiStocks, otherTypeWatchlistTickers, currentWatchlistTickers],
+  )
+  const isWatchlistTypeImportSelectionFull = watchlistTypeImportTickers.length >= activeWatchlistRemainingSlots
+  const canShowWatchlistTypeImport = Boolean(userSession) && canEditCurrentWatchlist
+  const closeWatchlistTypeImportModal = () => {
+    setIsWatchlistTypeImportOpen(false)
+    setWatchlistTypeImportTickers([])
+  }
+  const toggleWatchlistTypeImportTicker = (ticker: string) => {
+    setWatchlistTypeImportTickers((current) => {
+      if (current.includes(ticker)) return current.filter((item) => item !== ticker)
+      if (current.length >= activeWatchlistRemainingSlots) return current
+      return [...current, ticker]
+    })
+  }
+  // 남은 슬롯 한도 안에서 선택 가능한 종목 전체를 토글한다.
+  const watchlistTypeImportSelectableTickers = watchlistTypeImportCandidates.slice(0, activeWatchlistRemainingSlots).map((stock) => stock.ticker)
+  const isAllWatchlistTypeImportSelected = watchlistTypeImportSelectableTickers.length > 0
+    && watchlistTypeImportSelectableTickers.every((ticker) => watchlistTypeImportTickers.includes(ticker))
+  const toggleSelectAllWatchlistTypeImport = () => {
+    setWatchlistTypeImportTickers(isAllWatchlistTypeImportSelected ? [] : watchlistTypeImportSelectableTickers)
+  }
+  const importWatchlistTypeStocks = async () => {
+    if (!userSession || watchlistTypeImportTickers.length === 0 || activeWatchlistRemainingSlots <= 0) return
+
+    const tickersToImport = watchlistTypeImportTickers
+      .filter((ticker) => !currentWatchlistTickers.includes(ticker))
+      .slice(0, activeWatchlistRemainingSlots)
+    if (tickersToImport.length === 0) {
+      closeWatchlistTypeImportModal()
+      return
+    }
+
+    const nextWatchlist = [...currentWatchlistTickers, ...tickersToImport]
+    if (isOperatorDataMode) {
+      setOperatorWatchlist(nextWatchlist)
+      await persistWatchlist('operator', nextWatchlist)
+    } else {
+      setWatchlist(nextWatchlist)
+      await persistWatchlist('personal', nextWatchlist)
+    }
+
+    const importedStocks = tickersToImport
+      .map((ticker) => watchlistTypeImportCandidates.find((stock) => stock.ticker === ticker))
+      .filter((stock): stock is Stock => Boolean(stock))
+    if (importedStocks.length > 0) {
+      setApiStocks((currentStocks) => {
+        const currentTickers = new Set(currentStocks.map((stock) => stock.ticker))
+        return [...currentStocks, ...importedStocks.filter((stock) => !currentTickers.has(stock.ticker))]
+      })
+    }
+    closeWatchlistTypeImportModal()
+  }
+
   function megaTrendStatus(trade: TradeLog) {
     const stock = apiStocks.find((candidate) => candidate.ticker === trade.ticker)
     const industry = primaryIndustryLabel(stock?.industry)
@@ -6825,16 +7073,29 @@ function App() {
 
   const addStockInlineControl = isAddingStock && canEditCurrentWatchlist && !isCurrentWatchlistFull ? (
     <div className="inline-add analysis-inline-add" ref={inlineAddRef}>
-      {canShowOperatorImport && (
+      {(canShowOperatorImport || canShowWatchlistTypeImport) && (
         <div className="inline-add-toolbar">
-          <span>직접 검색하거나 공수성가 목록에서 가져올 수 있습니다.</span>
-          <button
-            className="import-operator-button"
-            type="button"
-            onClick={() => setIsOperatorImportOpen(true)}
-          >
-            공수성가 종목 가져오기
-          </button>
+          <span>직접 검색하거나 목록에서 가져올 수 있습니다.</span>
+          <div className="inline-add-toolbar-actions">
+            {canShowWatchlistTypeImport && (
+              <button
+                className="import-operator-button"
+                type="button"
+                onClick={() => setIsWatchlistTypeImportOpen(true)}
+              >
+                {otherInvestmentTypeLabel} 관심종목 불러오기
+              </button>
+            )}
+            {canShowOperatorImport && (
+              <button
+                className="import-operator-button"
+                type="button"
+                onClick={() => setIsOperatorImportOpen(true)}
+              >
+                공수성가 종목 가져오기
+              </button>
+            )}
+          </div>
         </div>
       )}
       <input
@@ -6893,7 +7154,17 @@ function App() {
               내 관심종목에 없는 공수성가 종목만 가져옵니다. 남은 슬롯 {personalRemainingSlots}개.
             </p>
             <div className="operator-import-status">
-              <strong>{operatorImportTickers.length}개 선택</strong>
+              <div className="operator-import-status-head">
+                <strong>{operatorImportTickers.length}개 선택</strong>
+                <button
+                  className="operator-import-select-all"
+                  type="button"
+                  disabled={operatorImportSelectableTickers.length === 0}
+                  onClick={toggleSelectAllOperatorImport}
+                >
+                  {isAllOperatorImportSelected ? '선택 해제' : '전체 선택'}
+                </button>
+              </div>
               <span>
                 {personalRemainingSlots > 0
                   ? `${personalRemainingSlots}개까지 선택할 수 있어요. 한도에 도달하면 기존 관심종목을 제거한 뒤 다시 추가해 주세요.`
@@ -6938,6 +7209,83 @@ function App() {
                 disabled={operatorImportTickers.length === 0}
                 type="button"
                 onClick={() => void importOperatorStocks()}
+              >
+                선택한 종목 가져오기
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
+      {isWatchlistTypeImportOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={closeWatchlistTypeImportModal}>
+          <section
+            aria-labelledby="watchlist-type-import-title"
+            aria-modal="true"
+            className="confirm-modal operator-import-modal"
+            role="dialog"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={closeWatchlistTypeImportModal}>×</button>
+            <h3 id="watchlist-type-import-title">{otherInvestmentTypeLabel} 관심종목 불러오기</h3>
+            <p>
+              {currentInvestmentTypeLabel} 관심종목에 없는 {otherInvestmentTypeLabel} 종목만 가져옵니다. 남은 슬롯 {activeWatchlistRemainingSlots}개.
+            </p>
+            <div className="operator-import-status">
+              <div className="operator-import-status-head">
+                <strong>{watchlistTypeImportTickers.length}개 선택</strong>
+                <button
+                  className="operator-import-select-all"
+                  type="button"
+                  disabled={watchlistTypeImportSelectableTickers.length === 0}
+                  onClick={toggleSelectAllWatchlistTypeImport}
+                >
+                  {isAllWatchlistTypeImportSelected ? '선택 해제' : '전체 선택'}
+                </button>
+              </div>
+              <span>
+                {activeWatchlistRemainingSlots > 0
+                  ? `${activeWatchlistRemainingSlots}개까지 선택할 수 있어요. 한도에 도달하면 기존 관심종목을 제거한 뒤 다시 추가해 주세요.`
+                  : `관심종목 ${MAX_WATCHLIST_ITEMS}개 한도에 도달했습니다. 기존 종목을 제거한 뒤 다시 가져올 수 있습니다.`}
+              </span>
+            </div>
+            <div className="operator-import-list">
+              {watchlistTypeImportCandidates.length > 0 ? watchlistTypeImportCandidates.map((stock) => {
+                const isChecked = watchlistTypeImportTickers.includes(stock.ticker)
+                const isDisabled = !isChecked && isWatchlistTypeImportSelectionFull
+
+                return (
+                  <label className={`operator-import-option ${isDisabled ? 'disabled' : ''}`} key={stock.ticker}>
+                    <input
+                      checked={isChecked}
+                      disabled={isDisabled}
+                      type="checkbox"
+                      onChange={() => toggleWatchlistTypeImportTicker(stock.ticker)}
+                    />
+                    <span className="market-flag" aria-hidden="true">{marketFlag(stock.market)}</span>
+                    <span>
+                      <strong>{stock.name}</strong>
+                      <small>{stock.ticker} · {displayIndustryLabel(stock.industry)}</small>
+                    </span>
+                  </label>
+                )
+              }) : (
+                <div className="operator-import-empty">
+                  가져올 수 있는 {otherInvestmentTypeLabel} 종목이 없습니다. 이미 모두 추가했거나 {otherInvestmentTypeLabel} 관심종목이 비어 있습니다.
+                </div>
+              )}
+            </div>
+            {isWatchlistTypeImportSelectionFull && watchlistTypeImportCandidates.length > watchlistTypeImportTickers.length && (
+              <div className="operator-import-limit-message">
+                남은 {activeWatchlistRemainingSlots}개를 모두 선택했습니다. 더 가져오려면 기존 관심종목을 제거한 다음 다시 추가해 주세요.
+              </div>
+            )}
+            <div className="modal-actions">
+              <button className="modal-cancel" type="button" onClick={closeWatchlistTypeImportModal}>취소</button>
+              <button
+                className="modal-confirm"
+                disabled={watchlistTypeImportTickers.length === 0}
+                type="button"
+                onClick={() => void importWatchlistTypeStocks()}
               >
                 선택한 종목 가져오기
               </button>
@@ -7113,7 +7461,7 @@ function App() {
             })}
           </div>
 
-          <div className="sheet-wrap trading-log-scroll" key={`trades-${homeSheetResetKey}`} ref={tradingLogScrollRef} onWheel={releaseVerticalScrollAtEdge}>
+          <div className="sheet-wrap trading-log-scroll" key={`trades-${homeSheetResetKey}`} ref={tradingLogWheelRef}>
             <table
               className={`sheet-table trading-log-table ${isLongTermInvestor ? 'long-term-trading-log-table' : ''} ${isTradingPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
               style={tradingPinnedStyle}
@@ -7339,7 +7687,7 @@ function App() {
 
             {addStockInlineControl}
 
-            <div className="sheet-wrap watchlist-sheet" key={`watchlist-${homeSheetResetKey}`} ref={watchlistSheetRef} onWheel={releaseVerticalScrollAtEdge}>
+            <div className="sheet-wrap watchlist-sheet" key={`watchlist-${homeSheetResetKey}`} ref={watchlistSheetWheelRef}>
               {tableStocks.length === 0 ? (
                 <div className="watchlist-empty-panel">
                   <div className="empty-watchlist">
@@ -7515,7 +7863,7 @@ function App() {
 
             <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다.</p>
 
-            <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetRef} onWheel={releaseVerticalScrollAtEdge}>
+            <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetWheelRef}>
               <table
                 className={`sheet-table holding-table ${isLongTermInvestor ? 'long-term-holding-table' : ''} ${canManageHoldingTrades ? 'editable-home-table' : 'readonly-home-table'} ${isHoldingPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
                 style={holdingPinnedStyle}

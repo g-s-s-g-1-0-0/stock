@@ -65,6 +65,9 @@ class Recipient:
     preferences: dict[str, Any]
     slack_webhook_url: str = ""
     slack_channel_name: str = ""
+    # 계정의 마지막 투자 성향. 'long_term'(가치투자)은 청산을 인식하지 않아 매수/관망 전환만,
+    # 'swing'은 청산까지 받는다. 온보딩 기본값이 가치투자이므로 미설정 계정도 'long_term'으로 둔다.
+    investment_type: str = "long_term"
 
 
 def read_json(path: Path) -> Any:
@@ -453,8 +456,13 @@ def supabase_request(path: str) -> list[dict[str, Any]]:
     return payload if isinstance(payload, list) else []
 
 
+def normalize_investment_type(value: Any) -> str:
+    # 온보딩 기본값이 가치투자(long_term)이므로 미설정/비정상 값은 long_term으로 본다.
+    return "swing" if value == "swing" else "long_term"
+
+
 def load_recipients() -> list[Recipient]:
-    settings_rows = supabase_request("/rest/v1/user_settings?select=owner_id,notification_preferences")
+    settings_rows = supabase_request("/rest/v1/user_settings?select=owner_id,notification_preferences,investment_type")
     profile_rows = supabase_request("/rest/v1/profiles?select=id,email,is_admin")
     profiles = {row.get("id"): row for row in profile_rows}
     try:
@@ -488,6 +496,7 @@ def load_recipients() -> list[Recipient]:
             preferences=prefs,
             slack_webhook_url=slack_webhook_url,
             slack_channel_name=str(slack_integration.get("channel_name") or "").strip(),
+            investment_type=normalize_investment_type(row.get("investment_type")),
         ))
     return dedupe_recipients(recipients)
 
@@ -1288,6 +1297,7 @@ def opinion_email_body(
     buy_opinions: list[str] | None = None,
     watch_holding_opinions: list[str] | None = None,
     sell_opinions: list[str] | None = None,
+    include_sell_summary: bool = True,
 ) -> str:
     changed_html = []
     sell_opinion_labels = list(sell_opinions or [])
@@ -1331,6 +1341,11 @@ def opinion_email_body(
     kst_label, et_label = now_labels()
     macro_context_html = build_macro_context_html() if has_buy_transition else ""
     trend_top3_html = build_trend_top3_html() if has_buy_transition else ""
+    sell_summary_html = (
+        f'<p style="margin:0;"><strong>현재 매도 의견 종목:</strong> {html.escape(list_text(sell_opinion_labels))}</p>'
+        if include_sell_summary
+        else ""
+    )
     return f"""
     <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
       <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
@@ -1341,7 +1356,7 @@ def opinion_email_body(
       {trend_top3_html}
       <p style="margin:0;"><strong>현재 매수 의견 종목:</strong> {html.escape(list_text(buy_opinions or []))}</p>
       <p style="margin:0;"><strong>보유 중 관망 종목:</strong> {html.escape(list_text(watch_holding_opinions or []))}</p>
-      <p style="margin:0;"><strong>현재 매도 의견 종목:</strong> {html.escape(list_text(sell_opinion_labels))}</p><br>
+      {sell_summary_html}<br>
       <p style="color:#888;font-size:12px;">
         발송 시각 (한국): {html.escape(kst_label)}<br>
         발송 시각 (미 동부): {html.escape(et_label)}
@@ -2121,12 +2136,38 @@ def send_opinion_notifications(
             clear_runtime_reset()
         return 0
 
-    subject = "투자의견 변경 알림 (" + ", ".join(change["ticker"] for change in changes[:8]) + ")"
-    body = opinion_email_body(changes, *opinion_groups(current))
+    buy_opinions, watch_holding_opinions, sell_opinions = opinion_groups(current)
+    # 가치투자(long_term)는 청산 조건 자체를 인식하지 않으므로 의견이 '매도'로 가는 일이 없다.
+    # 따라서 매수 신호와 매수→관망(매수 의견 해제)만 알리고, 매도 전환·청산은 제외한다.
+    long_term_changes = [
+        change
+        for change in changes
+        if change.get("to") == "매수" or (change.get("to") == "관망" and change.get("from") == "매수")
+    ]
+
+    swing_recipients = [r for r in recipients if r.investment_type != "long_term"]
+    long_term_recipients = [r for r in recipients if r.investment_type == "long_term"]
+
     sent = 0
-    for recipient in recipients:
-        send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
-        sent += 1
+    if swing_recipients:
+        subject = "투자의견 변경 알림 (" + ", ".join(change["ticker"] for change in changes[:8]) + ")"
+        body = opinion_email_body(changes, buy_opinions, watch_holding_opinions, sell_opinions)
+        for recipient in swing_recipients:
+            send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
+            sent += 1
+    if long_term_recipients and long_term_changes:
+        subject = "투자의견 변경 알림 (" + ", ".join(change["ticker"] for change in long_term_changes[:8]) + ")"
+        body = opinion_email_body(
+            long_term_changes,
+            buy_opinions,
+            watch_holding_opinions,
+            None,
+            include_sell_summary=False,
+        )
+        for recipient in long_term_recipients:
+            send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
+            sent += 1
+
     if reset_active:
         clear_runtime_reset()
     print(f"Sent opinion notifications: {sent}")
