@@ -774,6 +774,7 @@ def notification_preference_label(preference_key: str) -> str:
     labels = {
         "opinionChangeEmail": "투자의견 변경 알림",
         "nasdaqPeakEmail": "나스닥 고점 과열 알림",
+        "regimeShiftEmail": "QQQ 시장 국면 전환 알림",
         "weeklyTrendReport": "주간 트렌드 리포트",
         "earningsDayBefore": "실적발표 전날 알림",
         "bbPullbackEmail": "BB 상단 눌림 반등 후보 알림",
@@ -1651,6 +1652,108 @@ def send_nasdaq_peak_notifications() -> int:
     return sent
 
 
+def regime_shift_snapshot() -> dict[str, Any]:
+    row = calc_technical_row("QQQ")
+    qqq_rows = fetch_us_ohlcv("QQQ", range_value="2y")
+    recent_min_dist = qqq_recent_ma200_min_distance(qqq_rows)
+    return build_qqq_market_state(row, recent_min_dist=recent_min_dist)
+
+
+def regime_shift_email_body(*, became_recovery: bool, snapshot: dict[str, Any]) -> str:
+    kst_date, et_date = now_labels()
+    regime = html.escape(str(snapshot.get("regimeLabel") or "-"))
+    block_max = float(snapshot.get("buyBlockMax") or 0)
+    if became_recovery:
+        headline = "QQQ가 급락 후 회복장으로 전환됐습니다."
+        detail = (
+            f"이제 상단 매수 차단선이 +{block_max:.0f}%로 완화되고, 회복장 모멘텀 예외와 "
+            "G그룹(20일선 눌림) 전략이 활성화됩니다."
+        )
+        next_step = "상단 차단이 넓어진 만큼 개별 종목 과열(이격·RSI)을 더 보수적으로 확인하세요."
+        accent = "#1b5e20"
+        border = "#c8e6c9"
+        bg = "#f1f8e9"
+    else:
+        headline = "QQQ가 회복장에서 비회복장/고점 횡보장으로 전환됐습니다."
+        detail = (
+            f"상단 매수 차단선이 +{block_max:.0f}%로 다시 조여지고, 회복장 모멘텀 예외와 "
+            "G그룹(20일선 눌림) 전략이 비활성화됩니다."
+        )
+        next_step = "신규·추가 매수 폭이 좁아집니다. 보유 종목은 기존 청산 기준으로 계속 점검하세요."
+        accent = "#b45309"
+        border = "#fde68a"
+        bg = "#fffbeb"
+    return f"""
+    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;max-width:640px;">
+      <p style="font-size:16px;font-weight:bold;color:{accent};margin:0 0 12px 0;">{html.escape(headline)}</p>
+      <div style="border:1px solid {border};background:{bg};border-radius:10px;padding:12px 14px;margin:0 0 14px 0;">
+        <div style="font-weight:bold;margin-bottom:6px;">무엇이 바뀌나요</div>
+        <div>{html.escape(detail)}</div>
+      </div>
+      <div style="margin:0 0 14px 0;">
+        <div style="font-weight:bold;margin-bottom:6px;">시장 위치</div>
+        <div><strong>시장 국면:</strong> {regime}</div>
+        <div><strong>QQQ 200일선 대비:</strong> {fmt_signed(snapshot.get('premiumPercent'), '%')}</div>
+        <div><strong>최근 60거래일 최저 이격도:</strong> {fmt_signed(snapshot.get('recent60MinPremiumPercent'), '%')}</div>
+        <div><strong>현재 상단 매수 차단선:</strong> +{block_max:.0f}%</div>
+      </div>
+      <p><strong>지금 할 일:</strong> {html.escape(next_step)}</p>
+      <p style="color:#888;font-size:12px;margin:0;">
+        발송 시각 (한국): {html.escape(kst_date)}<br>
+        발송 시각 (미 동부): {html.escape(et_date)}
+      </p>
+    </div>
+    """
+
+
+def send_regime_shift_notifications() -> int:
+    state = read_json(NOTIFICATION_STATE)
+    if not isinstance(state, dict):
+        state = {}
+    snapshot = regime_shift_snapshot()
+    is_recovery = bool(snapshot.get("isRecoveryMarket"))
+
+    regime_state = state.get("regimeShift") if isinstance(state.get("regimeShift"), dict) else {}
+    previous_recovery = regime_state.get("isRecoveryMarket")
+
+    # 최초 실행이거나 국면이 그대로면 기준값만 저장하고 종료한다.
+    if not isinstance(previous_recovery, bool) or previous_recovery == is_recovery:
+        state["regimeShift"] = {
+            "isRecoveryMarket": is_recovery,
+            "updatedAt": datetime.now().astimezone().isoformat(),
+        }
+        write_json(NOTIFICATION_STATE, state)
+        print("Regime unchanged or baseline seeded; no notification.")
+        return 0
+
+    recipients = [
+        recipient
+        for recipient in load_recipients()
+        if enabled(recipient, "regimeShiftEmail")
+    ] or fallback_admin_recipients()
+    recipients = dedupe_recipients(recipients)
+
+    state["regimeShift"] = {
+        "isRecoveryMarket": is_recovery,
+        "changedAt": datetime.now().astimezone().isoformat(),
+        "snapshot": snapshot,
+    }
+    write_json(NOTIFICATION_STATE, state)
+
+    if not recipients:
+        print("No recipients for regime shift notification.")
+        return 0
+
+    subject = "QQQ 회복장 전환 알림" if is_recovery else "QQQ 비회복장 전환 알림"
+    body = regime_shift_email_body(became_recovery=is_recovery, snapshot=snapshot)
+    sent = 0
+    for recipient in recipients:
+        send_notification(recipient, subject, append_notification_footer(body, recipient, "regimeShiftEmail"))
+        sent += 1
+    print(f"Sent regime shift notifications: {sent}")
+    return sent
+
+
 def pct_b_value(price: float, closes: list[float]) -> float | None:
     if len(closes) < 20:
         return None
@@ -2133,6 +2236,7 @@ def main() -> int:
     bb_pullback_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
 
     subparsers.add_parser("nasdaq-peak")
+    subparsers.add_parser("regime-shift")
     subparsers.add_parser("weekly-trend")
     market_events_parser = subparsers.add_parser("market-events-review")
     market_events_parser.add_argument("--path", type=Path, default=DEFAULT_MARKET_EVENTS)
@@ -2160,6 +2264,9 @@ def main() -> int:
         return 0
     if args.command == "nasdaq-peak":
         send_nasdaq_peak_notifications()
+        return 0
+    if args.command == "regime-shift":
+        send_regime_shift_notifications()
         return 0
     if args.command == "weekly-trend":
         send_weekly_trend_notifications()

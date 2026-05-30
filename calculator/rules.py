@@ -58,6 +58,9 @@ STRATEGY_RULES: dict[str, float | int] = {
     "MAX_HOLD_DAYS_G": 40,
     "REENTRY_DAYS": 10,
     "NASDAQ_BUY_BLOCK_MAX": 9,
+    "RECOVERY_MOMENTUM_EXCEPTION": 1,
+    "RECOVERY_EXCEPTION_STOCK_DIST_MAX": 0.60,
+    "RECOVERY_EXCEPTION_RSI_MAX": 82,
     "NASDAQ_DIST_UPPER": -3,
     "NASDAQ_DIST_LOWER": -12,
     "NASDAQ_DIST_RELEASE": -2.5,
@@ -170,6 +173,7 @@ def evaluate_buy_condition(
     holding_strategy_type: str | None = None,
     nasdaq_buy_block_max: float | None = None,
     is_recovery_market: bool = False,
+    recovery_momentum_exception: bool = False,
 ) -> dict[str, Any]:
     """Evaluate A-G entry/hold conditions in the same priority as the sheet."""
 
@@ -185,11 +189,40 @@ def evaluate_buy_condition(
     )
     nasdaq_bottom = nasdaq_below_buy_block and not ixic_filter_active
 
+    # 회복장 모멘텀 예외: QQQ가 상단 차단선을 넘어도, 개별 종목이 과열 상태가
+    # 아니면(이격도·RSI 캡 이내) A/C/D 신규 진입만 허용한다. 차단선만 무시하고
+    # 강세 필터(필터 비활성 & 이격 >= 하단)는 그대로 유지해 휩소를 제한한다.
+    # 보유 종목 추가매수/유지 경로(is_holding)와 청산 조건에는 영향을 주지 않는다.
+    stock_dist_ratio = (
+        (ind.current_price / ind.ma200 - 1)
+        if ind.ma200 is not None and ind.ma200 > 0 and ind.current_price is not None
+        else None
+    )
+    stock_not_overheated = (
+        stock_dist_ratio is not None
+        and stock_dist_ratio <= float(s["RECOVERY_EXCEPTION_STOCK_DIST_MAX"])
+        and ind.rsi is not None
+        and ind.rsi <= float(s["RECOVERY_EXCEPTION_RSI_MAX"])
+    )
+    nasdaq_strong_relaxed = (
+        not ixic_filter_active
+        and ixic_dist is not None
+        and ixic_dist >= float(s["NASDAQ_DIST_UPPER"])
+    )
+    recovery_exception_open = (
+        recovery_momentum_exception
+        and is_recovery_market
+        and not nasdaq_below_buy_block
+        and stock_not_overheated
+        and nasdaq_strong_relaxed
+    )
+    nasdaq_acd_gate = nasdaq_strict or recovery_exception_open
+
     a_cond1 = _gt(ind.current_price, ind.ma200)
     a_cond2 = ind.macd_hist_d1 is not None and ind.macd_hist_d1 <= 0 and _gt(ind.macd_hist, 0)
     a_cond3 = _gt(ind.pct_b, float(s["GOLDEN_CROSS_PCTB_MIN"]))
     a_cond4 = _gt(ind.rsi, float(s["GOLDEN_CROSS_RSI_MIN"]))
-    entry_a = a_cond1 and a_cond2 and a_cond3 and a_cond4 and nasdaq_strict
+    entry_a = a_cond1 and a_cond2 and a_cond3 and a_cond4 and nasdaq_acd_gate
 
     rsi_ok = _lt(ind.rsi, float(s["RSI_MAX"]))
     cci_ok = _lt(ind.cci, float(s["CCI_MIN"]))
@@ -212,7 +245,7 @@ def evaluate_buy_condition(
     c_cond4 = ind.vol_ratio is not None and ind.vol_ratio >= float(s["SQUEEZE_BREAKOUT_VOL_RATIO"])
     c_cond5 = _gt(ind.pct_b, float(s["SQUEEZE_BREAKOUT_PCTB_MIN"]))
     c_cond6 = _gt(ind.macd_hist, 0)
-    entry_c = not entry_a and not entry_b and c_cond1 and c_cond2 and c_cond3 and c_cond4 and c_cond5 and c_cond6 and nasdaq_strict
+    entry_c = not entry_a and not entry_b and c_cond1 and c_cond2 and c_cond3 and c_cond4 and c_cond5 and c_cond6 and nasdaq_acd_gate
 
     d_cond1 = _gt(ind.current_price, ind.ma200)
     d_cond2 = ind.plus_di is not None and ind.minus_di is not None and ind.plus_di > ind.minus_di
@@ -220,7 +253,7 @@ def evaluate_buy_condition(
     d_cond4 = ind.adx is not None and ind.adx_d1 is not None and ind.adx > ind.adx_d1
     d_cond5 = _gt(ind.macd_hist, 0)
     d_cond6 = _between(ind.pct_b, float(s["ADX_PCTB_MIN"]), float(s["ADX_PCTB_MAX"]))
-    entry_d = not entry_a and not entry_b and not entry_c and d_cond1 and d_cond2 and d_cond3 and d_cond4 and d_cond5 and d_cond6 and nasdaq_strict
+    entry_d = not entry_a and not entry_b and not entry_c and d_cond1 and d_cond2 and d_cond3 and d_cond4 and d_cond5 and d_cond6 and nasdaq_acd_gate
 
     e_cond1 = _gt(ind.current_price, ind.ma200)
     e_cond2 = bb_pair_ok and ind.bb_width is not None and (ind.bb_width / ind.bb_width_avg60) < float(s["SQUEEZE_RATIO"])
@@ -268,6 +301,11 @@ def evaluate_buy_condition(
         else "E" if entry_e else "F" if entry_f else "G" if entry_g else None
     )
     triggered = entry_strategy is not None
+    recovery_exception_used = (
+        recovery_exception_open
+        and not nasdaq_strict
+        and entry_strategy in ("A", "C", "D")
+    )
 
     if is_holding and holding_strategy_type:
         if holding_strategy_type == "A":
@@ -312,11 +350,12 @@ def evaluate_buy_condition(
         "strategyType": entry_strategy,
         "strategyName": strategy_display_name(entry_strategy),
         "entryTriggered": entry_strategy is not None,
+        "recoveryException": recovery_exception_used,
         "conditions": {
-            "A": [a_cond1, a_cond2, a_cond3, a_cond4, nasdaq_strict],
+            "A": [a_cond1, a_cond2, a_cond3, a_cond4, nasdaq_acd_gate],
             "B": [b_cond1, b_cond2, b_cond3, b_cond4, b_cond5, nasdaq_below_buy_block],
-            "C": [c_cond1, c_cond2, c_cond3, c_cond4, c_cond5, c_cond6, nasdaq_strict],
-            "D": [d_cond1, d_cond2, d_cond3, d_cond4, d_cond5, d_cond6, nasdaq_strict],
+            "C": [c_cond1, c_cond2, c_cond3, c_cond4, c_cond5, c_cond6, nasdaq_acd_gate],
+            "D": [d_cond1, d_cond2, d_cond3, d_cond4, d_cond5, d_cond6, nasdaq_acd_gate],
             "E": [e_cond1, e_cond2, e_cond3, nasdaq_bottom],
             "F": [f_cond1, f_cond2, nasdaq_bottom],
             "G": [g_cond1, g_cond2, g_cond3, g_cond4, g_cond5, g_cond6, g_cond7, g_cond8, g_cond9, g_cond10],

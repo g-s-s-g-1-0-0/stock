@@ -20,6 +20,7 @@ type WatchlistSortSettings = {
 type NotificationPreferences = {
   opinionChangeEmail: boolean
   nasdaqPeakEmail: boolean
+  regimeShiftEmail: boolean
   bbPullbackEmail: boolean
   weeklyTrendReport: boolean
   earningsDayBefore: boolean
@@ -51,7 +52,7 @@ type LoadedWatchlist = {
   watchlistSort: WatchlistSortSettings | null
 }
 
-type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'bbPullbackEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
+type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'regimeShiftEmail' | 'bbPullbackEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
 
 type Stock = {
   ticker: string
@@ -282,6 +283,7 @@ const activePages: ActivePage[] = ['home', 'value-analysis', 'technical-analysis
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   opinionChangeEmail: true,
   nasdaqPeakEmail: true,
+  regimeShiftEmail: true,
   bbPullbackEmail: true,
   weeklyTrendReport: true,
   earningsDayBefore: true,
@@ -745,6 +747,7 @@ function normalizeNotificationPreferences(value: unknown): NotificationPreferenc
   return {
     opinionChangeEmail: typeof candidate?.opinionChangeEmail === 'boolean' ? candidate.opinionChangeEmail : DEFAULT_NOTIFICATION_PREFERENCES.opinionChangeEmail,
     nasdaqPeakEmail: typeof candidate?.nasdaqPeakEmail === 'boolean' ? candidate.nasdaqPeakEmail : DEFAULT_NOTIFICATION_PREFERENCES.nasdaqPeakEmail,
+    regimeShiftEmail: typeof candidate?.regimeShiftEmail === 'boolean' ? candidate.regimeShiftEmail : DEFAULT_NOTIFICATION_PREFERENCES.regimeShiftEmail,
     bbPullbackEmail: typeof candidate?.bbPullbackEmail === 'boolean' ? candidate.bbPullbackEmail : DEFAULT_NOTIFICATION_PREFERENCES.bbPullbackEmail,
     weeklyTrendReport: typeof candidate?.weeklyTrendReport === 'boolean' ? candidate.weeklyTrendReport : DEFAULT_NOTIFICATION_PREFERENCES.weeklyTrendReport,
     earningsDayBefore: typeof candidate?.earningsDayBefore === 'boolean' ? candidate.earningsDayBefore : DEFAULT_NOTIFICATION_PREFERENCES.earningsDayBefore,
@@ -1608,20 +1611,37 @@ function stockSearchRank(stock: Stock, normalizedQuery: string) {
   return 99
 }
 
+const SCROLL_GESTURE_GAP_MS = 200
+let lastEdgeWheelTimestamp = 0
+let releaseScrollToPage = false
+
 function releaseVerticalScrollAtEdge(event: WheelEvent<HTMLElement>) {
   const container = event.currentTarget
   if (Math.abs(event.deltaY) < Math.abs(event.deltaX) || container.scrollHeight <= container.clientHeight) return
 
+  const now = event.timeStamp
+  const isNewGesture = now - lastEdgeWheelTimestamp > SCROLL_GESTURE_GAP_MS
+  lastEdgeWheelTimestamp = now
+
   const isAtTop = container.scrollTop <= 0
   const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight
-  if ((event.deltaY < 0 && isAtTop) || (event.deltaY > 0 && isAtBottom)) {
-    const activeElement = document.activeElement
-    if (activeElement instanceof HTMLElement && container.contains(activeElement)) {
-      activeElement.blur()
-    }
-    event.preventDefault()
-    window.scrollBy({ top: event.deltaY, behavior: 'auto' })
+  const atEdgeInScrollDirection = (event.deltaY < 0 && isAtTop) || (event.deltaY > 0 && isAtBottom)
+
+  // Decide page-release only at the start of a gesture: the page scrolls only when a fresh
+  // scroll begins while already pinned at the edge. This keeps momentum from the gesture that
+  // scrolled the table to its edge from spilling into the page before the rows can be read.
+  if (isNewGesture) releaseScrollToPage = atEdgeInScrollDirection
+
+  if (!atEdgeInScrollDirection) return
+
+  event.preventDefault()
+  if (!releaseScrollToPage) return
+
+  const activeElement = document.activeElement
+  if (activeElement instanceof HTMLElement && container.contains(activeElement)) {
+    activeElement.blur()
   }
+  window.scrollBy({ top: event.deltaY, behavior: 'auto' })
 }
 
 function statusClass(value: Valuation | Opinion | TradeStatus) {
@@ -2406,6 +2426,7 @@ const watchlistSortOptions: Array<{ value: WatchlistSortKey; label: string; desc
 const notificationOptions: Array<{ key: NotificationPreferenceKey; title: string; description: string }> = [
   { key: 'opinionChangeEmail', title: '투자의견 변경', description: '관심종목의 매수/관망/매도 신호가 바뀔 때' },
   { key: 'nasdaqPeakEmail', title: '나스닥 고점 과열', description: 'QQQ 과열과 RSI 둔화가 동시에 감지될 때' },
+  { key: 'regimeShiftEmail', title: 'QQQ 시장 국면 전환', description: '회복장↔비회복장이 바뀌어 매수 차단선·예외 전략이 달라질 때' },
   { key: 'bbPullbackEmail', title: 'BB 눌림 반등 후보', description: '관심종목이 BB 상단 돌파 후 얕은 눌림 반등 후보로 잡힐 때' },
   { key: 'weeklyTrendReport', title: '주간 트렌드 리포트', description: '시장 트렌드와 관심종목 흐름을 주 1회 정리' },
   { key: 'earningsDayBefore', title: '실적발표 전날', description: '관심종목 실적발표 전 리스크 점검' },
@@ -6972,7 +6993,7 @@ function App() {
             })}
           </div>
 
-          <div className="sheet-wrap trading-log-scroll" key={`trades-${homeSheetResetKey}`} ref={tradingLogScrollRef}>
+          <div className="sheet-wrap trading-log-scroll" key={`trades-${homeSheetResetKey}`} ref={tradingLogScrollRef} onWheel={releaseVerticalScrollAtEdge}>
             <table
               className={`sheet-table trading-log-table ${isLongTermInvestor ? 'long-term-trading-log-table' : ''} ${isTradingPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
               style={tradingPinnedStyle}
@@ -7198,7 +7219,7 @@ function App() {
 
             {addStockInlineControl}
 
-            <div className="sheet-wrap watchlist-sheet" key={`watchlist-${homeSheetResetKey}`} ref={watchlistSheetRef}>
+            <div className="sheet-wrap watchlist-sheet" key={`watchlist-${homeSheetResetKey}`} ref={watchlistSheetRef} onWheel={releaseVerticalScrollAtEdge}>
               {tableStocks.length === 0 ? (
                 <div className="watchlist-empty-panel">
                   <div className="empty-watchlist">
@@ -7374,7 +7395,7 @@ function App() {
 
             <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다.</p>
 
-            <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetRef}>
+            <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetRef} onWheel={releaseVerticalScrollAtEdge}>
               <table
                 className={`sheet-table holding-table ${isLongTermInvestor ? 'long-term-holding-table' : ''} ${canManageHoldingTrades ? 'editable-home-table' : 'readonly-home-table'} ${isHoldingPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
                 style={holdingPinnedStyle}

@@ -696,6 +696,7 @@ def latest_technical_row(
         ixic_filter_active=ixic_filter_active,
         nasdaq_buy_block_max=nasdaq_buy_block_max,
         is_recovery_market=bool(qqq_market_state.get("isRecoveryMarket")) if qqq_market_state else False,
+        recovery_momentum_exception=bool(STRATEGY_RULES.get("RECOVERY_MOMENTUM_EXCEPTION")),
     )
     event_watch_active = market_event != "당분간 없음"
     opinion = "관망" if event_watch_active else "매수" if buy["entryTriggered"] else "관망"
@@ -707,11 +708,12 @@ def latest_technical_row(
         if all(buy["conditions"].get(group, []))
     ]
     buy_block_label = f"나스닥 상단 차단 아님(≤{float(nasdaq_buy_block_max):.0f}%)" if nasdaq_buy_block_max is not None else "나스닥 상단 차단 아님"
+    acd_filter_label = "나스닥 강세 필터(회복장 모멘텀 예외)" if buy.get("recoveryException") else "나스닥 강세 필터"
     strategy_labels = {
-        "A": ["현재가 > MA200", "MACD 골든크로스", "종가%B > 80", "RSI > 70", "나스닥 강세 필터"],
+        "A": ["현재가 > MA200", "MACD 골든크로스", "종가%B > 80", "RSI > 70", acd_filter_label],
         "B": ["현재가 < MA200", "VIX >= 30", "RSI < 35 또는 CCI < -150", "LR 추세선 상승", "저가 추세선 터치", buy_block_label],
-        "C": ["현재가 > MA200", "전일 BB 스퀴즈", "당일 BB 확장", "거래량 폭발", "종가%B > 55", "MACD Hist > 0", "나스닥 강세 필터"],
-        "D": ["현재가 > MA200", "+DI > -DI", "ADX > 30", "ADX 상승", "MACD Hist > 0", "종가%B 30~75", "나스닥 강세 필터"],
+        "C": ["현재가 > MA200", "전일 BB 스퀴즈", "당일 BB 확장", "거래량 폭발", "종가%B > 55", "MACD Hist > 0", acd_filter_label],
+        "D": ["현재가 > MA200", "+DI > -DI", "ADX > 30", "ADX 상승", "MACD Hist > 0", "종가%B 30~75", acd_filter_label],
         "E": ["현재가 > MA200", "BB폭 압축", "저가%B <= 50", "나스닥 바닥/정상 필터"],
         "F": ["현재가 > MA200", f"저가%B <= {float(STRATEGY_RULES['BB_PCT_B_LOW_MAX']):.0f}", "나스닥 바닥/정상 필터"],
         "G": [
@@ -744,6 +746,7 @@ def latest_technical_row(
         f"{stock['ticker']} 최종 판단: {opinion}",
         f"진입 전략: {strategy}",
         market_line,
+        *(["회복장 모멘텀 예외 적용: QQQ 상단 차단 초과지만 종목 비과열(이격 ≤60% · RSI ≤82)로 A/C/D 신규 진입 허용"] if buy.get("recoveryException") else []),
         *condition_summaries,
     ])
     return {
