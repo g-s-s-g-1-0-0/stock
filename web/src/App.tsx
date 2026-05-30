@@ -64,6 +64,10 @@ type ResolvedWatchlistState = {
   clearPending: boolean
 }
 
+type WatchlistPersistResult =
+  | { ok: true }
+  | { ok: false; reason?: 'auth'; error?: unknown }
+
 type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'regimeShiftEmail' | 'bbPullbackEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
 
 type Stock = {
@@ -5017,7 +5021,7 @@ function App() {
     }
   }
 
-  async function persistWatchlist(scope: 'personal' | 'operator', tickers: string[], session = userSession) {
+  async function persistWatchlist(scope: 'personal' | 'operator', tickers: string[], session = userSession): Promise<WatchlistPersistResult> {
     if (scope === 'operator') {
       storePendingOperatorWatchlist(tickers)
     } else if (session) {
@@ -5032,10 +5036,10 @@ function App() {
         localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(tickers))
         clearPendingPersonalWatchlist(session)
       }
-      return
+      return { ok: true }
     }
 
-    if (scope === 'personal' && !session) return
+    if (scope === 'personal' && !session) return { ok: false, reason: 'auth' }
     const client = supabase
     const markWatchlistPersisted = () => {
       if (scope === 'operator') {
@@ -5047,6 +5051,16 @@ function App() {
         localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(tickers))
         clearPendingPersonalWatchlist(session)
       }
+    }
+
+    // Watchlist rows are protected by RLS: operator rows are world-readable but
+    // admin-only for writes. An expired auth token therefore lets reads keep
+    // showing the old list while writes silently fail, leaving local pending and
+    // the server permanently out of sync. Require a valid session up front so the
+    // failure surfaces (the pending change is kept and re-synced after re-login).
+    const { data: sessionInfo } = await client.auth.getSession()
+    if (!sessionInfo.session) {
+      return { ok: false, reason: 'auth' }
     }
 
     const payload = scope === 'operator'
@@ -5066,41 +5080,54 @@ function App() {
       return updateQuery.select('id')
     }
 
-    let { data, error } = await updateWatchlist(payload)
-    if (error && scope === 'operator') {
-      const fallback = await updateWatchlist({ tickers })
-      data = fallback.data
-      error = fallback.error
-    }
-    if (error) throw error
-    if (data && data.length > 0) {
-      markWatchlistPersisted()
-      return
-    }
+    try {
+      let { data, error } = await updateWatchlist(payload)
+      if (error && scope === 'operator') {
+        const fallback = await updateWatchlist({ tickers })
+        data = fallback.data
+        error = fallback.error
+      }
+      if (error) return { ok: false, error }
+      if (data && data.length > 0) {
+        markWatchlistPersisted()
+        return { ok: true }
+      }
 
-    const insertPayload = {
-      owner_id: scope === 'operator' ? null : session?.id,
-      scope,
-      ...payload,
-    }
-    const { error: insertError } = await client
-      .from('watchlists')
-      .insert(insertPayload as never)
-    if (!insertError) {
-      markWatchlistPersisted()
-      return
-    }
-    if (scope !== 'operator') throw insertError
-
-    const { error: fallbackInsertError } = await client
-      .from('watchlists')
-      .insert({
-        owner_id: null,
+      const insertPayload = {
+        owner_id: scope === 'operator' ? null : session?.id,
         scope,
-        tickers,
-      })
-    if (fallbackInsertError) throw fallbackInsertError
-    markWatchlistPersisted()
+        ...payload,
+      }
+      const { error: insertError } = await client
+        .from('watchlists')
+        .insert(insertPayload as never)
+      if (!insertError) {
+        markWatchlistPersisted()
+        return { ok: true }
+      }
+      if (scope !== 'operator') return { ok: false, error: insertError }
+
+      const { error: fallbackInsertError } = await client
+        .from('watchlists')
+        .insert({
+          owner_id: null,
+          scope,
+          tickers,
+        })
+      if (fallbackInsertError) return { ok: false, error: fallbackInsertError }
+      markWatchlistPersisted()
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, error }
+    }
+  }
+
+  function notifyWatchlistPersistFailure(result: WatchlistPersistResult) {
+    if (result.ok) return
+    const message = result.reason === 'auth'
+      ? '로그인이 만료되어 관심 종목 변경이 저장되지 않았습니다.\n다시 로그인한 뒤 시도해 주세요. (변경 내용은 보관되어 재로그인 시 자동으로 반영됩니다.)'
+      : '관심 종목 변경을 저장하지 못했습니다.\n잠시 후 다시 시도해 주세요. (변경 내용은 보관되어 다음 접속 시 다시 동기화됩니다.)'
+    if (typeof window !== 'undefined') window.alert(message)
   }
 
   async function persistOperatorWatchlistSort(watchlistSort: WatchlistSortSettings, session = userSession) {
@@ -5651,26 +5678,28 @@ function App() {
         ? operatorWatchlist
         : [...operatorWatchlist, resolvedTicker]
       setOperatorWatchlist(nextWatchlist)
-      void persistWatchlist('operator', nextWatchlist)
+      void persistWatchlist('operator', nextWatchlist).then(notifyWatchlistPersistFailure)
     } else {
       const nextWatchlist = watchlist.includes(resolvedTicker) ? watchlist : [...watchlist, resolvedTicker]
       setWatchlist(nextWatchlist)
-      void persistWatchlist('personal', nextWatchlist)
+      void persistWatchlist('personal', nextWatchlist).then(notifyWatchlistPersistFailure)
     }
     setQuery('')
     setIsAddingStock(true)
   }
 
   const removeSelectedStocks = async () => {
+    let result: WatchlistPersistResult
     if (isOperatorDataMode) {
       const nextWatchlist = operatorWatchlist.filter((ticker) => !selectedTickers.includes(ticker))
       setOperatorWatchlist(nextWatchlist)
-      await persistWatchlist('operator', nextWatchlist)
+      result = await persistWatchlist('operator', nextWatchlist)
     } else {
       const nextWatchlist = watchlist.filter((ticker) => !selectedTickers.includes(ticker))
       setWatchlist(nextWatchlist)
-      await persistWatchlist('personal', nextWatchlist)
+      result = await persistWatchlist('personal', nextWatchlist)
     }
+    notifyWatchlistPersistFailure(result)
     setSelectedTickers([])
   }
 
