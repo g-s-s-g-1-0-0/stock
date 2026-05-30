@@ -462,7 +462,14 @@ def normalize_investment_type(value: Any) -> str:
 
 
 def load_recipients() -> list[Recipient]:
-    settings_rows = supabase_request("/rest/v1/user_settings?select=owner_id,notification_preferences,investment_type")
+    try:
+        settings_rows = supabase_request("/rest/v1/user_settings?select=owner_id,notification_preferences,investment_type")
+    except urllib.error.HTTPError as exc:
+        # investment_type 컬럼이 적용되지 않은 환경에서는 해당 컬럼 없이 조회하고 기본값(long_term)을 사용한다.
+        if exc.code != 400:
+            raise
+        print("user_settings.investment_type lookup failed (400); retrying without the column.")
+        settings_rows = supabase_request("/rest/v1/user_settings?select=owner_id,notification_preferences")
     profile_rows = supabase_request("/rest/v1/profiles?select=id,email,is_admin")
     profiles = {row.get("id"): row for row in profile_rows}
     try:
