@@ -185,6 +185,10 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         run: python scripts/web_refresh_notifications.py nasdaq-peak
 
+      - name: Send regime shift emails
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
+        run: python scripts/web_refresh_notifications.py regime-shift
+
       - name: Send BB pullback candidate emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         run: python scripts/web_refresh_notifications.py bb-pullback
