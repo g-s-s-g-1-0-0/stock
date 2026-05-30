@@ -50,6 +50,18 @@ type StoredPortfolioState = {
 type LoadedWatchlist = {
   tickers: string[] | null
   watchlistSort: WatchlistSortSettings | null
+  updatedAt: number | null
+}
+
+type PendingWatchlistEntry = {
+  tickers: string[]
+  updatedAt: number
+}
+
+type ResolvedWatchlistState = {
+  tickers: string[]
+  pendingToSync: string[] | null
+  clearPending: boolean
 }
 
 type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'regimeShiftEmail' | 'bbPullbackEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
@@ -440,7 +452,13 @@ function storeRemoteOperatorWatchlist(tickers: string[]) {
   localStorage.setItem(OPERATOR_WATCHLIST_REMOTE_CACHE_STORAGE_KEY, JSON.stringify(tickers))
 }
 
-function readPendingWatchlist(storageKey: string) {
+function parseRemoteUpdatedAt(value: unknown) {
+  if (typeof value !== 'string' || !value) return null
+  const parsed = Date.parse(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function readPendingWatchlistEntry(storageKey: string): PendingWatchlistEntry | null {
   const storedWatchlist = localStorage.getItem(storageKey)
   if (!storedWatchlist) return null
 
@@ -451,19 +469,40 @@ function readPendingWatchlist(storageKey: string) {
       localStorage.removeItem(storageKey)
       return null
     }
-    return normalizeWatchlistTickers(parsed.tickers)
+    return {
+      tickers: normalizeWatchlistTickers(parsed.tickers) ?? [],
+      updatedAt,
+    }
   } catch {
     localStorage.removeItem(storageKey)
     return null
   }
 }
 
+function resolveWatchlistWithPending(
+  remote: { tickers: string[] | null; updatedAt: number | null },
+  pending: PendingWatchlistEntry | null,
+): ResolvedWatchlistState {
+  const remoteTickers = remote.tickers ?? []
+  if (!pending) {
+    return { tickers: remoteTickers, pendingToSync: null, clearPending: false }
+  }
+  if (sameWatchlistTickers(remote.tickers, pending.tickers)) {
+    return { tickers: remoteTickers, pendingToSync: null, clearPending: true }
+  }
+  const remoteUpdatedAt = remote.updatedAt ?? 0
+  if (pending.updatedAt > remoteUpdatedAt) {
+    return { tickers: pending.tickers, pendingToSync: pending.tickers, clearPending: false }
+  }
+  return { tickers: remoteTickers, pendingToSync: null, clearPending: true }
+}
+
 function readPendingPersonalWatchlist(session: UserSession | null) {
-  return session ? readPendingWatchlist(personalWatchlistPendingStorageKey(session)) : null
+  return session ? readPendingWatchlistEntry(personalWatchlistPendingStorageKey(session)) : null
 }
 
 function readPendingOperatorWatchlist() {
-  return readPendingWatchlist(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
+  return readPendingWatchlistEntry(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
 }
 
 function storePendingPersonalWatchlist(session: UserSession | null, tickers: string[]) {
@@ -1206,6 +1245,21 @@ function mergeStocks(primary: Stock[], secondary: Stock[]) {
   return [...rowsByTicker.values()]
 }
 
+function watchlistStockShell(ticker: string): Stock {
+  const normalized = ticker.trim().toUpperCase()
+  return stockSearchShell({
+    ticker: normalized,
+    name: stockName(normalized),
+    market: stockMarket(normalized),
+    fairPrice: '-',
+    currentPrice: '-',
+    valuation: '보통',
+    opinion: '관망',
+    strategies: [],
+    updatedAt: '-',
+  })
+}
+
 function resolveStockForTicker(ticker: string, primaryStocks: Stock[], fallbackStocks: Stock[] = []) {
   const normalized = ticker.trim().toUpperCase()
   const matchesTicker = (stock: Stock) => stock.ticker.trim().toUpperCase() === normalized
@@ -1213,7 +1267,7 @@ function resolveStockForTicker(ticker: string, primaryStocks: Stock[], fallbackS
   if (fromPrimary) return withDisplayStockName(fromPrimary)
   const fromFallback = fallbackStocks.find(matchesTicker)
   if (fromFallback) return withDisplayStockName(fromFallback)
-  return null
+  return watchlistStockShell(normalized)
 }
 
 const initialWatchlist: string[] = []
@@ -4922,6 +4976,7 @@ function App() {
       return {
         tickers: scope === 'operator' ? readStoredOperatorWatchlist() : readStoredWatchlist(session),
         watchlistSort: scope === 'operator' ? readOperatorWatchlistSortSettings() : null,
+        updatedAt: null,
       }
     }
     const client = supabase
@@ -4939,14 +4994,14 @@ function App() {
       return query.maybeSingle()
     }
 
-    const { data: initialData, error } = await selectWatchlist('tickers, watchlist_sort')
+    const { data: initialData, error } = await selectWatchlist('tickers, watchlist_sort, updated_at')
     let data = initialData
     if (error) {
       const fallback = await selectWatchlist('tickers')
       if (fallback.error) throw error
       data = fallback.data
     }
-    const row = data as { tickers?: unknown, watchlist_sort?: unknown } | null
+    const row = data as { tickers?: unknown, watchlist_sort?: unknown, updated_at?: unknown } | null
 
     const watchlistSort = scope === 'operator'
       ? normalizeWatchlistSortSettings(row?.watchlist_sort)
@@ -4955,6 +5010,7 @@ function App() {
     return {
       tickers: normalizeWatchlistTickers(row?.tickers),
       watchlistSort,
+      updatedAt: parseRemoteUpdatedAt(row?.updated_at),
     }
   }
 
@@ -5090,17 +5146,16 @@ function App() {
 
       const operatorTickersFromDb = await loadWatchlist('operator', session)
       const operatorDefaultSort = operatorTickersFromDb?.watchlistSort
-      const remoteOperatorTickers = operatorTickersFromDb?.tickers
-      const pendingOperatorTickers = readPendingOperatorWatchlist()
-      const nextOperatorTickers = pendingOperatorTickers ?? remoteOperatorTickers ?? operatorTickers
-      setOperatorWatchlist(nextOperatorTickers)
-      storeRemoteOperatorWatchlist(nextOperatorTickers)
-      if (pendingOperatorTickers) {
-        if (sameWatchlistTickers(remoteOperatorTickers, pendingOperatorTickers)) {
-          clearPendingOperatorWatchlist()
-        } else if (session && isConfiguredAdminEmail(session.email)) {
-          void persistWatchlist('operator', pendingOperatorTickers, session).catch(() => undefined)
-        }
+      const resolvedOperatorWatchlist = resolveWatchlistWithPending(
+        { tickers: operatorTickersFromDb?.tickers ?? null, updatedAt: operatorTickersFromDb?.updatedAt ?? null },
+        readPendingOperatorWatchlist(),
+      )
+      setOperatorWatchlist(resolvedOperatorWatchlist.tickers)
+      storeRemoteOperatorWatchlist(resolvedOperatorWatchlist.tickers)
+      if (resolvedOperatorWatchlist.clearPending) {
+        clearPendingOperatorWatchlist()
+      } else if (resolvedOperatorWatchlist.pendingToSync && session && isConfiguredAdminEmail(session.email)) {
+        void persistWatchlist('operator', resolvedOperatorWatchlist.pendingToSync, session).catch(() => undefined)
       }
 
       const [personalTickers, loadedSettings, loadedPortfolioState] = await Promise.all([
@@ -5120,21 +5175,22 @@ function App() {
       setContributionSettings(loadedPortfolioState.contributionSettings)
       setPersonalTradeLogs(loadedPortfolioState.personalTradeLogs)
       const legacyTickers = session ? readLegacyWatchlist(session) : null
-      const remotePersonalTickers = personalTickers?.tickers
-      const pendingPersonalTickers = readPendingPersonalWatchlist(session)
-      const resolvedPersonalTickers = pendingPersonalTickers ?? remotePersonalTickers
-      const nextPersonalTickers = resolvedPersonalTickers ?? legacyTickers ?? initialWatchlist
+      const resolvedPersonalWatchlist = resolveWatchlistWithPending(
+        { tickers: personalTickers?.tickers ?? null, updatedAt: personalTickers?.updatedAt ?? null },
+        readPendingPersonalWatchlist(session),
+      )
+      const nextPersonalTickers = resolvedPersonalWatchlist.tickers.length > 0
+        ? resolvedPersonalWatchlist.tickers
+        : legacyTickers ?? initialWatchlist
 
       setWatchlist(session ? nextPersonalTickers : readStoredWatchlist(null))
-      if (session && pendingPersonalTickers) {
-        if (sameWatchlistTickers(remotePersonalTickers, pendingPersonalTickers)) {
-          clearPendingPersonalWatchlist(session)
-        } else {
-          void persistWatchlist('personal', pendingPersonalTickers, session).catch(() => undefined)
-        }
+      if (resolvedPersonalWatchlist.clearPending) {
+        clearPendingPersonalWatchlist(session)
+      } else if (session && resolvedPersonalWatchlist.pendingToSync) {
+        void persistWatchlist('personal', resolvedPersonalWatchlist.pendingToSync, session).catch(() => undefined)
       }
 
-      if (session && !pendingPersonalTickers && !remotePersonalTickers && legacyTickers) {
+      if (session && !resolvedPersonalWatchlist.pendingToSync && !personalTickers?.tickers?.length && legacyTickers) {
         await persistWatchlist('personal', legacyTickers, session)
       }
     } finally {
@@ -5178,6 +5234,22 @@ function App() {
       document.removeEventListener('visibilitychange', loadLatestDataWhenVisible)
     }
   }, [])
+
+  useEffect(() => {
+    if (isStockSearchLoaded) return
+
+    let isMounted = true
+    fetchStockSearchData<Stock>().then((data) => {
+      const rows = data?.rows ?? []
+      if (!isMounted || rows.length === 0) return
+      setApiSearchStocks((currentStocks) => mergeStocks(rows, currentStocks))
+      setIsStockSearchLoaded(true)
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [isStockSearchLoaded])
 
   useEffect(() => {
     const normalized = normalizeQuery(query)
@@ -5406,7 +5478,9 @@ function App() {
       : systemTradeLogs
     : personalTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
-  const visibleProfileTrades = isLongTermInvestor ? scopedOpenTrades : scopedTrades
+  const visibleProfileTrades = isLongTermInvestor && !(isAdminUser && isOperatorDataMode)
+    ? scopedOpenTrades
+    : scopedTrades
   const filteredTrades = visibleProfileTrades
     .filter((trade) => selectedStrategy === '전체' || strategyCode(trade.strategy) === selectedStrategy)
     .slice()
