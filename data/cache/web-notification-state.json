@@ -2,5 +2,9 @@
   "nasdaqPeak": {
     "resetAt": "2026-05-14T20:55:50.998617+00:00",
     "sent": false
+  },
+  "regimeShift": {
+    "isRecoveryMarket": true,
+    "updatedAt": "2026-05-30T07:00:00.654429+00:00"
   }
 }
