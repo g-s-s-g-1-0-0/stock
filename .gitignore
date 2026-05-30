@@ -2,6 +2,9 @@
 *.csv
 *.png
 
+# 백테스트 데이터 캐시 (종목 시세 pkl)
+.bt_cache/
+
 # Python 캐시
 __pycache__/
 *.pyc
