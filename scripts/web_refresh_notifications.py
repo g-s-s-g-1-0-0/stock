@@ -1950,7 +1950,7 @@ def send_bb_pullback_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> in
     recipients = [
         recipient
         for recipient in load_recipients()
-        if enabled(recipient, "bbPullbackEmail")
+        if recipient.is_admin and enabled(recipient, "bbPullbackEmail")
     ]
     if not recipients:
         print("No recipients for bbPullbackEmail.")

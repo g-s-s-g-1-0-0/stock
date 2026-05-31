@@ -2584,11 +2584,11 @@ const notificationOptions: Array<{ key: NotificationPreferenceKey; title: string
   { key: 'opinionChangeEmail', title: '투자의견 변경', description: '관심종목의 매수/관망/매도 신호가 바뀔 때' },
   { key: 'nasdaqPeakEmail', title: '나스닥 고점 과열', description: 'QQQ 과열과 RSI 둔화가 동시에 감지될 때' },
   { key: 'regimeShiftEmail', title: '시장 국면 전환', description: '회복장↔비회복장이 바뀌어 매수 차단선·예외 전략이 달라질 때' },
-  { key: 'bbPullbackEmail', title: 'BB 눌림 반등 후보', description: '관심종목이 BB 상단 돌파 후 얕은 눌림 반등 후보로 잡힐 때' },
   { key: 'weeklyTrendReport', title: '주간 트렌드 리포트', description: '시장 트렌드와 관심종목 흐름을 주 1회 정리' },
   { key: 'earningsDayBefore', title: '실적발표 전날', description: '관심종목 실적발표 전 리스크 점검' },
 ]
 const adminNotificationOptions: Array<{ key: NotificationPreferenceKey; title: string; description: string }> = [
+  { key: 'bbPullbackEmail', title: 'BB 눌림 반등 후보', description: '관리자 전용: 관심종목이 BB 상단 돌파 후 얕은 눌림 반등 후보로 잡힐 때' },
   { key: 'adminAutoUpdateFailureEmail', title: '자동 업데이트 실패', description: '관리자 전용: 같은 작업이 연속 3회 이상 실패할 때' },
 ]
 const apiLogTabs: Array<{ key: ApiLogTrigger; label: string; description: string }> = [

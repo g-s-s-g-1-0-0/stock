@@ -347,7 +347,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 self.notifications.Recipient(
                     owner_id="user-1",
                     email="user@example.com",
-                    is_admin=False,
+                    is_admin=True,
                     preferences={"bbPullbackEmail": True},
                 )
             ]
