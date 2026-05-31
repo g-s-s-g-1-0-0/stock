@@ -5162,6 +5162,8 @@
 
   .log-title-row .strategy-filter {
     justify-content: flex-start;
+    padding-top: 5px;
+    padding-bottom: 5px;
   }
 
   .strategy-filter button {
@@ -5190,6 +5192,39 @@
 
   .section-heading {
     margin-bottom: 6px;
+  }
+
+  .holding-heading {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .holding-heading .section-title-inline {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* 청산/삭제 노출 시 제목이 줄바꿈되지 않고 버튼이 우측에 유지되도록 제목만 말줄임 처리. */
+  .holding-heading .section-title-inline h2 {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .holding-heading .section-title-inline > span {
+    flex: 0 0 auto;
+  }
+
+  .holding-heading .heading-actions {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  /* 선택 전에는 청산/삭제 버튼이 자리를 차지하지 않게 해, 설명이 제목 바로 아래로 붙는다. */
+  .holding-heading .reserved-action-button {
+    display: none;
   }
 
   .section-heading + .section-note {

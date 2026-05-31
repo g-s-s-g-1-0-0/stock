@@ -7826,7 +7826,7 @@ function App() {
           </section>
 
           <section className={`panel ${shouldDimPanelsForFirstVisitGuide ? 'dimmed-panel' : ''}`}>
-            <div className="section-heading">
+            <div className="section-heading holding-heading">
               <div className="section-title-inline">
                 <h2>보유중인 종목 (전략 단위)</h2>
                 <span>총 {scopedOpenTrades.length}개</span>
