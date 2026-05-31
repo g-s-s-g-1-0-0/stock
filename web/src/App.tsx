@@ -7902,9 +7902,12 @@ function App() {
 
           <section className={`panel ${shouldDimPanelsForFirstVisitGuide ? 'dimmed-panel' : ''}`}>
             <div className="section-heading holding-heading">
-              <div className="section-title-inline">
-                <h2>보유중인 종목 (전략 단위)</h2>
-                <span>총 {scopedOpenTrades.length}개</span>
+              <div className="holding-heading-main">
+                <div className="section-title-inline">
+                  <h2>보유중인 종목 (전략 단위)</h2>
+                  <span>총 {scopedOpenTrades.length}개</span>
+                </div>
+                <p className="section-note holding-section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다.</p>
               </div>
               <div className="heading-actions">
                 {canManageHoldingTrades && (
@@ -7935,8 +7938,6 @@ function App() {
                 )}
               </div>
             </div>
-
-            <p className="section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다.</p>
 
             <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetWheelRef}>
               <table

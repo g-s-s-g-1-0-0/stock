@@ -403,6 +403,23 @@
   text-overflow: ellipsis;
 }
 
+/* 데스크탑: 보유종목 헤딩의 청산/삭제 버튼을 제목+설명 묶음의 하단선(설명 끝선)에 맞춰 표 가까이 내린다. */
+.holding-heading {
+  align-items: flex-end;
+}
+
+.holding-heading-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.holding-heading .holding-section-note {
+  margin: 0;
+}
+
 .section-heading-meta {
   display: inline-flex;
   align-items: center;
@@ -5202,8 +5219,19 @@
 
   .holding-heading {
     flex-wrap: nowrap;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
+  }
+
+  .holding-heading-main {
+    gap: 2px;
+  }
+
+  /* 모바일에서는 설명이 제목 바로 아래에서 줄바꿈되도록(말줄임 해제) 한다. */
+  .holding-section-note {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 
   .holding-heading .section-title-inline {
