@@ -7907,7 +7907,7 @@ function App() {
                   <h2>보유중인 종목 (전략 단위)</h2>
                   <span>총 {scopedOpenTrades.length}개</span>
                 </div>
-                <p className="section-note holding-section-note">시스템 기준 보유 종목으로, 실제 보유 여부와 다를 수 있어 개인 판단이 필요합니다.</p>
+                <p className="section-note holding-section-note">시스템 기준이라 실제 보유와 다를 수 있어요.</p>
               </div>
               <div className="heading-actions">
                 {canManageHoldingTrades && (

@@ -5227,13 +5227,6 @@
     gap: 2px;
   }
 
-  /* 모바일에서는 설명이 제목 바로 아래에서 줄바꿈되도록(말줄임 해제) 한다. */
-  .holding-section-note {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-  }
-
   .holding-heading .section-title-inline {
     flex: 1 1 auto;
     min-width: 0;
