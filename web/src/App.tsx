@@ -375,18 +375,15 @@ const investmentProfileOptions: Array<{
 const notificationIntegrationOptions: Array<{
   channel: NotificationIntegrationChannel
   shortTitle: string
-  logoSrc: string
   disabled?: boolean
 }> = [
   {
     channel: 'slack',
     shortTitle: '슬랙',
-    logoSrc: '',
   },
   {
     channel: 'kakaoTalk',
     shortTitle: '카카오톡',
-    logoSrc: 'https://cdn.simpleicons.org/kakaotalk/000000',
     disabled: true,
   },
 ]
@@ -8259,7 +8256,12 @@ function App() {
                                     <i className="slack-dot slack-dot-red"></i>
                                   </span>
                                 ) : (
-                                  <img alt="" src={option.logoSrc} />
+                                  <svg className="kakao-logo-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path
+                                      fill="#3C1E1E"
+                                      d="M12 3C6.477 3 2 6.463 2 10.733c0 2.76 1.84 5.18 4.6 6.54-.2.74-.726 2.69-.83 3.107-.13.516.19.51.4.37.165-.11 2.62-1.78 3.685-2.51.69.1 1.4.153 2.145.153 5.523 0 10-3.463 10-7.733S17.523 3 12 3z"
+                                    />
+                                  </svg>
                                 )}
                               </span>
                               <span>
@@ -8291,7 +8293,7 @@ function App() {
                           value={notificationPreferences.recipientEmail}
                           onChange={(event) => updateNotificationRecipientEmail(event.target.value)}
                         />
-                        <small>비워두면 가입한 이메일({userSession.email})을 사용합니다.</small>
+                        <small>비워두면 가입한 이메일을 사용합니다.</small>
                       </label>
                     )}
                   </div>

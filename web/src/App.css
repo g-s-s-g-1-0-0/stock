@@ -4681,6 +4681,12 @@
   background: #ffffff;
 }
 
+.kakao-logo-mark {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
 .slack-logo-mark {
   position: relative;
   display: block;
