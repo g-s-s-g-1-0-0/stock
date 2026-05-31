@@ -51,6 +51,7 @@ type LoadedWatchlist = {
   tickers: string[] | null
   watchlistSort: WatchlistSortSettings | null
   updatedAt: number | null
+  tickersByType?: Partial<Record<InvestmentType, string[]>> | null
 }
 
 type PendingWatchlistEntry = {
@@ -580,6 +581,18 @@ function readOperatorWatchlistByType(): Partial<Record<InvestmentType, string[]>
 
 function storeOperatorWatchlistByType(store: Record<InvestmentType, string[]>) {
   localStorage.setItem(OPERATOR_WATCHLIST_BY_TYPE_STORAGE_KEY, JSON.stringify(store))
+}
+
+// DB(jsonb) 등 외부에서 받은 유형별 관심종목 값을 안전하게 정규화한다.
+function normalizeWatchlistByType(value: unknown): Partial<Record<InvestmentType, string[]>> | null {
+  if (!value || typeof value !== 'object') return null
+  const parsed = value as Partial<Record<InvestmentType, unknown>>
+  const result: Partial<Record<InvestmentType, string[]>> = {}
+  const longTerm = normalizeWatchlistTickers(parsed.long_term)
+  const swing = normalizeWatchlistTickers(parsed.swing)
+  if (longTerm) result.long_term = longTerm
+  if (swing) result.swing = swing
+  return result
 }
 
 const APP_DATA_CACHE_STORAGE_KEY = 'gssg-app-data-cache-v1'
@@ -4466,6 +4479,8 @@ function App() {
       swing: stored?.swing ?? [],
     }
   })
+  // DB에서 유형별 운영자 관심종목을 한 번 복원한 뒤에만 어드민 변경분을 다시 저장하도록 게이트한다.
+  const operatorWatchlistByTypeLoadedRef = useRef(false)
   const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(() => (
     initialLocalTestSession ? resolveLocalTestPersonalTrades(initialLocalTestSession) : readStoredPersonalTradeLogs()
   ))
@@ -5103,14 +5118,22 @@ function App() {
       return query.maybeSingle()
     }
 
-    const { data: initialData, error } = await selectWatchlist('tickers, watchlist_sort, updated_at')
-    let data = initialData
+    const baseColumns = scope === 'operator'
+      ? 'tickers, watchlist_sort, updated_at, tickers_by_type'
+      : 'tickers, watchlist_sort, updated_at'
+    let { data, error } = await selectWatchlist(baseColumns)
+    if (error && scope === 'operator') {
+      // tickers_by_type 컬럼이 없는 구버전 DB 대비 폴백.
+      const retry = await selectWatchlist('tickers, watchlist_sort, updated_at')
+      data = retry.data
+      error = retry.error
+    }
     if (error) {
       const fallback = await selectWatchlist('tickers')
       if (fallback.error) throw error
       data = fallback.data
     }
-    const row = data as { tickers?: unknown, watchlist_sort?: unknown, updated_at?: unknown } | null
+    const row = data as { tickers?: unknown, watchlist_sort?: unknown, updated_at?: unknown, tickers_by_type?: unknown } | null
 
     const watchlistSort = scope === 'operator'
       ? normalizeWatchlistSortSettings(row?.watchlist_sort)
@@ -5120,6 +5143,7 @@ function App() {
       tickers: normalizeWatchlistTickers(row?.tickers),
       watchlistSort,
       updatedAt: parseRemoteUpdatedAt(row?.updated_at),
+      tickersByType: scope === 'operator' ? normalizeWatchlistByType(row?.tickers_by_type) : null,
     }
   }
 
@@ -5253,6 +5277,25 @@ function App() {
     }
   }
 
+  // 운영자 관심종목의 유형별 전체 목록을 DB에 저장한다. 일반 계정은 이 값을 읽어 자신의 성향에 맞는 목록만 가져온다.
+  async function persistOperatorWatchlistByType(map: Record<InvestmentType, string[]>, session = userSession) {
+    storeOperatorWatchlistByType(map)
+    if (!supabase || !session || !isConfiguredAdminEmail(session.email)) return
+    const client = supabase
+
+    try {
+      const { error } = await client
+        .from('watchlists')
+        .update({ tickers_by_type: map })
+        .eq('scope', 'operator')
+        .is('owner_id', null)
+        .select('id')
+      if (error) return
+    } catch {
+      // tickers_by_type 컬럼이 없는 구버전 DB는 로컬 저장으로만 유지한다.
+    }
+  }
+
   async function loadBoardPosts() {
     if (!supabase) return
 
@@ -5308,6 +5351,22 @@ function App() {
       setInvestmentType(loadedSettings.investmentType)
       setContributionSettings(loadedPortfolioState.contributionSettings)
       setPersonalTradeLogs(loadedPortfolioState.personalTradeLogs)
+
+      // 운영자 관심종목의 유형별 목록을 복원해 일반 계정의 '공수성가 가져오기'가 성향별로 분기되도록 한다.
+      const operatorByTypeFromDb = operatorTickersFromDb?.tickersByType
+      const cachedOperatorByType = readOperatorWatchlistByType()
+      const nextOperatorByType: Record<InvestmentType, string[]> = {
+        long_term: operatorByTypeFromDb?.long_term ?? cachedOperatorByType?.long_term ?? [],
+        swing: operatorByTypeFromDb?.swing ?? cachedOperatorByType?.swing ?? [],
+      }
+      if (session && isConfiguredAdminEmail(session.email)) {
+        // 어드민은 단일 tickers(=현재 활성 유형 목록)를 해당 유형의 최신 원본으로 본다.
+        const adminActiveType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
+        nextOperatorByType[adminActiveType] = resolvedOperatorWatchlist.tickers
+      }
+      setOperatorWatchlistByType(nextOperatorByType)
+      storeOperatorWatchlistByType(nextOperatorByType)
+      operatorWatchlistByTypeLoadedRef.current = true
       const legacyTickers = session ? readLegacyWatchlist(session) : null
       const resolvedPersonalWatchlist = resolveWatchlistWithPending(
         { tickers: personalTickers?.tickers ?? null, updatedAt: personalTickers?.updatedAt ?? null },
@@ -6028,6 +6087,17 @@ function App() {
       return next
     })
   }, [effectiveOperatorWatchlist, displayedInvestmentType, isOperatorDataMode])
+
+  // 어드민이 유형별 운영자 관심종목을 변경하면 DB에 반영해 일반 계정이 성향별로 가져올 수 있게 한다.
+  // DB에서 한 번 복원(operatorWatchlistByTypeLoadedRef)한 뒤에만 저장해 초기 로드 시 빈 값으로 덮어쓰지 않는다.
+  useEffect(() => {
+    if (!isAdminUser) return undefined
+    if (!operatorWatchlistByTypeLoadedRef.current) return undefined
+    const timeoutId = window.setTimeout(() => {
+      void persistOperatorWatchlistByType(operatorWatchlistByType)
+    }, 500)
+    return () => window.clearTimeout(timeoutId)
+  }, [operatorWatchlistByType, isAdminUser])
 
   const selectInvestmentType = (nextInvestmentType: InvestmentType) => {
     const currentType = investmentType ?? DEFAULT_INVESTMENT_TYPE
@@ -6867,14 +6937,19 @@ function App() {
   const shouldDimPanelsForFirstVisitGuide = isCurrentWatchlistEmpty && scopedTrades.length === 0
   const isCurrentWatchlistFull = canEditCurrentWatchlist && currentWatchlistTickers.length >= MAX_WATCHLIST_ITEMS
   const personalRemainingSlots = Math.max(0, MAX_WATCHLIST_ITEMS - watchlist.length)
-  const operatorImportCandidates = useMemo(
-    () => effectiveOperatorWatchlist
+  // 일반 계정의 '공수성가 가져오기'는 자신의 투자 성향에 맞는 운영자 관심종목만 후보로 노출한다.
+  // 유형별 데이터가 아직 없는(구버전) 경우에만 단일 운영자 목록으로 폴백한다.
+  const operatorImportCandidates = useMemo(() => {
+    const hasByTypeData = operatorWatchlistByType.long_term.length > 0 || operatorWatchlistByType.swing.length > 0
+    const sourceTickers = hasByTypeData
+      ? operatorWatchlistByType[displayedInvestmentType] ?? []
+      : effectiveOperatorWatchlist
+    return sourceTickers
       .filter((ticker) => !watchlist.includes(ticker))
       .map((ticker) => apiStocks.find((stock) => stock.ticker === ticker) ?? apiSearchStocks.find((stock) => stock.ticker === ticker))
       .filter((stock): stock is Stock => Boolean(stock))
-      .sort((a, b) => marketSortRank(a.market) - marketSortRank(b.market)),
-    [apiSearchStocks, apiStocks, effectiveOperatorWatchlist, watchlist],
-  )
+      .sort((a, b) => marketSortRank(a.market) - marketSortRank(b.market))
+  }, [apiSearchStocks, apiStocks, effectiveOperatorWatchlist, operatorWatchlistByType, displayedInvestmentType, watchlist])
   const isOperatorImportSelectionFull = operatorImportTickers.length >= personalRemainingSlots
   const canShowOperatorImport = Boolean(userSession) && effectiveViewMode === 'personal' && canEditCurrentWatchlist
   const toggleOperatorImportTicker = (ticker: string) => {
@@ -8239,8 +8314,8 @@ function App() {
                   </div>
                   <div className="account-alert-card investment-settings-card">
                     <div className="account-alert-header">
-                      <span>투자성향</span>
-                      <small>성향에 따라 Home과 기술 분석에서 보여주는 신호가 달라집니다.</small>
+                      <span>성향</span>
+                      <small>성향에 따라 신호가 달라집니다.</small>
                     </div>
                     <div className="investment-option-grid compact">
                       {investmentProfileOptions.map((option) => (

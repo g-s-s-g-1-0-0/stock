@@ -4985,8 +4985,14 @@
     touch-action: pan-x pan-y;
   }
 
+  /* 모바일: 트레이딩 로그가 자체 세로 스크롤을 갖지 않고 페이지와 함께 세로로 흐르게 한다.
+     가로(넓은 표)만 표 안에서 스크롤하고, 세로 제스처는 페이지 스크롤로 넘겨 스크롤이 어색하지 않게 한다. */
   .trading-log-scroll {
-    --trading-log-sheet-height: min(64svh, 680px);
+    height: auto;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: visible;
+    touch-action: pan-x;
   }
 
   .watchlist-sheet,
@@ -5479,6 +5485,12 @@
 
   .investment-option-card {
     padding-right: 36px;
+  }
+
+  /* 모바일에서 '천천히 모아가는 투자자 (가치 투자)' 같은 긴 제목이 줄바꿈되지 않도록 한 줄에 맞춰 폰트를 줄인다. */
+  .investment-option-card strong {
+    font-size: 13.5px;
+    white-space: nowrap;
   }
 
   .investment-option-card > span {
