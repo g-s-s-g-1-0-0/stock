@@ -1718,6 +1718,8 @@ function withDisplayStockName(stock: Stock): Stock {
   return {
     ...stock,
     name: displayStockName(stock.name),
+    // 구버전 캐시 페이로드 등 strategies가 없는 원본이 들어와도 항상 배열을 보장한다.
+    strategies: stock.strategies ?? [],
   }
 }
 
@@ -3014,12 +3016,12 @@ function openTradeStrategiesForStock(stock: Stock, targetTrades: TradeLog[]) {
 
 function displayStrategiesForStock(stock: Stock, targetTrades: TradeLog[] = []) {
   const openTradeStrategies = openTradeStrategiesForStock(stock, targetTrades)
-  return openTradeStrategies.length > 0 ? openTradeStrategies : stock.strategies
+  return openTradeStrategies.length > 0 ? openTradeStrategies : stock.strategies ?? []
 }
 
 function technicalEntryStrategiesForStock(stock: Stock, targetTrades: TradeLog[] = []) {
   const strategies = openTradesForStock(stock, targetTrades).map((trade) => trade.strategy).filter(Boolean)
-  return strategies.length > 0 ? strategies : stock.strategies
+  return strategies.length > 0 ? strategies : stock.strategies ?? []
 }
 
 function joinTradeValues(targetTrades: TradeLog[], value: (trade: TradeLog) => string) {
@@ -5021,7 +5023,7 @@ function App() {
         market: stock.market,
         industry: displayIndustryLabel(stock.industry),
         opinion: displayStockOpinion(stock),
-        strategy: stock.strategies.join(', ') || technicalValue(technical, ['진입 전략']),
+        strategy: (stock.strategies ?? []).join(', ') || technicalValue(technical, ['진입 전략']),
         decision,
         currentPrice: technicalValue(technical, ['현재가']) || displayCurrentPriceText(stock),
         rsi: technicalValue(technical, ['RSI']),
