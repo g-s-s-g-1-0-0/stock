@@ -1495,9 +1495,9 @@
   position: sticky;
   left: 0;
   z-index: 4;
-  width: 104px;
-  min-width: 104px;
-  max-width: 104px;
+  width: 72px;
+  min-width: 72px;
+  max-width: 72px;
   background: var(--sheet-bg);
   border-right: 0;
 }
@@ -1518,11 +1518,11 @@
 .market-events-table .event-month-head,
 .market-events-table .event-month-cell {
   position: sticky;
-  left: 104px;
+  left: 72px;
   z-index: 4;
-  width: 88px;
-  min-width: 88px;
-  max-width: 88px;
+  width: 56px;
+  min-width: 56px;
+  max-width: 56px;
   background: var(--sheet-bg);
   border-right: 0;
 }
@@ -3937,11 +3937,11 @@
 }
 
 .event-edit-input-short {
-  min-width: 54px;
+  min-width: 0;
 }
 
 .event-edit-input-label {
-  min-width: 64px;
+  min-width: 0;
   border-color: transparent;
   background: transparent;
   font-weight: 800;
