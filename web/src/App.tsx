@@ -3695,6 +3695,109 @@ function MarketEventsPage({
   )
 }
 
+function TruncatedTrendCell({
+  text,
+  className,
+  cellKey,
+  onTooltipOpen,
+  onTooltipClose,
+}: {
+  text: string
+  className: string
+  cellKey: string
+  onTooltipOpen: (tooltip: TooltipState) => void
+  onTooltipClose: () => void
+}) {
+  const cellRef = useRef<HTMLTableCellElement>(null)
+  const [isTruncated, setIsTruncated] = useState(false)
+
+  useLayoutEffect(() => {
+    const cellElement = cellRef.current
+    if (!cellElement) return undefined
+
+    let frameId = 0
+    const updateTruncation = () => {
+      window.cancelAnimationFrame(frameId)
+      frameId = window.requestAnimationFrame(() => {
+        setIsTruncated(
+          cellElement.scrollWidth > cellElement.clientWidth + 1 ||
+            cellElement.scrollHeight > cellElement.clientHeight + 1,
+        )
+      })
+    }
+
+    updateTruncation()
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateTruncation)
+    observer?.observe(cellElement)
+    window.addEventListener('resize', updateTruncation)
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      observer?.disconnect()
+      window.removeEventListener('resize', updateTruncation)
+    }
+  }, [text])
+
+  const openTooltip = (element: HTMLElement) => {
+    const cellElement = cellRef.current
+    if (
+      !cellElement ||
+      (cellElement.scrollWidth <= cellElement.clientWidth + 1 &&
+        cellElement.scrollHeight <= cellElement.clientHeight + 1)
+    ) {
+      return
+    }
+
+    const rect = element.getBoundingClientRect()
+    const tooltipHalfWidth = Math.min(130, (window.innerWidth - 32) / 2)
+    const minX = tooltipHalfWidth + 16
+    const maxX = window.innerWidth - tooltipHalfWidth - 16
+    const centeredX = rect.left + rect.width / 2
+
+    onTooltipOpen({
+      text,
+      x: Math.min(Math.max(centeredX, minX), maxX),
+      y: rect.top - 8,
+    })
+  }
+
+  if (!isTruncated) {
+    return (
+      <td className={className} key={cellKey} ref={cellRef}>
+        {text}
+      </td>
+    )
+  }
+
+  return (
+    <td
+      aria-label={`${text} 전체 내용 보기`}
+      className={`${className} is-truncated`}
+      key={cellKey}
+      ref={cellRef}
+      role="button"
+      tabIndex={0}
+      title={text}
+      onBlur={onTooltipClose}
+      onClick={(event) => {
+        event.stopPropagation()
+        openTooltip(event.currentTarget)
+      }}
+      onFocus={(event) => openTooltip(event.currentTarget)}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return
+        event.preventDefault()
+        event.stopPropagation()
+        openTooltip(event.currentTarget)
+      }}
+      onMouseEnter={(event) => openTooltip(event.currentTarget)}
+      onMouseLeave={onTooltipClose}
+    >
+      {text}
+    </td>
+  )
+}
+
 function MarketTrendsPage({
   rows,
   updateLabel,
@@ -3703,6 +3806,8 @@ function MarketTrendsPage({
   isSaving,
   onToggleRow,
   onDeleteSelected,
+  onTooltipOpen,
+  onTooltipClose,
 }: {
   rows: MarketTrendRow[]
   updateLabel: string
@@ -3711,6 +3816,8 @@ function MarketTrendsPage({
   isSaving: boolean
   onToggleRow: (rowKey: string) => void
   onDeleteSelected: () => void
+  onTooltipOpen: (tooltip: TooltipState) => void
+  onTooltipClose: () => void
 }) {
   const [page, setPage] = useState(1)
   const sortedMarketTrendRows = [...rows].sort((a, b) => new Date(b.date.replaceAll('.', '-')).getTime() - new Date(a.date.replaceAll('.', '-')).getTime())
@@ -3783,7 +3890,14 @@ function MarketTrendsPage({
                   )}
                   <td className="number-cell trend-date-cell">{row.date}</td>
                   {Array.from({ length: 10 }).map((_, index) => (
-                    <td className="trend-rank-cell" key={`${row.date}-${index + 1}`}>{row.ranks[index] ?? '-'}</td>
+                    <TruncatedTrendCell
+                      className="trend-rank-cell"
+                      cellKey={`${row.date}-${index + 1}`}
+                      key={`${row.date}-${index + 1}`}
+                      text={row.ranks[index] ?? '-'}
+                      onTooltipClose={onTooltipClose}
+                      onTooltipOpen={onTooltipOpen}
+                    />
                   ))}
                   <td className="trend-summary-cell">{row.summary}</td>
                 </tr>
@@ -8079,6 +8193,8 @@ function App() {
           isSaving={isSavingMarketTrends}
           onToggleRow={toggleSelectedMarketTrendRow}
           onDeleteSelected={openMarketTrendDeleteConfirm}
+          onTooltipClose={() => setActiveTooltip(null)}
+          onTooltipOpen={setActiveTooltip}
         />
       ) : currentActivePage === 'admin-logs' && isAdminUser ? (
         <AdminLogsPage logs={apiLogs} isLoading={isLoadingApiLogs} onRefresh={loadApiLogs} />

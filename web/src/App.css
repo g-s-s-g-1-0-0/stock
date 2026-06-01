@@ -1794,6 +1794,15 @@
   text-overflow: ellipsis;
 }
 
+.trend-rank-cell.is-truncated {
+  cursor: help;
+}
+
+.trend-rank-cell.is-truncated:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(34, 136, 238, 0.22);
+}
+
 .trend-date-cell {
   font-weight: 700;
   text-align: center !important;
