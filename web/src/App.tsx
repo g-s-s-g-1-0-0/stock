@@ -3604,7 +3604,7 @@ function MarketEventsPage({
         <table className="sheet-table market-events-table">
           <thead>
             <tr>
-              <th className="event-period-head" rowSpan={2}>시기</th>
+              <th className="event-period-head" rowSpan={2}>년</th>
               <th className="event-month-head" rowSpan={2}>월</th>
               {groups.map((group) => (
                 <th className="event-group-header" colSpan={3} key={group.title}>
