@@ -1483,17 +1483,11 @@
   --event-past-text: #94a3b8;
   border-collapse: separate;
   border-spacing: 0;
-  width: max-content;
-}
-
-.market-events-table th,
-.market-events-table td {
-  padding-right: 8px;
-  padding-left: 8px;
+  min-width: 2520px;
 }
 
 .market-events-table th {
-  min-width: 56px;
+  min-width: 88px;
 }
 
 .market-events-table .event-period-head,
@@ -1586,7 +1580,8 @@
 }
 
 .market-events-table .event-date-cell {
-  min-width: 116px;
+  width: 1%;
+  min-width: 0;
   padding-right: 8px;
   padding-left: 8px;
   font-family: var(--mono);
@@ -1595,7 +1590,8 @@
 }
 
 .market-events-table .event-date-head {
-  min-width: 116px;
+  width: 1%;
+  min-width: 0;
   padding-right: 8px;
   padding-left: 8px;
   white-space: nowrap;
