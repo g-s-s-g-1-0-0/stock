@@ -1586,9 +1586,7 @@
 }
 
 .market-events-table .event-date-cell {
-  width: 104px;
-  min-width: 104px;
-  max-width: 104px;
+  min-width: 116px;
   padding-right: 8px;
   padding-left: 8px;
   font-family: var(--mono);
@@ -1597,9 +1595,7 @@
 }
 
 .market-events-table .event-date-head {
-  width: 104px;
-  min-width: 104px;
-  max-width: 104px;
+  min-width: 116px;
   padding-right: 8px;
   padding-left: 8px;
   white-space: nowrap;

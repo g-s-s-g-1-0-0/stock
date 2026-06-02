@@ -12,6 +12,20 @@
     <meta name="apple-mobile-web-app-title" content="공수성가" />
     <meta name="description" content="공수성가 투자 로그와 매매 신호를 모바일 앱처럼 확인합니다." />
     <title>공수성가 | 투자 로그</title>
+    <!-- Pretendard 폰트를 렌더링 차단 없이 비동기로 로드해 첫 화면(스피너) 표시를 앞당긴다. -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+      />
+    </noscript>
     <style>
       /* 번들이 로드되기 전에도 즉시 보이는 로딩 화면. React가 마운트되면 #root가 교체되며 사라진다. */
       .app-loading {
