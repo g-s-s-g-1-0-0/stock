@@ -12,9 +12,140 @@
     <meta name="apple-mobile-web-app-title" content="공수성가" />
     <meta name="description" content="공수성가 투자 로그와 매매 신호를 모바일 앱처럼 확인합니다." />
     <title>공수성가 | 투자 로그</title>
+    <style>
+      /* 번들이 로드되기 전에도 즉시 보이는 로딩 화면. React가 마운트되면 #root가 교체되며 사라진다. */
+      .app-loading {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        background: #ffffff;
+        color: #6b7280;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        z-index: 9999;
+      }
+      .app-loading__logo {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+        animation: app-loading-pulse 1.6s ease-in-out infinite;
+      }
+      .app-loading__spinner {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 3px solid rgba(34, 136, 238, 0.2);
+        border-top-color: #2288ee;
+        animation: app-loading-spin 0.8s linear infinite;
+      }
+      .app-loading__text {
+        margin: 0;
+        font-size: 14px;
+        letter-spacing: 0.01em;
+      }
+      .app-loading__error {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        max-width: 280px;
+        text-align: center;
+      }
+      .app-loading__error p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .app-loading__retry {
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #ffffff;
+        background: #2288ee;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      @keyframes app-loading-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes app-loading-pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.55;
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        .app-loading {
+          background: #08111f;
+          color: #94a3b8;
+        }
+        .app-loading__spinner {
+          border-color: rgba(90, 169, 244, 0.22);
+          border-top-color: #5aa9f4;
+        }
+        .app-loading__retry {
+          background: #5aa9f4;
+          color: #08111f;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .app-loading__logo,
+        .app-loading__spinner {
+          animation-duration: 2.4s;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="app-loading" class="app-loading" role="status" aria-live="polite">
+        <img class="app-loading__logo" src="/gongsu-logo.png" alt="공수성가" width="64" height="64" />
+        <div class="app-loading__spinner" aria-hidden="true"></div>
+        <p class="app-loading__text" id="app-loading-text">불러오는 중…</p>
+        <div class="app-loading__error" id="app-loading-error" hidden>
+          <p>불러오기가 평소보다 오래 걸리고 있어요.<br />네트워크 상태를 확인한 뒤 다시 시도해 주세요.</p>
+          <button type="button" class="app-loading__retry" onclick="window.location.reload()">새로고침</button>
+        </div>
+      </div>
+    </div>
+    <script>
+      // 로딩 버퍼/오류 감지: 일정 시간 안에 React가 마운트되지 않거나 스크립트 로드가 실패하면 재시도 UI를 보여준다.
+      (function () {
+        var SLOW_MS = 10000
+        function showError() {
+          var loader = document.getElementById('app-loading')
+          if (!loader) return // React가 이미 마운트되어 #root가 교체됨
+          var spinner = loader.querySelector('.app-loading__spinner')
+          var text = document.getElementById('app-loading-text')
+          var error = document.getElementById('app-loading-error')
+          if (spinner) spinner.style.display = 'none'
+          if (text) text.style.display = 'none'
+          if (error) error.hidden = false
+        }
+        var timer = setTimeout(showError, SLOW_MS)
+        // 메인 스크립트 등 리소스 로드 실패 감지
+        window.addEventListener(
+          'error',
+          function (event) {
+            var target = event && event.target
+            if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
+              clearTimeout(timer)
+              showError()
+            }
+          },
+          true,
+        )
+      })()
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
