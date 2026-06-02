@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-06-02T14:55:43+00:00",
-    "lastSuccessfulRun": "2026-06-02T14:55:43+00:00",
+    "updatedAt": "2026-06-02T15:01:32+00:00",
+    "lastSuccessfulRun": "2026-06-02T15:01:32+00:00",
     "failedReason": null
   },
   "rows": [
@@ -171,7 +171,7 @@
       "ticker": "277810",
       "name": "레인보우로보틱스",
       "market": "KR",
-      "fairPrice": "₩2,960 ~ ₩3,700",
+      "fairPrice": "₩3,200 ~ ₩4,480",
       "fairPriceReason": null,
       "currentPrice": "₩763,000",
       "valuation": "고평가",
@@ -299,7 +299,7 @@
       "ticker": "CRDO",
       "name": "Credo Technology Group Holding",
       "market": "US",
-      "fairPrice": "$90.00 ~ $126.00",
+      "fairPrice": "$124.00 ~ $173.60",
       "fairPriceReason": null,
       "currentPrice": "$217.50",
       "valuation": "고평가",
