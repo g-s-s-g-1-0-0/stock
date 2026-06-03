@@ -910,14 +910,14 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
             "meta": {
                 **existing_meta,
                 "kind": "valuation",
-                "updatedAt": now_iso(),
+                "updatedAt": publish_iso(),
                 "failedReason": "refresh universe is empty; preserved existing valuation cache",
             },
         }
     rows: dict[str, dict[str, str]] = {}
     errors: list[dict[str, str]] = []
     successful_rows = 0
-    refreshed_at = now_iso()
+    refreshed_at = publish_iso()
     for stock in source_universe:
         try:
             values = fetch_valuation(stock["ticker"])
