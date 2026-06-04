@@ -143,6 +143,7 @@ type ContributionSettingsMode = 'cash' | 'investment'
 type AllocationSettings = {
   slotCount: number
   slotPercents: number[]
+  megaTrendOnly: boolean
 }
 
 type ContributionSettings = {
@@ -163,6 +164,7 @@ type ContributionSettingsDraft = {
   allocationByInvestmentType: Record<InvestmentType, {
     slotCount: string
     slotPercents: string[]
+    megaTrendOnly: boolean
   }>
 }
 
@@ -327,8 +329,8 @@ const DEFAULT_USER_SETTINGS: StoredUserSettings = {
 const DEFAULT_INVESTMENT_TYPE: InvestmentType = 'long_term'
 const DEFAULT_PORTFOLIO_CASH = 10_000_000
 const DEFAULT_ALLOCATION_SETTINGS: Record<InvestmentType, AllocationSettings> = {
-  swing: { slotCount: 3, slotPercents: [50, 25, 25] },
-  long_term: { slotCount: 10, slotPercents: Array.from({ length: 10 }, () => 10) },
+  swing: { slotCount: 3, slotPercents: [50, 25, 25], megaTrendOnly: true },
+  long_term: { slotCount: 10, slotPercents: Array.from({ length: 10 }, () => 10), megaTrendOnly: true },
 }
 const DEFAULT_CONTRIBUTION_SETTINGS: ContributionSettings = {
   initialCapital: DEFAULT_PORTFOLIO_CASH,
@@ -988,8 +990,11 @@ function normalizeAllocationSettings(value: unknown, investmentType: InvestmentT
     }
     return fallback.slotPercents[index] ?? 0
   })
+  const megaTrendOnly = typeof candidate?.megaTrendOnly === 'boolean'
+    ? candidate.megaTrendOnly
+    : fallback.megaTrendOnly
 
-  return { slotCount, slotPercents }
+  return { slotCount, slotPercents, megaTrendOnly }
 }
 
 function normalizeContributionSettings(value: unknown): ContributionSettings {
@@ -2382,10 +2387,12 @@ function contributionSettingsDraftFrom(settings: ContributionSettings): Contribu
       swing: {
         slotCount: String(settings.allocationByInvestmentType.swing.slotCount),
         slotPercents: settings.allocationByInvestmentType.swing.slotPercents.map(String),
+        megaTrendOnly: settings.allocationByInvestmentType.swing.megaTrendOnly,
       },
       long_term: {
         slotCount: String(settings.allocationByInvestmentType.long_term.slotCount),
         slotPercents: settings.allocationByInvestmentType.long_term.slotPercents.map(String),
+        megaTrendOnly: settings.allocationByInvestmentType.long_term.megaTrendOnly,
       },
     },
   }
@@ -2413,6 +2420,7 @@ function buildPortfolioSummary(
 ): PortfolioSummary {
   let runningCash = initialCash
   const slotWeights = allocationWeightsForProfile(investmentType, settings)
+  const megaTrendOnly = settings.allocationByInvestmentType[investmentType].megaTrendOnly
   const occupiedSlots = new Map<string, number>()
   const amountByTradeKey = new Map<string, number>()
   let openInvestmentAmount = 0
@@ -2467,7 +2475,8 @@ function buildPortfolioSummary(
       const fixedAmount = typeof trade.investmentAmount === 'number' && Number.isFinite(trade.investmentAmount)
         ? Math.max(0, Math.round(trade.investmentAmount))
         : null
-      const slotIndex = fixedAmount === 0 ? -1 : slotWeights.findIndex((_, index) => ![...occupiedSlots.values()].includes(index))
+      const blockedByMegaTrend = megaTrendOnly && fixedAmount === null && buyPriorityForTrade(trade).megaRank !== 0
+      const slotIndex = fixedAmount === 0 || blockedByMegaTrend ? -1 : slotWeights.findIndex((_, index) => ![...occupiedSlots.values()].includes(index))
       const amount = fixedAmount !== null
         ? fixedAmount
         : slotIndex >= 0 ? Math.min(runningCash, Math.max(0, Math.floor(cashBeforeBuys * slotWeights[slotIndex]))) : 0
@@ -6075,10 +6084,12 @@ function App() {
         swing: normalizeAllocationSettings({
           slotCount: Number(contributionDraft.allocationByInvestmentType.swing.slotCount),
           slotPercents: contributionDraft.allocationByInvestmentType.swing.slotPercents.map((value) => Number(value)),
+          megaTrendOnly: contributionDraft.allocationByInvestmentType.swing.megaTrendOnly,
         }, 'swing'),
         long_term: normalizeAllocationSettings({
           slotCount: Number(contributionDraft.allocationByInvestmentType.long_term.slotCount),
           slotPercents: contributionDraft.allocationByInvestmentType.long_term.slotPercents.map((value) => Number(value)),
+          megaTrendOnly: contributionDraft.allocationByInvestmentType.long_term.megaTrendOnly,
         }, 'long_term'),
       },
     }
@@ -8788,6 +8799,33 @@ function App() {
                 </div>
                 {activeAllocation && (
                   <>
+                    <label className="allocation-megatrend-toggle">
+                      <input
+                        type="checkbox"
+                        checked={activeAllocation.megaTrendOnly}
+                        onChange={(event) => {
+                          const nextChecked = event.target.checked
+                          setContributionDraft((current) => {
+                            if (!current) return current
+                            const currentAllocation = current.allocationByInvestmentType[displayedInvestmentType]
+                            return {
+                              ...current,
+                              allocationByInvestmentType: {
+                                ...current.allocationByInvestmentType,
+                                [displayedInvestmentType]: {
+                                  ...currentAllocation,
+                                  megaTrendOnly: nextChecked,
+                                },
+                              },
+                            }
+                          })
+                        }}
+                      />
+                      <span>
+                        메가 트렌드만 매수 허용
+                        <em>체크 시, 매수 시점에 메가 트렌드를 충족한 종목만 투자금을 배정합니다. 해제하면 보유 현금이 있을 때 원래 기준대로 매수합니다. (로그 기록은 동일)</em>
+                      </span>
+                    </label>
                     <label className="login-field">
                       <span>제한 슬롯 수</span>
                       <input
@@ -8807,6 +8845,7 @@ function App() {
                               allocationByInvestmentType: {
                                 ...current.allocationByInvestmentType,
                                 [displayedInvestmentType]: {
+                                  ...currentAllocation,
                                   slotCount: nextSlotCount,
                                   slotPercents,
                                 },

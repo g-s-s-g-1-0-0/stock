@@ -2659,6 +2659,42 @@
   gap: 0 10px;
 }
 
+.allocation-megatrend-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.04);
+  margin: 14px 0 4px;
+  padding: 11px 12px;
+  cursor: pointer;
+}
+
+.allocation-megatrend-toggle input {
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.allocation-megatrend-toggle span {
+  display: grid;
+  gap: 4px;
+  color: var(--text-h);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.allocation-megatrend-toggle em {
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 .watchlist-table .number-cell {
   font-family: var(--font);
 }
