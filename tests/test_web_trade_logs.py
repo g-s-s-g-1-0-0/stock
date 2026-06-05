@@ -450,3 +450,98 @@ def test_same_day_sell_does_not_reopen_same_strategy(monkeypatch, tmp_path):
     assert len(updated["rows"]) == 1
     assert updated["rows"][0]["status"] == "익절"
     assert updated["meta"]["appendedOpenTrades"] == 0
+
+
+def test_offlist_ticker_does_not_generate_buy_signal(monkeypatch, tmp_path):
+    # 관심종목(watchlist)에 없는 종목은 매수 신호가 계산돼도 trade가 추가되지 않고,
+    # 의견은 관망으로 강제된다(보유 포지션 청산 추적과 매수 시그널을 분리).
+    cache_path, _ = patch_log_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(logs, "load_watchlist_tickers", lambda stocks: ["MSFT"])
+
+    stock = {"ticker": "ACLS", "name": "Axcelis", "market": "US", "currentPrice": "$154.49", "opinion": "매수"}
+    technical = {"ACLS": {"opinion": "매수", "entrySignalCodes": "G", "entryStrategy": "G. 급락 후 회복장 20일선 눌림", "현재가": "$154.49"}}
+
+    changed = logs.update_trade_logs([stock], {}, technical, {"peakTriggered": False})
+
+    updated = logs.load_json(cache_path, {})
+    assert updated["rows"] == []
+    assert updated["meta"]["appendedOpenTrades"] == 0
+    assert changed is True
+    assert stock["opinion"] == "관망"
+    assert technical["ACLS"]["opinion"] == "관망"
+    assert technical["ACLS"]["entrySignalCodes"] == ""
+
+
+def test_offlist_held_trade_keeps_tracking_but_blocks_additional_buy(monkeypatch, tmp_path):
+    # 관심종목에서 제거됐어도 '보유 중' 기록은 유지되며, 매수/추가매수만 차단된다.
+    # (청산되기 전까지는 trade-log에 남아 청산 조건을 계속 추적)
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(logs, "load_watchlist_tickers", lambda stocks: ["MSFT"])
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "slotId": "ACLS_G_20260522_1",
+                "ticker": "ACLS",
+                "strategy": "G. 급락 후 회복장 20일선 눌림",
+                "buyDate": "2026.05.22",
+                "buyPrice": "$152.51",
+                "currentPrice": "$152.51",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+
+    # 관심종목이 아니어도 매수 신호로 의견이 계산될 수 있다(보유라 universe 포함). 추가매수는 차단돼야 한다.
+    stock = {"ticker": "ACLS", "name": "Axcelis", "market": "US", "currentPrice": "$154.49", "opinion": "매수"}
+    technical = {"ACLS": {"opinion": "매수", "entrySignalCodes": "G", "현재가": "$154.49"}}
+    logs.update_trade_logs([stock], {}, technical, {"peakTriggered": False})
+
+    updated = logs.load_json(cache_path, {})
+    acls_rows = [row for row in updated["rows"] if row["ticker"] == "ACLS"]
+    assert len(acls_rows) == 1  # 보유 기록 유지, 추가 trade 없음
+    assert acls_rows[0]["status"] == "보유 중"
+    assert updated["meta"]["appendedOpenTrades"] == 0
+    # 매수 시그널은 차단되어 의견은 관망으로 정리된다.
+    assert stock["opinion"] == "관망"
+
+
+def test_offlist_held_trade_still_liquidates_on_exit(monkeypatch, tmp_path):
+    # 관심종목 밖 보유 종목도 청산 조건이 충족되면 정상적으로 매도 처리된다(나스닥 고점 강제 청산).
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(logs, "load_watchlist_tickers", lambda stocks: ["MSFT"])
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "slotId": "OFL_D_20260501_1",
+                "ticker": "OFL",
+                "strategy": "D. 200일선 상방 & 상승 흐름 강화",
+                "buyDate": "2026.05.01",
+                "buyPrice": "$100.00",
+                "currentPrice": "$120.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+
+    logs.update_trade_logs(
+        [{"ticker": "OFL", "name": "Offlist Co", "market": "US", "currentPrice": "$120.00", "opinion": "관망"}],
+        {},
+        {"OFL": {}},
+        {"peakTriggered": True},
+    )
+
+    updated = logs.load_json(cache_path, {})
+    ofl_rows = [row for row in updated["rows"] if row["ticker"] == "OFL"]
+    assert len(ofl_rows) == 1
+    assert ofl_rows[0]["status"] != "보유 중"
+    assert ofl_rows[0]["exitReason"] == "나스닥 고점 청산/강제매도"

@@ -578,29 +578,36 @@ def write_technical_payload(payload: dict[str, Any]) -> None:
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def suppress_held_buy_signal(stock: dict[str, Any], technical_row: dict[str, Any]) -> bool:
+def suppress_offlist_buy_signal(stock: dict[str, Any], technical_row: dict[str, Any]) -> bool:
+    """관심종목(watchlist)에 없는 종목의 매수 신호를 관망으로 되돌린다.
+
+    보유 포지션 청산 추적을 위해 universe에 포함돼 가격은 갱신되지만, 관심종목이 아니므로
+    매수/추가매수 시그널을 내보내면 안 된다. 진입 신호로 '매수'가 계산된 경우 관망으로 강제한다.
+    """
+    reason = "관심종목 제외 — 매수 신호 미발생 (보유 포지션은 청산 조건만 추적)"
     changed = False
     if stock.get("opinion") != "관망":
         stock["opinion"] = "관망"
         changed = True
-    if stock.get("opinionReason") != "보유 중 추가매수 조건 미충족":
-        stock["opinionReason"] = "보유 중 추가매수 조건 미충족"
+    if stock.get("opinionReason") != reason:
+        stock["opinionReason"] = reason
         changed = True
     if stock.get("strategies") != []:
         stock["strategies"] = []
         changed = True
 
-    updates = {
-        "opinion": "관망",
-        "opinionReason": "보유 중 추가매수 조건 미충족",
-        "entryStrategy": "-",
-        "entrySignalCodes": "",
-        "entrySignals": "",
-    }
-    for key, value in updates.items():
-        if technical_row.get(key) != value:
-            technical_row[key] = value
-            changed = True
+    if isinstance(technical_row, dict):
+        updates = {
+            "opinion": "관망",
+            "opinionReason": reason,
+            "entryStrategy": "-",
+            "entrySignalCodes": "",
+            "entrySignals": "",
+        }
+        for key, value in updates.items():
+            if technical_row.get(key) != value:
+                technical_row[key] = value
+                changed = True
     return changed
 
 
@@ -651,6 +658,8 @@ def update_trade_logs(
     closed = 0
     signal_state_changed = False
 
+    # 관심종목(watchlist)에서 제거된 종목이라도 이미 '보유 중'인 포지션은 청산(매도)될 때까지
+    # 그대로 추적한다. 매수/추가매수 시그널만 차단되며(아래 진입 루프 참고), 청산 추적은 유지된다.
     for trade in trades:
         ticker = str(trade.get("ticker") or "").strip().upper()
         if not ticker:
@@ -722,13 +731,17 @@ def update_trade_logs(
         ticker = str(stock.get("ticker") or "").strip().upper()
         if not ticker:
             continue
-        if ticker not in entry_tickers:
-            continue
         current_opinion = str(stock.get("opinion") or "").strip()
-        previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "").strip()
         row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
         if not isinstance(row, dict):
+            row = {}
+        # 관심종목(watchlist)에 없는 종목은 보유 포지션 청산 추적을 위해 가격만 갱신할 뿐,
+        # 매수/추가매수 시그널을 발생시키지 않는다. 진입 신호로 '매수'가 계산됐더라도 관망으로 되돌린다.
+        if ticker not in entry_tickers:
+            if current_opinion == "매수":
+                signal_state_changed = suppress_offlist_buy_signal(stock, row) or signal_state_changed
             continue
+        previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "").strip()
         if current_opinion != "매수" or nasdaq_peak_alert:
             continue
         current_price = parse_price(stock.get("currentPrice") or tech_value(row, "현재가"))
@@ -740,7 +753,8 @@ def update_trade_logs(
         ]
         ticker_appended = False
         if open_for_ticker and not restore_candidates:
-            signal_state_changed = suppress_held_buy_signal(stock, row) or signal_state_changed
+            # 이미 보유 중이고 추가매수(재진입) 조건은 미충족이지만, 매수 신호 자체는 유지된다.
+            # 이 경우 의견은 '매수' 그대로 두고 추가 trade만 만들지 않는다.
             continue
         for code in entry_signal_codes(row):
             slot_key = (ticker, code)
@@ -787,8 +801,8 @@ def update_trade_logs(
             current_open_by_ticker.setdefault(ticker, []).append(new_trade)
             appended += 1
             ticker_appended = True
-        if open_for_ticker and not ticker_appended:
-            signal_state_changed = suppress_held_buy_signal(stock, row) or signal_state_changed
+        # 보유 중인데 이번 회차에 추가 trade를 만들지 못했더라도(추가매수 미충족) 매수 신호는 유지된다.
+        # 의견을 관망으로 깎지 않고 '매수'를 그대로 둔다.
 
     deduped = list({trade_key(trade): trade for trade in trades}.values())
     refreshed_at = publish_iso()

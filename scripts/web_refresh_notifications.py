@@ -353,11 +353,7 @@ def opinion_changes(
             continue
         current_opinion = str(current_stock.get("opinion") or "").strip()
         previous_opinion = str(previous_stock.get("opinion") or "").strip()
-        suppressed_held_buy = (
-            current_opinion == "관망"
-            and "추가매수 조건 미충족" in str(current_stock.get("opinionReason") or "")
-        )
-        if current_opinion != "매수" and not suppressed_held_buy:
+        if current_opinion != "매수":
             continue
         previous_trade_rows_for_ticker = previous_trades_by_ticker.get(ticker, [])
         current_trade_rows_for_ticker = current_trades_by_ticker.get(ticker, [])
