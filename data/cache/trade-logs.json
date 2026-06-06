@@ -334,21 +334,6 @@
       "restoreWatchDate": "2026.06.06"
     },
     {
-      "slotId": "INTC_F_20260606_1",
-      "ticker": "INTC",
-      "name": "Intel",
-      "market": "US",
-      "currentPrice": "$96.90",
-      "strategy": "F. 200일선 상방 & BB 극단 저점",
-      "buyDate": "2026.06.06",
-      "buyPrice": "$102.90",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
-      "holdingDays": "-",
-      "status": "보유 중"
-    },
-    {
       "slotId": "LPTH_D_20260606_1",
       "ticker": "LPTH",
       "name": "LightPath Technologies",

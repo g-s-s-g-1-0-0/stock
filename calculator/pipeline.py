@@ -702,11 +702,7 @@ def latest_technical_row(
     opinion = "관망" if event_watch_active else "매수" if buy["entryTriggered"] else "관망"
     opinion_reason = f"이벤트 기간 관망 ({market_event})" if event_watch_active else "-"
     strategy = buy["strategyName"] if buy["entryTriggered"] else "-"
-    entry_signal_codes = [
-        group
-        for group in ("A", "B", "C", "D", "E", "F", "G")
-        if all(buy["conditions"].get(group, []))
-    ]
+    entry_signal_codes = [buy["strategyType"]] if buy["strategyType"] else []
     buy_block_label = f"나스닥 상단 차단 아님(≤{float(nasdaq_buy_block_max):.0f}%)" if nasdaq_buy_block_max is not None else "나스닥 상단 차단 아님"
     acd_filter_label = "나스닥 강세 필터(회복장 모멘텀 예외)" if buy.get("recoveryException") else "나스닥 강세 필터"
     strategy_labels = {
