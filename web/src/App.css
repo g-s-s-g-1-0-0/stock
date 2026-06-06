@@ -2891,6 +2891,19 @@
   color: #2563eb;
 }
 
+.sheet-table td.indicator-earnings-near {
+  background: #fffbeb;
+  color: #b45309;
+  font-weight: 800;
+}
+
+.sheet-table td.indicator-earnings-today {
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  background: #ffe4e6;
+  color: #be123c;
+  font-weight: 900;
+}
+
 .sheet-table tbody tr:hover td.indicator-good {
   background: #ffe4e6;
 }
@@ -2901,6 +2914,14 @@
 
 .sheet-table tbody tr:hover td.indicator-weak {
   background: #dbeafe;
+}
+
+.sheet-table tbody tr:hover td.indicator-earnings-near {
+  background: #fef3c7;
+}
+
+.sheet-table tbody tr:hover td.indicator-earnings-today {
+  background: #fecdd3;
 }
 
 .result-badge {

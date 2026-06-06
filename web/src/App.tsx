@@ -196,7 +196,7 @@ type TechnicalColumn = {
   value: (stock: Stock, index: number) => string
 }
 
-type IndicatorTone = 'good' | 'neutral' | 'weak'
+type IndicatorTone = 'good' | 'neutral' | 'weak' | 'earnings-near' | 'earnings-today'
 
 type MarketEventEntry = {
   month: string
@@ -2349,6 +2349,14 @@ function technicalLowBbTone(value: number | null): IndicatorTone | null {
   return 'weak'
 }
 
+function earningsDateTone(value: string): IndicatorTone | null {
+  if (typeof value !== 'string' || value.trim() === '-') return null
+  if (/\bD\s*-\s*0\b/i.test(value)) return 'earnings-today'
+
+  const match = value.match(/\bD\s*-\s*([1-3])\b/i)
+  return match ? 'earnings-near' : null
+}
+
 function isCandleLengthMetric(label: string) {
   return label === '아래꼬리 길이' || label === '위꼬리 길이' || label === '몸통 길이'
 }
@@ -2392,6 +2400,7 @@ function valueMetricTone(label: string, value: string): IndicatorTone | null {
   if (label === 'EPS Next Y') return toneByHigherBetter(number, 0.01, 0)
   if (label === 'EPS Q/Q (%)') return toneByHigherBetter(number, 20, 0)
   if (label === 'Rule of 40%') return toneByHigherBetter(number, 40, 20)
+  if (label.startsWith('실적발표일')) return earningsDateTone(value)
 
   return null
 }
@@ -2440,6 +2449,7 @@ function technicalMetricTone(label: string, value: string, stock: Stock, apiRow:
   const number = parseIndicatorNumber(value)
   const currentPrice = apiRow?.['현재가'] ?? stock.currentPrice
 
+  if (label.startsWith('실적발표일')) return earningsDateTone(value)
   if (label.startsWith('RSI (')) return technicalRsiTone(number)
   if (label === 'RSI EMA(9)') return technicalRsiTone(number)
   if (label === 'RSI 변화(D-D-1)') return toneByHigherBetter(number, 2, 0)
