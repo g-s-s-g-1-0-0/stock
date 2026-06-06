@@ -196,6 +196,8 @@ type TechnicalColumn = {
   value: (stock: Stock, index: number) => string
 }
 
+type IndicatorTone = 'good' | 'neutral' | 'weak'
+
 type MarketEventEntry = {
   month: string
   date: string
@@ -2249,6 +2251,252 @@ function parsePriceValue(value: string) {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+function parseIndicatorNumber(value: string) {
+  if (typeof value !== 'string') return null
+  const normalized = value.trim()
+  if (!normalized || normalized === '-') return null
+  const parsed = Number(normalized.replace(/[^0-9.+-]/g, ''))
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function parseKoreanAmountMagnitude(value: string) {
+  if (typeof value !== 'string') return null
+  const normalized = value.replace(/,/g, '').trim()
+  if (!normalized || normalized === '-') return null
+
+  const trillionMatch = normalized.match(/([0-9.]+)\s*조/)
+  const hundredMillionMatch = normalized.match(/([0-9.]+)\s*억/)
+  const trillion = trillionMatch ? Number(trillionMatch[1]) : 0
+  const hundredMillion = hundredMillionMatch ? Number(hundredMillionMatch[1]) : 0
+  if (trillionMatch || hundredMillionMatch) return trillion * 10000 + hundredMillion
+
+  const suffixMatch = normalized.match(/\$?([0-9.]+)\s*([TtBbMm])?/)
+  if (!suffixMatch) return null
+  const amount = Number(suffixMatch[1])
+  if (!Number.isFinite(amount)) return null
+  const suffix = suffixMatch[2]?.toUpperCase()
+  if (suffix === 'T') return amount * 10000
+  if (suffix === 'B') return amount * 10
+  if (suffix === 'M') return amount / 100
+  return amount
+}
+
+function indicatorToneClass(tone: IndicatorTone | null) {
+  return tone ? `indicator-cell indicator-${tone}` : ''
+}
+
+function toneByHigherBetter(value: number | null, good: number, neutral: number) {
+  if (value === null) return null
+  if (value >= good) return 'good'
+  if (value >= neutral) return 'neutral'
+  return 'weak'
+}
+
+function toneByLowerBetter(value: number | null, good: number, neutral: number) {
+  if (value === null || value <= 0) return value === null ? null : 'weak'
+  if (value <= good) return 'good'
+  if (value <= neutral) return 'neutral'
+  return 'weak'
+}
+
+function toneByRange(value: number | null, goodMin: number, goodMax: number, neutralMin: number, neutralMax: number) {
+  if (value === null) return null
+  if (value >= goodMin && value <= goodMax) return 'good'
+  if (value >= neutralMin && value <= neutralMax) return 'neutral'
+  return 'weak'
+}
+
+function technicalRsiTone(value: number | null): IndicatorTone | null {
+  if (value === null) return null
+  if (value <= 35) return 'good'
+  if (value < 45) return 'neutral'
+  if (value <= 80) return 'good'
+  return 'weak'
+}
+
+function technicalCciTone(value: number | null): IndicatorTone | null {
+  if (value === null) return null
+  if (value <= -150) return 'good'
+  if (value <= 200) return 'neutral'
+  return 'weak'
+}
+
+function technicalAdxTone(value: number | null): IndicatorTone | null {
+  if (value === null) return null
+  if (value >= 30) return 'good'
+  if (value >= 20) return 'neutral'
+  return 'weak'
+}
+
+function technicalVolumeTone(value: number | null): IndicatorTone | null {
+  if (value === null) return null
+  if (value >= 100 && value <= 200) return 'good'
+  if (value >= 50 && value <= 250) return 'neutral'
+  return 'weak'
+}
+
+function technicalCloseBbTone(value: number | null): IndicatorTone | null {
+  if (value === null) return null
+  if (value >= 30 && value <= 85) return 'good'
+  if (value >= 20 && value <= 95) return 'neutral'
+  return 'weak'
+}
+
+function technicalLowBbTone(value: number | null): IndicatorTone | null {
+  if (value === null) return null
+  if (value <= 50) return 'good'
+  if (value <= 80) return 'neutral'
+  return 'weak'
+}
+
+function isCandleLengthMetric(label: string) {
+  return label === '아래꼬리 길이' || label === '위꼬리 길이' || label === '몸통 길이'
+}
+
+function candleLengthPercentValue(value: string, stock: Stock, apiRow: Record<string, string> | undefined) {
+  if (typeof value !== 'string' || value.trim() === '-' || value.includes('%')) return value
+  const length = parsePriceValue(value)
+  const close = parsePriceValue(apiRow?.['C - Close'] ?? apiRow?.['현재가'] ?? stock.currentPrice)
+  if (length === null || close === null || close <= 0) return value
+  return `${formatTechnicalNumber(length / close * 100, 2)}%`
+}
+
+function valueMetricTone(label: string, value: string): IndicatorTone | null {
+  const number = parseIndicatorNumber(value)
+
+  if (label === 'Market Cap') {
+    const amount = parseKoreanAmountMagnitude(value)
+    return toneByHigherBetter(amount, 100000, 10000)
+  }
+  if (label === 'Sales') {
+    const amount = parseKoreanAmountMagnitude(value)
+    return toneByHigherBetter(amount, 10000, 1000)
+  }
+  if (label === 'Sales Q/Q') return toneByHigherBetter(number, 10, 0)
+  if (label === 'Sales Y/Y (TTM)') return toneByHigherBetter(number, 15, 0)
+  if (label === 'Sales past 3/5Y') {
+    const values = value.split('/').map((part) => parseIndicatorNumber(part)).filter((item): item is number => item !== null)
+    if (values.length === 0) return null
+    return toneByHigherBetter(values.reduce((sum, item) => sum + item, 0) / values.length, 12, 0)
+  }
+  if (label === 'Current Ratio') return toneByHigherBetter(number, 120, 70)
+  if (label === 'P/FCF') return toneByLowerBetter(number, 20, 35)
+  if (label === 'P/S') return toneByLowerBetter(number, 3, 8)
+  if (label === 'PER') return toneByLowerBetter(number, 25, 40)
+  if (label === 'PBR') return toneByLowerBetter(number, 3, 8)
+  if (label === 'ROE') return toneByHigherBetter(number, 20, 10)
+  if (label === 'PEG') return toneByLowerBetter(number, 1.2, 2)
+  if (label === 'Gross Margin') return toneByHigherBetter(number, 50, 25)
+  if (label === 'Oper. Margin') return toneByHigherBetter(number, 20, 8)
+  if (label === 'EPS (TTM)') return toneByHigherBetter(number, 0.01, 0)
+  if (label === 'EPS Next Y') return toneByHigherBetter(number, 0.01, 0)
+  if (label === 'EPS Q/Q (%)') return toneByHigherBetter(number, 20, 0)
+  if (label === 'Rule of 40%') return toneByHigherBetter(number, 40, 20)
+
+  return null
+}
+
+function valuationToneClass(value: Valuation) {
+  if (value === '저평가') return indicatorToneClass('good')
+  if (value === '보통') return indicatorToneClass('neutral')
+  if (value === '고평가') return indicatorToneClass('weak')
+  return ''
+}
+
+function technicalPriceDistanceTone(price: string, base: string) {
+  const priceValue = parsePriceValue(price)
+  const baseValue = parsePriceValue(base)
+  if (priceValue === null || baseValue === null || baseValue <= 0) return null
+  const distance = (priceValue / baseValue - 1) * 100
+  if (distance >= 2) return 'good'
+  if (distance >= -2) return 'neutral'
+  return 'weak'
+}
+
+function technicalMovingAverageTone(label: string, currentPrice: string, averageValue: string): IndicatorTone | null {
+  const priceValue = parsePriceValue(currentPrice)
+  const average = parsePriceValue(averageValue)
+  if (priceValue === null || average === null || average <= 0) return null
+  const distance = (priceValue / average - 1) * 100
+
+  if (label === '20일 이동평균선') {
+    if (distance >= 0 && distance <= 8) return 'good'
+    if (distance >= -2 && distance <= 20) return 'neutral'
+    return 'weak'
+  }
+
+  if (label === '200일 이동평균선') {
+    if (distance > 0 && distance <= 80) return 'good'
+    if (distance >= -10 && distance <= 100) return 'neutral'
+    return 'weak'
+  }
+
+  if (distance >= 0 && distance <= 80) return 'good'
+  if (distance >= -5 && distance <= 100) return 'neutral'
+  return 'weak'
+}
+
+function technicalMetricTone(label: string, value: string, stock: Stock, apiRow: Record<string, string> | undefined): IndicatorTone | null {
+  const number = parseIndicatorNumber(value)
+  const currentPrice = apiRow?.['현재가'] ?? stock.currentPrice
+
+  if (label.startsWith('RSI (')) return technicalRsiTone(number)
+  if (label === 'RSI EMA(9)') return technicalRsiTone(number)
+  if (label === 'RSI 변화(D-D-1)') return toneByHigherBetter(number, 2, 0)
+
+  if (label.startsWith('CCI (')) return technicalCciTone(number)
+  if (label === 'CCI EMA(9)') return technicalCciTone(number)
+  if (label === 'CCI 변화(D-D-1)') return toneByHigherBetter(number, 10, 0)
+
+  if (label.startsWith('MACD (') || label === 'MACD Signal EMA(9)') return toneByHigherBetter(number, 0, -500)
+  if (label.startsWith('MACD Hist') || label === 'MACD 기울기') return toneByHigherBetter(number, 0, -1)
+
+  if (label === '+DI (DMI, 14)') {
+    const minusDi = parseIndicatorNumber(apiRow?.['-DI (DMI, 14)'] ?? '')
+    if (number === null || minusDi === null) return null
+    if (number >= minusDi + 3) return 'good'
+    if (number >= minusDi - 3) return 'neutral'
+    return 'weak'
+  }
+  if (label === '-DI (DMI, 14)') {
+    const plusDi = parseIndicatorNumber(apiRow?.['+DI (DMI, 14)'] ?? '')
+    if (number === null || plusDi === null) return null
+    if (number <= plusDi - 3) return 'good'
+    if (number <= plusDi + 3) return 'neutral'
+    return 'weak'
+  }
+  if (label.startsWith('ADX')) return technicalAdxTone(number)
+  if (label === 'ADX 변화(D-D-1)') return toneByHigherBetter(number, 1, 0)
+
+  if (label === '시가(D)') {
+    const close = apiRow?.['C - Close'] ?? currentPrice
+    return technicalPriceDistanceTone(close, value)
+  }
+  if (label === '고가(D)' || label === '저가(D)' || label === '종가(D)' || label === '현재가') return null
+  if (label === '아래꼬리 길이') return toneByHigherBetter(number, 1.5, 0.5)
+  if (label === '위꼬리 길이') return toneByLowerBetter(number, 1, 2.5)
+  if (label === '몸통 길이') return toneByHigherBetter(number, 1, 0.3)
+
+  if (label.includes('평균 대비 거래량')) return technicalVolumeTone(number)
+  if (label === '볼린저밴드 %B (종가)') return technicalCloseBbTone(number)
+  if (label === '볼린저밴드 %B (저가)') return technicalLowBbTone(number)
+  if (label.includes('볼린저밴드 %B (고가)')) return toneByRange(number, 35, 85, 20, 95)
+  if (label.startsWith('볼린저밴드 폭')) {
+    const averageWidth = parseIndicatorNumber(apiRow?.['지난 60일 볼린저밴드 폭 평균'] ?? '')
+    if (number === null || averageWidth === null || averageWidth <= 0) return null
+    if (number <= averageWidth * 0.85) return 'good'
+    if (number <= averageWidth * 1.2) return 'neutral'
+    return 'weak'
+  }
+  if (label === '볼린저밴드 폭 60일 평균') return null
+
+  if (label.endsWith('이동평균선') || label === '120일 저가 회귀 추세선') {
+    return technicalMovingAverageTone(label, currentPrice, value)
+  }
+
+  return null
+}
+
 function parseAmountValue(value: string) {
   const parsed = Number(value.replace(/[^0-9.-]/g, ''))
   return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed)) : null
@@ -3078,9 +3326,9 @@ const technicalMetricColumns: TechnicalColumn[] = [
   { key: 'C - Low', label: '저가(D)', tooltip: '오늘 가장 낮게 거래된 가격입니다. 저가에서 얼마나 회복했는지로 반등 힘을 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 24, 0.925, 0.065, 4)) },
   { key: 'C - Close', label: '종가(D)', tooltip: '오늘 마감 가격입니다. 대부분의 기술 지표가 이 가격을 기준으로 계산됩니다.', value: (stock) => stock.currentPrice },
   { key: 'C - Volume', label: '캔들 거래량(D)', tooltip: '오늘 캔들 데이터의 실제 거래량입니다. 가격 움직임에 거래량이 같이 붙으면 신뢰도가 높아집니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 25) },
-  { label: '아래꼬리 길이', tooltip: '시가와 종가 중 낮은 값에서 저가를 뺀 폭입니다. 길수록 저점 매수세가 들어왔다고 볼 수 있습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 26, 0, 18), 2) },
-  { label: '위꼬리 길이', tooltip: '고가에서 시가와 종가 중 높은 값을 뺀 폭입니다. 길수록 위에서 매물이 많이 나왔다고 볼 수 있습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 27, 0, 16), 2) },
-  { label: '몸통 길이', tooltip: '시가와 종가의 차이입니다. 클수록 그날 방향성이 뚜렷합니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 28, 0.2, 22), 2) },
+  { label: '아래꼬리 길이', tooltip: '시가와 종가 중 낮은 값에서 저가를 뺀 폭을 종가 대비 비율로 봅니다. 길수록 저점 매수세가 들어왔다고 볼 수 있습니다.', value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 26, 0, 4), 2)}%` },
+  { label: '위꼬리 길이', tooltip: '고가에서 시가와 종가 중 높은 값을 뺀 폭을 종가 대비 비율로 봅니다. 길수록 위에서 매물이 많이 나왔다고 볼 수 있습니다.', value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 27, 0, 4), 2)}%` },
+  { label: '몸통 길이', tooltip: '시가와 종가의 차이를 종가 대비 비율로 봅니다. 클수록 그날 방향성이 뚜렷합니다.', value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 28, 0.05, 5), 2)}%` },
   { key: '거래량 (D)', label: '5일 평균 대비 거래량(D)', tooltip: '오늘 실제 거래량을 최근 5일 평균 거래량으로 나눈 비율입니다. 100% 이상이면 최근 5일 평균보다 거래가 많습니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 29) },
   { key: '거래량 (D-1)', label: '전일 5일 평균 대비 거래량(D-1)', tooltip: '어제 실제 거래량을 어제 기준 직전 5일 평균 거래량으로 나눈 비율입니다. 오늘 비율과 비교해 관심이 늘었는지 확인합니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 30) },
   { label: '20일 평균 대비 거래량 (D)', tooltip: '최근 20일 평균보다 오늘 거래가 얼마나 많은지 봅니다. 100% 이상이면 평소보다 활발합니다.', value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 31, 45, 165), 0)}%` },
@@ -3244,6 +3492,7 @@ function ValueAnalysisPage({
             {visibleStocks.map((stock) => {
               const metric = valuationRows[stock.ticker]
               const displayValuation = displayStockValuation(stock)
+              const valuationClassName = valuationToneClass(displayValuation)
 
               return (
                 <tr key={stock.ticker}>
@@ -3253,14 +3502,18 @@ function ValueAnalysisPage({
                   <td className="ticker-cell">{stock.ticker}</td>
                   <td>{stock.category ?? (stock.market === 'KR' ? '성장주' : '혼합주')}</td>
                   <td className="industry-cell">{displayIndustryLabel(stock.industry)}</td>
-                  <td className="number-cell">{isFairPriceUnavailable(stock) ? <span className="unavailable-value-label">{displayFairPriceText(stock)}</span> : displayFairPriceText(stock)}</td>
-                  <td className="number-cell">{displayCurrentPriceText(stock)}</td>
+                  <td className={`number-cell ${valuationClassName}`.trim()}>{isFairPriceUnavailable(stock) ? <span className="unavailable-value-label">{displayFairPriceText(stock)}</span> : displayFairPriceText(stock)}</td>
+                  <td className={`number-cell ${valuationClassName}`.trim()}>{displayCurrentPriceText(stock)}</td>
                   <td><span className={`status-badge ${valuationBadgeClass(displayValuation)}`}>{displayValuation}</span></td>
-                  {valueMetricColumns.map((column) => (
-                    <td className={`number-cell ${column.label.startsWith('실적발표일') ? 'earnings-date-cell' : ''}`.trim()} key={column.label}>
-                      {metric ? column.value(metric) : '-'}
-                    </td>
-                  ))}
+                  {valueMetricColumns.map((column) => {
+                    const value = metric ? column.value(metric) : '-'
+                    const indicatorClassName = valueMetricTone(column.label, value)
+                    return (
+                      <td className={`number-cell ${column.label.startsWith('실적발표일') ? 'earnings-date-cell' : ''} ${indicatorToneClass(indicatorClassName)}`.trim()} key={column.label}>
+                        {value}
+                      </td>
+                    )
+                  })}
                 </tr>
               )
             })}
@@ -3430,16 +3683,22 @@ function TechnicalAnalysisPage({
                         : apiKey === '진입 전략'
                           ? (entryStrategies.length > 0 ? entryStrategies.join(', ') : '-')
                           : apiRow?.[apiKey] ?? '-'
+                    const displayValue = isCandleLengthMetric(column.label)
+                      ? candleLengthPercentValue(value, stock, apiRow)
+                      : value
                     const isEntryStrategy = apiKey === '진입 전략'
                     const isEarningsDate = apiKey.startsWith('실적발표일')
-                    const cellClassName = value === '-'
+                    const cellClassName = displayValue === '-'
                       ? 'dash-cell'
                       : isEntryStrategy
                         ? 'strategy-data-cell technical-strategy-cell'
                         : `number-cell ${isEarningsDate ? 'earnings-date-cell' : ''}`.trim()
+                    const indicatorClassName = displayValue === '-' || isEntryStrategy
+                      ? ''
+                      : indicatorToneClass(technicalMetricTone(column.label, displayValue, stock, apiRow))
 
                     return (
-                      <td className={cellClassName} key={column.label}>
+                      <td className={`${cellClassName} ${indicatorClassName}`.trim()} key={column.label}>
                         {isEntryStrategy && entryStrategies.length > 0 ? entryStrategies.map((strategy, strategyIndex) => (
                           <StrategyTag
                             key={`${strategy}-${strategyIndex}`}
@@ -3447,7 +3706,7 @@ function TechnicalAnalysisPage({
                             onTooltipOpen={onTooltipOpen}
                             strategy={strategy}
                           />
-                        )) : value}
+                        )) : displayValue}
                       </td>
                     )
                   })}

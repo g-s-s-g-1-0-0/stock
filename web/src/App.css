@@ -2872,6 +2872,37 @@
   color: #475569;
 }
 
+.sheet-table td.indicator-cell {
+  font-weight: 700;
+}
+
+.sheet-table td.indicator-good {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.sheet-table td.indicator-neutral {
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.sheet-table td.indicator-weak {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.sheet-table tbody tr:hover td.indicator-good {
+  background: #ffe4e6;
+}
+
+.sheet-table tbody tr:hover td.indicator-neutral {
+  background: #f1f5f9;
+}
+
+.sheet-table tbody tr:hover td.indicator-weak {
+  background: #dbeafe;
+}
+
 .result-badge {
   cursor: help;
   outline: none;

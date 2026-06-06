@@ -538,6 +538,15 @@ def fmt_amount(value: Any, market: str) -> str:
     return f"${float(value):,.2f}"
 
 
+def fmt_price_ratio(value: Any, base: Any) -> str:
+    if value is None or not base:
+        return "-"
+    try:
+        return f"{float(value) / float(base) * 100:.2f}%"
+    except (TypeError, ValueError, ZeroDivisionError):
+        return "-"
+
+
 def parse_percent(value: Any) -> float | None:
     if not isinstance(value, str) or value.strip() in ("", "-"):
         return None
@@ -785,9 +794,9 @@ def latest_technical_row(
         "C - Low": fmt_price(row["low"], stock["market"]),
         "C - Close": fmt_price(row["close"], stock["market"]),
         "C - Volume": f"{int(row['volume']):,}",
-        "아래꼬리 길이": fmt_amount(row["lowerTail"], stock["market"]),
-        "위꼬리 길이": fmt_amount(row["upperTail"], stock["market"]),
-        "몸통 길이": fmt_amount(row["bodyLength"], stock["market"]),
+        "아래꼬리 길이": fmt_price_ratio(row["lowerTail"], row["close"]),
+        "위꼬리 길이": fmt_price_ratio(row["upperTail"], row["close"]),
+        "몸통 길이": fmt_price_ratio(row["bodyLength"], row["close"]),
         "거래량 (D)": f"{row['volRatio'] * 100:.0f}%",
         "거래량 (D-1)": f"{row['prevVolRatio'] * 100:.0f}%",
         "20일 평균 대비 거래량 (D)": f"{row['volRatio20'] * 100:.0f}%",
