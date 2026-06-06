@@ -5870,7 +5870,8 @@ function App() {
     },
     {
       label: '평가 투자금',
-      value: formatKrwAmount(portfolioSummary.openInvestmentAmount),
+      value: formatKrwAmount(portfolioSummary.positionValue),
+      detail: `매수원금 ${formatKrwAmount(portfolioSummary.openInvestmentAmount)} · 평가손익 ${formatKrwAmount(portfolioSummary.unrealizedProfitAmount)}`,
       action: openInvestmentAllocationSettings,
       clickable: canEditContributionSettings,
     },
