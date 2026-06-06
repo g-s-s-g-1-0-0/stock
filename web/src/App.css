@@ -372,11 +372,11 @@
   grid-template-rows: auto minmax(0, 1fr);
   height: auto;
   min-width: 0;
-  gap: 22px;
+  gap: 32px;
 }
 
 .long-term-home-grid .right-column {
-  gap: 42px;
+  gap: 52px;
 }
 
 .section-heading {
