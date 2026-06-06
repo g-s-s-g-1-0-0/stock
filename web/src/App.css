@@ -500,6 +500,7 @@
   cursor: pointer;
   font: inherit;
   text-align: left;
+  overflow: visible;
 }
 
 .asset-summary-action:hover {
