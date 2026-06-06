@@ -5869,7 +5869,7 @@ function App() {
       clickable: canEditContributionSettings,
     },
     {
-      label: '평가 투자금',
+      label: '평가액',
       value: formatKrwAmount(portfolioSummary.positionValue),
       detail: `매수원금 ${formatKrwAmount(portfolioSummary.openInvestmentAmount)} · 평가손익 ${formatKrwAmount(portfolioSummary.unrealizedProfitAmount)}`,
       detailTooltipRows: [
@@ -5891,7 +5891,17 @@ function App() {
       ],
       tone: tradeProfitClass(portfolioSummary.profitAmount),
     },
-    { label: '총 자산', value: formatKrwAmount(portfolioSummary.totalAsset), strong: true },
+    {
+      label: '총 자산',
+      value: formatKrwAmount(portfolioSummary.totalAsset),
+      detail: `보유현금 ${formatKrwAmount(portfolioSummary.cash)} · 평가액 ${formatKrwAmount(portfolioSummary.positionValue)}`,
+      detailTooltipRows: [
+        { label: '보유현금', value: formatKrwAmount(portfolioSummary.cash) },
+        { label: '평가액', value: formatKrwAmount(portfolioSummary.positionValue) },
+        { label: '총자산', value: formatKrwAmount(portfolioSummary.totalAsset) },
+      ],
+      strong: true,
+    },
   ]
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = !isAdminUser && (activePage === 'board' || activePage === 'admin-logs') ? 'home' : activePage
