@@ -7619,9 +7619,7 @@ function App() {
           <div className="asset-summary-box" aria-label="현재 자산 요약">
             {assetSummaryItems.map((item) => {
               const itemClassName = `asset-summary-item ${item.strong ? 'strong' : ''}`.trim()
-              const detailTitle = item.detailTooltipRows
-                ? item.detailTooltipRows.map((row) => `${row.label}: ${row.value}`).join('\n')
-                : item.detail
+              const detailTitle = item.detailTooltipRows ? undefined : item.detail
               const detailTooltip = item.detailTooltipRows ? (
                 <span className="asset-summary-tooltip" role="tooltip">
                   {item.detailTooltipRows.map((row) => (
@@ -7645,12 +7643,12 @@ function App() {
                         role={item.detailTooltipRows ? 'button' : undefined}
                         aria-label={item.detailTooltipRows ? `${item.label} 상세` : undefined}
                         onClick={item.detailTooltipRows ? (e) => e.stopPropagation() : undefined}
-                        onKeyDown={item.detailTooltipRows ? (e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation() } : undefined}
+                        onKeyDown={item.detailTooltipRows ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation() } } : undefined}
                       >
                         <small className="asset-summary-detail">{item.detail}</small>
-                        {detailTooltip}
                       </span>
                     )}
+                    {detailTooltip}
                   </button>
                 )
               }
@@ -7666,9 +7664,9 @@ function App() {
                       title={detailTitle}
                     >
                       <small className="asset-summary-detail">{item.detail}</small>
-                      {detailTooltip}
                     </span>
                   )}
+                  {detailTooltip}
                 </div>
               )
             })}

@@ -479,9 +479,12 @@
 
 .asset-summary-box {
   display: grid;
+  position: relative;
+  z-index: 20;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin: -4px 0 12px;
+  overflow: visible;
 }
 
 .asset-summary-item {
@@ -493,6 +496,11 @@
   border-radius: 10px;
   background: var(--surface-soft);
   padding: 9px 10px;
+}
+
+.asset-summary-item:hover,
+.asset-summary-item:focus-within {
+  z-index: 80;
 }
 
 .asset-summary-action {
@@ -563,7 +571,7 @@
 
 .asset-summary-tooltip {
   position: absolute;
-  z-index: 30;
+  z-index: 90;
   bottom: -6px;
   left: 10px;
   display: grid;
@@ -580,8 +588,11 @@
   font-size: 11px;
   line-height: 1.35;
   opacity: 0;
+  overflow: visible;
   padding: 9px 10px;
   pointer-events: none;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .asset-summary-tooltip-row {
