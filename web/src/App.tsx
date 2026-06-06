@@ -5872,6 +5872,11 @@ function App() {
       label: '평가 투자금',
       value: formatKrwAmount(portfolioSummary.positionValue),
       detail: `매수원금 ${formatKrwAmount(portfolioSummary.openInvestmentAmount)} · 평가손익 ${formatKrwAmount(portfolioSummary.unrealizedProfitAmount)}`,
+      detailTooltipRows: [
+        { label: '매수원금', value: formatKrwAmount(portfolioSummary.openInvestmentAmount) },
+        { label: '평가손익', value: formatKrwAmount(portfolioSummary.unrealizedProfitAmount) },
+        { label: '평가액', value: formatKrwAmount(portfolioSummary.positionValue) },
+      ],
       action: openInvestmentAllocationSettings,
       clickable: canEditContributionSettings,
     },
@@ -7633,7 +7638,15 @@ function App() {
                     <span>{item.label}</span>
                     <strong className="asset-summary-value asset-summary-button">{item.value}</strong>
                     {item.detail && (
-                      <span className="asset-summary-detail-wrap" title={detailTitle}>
+                      <span
+                        className="asset-summary-detail-wrap"
+                        title={detailTitle}
+                        tabIndex={item.detailTooltipRows ? 0 : undefined}
+                        role={item.detailTooltipRows ? 'button' : undefined}
+                        aria-label={item.detailTooltipRows ? `${item.label} 상세` : undefined}
+                        onClick={item.detailTooltipRows ? (e) => e.stopPropagation() : undefined}
+                        onKeyDown={item.detailTooltipRows ? (e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation() } : undefined}
+                      >
                         <small className="asset-summary-detail">{item.detail}</small>
                         {detailTooltip}
                       </span>
