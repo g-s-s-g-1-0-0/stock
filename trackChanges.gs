@@ -165,7 +165,19 @@ function processMultiSlots(stockName, row, globalData, now, allProperties, kstDa
 
   const STRATEGIES = ["A", "B", "C", "D", "E", "F", "G"];
 
+  // 동시 충족 시 더 강한 확신의 전략 하나만 추가 매수로 채택 (우선순위 A>B>C>D>E>F>G).
+  // evaluateBuyCondition의 그룹 상호배타 규칙과 동일하게, 상위 전략 진입 조건이 충족되면
+  // 하위 전략 슬롯은 같은 회차에 진입시키지 않는다. (E·F 동시 충족 시 E만 채택)
+  let topSlotStrategy = null;
   for (const strategy of STRATEGIES) {
+    if (Utils.evaluateSlotEntry(row, globalData, strategy, stockName, allProperties)) {
+      topSlotStrategy = strategy;
+      break;
+    }
+  }
+
+  for (const strategy of STRATEGIES) {
+    if (topSlotStrategy && strategy !== topSlotStrategy) continue;
     const liveProps  = props.getProperties();
     const liveSlots  = Utils.loadSlots(stockName, liveProps);
     const sameStrategySlotCount = liveSlots.filter(s => s.strategy === strategy).length;
