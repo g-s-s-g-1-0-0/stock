@@ -2,11 +2,11 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-06-07T15:00:00Z",
-    "lastSuccessfulRun": "2026-06-07T15:00:00Z",
+    "updatedAt": "2026-06-07T17:00:00Z",
+    "lastSuccessfulRun": "2026-06-07T17:00:00Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
-    "closedTrades": 0,
+    "closedTrades": 3,
     "nasdaqPeakLiquidation": false
   },
   "rows": [
@@ -104,12 +104,13 @@
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.18",
       "buyPrice": "₩401,500",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
+      "sellDate": "2026.06.08",
+      "sellPrice": "₩389,000",
+      "returnPct": -3.11,
       "holdingDays": "-",
-      "status": "보유 중",
-      "restoreWatchDate": "2026.05.25"
+      "status": "손절",
+      "sellTimestamp": "2026-06-07T17:00:00Z",
+      "exitReason": "15거래일 반등 미달 청산 (15일, -3.11% < +8%)"
     },
     {
       "slotId": "079550_F_20260518_1",
@@ -120,11 +121,13 @@
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.18",
       "buyPrice": "₩832,000",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
+      "sellDate": "2026.06.08",
+      "sellPrice": "₩726,000",
+      "returnPct": -12.74,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "손절",
+      "sellTimestamp": "2026-06-07T17:00:00Z",
+      "exitReason": "15거래일 반등 미달 청산 (15일, -12.74% < +8%)"
     },
     {
       "slotId": "376900_F_20260518_1",
@@ -135,12 +138,13 @@
       "strategy": "F. 200일선 상방 & BB 극단 저점",
       "buyDate": "2026.05.18",
       "buyPrice": "₩59,600",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
+      "sellDate": "2026.06.08",
+      "sellPrice": "₩51,200",
+      "returnPct": -14.09,
       "holdingDays": "-",
-      "status": "보유 중",
-      "restoreWatchDate": "2026.05.25"
+      "status": "손절",
+      "sellTimestamp": "2026-06-07T17:00:00Z",
+      "exitReason": "15거래일 반등 미달 청산 (15일, -14.09% < +8%)"
     },
     {
       "slotId": "039030_F_20260518_1",
@@ -269,7 +273,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.06.08"
     },
     {
       "slotId": "BE_E_20260606_1",
