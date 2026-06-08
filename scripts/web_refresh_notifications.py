@@ -2297,7 +2297,9 @@ def send_trade_exit_notifications(
         return 0
 
     subject = "투자의견 변경 알림 (" + ", ".join(str(change["ticker"]) for change in changes[:8]) + ")"
-    body = opinion_email_body(changes, *opinion_groups(DEFAULT_CURRENT_STOCKS, current))
+    # 매도 요약은 운영 캐시 전체가 아니라 이번에 청산된 종목만 담는다.
+    # opinion_email_body가 changes의 매도 종목을 매도 목록에 자동 추가한다.
+    body = opinion_email_body(changes)
     sent = 0
     for recipient in recipients:
         send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
