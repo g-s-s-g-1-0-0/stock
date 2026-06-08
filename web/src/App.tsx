@@ -20,6 +20,7 @@ type WatchlistSortSettings = {
 type NotificationPreferences = {
   opinionChangeEmail: boolean
   nasdaqPeakEmail: boolean
+  nasdaqWarnEmail: boolean
   regimeShiftEmail: boolean
   bbPullbackEmail: boolean
   weeklyTrendReport: boolean
@@ -69,7 +70,7 @@ type WatchlistPersistResult =
   | { ok: true }
   | { ok: false; reason?: 'auth'; error?: unknown }
 
-type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'regimeShiftEmail' | 'bbPullbackEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
+type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'nasdaqWarnEmail' | 'regimeShiftEmail' | 'bbPullbackEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
 
 type Stock = {
   ticker: string
@@ -311,6 +312,7 @@ const activePages: ActivePage[] = ['home', 'value-analysis', 'technical-analysis
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   opinionChangeEmail: true,
   nasdaqPeakEmail: true,
+  nasdaqWarnEmail: true,
   regimeShiftEmail: true,
   bbPullbackEmail: true,
   weeklyTrendReport: true,
@@ -857,6 +859,7 @@ function normalizeNotificationPreferences(value: unknown): NotificationPreferenc
   return {
     opinionChangeEmail: typeof candidate?.opinionChangeEmail === 'boolean' ? candidate.opinionChangeEmail : DEFAULT_NOTIFICATION_PREFERENCES.opinionChangeEmail,
     nasdaqPeakEmail: typeof candidate?.nasdaqPeakEmail === 'boolean' ? candidate.nasdaqPeakEmail : DEFAULT_NOTIFICATION_PREFERENCES.nasdaqPeakEmail,
+    nasdaqWarnEmail: typeof candidate?.nasdaqWarnEmail === 'boolean' ? candidate.nasdaqWarnEmail : DEFAULT_NOTIFICATION_PREFERENCES.nasdaqWarnEmail,
     regimeShiftEmail: typeof candidate?.regimeShiftEmail === 'boolean' ? candidate.regimeShiftEmail : DEFAULT_NOTIFICATION_PREFERENCES.regimeShiftEmail,
     bbPullbackEmail: typeof candidate?.bbPullbackEmail === 'boolean' ? candidate.bbPullbackEmail : DEFAULT_NOTIFICATION_PREFERENCES.bbPullbackEmail,
     weeklyTrendReport: typeof candidate?.weeklyTrendReport === 'boolean' ? candidate.weeklyTrendReport : DEFAULT_NOTIFICATION_PREFERENCES.weeklyTrendReport,
@@ -2852,6 +2855,7 @@ const watchlistSortOptions: Array<{ value: WatchlistSortKey; label: string; desc
 const notificationOptions: Array<{ key: NotificationPreferenceKey; title: string; description: string }> = [
   { key: 'opinionChangeEmail', title: '투자의견 변경', description: '관심종목의 매수/관망/매도 신호가 바뀔 때' },
   { key: 'nasdaqPeakEmail', title: '나스닥 고점 과열', description: 'QQQ 과열과 RSI 둔화가 동시에 감지될 때' },
+  { key: 'nasdaqWarnEmail', title: '나스닥 과열 청산선 근접 경고', description: 'QQQ 이격도가 과열 청산선 직전까지 올라와 곧 하락이 나올 수 있을 때' },
   { key: 'regimeShiftEmail', title: '시장 국면 전환', description: '회복장↔비회복장이 바뀌어 매수 차단선·예외 전략이 달라질 때' },
   { key: 'weeklyTrendReport', title: '주간 트렌드 리포트', description: '시장 트렌드와 관심종목 흐름을 주 1회 정리' },
   { key: 'earningsDayBefore', title: '실적발표 전날', description: '관심종목 실적발표 전 리스크 점검' },

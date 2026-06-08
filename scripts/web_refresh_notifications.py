@@ -786,6 +786,7 @@ def notification_preference_label(preference_key: str) -> str:
     labels = {
         "opinionChangeEmail": "투자의견 변경 알림",
         "nasdaqPeakEmail": "나스닥 고점 과열 알림",
+        "nasdaqWarnEmail": "나스닥 과열 청산선 근접 경고",
         "regimeShiftEmail": "QQQ 시장 국면 전환 알림",
         "weeklyTrendReport": "주간 트렌드 리포트",
         "earningsDayBefore": "실적발표 전날 알림",
@@ -1564,6 +1565,7 @@ def qqq_peak_snapshot() -> dict[str, Any]:
     ma200 = float(snapshot["ma200"] or 0)
     snapshot["directThreshold"] = ma200 * (1 + float(snapshot["peakDirectDist"]) / 100) if ma200 > 0 else 0
     snapshot["confirmThreshold"] = ma200 * (1 + float(snapshot["peakConfirmDist"]) / 100) if ma200 > 0 else 0
+    snapshot["warnThreshold"] = ma200 * (1 + float(snapshot["peakWarnDist"]) / 100) if ma200 > 0 else 0
     snapshot["resetThreshold"] = ma200 * (1 + float(snapshot["peakResetDist"]) / 100) if ma200 > 0 else 0
     snapshot["triggered"] = snapshot["peakTriggered"]
     return snapshot
@@ -1667,6 +1669,105 @@ def send_nasdaq_peak_notifications() -> int:
     }
     write_json(NOTIFICATION_STATE, state)
     print(f"Sent nasdaq peak notifications: {sent}")
+    return sent
+
+
+def nasdaq_warn_email_body(snapshot: dict[str, Any]) -> str:
+    kst_date, et_date = now_labels()
+    regime = html.escape(str(snapshot.get("regimeLabel") or "-"))
+    warn_dist = float(snapshot.get("peakWarnDist") or 0)
+    direct_dist = float(snapshot.get("peakDirectDist") or 0)
+    confirm_dist = float(snapshot.get("peakConfirmDist") or 0)
+    if snapshot.get("isRecoveryMarket"):
+        trigger_rule = (
+            f"회복장에서는 QQQ가 200일선보다 +{direct_dist:.0f}% 이상 높으면 과열 청산으로 봅니다. "
+            f"지금은 그 직전인 +{warn_dist:.0f}%에 도달했습니다."
+        )
+    else:
+        trigger_rule = (
+            f"비회복장에서는 QQQ가 200일선보다 +{direct_dist:.0f}% 이상(또는 +{confirm_dist:.0f}% 이상에서 RSI·MACD 둔화) "
+            f"이면 과열 청산으로 봅니다. 지금은 그 직전인 +{warn_dist:.0f}%에 도달했습니다."
+        )
+    return f"""
+    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;max-width:640px;">
+      <p style="font-size:16px;font-weight:bold;color:#b45309;margin:0 0 12px 0;">
+        QQQ가 과열 청산선 근접 구간에 들어왔습니다.
+      </p>
+      <div style="border:1px solid #fde68a;background:#fffbeb;border-radius:10px;padding:12px 14px;margin:0 0 14px 0;">
+        <div style="font-weight:bold;margin-bottom:6px;">핵심만 보면</div>
+        <div>아직 매수 차단·청산이 켜진 것은 아닙니다.</div>
+        <div>다만 QQQ 이격도가 과열 청산선 직전까지 올라와, 곧 하락이 나올 수 있는 구간입니다.</div>
+        <div style="margin-top:6px;">신규·추가 매수는 보수적으로 보고, 보유 종목의 청산 기준을 미리 점검해 두세요.</div>
+      </div>
+      <div style="margin:0 0 14px 0;">
+        <div style="font-weight:bold;margin-bottom:6px;">시장 위치</div>
+        <div><strong>QQQ 현재가:</strong> {snapshot['currentPrice']:.2f}</div>
+        <div><strong>QQQ 200일 이평선:</strong> {snapshot['ma200']:.2f}</div>
+        <div><strong>200일선 대비:</strong> {fmt_signed(snapshot.get('premiumPercent'), '%')}</div>
+        <div><strong>최근 60거래일 최저 이격도:</strong> {fmt_signed(snapshot.get('recent60MinPremiumPercent'), '%')}</div>
+        <div><strong>시장 국면:</strong> {regime}</div>
+        <div><strong>경고선:</strong> +{warn_dist:.0f}% ({snapshot['warnThreshold']:.2f}) - 지금 도달한 지점</div>
+        <div><strong>직접 청산선:</strong> +{direct_dist:.0f}% ({snapshot['directThreshold']:.2f}) - 이 위면 과열로 바로 판단</div>
+      </div>
+      <p>
+        <strong>이번 알림이 뜬 이유:</strong> {html.escape(trigger_rule)}
+      </p>
+      <p>
+        <strong>지금 할 일:</strong> 새 매수와 추가매수는 신중하게 보고, 보유 종목은 청산 기준을 미리 확인해 두세요. 실제 청산이 켜지면 별도의 과열 청산 알림이 이어서 발송됩니다.
+      </p>
+      <p style="color:#888;font-size:12px;margin:0;">
+        발송 시각 (한국): {html.escape(kst_date)}<br>
+        발송 시각 (미 동부): {html.escape(et_date)}
+      </p>
+    </div>
+    """
+
+
+def send_nasdaq_warn_notifications() -> int:
+    state = read_json(NOTIFICATION_STATE)
+    if not isinstance(state, dict):
+        state = {}
+    snapshot = qqq_peak_snapshot()
+    warn_state = state.get("nasdaqWarn") if isinstance(state.get("nasdaqWarn"), dict) else {}
+    was_sent = warn_state.get("sent") is True
+
+    if snapshot["currentPrice"] <= snapshot["warnThreshold"] and was_sent:
+        state["nasdaqWarn"] = {"sent": False, "resetAt": datetime.now().astimezone().isoformat()}
+        write_json(NOTIFICATION_STATE, state)
+        print("Nasdaq warn state reset.")
+        return 0
+
+    if not snapshot["warnTriggered"]:
+        print("Nasdaq warn signal not triggered.")
+        return 0
+    if was_sent:
+        print("Nasdaq warn notification already sent.")
+        return 0
+
+    recipients = [
+        recipient
+        for recipient in load_recipients()
+        if enabled(recipient, "nasdaqWarnEmail")
+    ] or fallback_admin_recipients()
+    recipients = dedupe_recipients(recipients)
+    if not recipients:
+        print("No recipients for nasdaq warn notification.")
+        return 0
+
+    subject = "나스닥 과열 청산선 근접 경고"
+    body = nasdaq_warn_email_body(snapshot)
+    sent = 0
+    for recipient in recipients:
+        send_notification(recipient, subject, append_notification_footer(body, recipient, "nasdaqWarnEmail"))
+        sent += 1
+
+    state["nasdaqWarn"] = {
+        "sent": True,
+        "sentAt": datetime.now().astimezone().isoformat(),
+        "snapshot": snapshot,
+    }
+    write_json(NOTIFICATION_STATE, state)
+    print(f"Sent nasdaq warn notifications: {sent}")
     return sent
 
 
@@ -2280,6 +2381,7 @@ def main() -> int:
     bb_pullback_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
 
     subparsers.add_parser("nasdaq-peak")
+    subparsers.add_parser("nasdaq-warn")
     subparsers.add_parser("regime-shift")
     subparsers.add_parser("weekly-trend")
     market_events_parser = subparsers.add_parser("market-events-review")
@@ -2308,6 +2410,9 @@ def main() -> int:
         return 0
     if args.command == "nasdaq-peak":
         send_nasdaq_peak_notifications()
+        return 0
+    if args.command == "nasdaq-warn":
+        send_nasdaq_warn_notifications()
         return 0
     if args.command == "regime-shift":
         send_regime_shift_notifications()

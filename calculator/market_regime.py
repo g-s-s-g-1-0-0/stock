@@ -13,6 +13,7 @@ QQQ_NORMAL_PEAK_CONFIRM_DIST = 14.0
 QQQ_RECOVERY_PEAK_DIRECT_DIST = 22.0
 QQQ_RECOVERY_PEAK_CONFIRM_DIST = 18.0
 QQQ_PEAK_RSI_THRESHOLD = 65.0
+QQQ_PEAK_WARN_MARGIN = 3.0
 
 
 def _num(value: Any) -> float | None:
@@ -123,6 +124,16 @@ def build_qqq_market_state(
             )
         )
 
+    # 직접 청산선보다 한 단계 앞선 "조기 경고선". 별도 동작은 없고 경고 메일만
+    # 보낸다. 이미 청산 조건이 켜진 경우(peak_triggered)에는 경고를 생략해
+    # 청산 알림과 중복으로 나가지 않게 한다.
+    warn_dist = peak_dist["direct"] - QQQ_PEAK_WARN_MARGIN
+    warn_triggered = (
+        current_dist is not None
+        and current_dist >= warn_dist - 1e-9
+        and not peak_triggered
+    )
+
     return {
         "currentPrice": current_price,
         "ma200": ma200,
@@ -133,6 +144,7 @@ def build_qqq_market_state(
         "buyBlockMax": qqq_buy_block_max(is_recovery),
         "peakDirectDist": peak_dist["direct"],
         "peakConfirmDist": peak_dist["confirm"],
+        "peakWarnDist": warn_dist,
         "peakResetDist": peak_dist["direct"] if is_recovery else peak_dist["confirm"],
         "weeklyRsi": _num(weekly_rsi),
         "dailyRsi": _num(qqq_row.get("rsi")),
@@ -143,4 +155,5 @@ def build_qqq_market_state(
         "rsiHotAndFalling": rsi_hot,
         "macdHistSlowing": macd_slowing,
         "peakTriggered": peak_triggered,
+        "warnTriggered": warn_triggered,
     }
