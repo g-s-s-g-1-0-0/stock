@@ -385,6 +385,23 @@ def strategy_target_criterion_label(strategy_type: str) -> str:
     return f"{base} 기준 +{target_display}%"
 
 
+def strategy_stop_criterion_label(strategy_type: str) -> str:
+    circuit_pct = float(
+        STRATEGY_RULES.get(f"CIRCUIT_PCT_{strategy_type}", STRATEGY_RULES["CIRCUIT_PCT_F"])
+    )
+    base = STRATEGY_LABELS.get(strategy_type, STRATEGY_LABELS["F"])
+    stop_display = int(round(circuit_pct * 100))
+    return f"{base} 기준 -{stop_display}%"
+
+
+def strategy_max_hold_days(strategy_type: str) -> int:
+    if strategy_type == "D":
+        return int(STRATEGY_RULES["MAX_HOLD_DAYS_D"])
+    if strategy_type == "G":
+        return int(STRATEGY_RULES["MAX_HOLD_DAYS_G"])
+    return int(STRATEGY_RULES["MAX_HOLD_DAYS"])
+
+
 def enrich_profit_exit_reason(
     reason: str,
     strategy_type: str,
@@ -393,12 +410,13 @@ def enrich_profit_exit_reason(
     return_pct_is_percent: bool = True,
 ) -> str:
     text = str(reason or "").strip()
-    if not text or "기준 +" in text:
+    if not text or "기준 +" in text or "기준 -" in text:
         return text or "시스템 매도"
     if strategy_type not in STRATEGY_LABELS:
         return text
 
     strat_label = strategy_target_criterion_label(strategy_type)
+    stop_label = strategy_stop_criterion_label(strategy_type)
     return_ratio = (
         return_pct / 100
         if return_pct is not None and return_pct_is_percent
@@ -416,6 +434,14 @@ def enrich_profit_exit_reason(
         text.startswith("목표 수익 도달 후") and "대기 만료 매도" in text and "기준 +" not in text
     ):
         return f"목표 수익 도달 후 {wait_days}거래일 대기 만료 매도 {unsigned} [{strat_label}]".strip()
+    if text == "손절 기준 도달":
+        return f"손절 기준 도달 {signed} [{stop_label}]".strip()
+    if text == "60거래일 경과 + 수익 중 자동 매도":
+        max_days = strategy_max_hold_days(strategy_type)
+        return f"60거래일 경과 + 수익 중 자동 매도 {signed} [최대 보유 {max_days}거래일]".strip()
+    if text == "최대 보유 기간 초과 자동 매도":
+        max_days = strategy_max_hold_days(strategy_type)
+        return f"최대 보유 기간 초과 자동 매도 {signed} [최대 보유 {max_days}거래일]".strip()
     return text
 
 
@@ -435,14 +461,11 @@ def evaluate_exit_condition(
     s = STRATEGY_RULES
     target_pct = float(s.get(f"TARGET_PCT_{strategy_type}", s["TARGET_PCT_F"]))
     circuit_pct = float(s.get(f"CIRCUIT_PCT_{strategy_type}", s["CIRCUIT_PCT_F"]))
-    max_hold_days = int(
-        s["MAX_HOLD_DAYS_D"] if strategy_type == "D"
-        else s["MAX_HOLD_DAYS_G"] if strategy_type == "G"
-        else s["MAX_HOLD_DAYS"]
-    )
+    max_hold_days = strategy_max_hold_days(strategy_type)
     return_pct = (ind.current_price - ind.entry_price) / ind.entry_price
     is_ef_strategy = strategy_type in {"E", "F"}
     strat_label = strategy_target_criterion_label(strategy_type)
+    stop_label = strategy_stop_criterion_label(strategy_type)
     return_signed = format_return_pct(return_pct)
     return_unsigned = format_return_pct(return_pct, signed=False)
     wait_days = int(s["UPPER_EXIT_MAX_WAIT_DAYS"])
@@ -465,7 +488,7 @@ def evaluate_exit_condition(
         }
 
     if return_pct <= -circuit_pct:
-        return {"shouldExit": True, "reason": "손절 기준 도달"}
+        return {"shouldExit": True, "reason": f"손절 기준 도달 {return_signed} [{stop_label}]"}
     if trading_days >= int(s["STALLED_EXIT_DAYS"]) and return_pct < float(s["STALLED_EXIT_MIN_RETURN"]):
         return {
             "shouldExit": True,
@@ -475,9 +498,15 @@ def evaluate_exit_condition(
             ),
         }
     if strategy_type != "G" and trading_days >= int(s["HALF_EXIT_DAYS"]) and return_pct > 0:
-        return {"shouldExit": True, "reason": "60거래일 경과 + 수익 중 자동 매도"}
+        return {
+            "shouldExit": True,
+            "reason": f"60거래일 경과 + 수익 중 자동 매도 {return_signed} [최대 보유 {max_hold_days}거래일]",
+        }
     if trading_days >= max_hold_days:
-        return {"shouldExit": True, "reason": "최대 보유 기간 초과 자동 매도"}
+        return {
+            "shouldExit": True,
+            "reason": f"최대 보유 기간 초과 자동 매도 {return_signed} [최대 보유 {max_hold_days}거래일]",
+        }
     return {"shouldExit": False, "reason": None}
 
 

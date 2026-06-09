@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from calculator.rules import IndicatorRow, evaluate_buy_condition, evaluate_exit_condition
+from calculator.rules import IndicatorRow, enrich_profit_exit_reason, evaluate_buy_condition, evaluate_exit_condition
 
 
 def test_strategy_a_matches_sheet_conditions():
@@ -130,6 +130,7 @@ def test_strategy_g_uses_twelve_percent_target_and_ten_percent_stop():
     assert "급락 후 회복장 20일선 눌림 기준 +12%" in target["reason"]
     assert stop["shouldExit"] is True
     assert "손절" in stop["reason"]
+    assert "급락 후 회복장 20일선 눌림 기준 -10%" in stop["reason"]
 
 
 def test_strategy_d_target_exit_reason_includes_return_and_strategy_target():
@@ -180,6 +181,12 @@ def test_exit_condition_for_ef_waits_for_macd_turn():
     assert "MACD" in result["reason"]
 
 
+def test_enrich_exit_reason_adds_strategy_stop_threshold_to_legacy_reason():
+    result = enrich_profit_exit_reason("손절 기준 도달", "G", -11.09)
+
+    assert result == "손절 기준 도달 -11.09% [급락 후 회복장 20일선 눌림 기준 -10%]"
+
+
 if __name__ == "__main__":
     test_strategy_a_matches_sheet_conditions()
     test_strategy_b_uses_vix_and_oversold_below_ma200()
@@ -192,4 +199,5 @@ if __name__ == "__main__":
     test_all_strategies_exit_when_fifteen_day_rebound_stalls()
     test_stalled_rebound_exit_waits_until_day_fifteen_and_below_eight_percent()
     test_exit_condition_for_ef_waits_for_macd_turn()
+    test_enrich_exit_reason_adds_strategy_stop_threshold_to_legacy_reason()
     print("strategy parity smoke tests passed")
