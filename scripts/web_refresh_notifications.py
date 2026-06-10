@@ -328,12 +328,19 @@ def opinion_changes(
             "reason": concise_opinion_reason(old_opinion, new_opinion, previous_stock, current_stock, technical_row),
         }
         if new_opinion == "매수":
+            added_trade = added_for_ticker[0] if added_for_ticker else None
             if any(is_open_trade(row) for row in previous_trade_rows):
-                added_trade = added_for_ticker[0] if added_for_ticker else None
+                if not added_trade:
+                    continue
                 reference_trade = added_trade or next((row for row in previous_trade_rows if is_open_trade(row)), None)
                 change["fromLabel"] = "매수(보유중)"
                 change["toLabel"] = "추가 매수"
                 change["reason"] = buy_reason_for_trade(reference_trade or {}, current_stock, technical_row)
+            change["recommendedSellPrice"] = recommended_sell_price_for_trade(
+                added_trade or {},
+                current_stock,
+                technical_row,
+            )
             change["entryNote"] = buy_entry_note(
                 old_opinion=old_opinion,
                 previous_trade_rows=previous_trade_rows,
@@ -371,6 +378,7 @@ def opinion_changes(
             "industry": current_stock.get("industry") or "-",
             "strategies": current_stock.get("strategies") or [],
             "reason": buy_reason_for_trade(trade, current_stock, technical_row),
+            "recommendedSellPrice": recommended_sell_price_for_trade(trade, current_stock, technical_row),
             "entryNote": buy_entry_note(
                 old_opinion="매수" if is_additional_buy else "관망",
                 previous_trade_rows=previous_trade_rows_for_ticker,
@@ -868,6 +876,39 @@ def parse_metric_number(value: Any) -> float | None:
     return parsed if parsed == parsed else None
 
 
+def format_target_price(reference: Any, price: float) -> str:
+    text = str(reference or "").strip()
+    if "₩" in text:
+        return f"₩{round(price):,}"
+    return f"${price:,.2f}"
+
+
+def strategy_target_pct(code: str) -> float | None:
+    value = STRATEGY_RULES.get(f"TARGET_PCT_{code}")
+    return float(value) if isinstance(value, (int, float)) else None
+
+
+def recommended_sell_price_for_trade(
+    trade: dict[str, Any],
+    stock: dict[str, Any],
+    technical_row: dict[str, Any],
+) -> str:
+    code = strategy_code(trade.get("strategy"))
+    if not code:
+        codes = buy_strategy_codes(stock, technical_row)
+        code = codes[0] if codes else ""
+    target_pct = strategy_target_pct(code)
+    entry_price_text = first_text(
+        trade.get("buyPrice"),
+        stock.get("currentPrice"),
+        technical_row.get("현재가"),
+    )
+    entry_price = parse_metric_number(entry_price_text)
+    if target_pct is None or entry_price is None:
+        return "-"
+    return format_target_price(entry_price_text, entry_price * (1 + target_pct))
+
+
 def metric_number(row: dict[str, Any], *keys: str) -> float | None:
     for key in keys:
         parsed = parse_metric_number(row.get(key))
@@ -1302,6 +1343,7 @@ def opinion_email_body(
     watch_holding_opinions: list[str] | None = None,
     sell_opinions: list[str] | None = None,
     include_sell_summary: bool = True,
+    include_recommended_sell_price: bool = True,
 ) -> str:
     changed_html = []
     sell_opinion_labels = list(sell_opinions or [])
@@ -1327,6 +1369,12 @@ def opinion_email_body(
             entry_note_html = f'<br><span style="font-size:12px;color:{note_color};">{change_reason_html(entry_note)}</span>'
         industry = str(change.get("industry") or "").strip()
         trend_badge = str(change.get("trendBadge") or "").strip()
+        recommended_sell_price = str(change.get("recommendedSellPrice") or "").strip()
+        recommended_sell_html = (
+            f'<br><span style="font-size:13px;">권장 매도가: <strong>{html.escape(recommended_sell_price)}</strong></span>'
+            if include_recommended_sell_price and is_buy and recommended_sell_price and recommended_sell_price != "-"
+            else ""
+        )
         changed_html.append(
             f"""
             <div style="margin-bottom:8px;padding:8px;background:#f9f9f9;border-left:3px solid {border};">
@@ -1335,6 +1383,7 @@ def opinion_email_body(
               → <strong style="color:{color};">{html.escape(to_label)}</strong><br>
               <span style="font-size:13px;">이유: {change_reason_html(change.get('reason'))}</span><br>
               <span style="font-size:13px;">현재가: <strong>{html.escape(str(change.get('price') or '-'))}</strong></span>
+              {recommended_sell_html}
               {entry_note_html}
               {f'<br><span style="font-size:12px;color:#666;">산업: {html.escape(industry)}</span>' if industry and industry != '-' else ''}
               {f'<br><span style="font-size:12px;color:#e67e22;">{html.escape(trend_badge)}</span>' if trend_badge else ''}
@@ -2267,6 +2316,7 @@ def send_opinion_notifications(
             watch_holding_opinions,
             None,
             include_sell_summary=False,
+            include_recommended_sell_price=False,
         )
         for recipient in long_term_recipients:
             send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))

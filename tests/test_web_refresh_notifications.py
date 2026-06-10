@@ -137,6 +137,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 "to": "매수",
                 "price": "₩92,300",
                 "reason": "F. 200일선 상방 & BB 극단 저점",
+                "recommendedSellPrice": "₩110,760",
                 "entryNote": "재진입 1회차 — 최초 진입가 ₩95,400",
             }
         ])
@@ -145,7 +146,26 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("추가 매수", body)
         self.assertNotIn("'매수'</span>", body)
         self.assertNotIn(">매수</strong><br>", body)
+        self.assertIn("권장 매도가", body)
+        self.assertIn("₩110,760", body)
         self.assertIn("매크로 참고", body)
+
+    def test_opinion_email_body_can_hide_recommended_sell_price(self) -> None:
+        body = self.notifications.opinion_email_body([
+            {
+                "ticker": "375500",
+                "name": "DL이앤씨",
+                "from": "관망",
+                "to": "매수",
+                "price": "₩92,300",
+                "reason": "F. 200일선 상방 & BB 극단 저점",
+                "recommendedSellPrice": "₩110,760",
+                "entryNote": "신규 진입",
+            }
+        ], include_recommended_sell_price=False)
+
+        self.assertNotIn("권장 매도가", body)
+        self.assertNotIn("₩110,760", body)
 
     def test_opinion_email_body_includes_trade_exit_in_sell_summary(self) -> None:
         body = self.notifications.opinion_email_body([
@@ -204,8 +224,9 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("매수(보유중)", changes[0]["fromLabel"])
         self.assertEqual("추가 매수", changes[0]["toLabel"])
         self.assertEqual("재진입 1회차 — 최초 진입가 $100.00", changes[0]["entryNote"])
+        self.assertEqual("$100.80", changes[0]["recommendedSellPrice"])
 
-    def test_opinion_changes_labels_watch_to_buy_with_open_trade_as_additional_buy(self) -> None:
+    def test_opinion_changes_skips_held_buy_signal_without_added_trade(self) -> None:
         with TemporaryDirectory() as temp_dir:
             previous = Path(temp_dir) / "previous.json"
             current = Path(temp_dir) / "current.json"
@@ -237,13 +258,8 @@ class WebRefreshNotificationsTest(unittest.TestCase):
             current_trades.write_text(json.dumps({"rows": [open_trade]}), encoding="utf-8")
 
             changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
-            body = self.notifications.opinion_email_body(changes)
 
-        self.assertEqual(1, len(changes))
-        self.assertEqual("매수(보유중)", changes[0]["fromLabel"])
-        self.assertEqual("추가 매수", changes[0]["toLabel"])
-        self.assertEqual("재진입 1회차 — 최초 진입가 ₩410,000", changes[0]["entryNote"])
-        self.assertNotIn("보유 중 매수 복원", body)
+        self.assertEqual([], changes)
 
     def test_send_notification_uses_slack_when_selected_and_connected(self) -> None:
         sent_slack: list[tuple[str, str, str]] = []

@@ -611,6 +611,35 @@ def suppress_offlist_buy_signal(stock: dict[str, Any], technical_row: dict[str, 
     return changed
 
 
+def block_held_public_buy_signal(stock: dict[str, Any], technical_row: dict[str, Any]) -> bool:
+    """보유 종목은 추가매수 조건을 통과할 때만 공개 매수 신호로 승격한다."""
+    reason = "보유 중 추가매수 조건 미충족 — 매수 신호 미발생"
+    changed = False
+    updates = {
+        "opinion": "관망",
+        "opinionReason": reason,
+        "strategies": [],
+    }
+    for key, value in updates.items():
+        if stock.get(key) != value:
+            stock[key] = value
+            changed = True
+
+    if isinstance(technical_row, dict):
+        technical_updates = {
+            "opinion": "관망",
+            "opinionReason": reason,
+            "entryStrategy": "-",
+            "entrySignalCodes": "",
+            "entrySignals": "",
+        }
+        for key, value in technical_updates.items():
+            if technical_row.get(key) != value:
+                technical_row[key] = value
+                changed = True
+    return changed
+
+
 def mark_exit_opinion(stock: dict[str, Any], technical_row: dict[str, Any], reason: str) -> bool:
     changed = False
     updates = {
@@ -741,9 +770,6 @@ def update_trade_logs(
             if current_opinion == "매수":
                 signal_state_changed = suppress_offlist_buy_signal(stock, row) or signal_state_changed
             continue
-        previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "").strip()
-        if current_opinion != "매수" or nasdaq_peak_alert:
-            continue
         current_price = parse_price(stock.get("currentPrice") or tech_value(row, "현재가"))
         open_for_ticker = current_open_by_ticker.get(ticker, [])
         restore_candidates = [
@@ -751,11 +777,15 @@ def update_trade_logs(
             for trade in open_for_ticker
             if hold_restore_allowed(trade, current_price, today_date)
         ]
-        ticker_appended = False
-        if open_for_ticker and not restore_candidates:
-            # 이미 보유 중이고 추가매수(재진입) 조건은 미충족이지만, 매수 신호 자체는 유지된다.
-            # 이 경우 의견은 '매수' 그대로 두고 추가 trade만 만들지 않는다.
+        # 보유 중에는 원시 기술 조건이 다시 맞더라도, 가격/대기일 등 추가매수 조건을 통과해야만
+        # 공개 매수 신호로 승격한다. 조건 미충족이면 사용자에게 노출되는 의견은 관망을 유지한다.
+        if open_for_ticker and current_opinion == "매수" and not restore_candidates:
+            signal_state_changed = block_held_public_buy_signal(stock, row) or signal_state_changed
             continue
+        previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "").strip()
+        if current_opinion != "매수" or nasdaq_peak_alert:
+            continue
+        ticker_appended = False
         for code in entry_signal_codes(row):
             slot_key = (ticker, code)
             open_count = current_open_counts.get(slot_key, 0)
@@ -801,8 +831,8 @@ def update_trade_logs(
             current_open_by_ticker.setdefault(ticker, []).append(new_trade)
             appended += 1
             ticker_appended = True
-        # 보유 중인데 이번 회차에 추가 trade를 만들지 못했더라도(추가매수 미충족) 매수 신호는 유지된다.
-        # 의견을 관망으로 깎지 않고 '매수'를 그대로 둔다.
+        if open_for_ticker and not ticker_appended:
+            signal_state_changed = block_held_public_buy_signal(stock, row) or signal_state_changed
 
     deduped = list({trade_key(trade): trade for trade in trades}.values())
     refreshed_at = publish_iso()

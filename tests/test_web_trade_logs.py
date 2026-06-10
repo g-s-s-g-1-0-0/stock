@@ -510,6 +510,46 @@ def test_offlist_held_trade_keeps_tracking_but_blocks_additional_buy(monkeypatch
     assert stock["opinion"] == "관망"
 
 
+def test_held_trade_buy_signal_without_add_slot_gate_is_watch(monkeypatch, tmp_path):
+    # 관심종목에 남아 있어도 보유 중 추가매수 조건(-10% 등)을 못 채우면 공개 의견은 매수가 아니다.
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(logs, "load_watchlist_tickers", lambda stocks: ["INTC"])
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "slotId": "INTC_E_20260606_1",
+                "ticker": "INTC",
+                "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+                "buyDate": "2026.06.06",
+                "buyPrice": "$102.90",
+                "currentPrice": "$102.90",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+                "restoreWatchDate": "2026.06.06",
+            }
+        ]
+    }), encoding="utf-8")
+
+    stock = {"ticker": "INTC", "name": "Intel", "market": "US", "currentPrice": "$109.82", "opinion": "매수", "strategies": ["F. 200일선 상방 & BB 극단 저점"]}
+    technical = {"INTC": {"opinion": "매수", "entrySignalCodes": "F", "entryStrategy": "F. 200일선 상방 & BB 극단 저점", "현재가": "$109.82"}}
+
+    changed = logs.update_trade_logs([stock], {"INTC": {"opinion": "관망"}}, technical, {"peakTriggered": False})
+
+    updated = logs.load_json(cache_path, {})
+    intc_rows = [row for row in updated["rows"] if row["ticker"] == "INTC"]
+    assert len(intc_rows) == 1
+    assert updated["meta"]["appendedOpenTrades"] == 0
+    assert changed is True
+    assert stock["opinion"] == "관망"
+    assert stock["strategies"] == []
+    assert technical["INTC"]["opinion"] == "관망"
+    assert technical["INTC"]["entrySignalCodes"] == ""
+
+
 def test_offlist_held_trade_still_liquidates_on_exit(monkeypatch, tmp_path):
     # 관심종목 밖 보유 종목도 청산 조건이 충족되면 정상적으로 매도 처리된다(나스닥 고점 강제 청산).
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)

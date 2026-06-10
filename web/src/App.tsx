@@ -2001,6 +2001,27 @@ function formatTradePrice(trade: TradeLog, value: number | null, fallback: strin
     : `$${value.toFixed(2)}`
 }
 
+function strategyTargetReturnPct(strategy: string) {
+  const code = strategyCode(strategy)
+  if (['A', 'B', 'C', 'E', 'F'].includes(code)) return 0.2
+  if (['D', 'G'].includes(code)) return 0.12
+  return null
+}
+
+function recommendedSellPriceText(trade: TradeLog) {
+  const buyPrice = parsePriceValue(trade.buyPrice)
+  const targetReturnPct = strategyTargetReturnPct(trade.strategy)
+  if (buyPrice === null || targetReturnPct === null) return '-'
+  return formatTradePrice(trade, buyPrice * (1 + targetReturnPct), '-')
+}
+
+function recommendedSellPriceNote(strategy: string) {
+  const code = strategyCode(strategy)
+  if (['E', 'F'].includes(code)) return 'E/F는 목표가 도달 후 MACD 둔화 확인 또는 5거래일 대기 만료 시 청산합니다.'
+  if (code) return `${code} 전략 목표 익절가입니다.`
+  return undefined
+}
+
 function marketFlag(market: Market) {
   return market === 'KR' ? '🇰🇷' : '🇺🇸'
 }
@@ -7979,6 +8000,7 @@ function App() {
                   <th>티커</th>
                   <th>매수 신호일</th>
                   <th>매수 신호 가격</th>
+                  {!isLongTermInvestor && <th>권장 매도가</th>}
                   {!isLongTermInvestor && <th>매도 신호일</th>}
                   {!isLongTermInvestor && <th>매도 신호 가격</th>}
                   <th>전략</th>
@@ -8015,6 +8037,7 @@ function App() {
                     <td className="number-cell">{displayCurrentPriceText(exampleStock)}</td>
                     {!isLongTermInvestor && <td className="dash-cell">-</td>}
                     {!isLongTermInvestor && <td className="dash-cell">-</td>}
+                    {!isLongTermInvestor && <td className="dash-cell">-</td>}
                     <td><span className="example-note">매수 시그널 충족 시 기록됩니다.</span></td>
                     <td className="dash-cell">미충족</td>
                     <td className="dash-cell">-</td>
@@ -8027,6 +8050,7 @@ function App() {
                 {displayedTradeRows.map(({ trade, rowNumber }) => {
                   const profileReturnPct = displayedTradeReturnPct(trade, apiStocks)
                   const returnPriceText = tradeReturnPriceText(trade, apiStocks)
+                  const recommendedSellPrice = recommendedSellPriceText(trade)
                   const investedAmount = tradeInvestmentAmount(trade, portfolioSummary.amountByTradeKey)
                   const profitAmount = tradeProfitAmount(trade, apiStocks, portfolioSummary.amountByTradeKey)
                   return (
@@ -8043,6 +8067,14 @@ function App() {
                       <td className="ticker-cell">{trade.ticker}</td>
                       <td>{trade.buyDate}</td>
                       <td className="number-cell">{trade.buyPrice}</td>
+                      {!isLongTermInvestor && (
+                        <td
+                          className={recommendedSellPrice === '-' ? 'dash-cell' : 'number-cell'}
+                          title={recommendedSellPriceNote(trade.strategy)}
+                        >
+                          {recommendedSellPrice}
+                        </td>
+                      )}
                       {!isLongTermInvestor && <td>{trade.sellDate}</td>}
                       {!isLongTermInvestor && <td className={trade.sellPrice === '-' ? 'dash-cell' : 'number-cell'}>{trade.sellPrice}</td>}
                       <td className="strategy-data-cell">
@@ -8079,7 +8111,7 @@ function App() {
                 })}
                 {Array.from({ length: tradeBlankRows }).map((_, index) => (
                   <tr className="blank-row" key={`trade-blank-${index}`}>
-                    {Array.from({ length: isLongTermInvestor ? 11 : 14 }).map((_, cellIndex) => (
+                    {Array.from({ length: isLongTermInvestor ? 11 : 15 }).map((_, cellIndex) => (
                       <td className={cellIndex === 0 ? 'numbering-cell' : undefined} key={`trade-blank-${index}-${cellIndex}`}>{cellIndex === 0 ? '\u00a0' : ''}</td>
                     ))}
                   </tr>
@@ -8383,6 +8415,7 @@ function App() {
                     <th>티커</th>
                     <th>매수 신호일</th>
                     <th>매수 신호 가격</th>
+                    {!isLongTermInvestor && <th>권장 매도가</th>}
                     <th>매수 전략</th>
                     <th>현재가(수익률)</th>
                     <th>보유 기간</th>
@@ -8404,6 +8437,7 @@ function App() {
                       <td className="ticker-cell">{exampleStock.ticker}</td>
                       <td>신호 발생 시</td>
                       <td className="number-cell">{displayCurrentPriceText(exampleStock)}</td>
+                      {!isLongTermInvestor && <td className="dash-cell">-</td>}
                       <td className="holding-example-note-cell"><span className="example-note">보유 전환 시 표시됩니다.</span></td>
                       <td className="dash-cell">-</td>
                       <td className="dash-cell">-</td>
@@ -8412,6 +8446,7 @@ function App() {
                   {scopedOpenTrades.map((trade, index) => {
                     const openReturnPct = currentReturnPct(trade, apiStocks)
                     const currentPriceText = tradeCurrentPriceText(trade, apiStocks)
+                    const recommendedSellPrice = recommendedSellPriceText(trade)
 
                     return (
                       <tr key={`open-${tradeKey(trade)}`}>
@@ -8438,6 +8473,14 @@ function App() {
                         <td className="ticker-cell">{trade.ticker}</td>
                         <td>{trade.buyDate}</td>
                         <td className="number-cell">{trade.buyPrice}</td>
+                        {!isLongTermInvestor && (
+                          <td
+                            className={recommendedSellPrice === '-' ? 'dash-cell' : 'number-cell'}
+                            title={recommendedSellPriceNote(trade.strategy)}
+                          >
+                            {recommendedSellPrice}
+                          </td>
+                        )}
                         <td className="strategy-data-cell">
                           <StrategyTag
                             onTooltipClose={() => setActiveTooltip(null)}
@@ -8466,6 +8509,7 @@ function App() {
                       <td></td>
                       <td></td>
                       <td></td>
+                      {!isLongTermInvestor && <td></td>}
                       <td></td>
                     </tr>
                   ))}

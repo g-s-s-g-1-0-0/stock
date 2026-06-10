@@ -1130,7 +1130,7 @@
 }
 
 .trading-log-table {
-  min-width: 1320px;
+  min-width: 1420px;
 }
 
 .long-term-trading-log-table {
@@ -1142,7 +1142,7 @@
 }
 
 .holding-table {
-  min-width: 980px;
+  min-width: 1080px;
 }
 
 .long-term-holding-table {
@@ -5133,7 +5133,7 @@
   }
 
   .trading-log-table {
-    min-width: 920px;
+    min-width: 1010px;
   }
 
   .long-term-trading-log-table {
@@ -5142,6 +5142,10 @@
 
   .watchlist-table,
   .holding-table {
+    min-width: 870px;
+  }
+
+  .long-term-holding-table {
     min-width: 780px;
   }
 
