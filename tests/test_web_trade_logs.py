@@ -510,8 +510,9 @@ def test_offlist_held_trade_keeps_tracking_but_blocks_additional_buy(monkeypatch
     assert stock["opinion"] == "관망"
 
 
-def test_held_trade_buy_signal_without_add_slot_gate_is_watch(monkeypatch, tmp_path):
-    # 관심종목에 남아 있어도 보유 중 추가매수 조건(-10% 등)을 못 채우면 공개 의견은 매수가 아니다.
+def test_held_trade_buy_signal_without_add_slot_keeps_buy_opinion(monkeypatch, tmp_path):
+    # 보유 중 '매수' 종목은 추가매수 조건(-10%/대기일)을 못 채워도 의견은 '매수'를 유지한다.
+    # 추가매수 '신호'(추가 슬롯/진입 코드)만 보류될 뿐, 의견을 관망으로 강제로 내리지 않는다(GAS와 동일).
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     monkeypatch.setattr(logs, "load_watchlist_tickers", lambda stocks: ["INTC"])
     public_path.parent.mkdir(parents=True)
@@ -542,11 +543,13 @@ def test_held_trade_buy_signal_without_add_slot_gate_is_watch(monkeypatch, tmp_p
     updated = logs.load_json(cache_path, {})
     intc_rows = [row for row in updated["rows"] if row["ticker"] == "INTC"]
     assert len(intc_rows) == 1
+    # 추가 슬롯은 생성되지 않는다(추가매수 조건 미충족).
     assert updated["meta"]["appendedOpenTrades"] == 0
     assert changed is True
-    assert stock["opinion"] == "관망"
+    # 의견은 '매수' 유지, 추가매수 신호(코드/전략 리스트)만 비운다.
+    assert stock["opinion"] == "매수"
     assert stock["strategies"] == []
-    assert technical["INTC"]["opinion"] == "관망"
+    assert technical["INTC"]["opinion"] == "매수"
     assert technical["INTC"]["entrySignalCodes"] == ""
 
 

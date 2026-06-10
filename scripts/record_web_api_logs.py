@@ -612,24 +612,24 @@ def suppress_offlist_buy_signal(stock: dict[str, Any], technical_row: dict[str, 
 
 
 def block_held_public_buy_signal(stock: dict[str, Any], technical_row: dict[str, Any]) -> bool:
-    """보유 종목은 추가매수 조건을 통과할 때만 공개 매수 신호로 승격한다."""
-    reason = "보유 중 추가매수 조건 미충족 — 매수 신호 미발생"
+    """보유 종목의 추가매수 '신호' 노출만 차단한다 — 의견은 hold 조건 그대로 유지.
+
+    추가매수 조건(눌림/대기일 등)을 통과하지 못하면 추가 슬롯을 만들거나 "더 사라"는
+    매수 신호(진입 코드)를 노출하지 않는다. 다만 보유 포지션 자체의 투자의견은
+    hold 조건이 유지되는 한 '매수'로 둔다(GAS와 동일). 추가매수 미충족을 이유로
+    의견을 '관망'으로 강제로 내리지 않는다.
+    """
+    reason = "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류"
     changed = False
-    updates = {
-        "opinion": "관망",
-        "opinionReason": reason,
-        "strategies": [],
-    }
-    for key, value in updates.items():
-        if stock.get(key) != value:
-            stock[key] = value
-            changed = True
+    if stock.get("strategies") != []:
+        stock["strategies"] = []
+        changed = True
+    if stock.get("opinion") == "매수" and stock.get("opinionReason") != reason:
+        stock["opinionReason"] = reason
+        changed = True
 
     if isinstance(technical_row, dict):
         technical_updates = {
-            "opinion": "관망",
-            "opinionReason": reason,
-            "entryStrategy": "-",
             "entrySignalCodes": "",
             "entrySignals": "",
         }
@@ -637,6 +637,9 @@ def block_held_public_buy_signal(stock: dict[str, Any], technical_row: dict[str,
             if technical_row.get(key) != value:
                 technical_row[key] = value
                 changed = True
+        if technical_row.get("opinion") == "매수" and technical_row.get("opinionReason") != reason:
+            technical_row["opinionReason"] = reason
+            changed = True
     return changed
 
 

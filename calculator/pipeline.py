@@ -651,6 +651,34 @@ def valuation_from_price_range(current_price: str, fair_price: str) -> str:
     return "보통"
 
 
+def parse_holding_strategy_code(value: Any) -> str | None:
+    match = re.match(r"\s*([A-G])\b", str(value or "").strip().upper())
+    return match.group(1) if match else None
+
+
+def open_holding_strategies() -> dict[str, str]:
+    """현재 '보유 중'인 종목의 PRIMARY 전략 코드 맵 (ticker → A-G).
+
+    매매로그에 같은 종목의 보유 슬롯이 여러 개면 가장 먼저 보이는(PRIMARY) 전략을
+    사용한다. GAS의 saved.strategyType(ENTRY_ 키)에 대응한다.
+    """
+
+    rows = read_cache("trade-logs").get("rows", [])
+    holdings: dict[str, str] = {}
+    if not isinstance(rows, list):
+        return holdings
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("status") or "").strip() != "보유 중":
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        code = parse_holding_strategy_code(row.get("strategy"))
+        if ticker and code and ticker not in holdings:
+            holdings[ticker] = code
+    return holdings
+
+
 def latest_technical_row(
     stock: dict[str, str],
     earnings_date: str = "-",
@@ -658,6 +686,7 @@ def latest_technical_row(
     qqq_market_state: dict[str, Any] | None = None,
     vix: float | None = None,
     market_event: str = "당분간 없음",
+    holding_strategy_type: str | None = None,
 ) -> dict[str, str] | None:
     row = calc_technical_row(stock["ticker"])
     price = float(row["close"])
@@ -698,20 +727,40 @@ def latest_technical_row(
     ixic_dist = qqq_market_state.get("premiumPercent") if qqq_market_state else None
     nasdaq_buy_block_max = qqq_market_state.get("buyBlockMax") if qqq_market_state else None
     ixic_filter_active = compute_nasdaq_filter_active(ixic_dist)
+    is_holding = holding_strategy_type is not None
     buy = evaluate_buy_condition(
         ind,
         vix=vix,
         ixic_dist=ixic_dist,
         ixic_filter_active=ixic_filter_active,
+        is_holding=is_holding,
+        holding_strategy_type=holding_strategy_type,
         nasdaq_buy_block_max=nasdaq_buy_block_max,
         is_recovery_market=bool(qqq_market_state.get("isRecoveryMarket")) if qqq_market_state else False,
         recovery_momentum_exception=bool(STRATEGY_RULES.get("RECOVERY_MOMENTUM_EXCEPTION")),
     )
     event_watch_active = market_event != "당분간 없음"
-    opinion = "관망" if event_watch_active else "매수" if buy["entryTriggered"] else "관망"
-    opinion_reason = f"이벤트 기간 관망 ({market_event})" if event_watch_active else "-"
-    strategy = buy["strategyName"] if buy["entryTriggered"] else "-"
-    entry_signal_codes = [buy["strategyType"]] if buy["strategyType"] else []
+    # 보유 종목은 보유용(hold) 조건(buy["triggered"])이 유지되는 한 '매수'를 유지한다.
+    # 신규 진입 신호 재발화 여부가 아니라 hold 조건 이탈 시에만 '관망'으로 내린다(GAS와 동일).
+    # 미보유 종목은 기존대로 신규 진입 신호(entryTriggered)로 판단한다.
+    if event_watch_active:
+        opinion = "관망"
+        opinion_reason = f"이벤트 기간 관망 ({market_event})"
+    elif is_holding:
+        opinion = "매수" if buy["triggered"] else "관망"
+        opinion_reason = "-"
+    else:
+        opinion = "매수" if buy["entryTriggered"] else "관망"
+        opinion_reason = "-"
+    if buy["entryTriggered"]:
+        strategy = buy["strategyName"]
+        entry_signal_codes = [buy["strategyType"]] if buy["strategyType"] else []
+    elif is_holding and opinion == "매수":
+        strategy = strategy_display_name(holding_strategy_type)
+        entry_signal_codes = [holding_strategy_type]
+    else:
+        strategy = "-"
+        entry_signal_codes = []
     buy_block_label = f"나스닥 상단 차단 아님(≤{float(nasdaq_buy_block_max):.0f}%)" if nasdaq_buy_block_max is not None else "나스닥 상단 차단 아님"
     acd_filter_label = "나스닥 강세 필터(회복장 모멘텀 예외)" if buy.get("recoveryException") else "나스닥 강세 필터"
     strategy_labels = {
@@ -853,6 +902,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
         market_snapshot = [["시장 주요 이벤트", "당분간 없음"]]
         errors.append({"ticker": "CNN_FEAR_GREED", "error": str(exc)})
     market_event = market_snapshot[0][1] if market_snapshot and len(market_snapshot[0]) > 1 else "당분간 없음"
+    holdings = open_holding_strategies()
 
     for stock in source_universe:
         try:
@@ -864,6 +914,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 qqq_market_state=qqq_market_state,
                 vix=vix_today,
                 market_event=market_event,
+                holding_strategy_type=holdings.get(str(stock["ticker"]).strip().upper()),
             )
             if row:
                 existing_row = existing_rows.get(stock["ticker"], {})
