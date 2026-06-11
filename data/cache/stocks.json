@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-06-11T04:55:37+00:00",
-    "lastSuccessfulRun": "2026-06-11T04:55:37+00:00",
+    "updatedAt": "2026-06-11T06:55:36+00:00",
+    "lastSuccessfulRun": "2026-06-11T06:55:36+00:00",
     "failedReason": null
   },
   "rows": [
@@ -13,7 +13,7 @@
       "market": "KR",
       "fairPrice": "₩84,740 ~ ₩127,110",
       "fairPriceReason": null,
-      "currentPrice": "₩1,615,000",
+      "currentPrice": "₩1,621,000",
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (PPI 발표)",
@@ -21,7 +21,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "동박적층판, 유압기기, 지게차, IT 시스템, 연료전지",
-      "updatedAt": "2026-06-11T04:55:24+00:00"
+      "updatedAt": "2026-06-11T06:55:22+00:00"
     },
     {
       "ticker": "000660",
@@ -29,7 +29,7 @@
       "market": "KR",
       "fairPrice": "₩5,194,250 ~ ₩7,271,950",
       "fairPriceReason": null,
-      "currentPrice": "₩2,109,000",
+      "currentPrice": "₩2,101,000",
       "valuation": "저평가",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (PPI 발표)",
@@ -37,7 +37,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 메모리, HBM, AI 메모리, DRAM",
-      "updatedAt": "2026-06-11T04:55:25+00:00"
+      "updatedAt": "2026-06-11T06:55:23+00:00"
     },
     {
       "ticker": "005380",
@@ -45,16 +45,17 @@
       "market": "KR",
       "fairPrice": "₩324,140 ~ ₩486,210",
       "fairPriceReason": null,
-      "currentPrice": "₩596,000",
+      "currentPrice": "₩597,000",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (PPI 발표)",
       "marketEvent": "PPI 발표",
       "strategies": [
         "F. 200일선 상방 & BB 극단 저점"
       ],
       "category": "가치주",
       "industry": "자동차, 전기차, 수소차, 로보틱스",
-      "updatedAt": "2026-06-11T04:55:25+00:00"
+      "updatedAt": "2026-06-11T06:55:24+00:00"
     },
     {
       "ticker": "005930",
@@ -62,7 +63,7 @@
       "market": "KR",
       "fairPrice": "₩185,595 ~ ₩309,325",
       "fairPriceReason": null,
-      "currentPrice": "₩300,000",
+      "currentPrice": "₩299,000",
       "valuation": "보통",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (PPI 발표)",
@@ -70,7 +71,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체, 메모리·파운드리, 스마트폰, 소비자 가전",
-      "updatedAt": "2026-06-11T04:55:26+00:00"
+      "updatedAt": "2026-06-11T06:55:25+00:00"
     },
     {
       "ticker": "009150",
@@ -78,7 +79,7 @@
       "market": "KR",
       "fairPrice": "₩158,805 ~ ₩264,675",
       "fairPriceReason": null,
-      "currentPrice": "₩1,791,000",
+      "currentPrice": "₩1,805,000",
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (PPI 발표)",
@@ -86,7 +87,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "MLCC, 패키지기판, 카메라 모듈",
-      "updatedAt": "2026-06-11T04:55:27+00:00"
+      "updatedAt": "2026-06-11T06:55:25+00:00"
     },
     {
       "ticker": "011070",
@@ -94,7 +95,7 @@
       "market": "KR",
       "fairPrice": "₩409,680 ~ ₩614,520",
       "fairPriceReason": null,
-      "currentPrice": "₩1,069,000",
+      "currentPrice": "₩1,072,000",
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (PPI 발표)",
@@ -102,7 +103,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "카메라 모듈, 기판소재, 자동차 전장, AI 반도체 기판",
-      "updatedAt": "2026-06-11T04:55:28+00:00"
+      "updatedAt": "2026-06-11T06:55:26+00:00"
     },
     {
       "ticker": "012450",
@@ -110,7 +111,7 @@
       "market": "KR",
       "fairPrice": "₩465,240 ~ ₩620,320",
       "fairPriceReason": null,
-      "currentPrice": "₩1,015,000",
+      "currentPrice": "₩1,014,000",
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (PPI 발표)",
@@ -118,7 +119,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "방산, 항공엔진, K-방산, 우주 산업·발사체",
-      "updatedAt": "2026-06-11T04:55:28+00:00"
+      "updatedAt": "2026-06-11T06:55:27+00:00"
     },
     {
       "ticker": "039030",
@@ -126,7 +127,7 @@
       "market": "KR",
       "fairPrice": "₩240,360 ~ ₩300,450",
       "fairPriceReason": null,
-      "currentPrice": "₩491,500",
+      "currentPrice": "₩504,000",
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (PPI 발표)",
@@ -134,7 +135,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "레이저 마커 및 레이저 응용기기",
-      "updatedAt": "2026-06-11T04:55:29+00:00"
+      "updatedAt": "2026-06-11T06:55:28+00:00"
     },
     {
       "ticker": "042700",
@@ -142,7 +143,7 @@
       "market": "KR",
       "fairPrice": "₩27,975 ~ ₩37,300",
       "fairPriceReason": null,
-      "currentPrice": "₩284,000",
+      "currentPrice": "₩291,000",
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (PPI 발표)",
@@ -150,7 +151,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 장비, HBM 패키징, TC본더, 열압착 본딩",
-      "updatedAt": "2026-06-11T04:55:29+00:00"
+      "updatedAt": "2026-06-11T06:55:29+00:00"
     },
     {
       "ticker": "277810",
@@ -158,7 +159,7 @@
       "market": "KR",
       "fairPrice": "₩3,200 ~ ₩4,480",
       "fairPriceReason": null,
-      "currentPrice": "₩593,000",
+      "currentPrice": "₩605,000",
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (PPI 발표)",
@@ -168,7 +169,7 @@
       ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
-      "updatedAt": "2026-06-11T04:55:30+00:00"
+      "updatedAt": "2026-06-11T06:55:30+00:00"
     },
     {
       "ticker": "278470",
@@ -176,7 +177,7 @@
       "market": "KR",
       "fairPrice": "₩475,350 ~ ₩665,490",
       "fairPriceReason": null,
-      "currentPrice": "₩405,500",
+      "currentPrice": "₩410,500",
       "valuation": "저평가",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (PPI 발표)",
@@ -184,7 +185,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "뷰티테크, 화장품·건기식, 홈 뷰티 디바이스, D2C 브랜드",
-      "updatedAt": "2026-06-11T04:55:31+00:00"
+      "updatedAt": "2026-06-11T06:55:31+00:00"
     },
     {
       "ticker": "AEHR",
@@ -200,7 +201,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 반도체 테스트 장비, 후공정 검사",
-      "updatedAt": "2026-06-11T04:55:31+00:00"
+      "updatedAt": "2026-06-11T06:55:31+00:00"
     },
     {
       "ticker": "AMD",
@@ -216,7 +217,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
-      "updatedAt": "2026-06-11T04:55:31+00:00"
+      "updatedAt": "2026-06-11T06:55:31+00:00"
     },
     {
       "ticker": "ASTS",
@@ -232,7 +233,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 위성통신, LEO 위성, D2D 통신",
-      "updatedAt": "2026-06-11T04:55:32+00:00"
+      "updatedAt": "2026-06-11T06:55:31+00:00"
     },
     {
       "ticker": "ASX",
@@ -248,7 +249,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
-      "updatedAt": "2026-06-11T04:55:32+00:00"
+      "updatedAt": "2026-06-11T06:55:32+00:00"
     },
     {
       "ticker": "BE",
@@ -266,7 +267,7 @@
       ],
       "category": "성장주",
       "industry": "AI 인프라, 에너지, 연료전지·수소, 데이터센터 전력",
-      "updatedAt": "2026-06-11T04:55:32+00:00"
+      "updatedAt": "2026-06-11T06:55:32+00:00"
     },
     {
       "ticker": "CIFR",
@@ -282,7 +283,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, HPC",
-      "updatedAt": "2026-06-11T04:55:32+00:00"
+      "updatedAt": "2026-06-11T06:55:32+00:00"
     },
     {
       "ticker": "CRDO",
@@ -298,7 +299,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "데이터센터, AI 인프라, 고속 인터커넥트",
-      "updatedAt": "2026-06-11T04:55:32+00:00"
+      "updatedAt": "2026-06-11T06:55:32+00:00"
     },
     {
       "ticker": "HOOG",
@@ -314,7 +315,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "레버리지·테마 ETF",
-      "updatedAt": "2026-06-11T04:55:33+00:00"
+      "updatedAt": "2026-06-11T06:55:32+00:00"
     },
     {
       "ticker": "INTC",
@@ -332,7 +333,7 @@
       ],
       "category": "성장주",
       "industry": "반도체, 데이터센터·AI 서버 칩, 파운드리, 네트워크·5G",
-      "updatedAt": "2026-06-11T04:55:33+00:00"
+      "updatedAt": "2026-06-11T06:55:32+00:00"
     },
     {
       "ticker": "IONQ",
@@ -348,7 +349,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "양자컴퓨팅, 이온트랩, 양자 네트워크",
-      "updatedAt": "2026-06-11T04:55:33+00:00"
+      "updatedAt": "2026-06-11T06:55:33+00:00"
     },
     {
       "ticker": "IREN",
@@ -364,7 +365,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, GPU 클라우드, HPC",
-      "updatedAt": "2026-06-11T04:55:33+00:00"
+      "updatedAt": "2026-06-11T06:55:33+00:00"
     },
     {
       "ticker": "LITE",
@@ -382,7 +383,7 @@
       ],
       "category": "성장주",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
-      "updatedAt": "2026-06-11T04:55:34+00:00"
+      "updatedAt": "2026-06-11T06:55:33+00:00"
     },
     {
       "ticker": "LPTH",
@@ -398,7 +399,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "광학·포토닉스, 적외선·열화상 부품, 방산 광학",
-      "updatedAt": "2026-06-11T04:55:34+00:00"
+      "updatedAt": "2026-06-11T06:55:33+00:00"
     },
     {
       "ticker": "MU",
@@ -414,7 +415,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체, 메모리, DRAM, NAND, HBM",
-      "updatedAt": "2026-06-11T04:55:34+00:00"
+      "updatedAt": "2026-06-11T06:55:33+00:00"
     },
     {
       "ticker": "NBIS",
@@ -430,7 +431,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, AI 클라우드, GPU 클러스터, 데이터센터",
-      "updatedAt": "2026-06-11T04:55:34+00:00"
+      "updatedAt": "2026-06-11T06:55:33+00:00"
     },
     {
       "ticker": "PL",
@@ -448,7 +449,7 @@
       ],
       "category": "성장주",
       "industry": "우주 산업, 위성 지구관측 데이터, 위성 이미지",
-      "updatedAt": "2026-06-11T04:55:34+00:00"
+      "updatedAt": "2026-06-11T06:55:34+00:00"
     },
     {
       "ticker": "RKLB",
@@ -466,7 +467,7 @@
       ],
       "category": "성장주",
       "industry": "우주 산업, 소형 발사체, 위성 배포",
-      "updatedAt": "2026-06-11T04:55:35+00:00"
+      "updatedAt": "2026-06-11T06:55:34+00:00"
     },
     {
       "ticker": "SGML",
@@ -482,7 +483,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "리튬, 2차전지 원자재, EV 배터리 소재",
-      "updatedAt": "2026-06-11T04:55:35+00:00"
+      "updatedAt": "2026-06-11T06:55:34+00:00"
     },
     {
       "ticker": "SNDK",
@@ -498,7 +499,7 @@
       "strategies": [],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
-      "updatedAt": "2026-06-11T04:55:35+00:00"
+      "updatedAt": "2026-06-11T06:55:34+00:00"
     },
     {
       "ticker": "SOXL",
@@ -514,7 +515,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 레버리지 ETF",
-      "updatedAt": "2026-06-11T04:55:35+00:00"
+      "updatedAt": "2026-06-11T06:55:34+00:00"
     },
     {
       "ticker": "STX",
@@ -530,7 +531,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
-      "updatedAt": "2026-06-11T04:55:36+00:00"
+      "updatedAt": "2026-06-11T06:55:34+00:00"
     },
     {
       "ticker": "VST",
@@ -546,7 +547,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "전력 발전, 원전·가스, AI 데이터센터 전력수요, AI 인프라",
-      "updatedAt": "2026-06-11T04:55:36+00:00"
+      "updatedAt": "2026-06-11T06:55:35+00:00"
     },
     {
       "ticker": "WULF",
@@ -564,7 +565,7 @@
       ],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
-      "updatedAt": "2026-06-11T04:55:36+00:00"
+      "updatedAt": "2026-06-11T06:55:35+00:00"
     },
     {
       "ticker": "GOOGL",
@@ -582,7 +583,7 @@
       ],
       "category": "혼합주",
       "industry": "AI, 광고, 클라우드, Waymo, TPU",
-      "updatedAt": "2026-06-11T04:55:36+00:00"
+      "updatedAt": "2026-06-11T06:55:35+00:00"
     },
     {
       "ticker": "079550",
@@ -590,7 +591,7 @@
       "market": "KR",
       "fairPrice": "₩421,440 ~ ₩561,920",
       "fairPriceReason": null,
-      "currentPrice": "₩767,000",
+      "currentPrice": "₩764,000",
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (PPI 발표)",
@@ -598,7 +599,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "방산, 유도무기, 레이더, 방산 수출",
-      "updatedAt": "2026-06-11T04:55:37+00:00"
+      "updatedAt": "2026-06-11T06:55:36+00:00"
     }
   ]
 }
