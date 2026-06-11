@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-06-11T13:50:47+00:00",
-    "lastSuccessfulRun": "2026-06-11T13:50:47+00:00",
+    "updatedAt": "2026-06-11T14:56:13+00:00",
+    "lastSuccessfulRun": "2026-06-11T14:56:13+00:00",
     "failedReason": null
   },
   "rows": [
@@ -50,7 +50,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "F. 200일선 상방 & BB 극단 저점"
+      ],
       "category": "가치주",
       "industry": "자동차, 전기차, 수소차, 로보틱스",
       "updatedAt": "2026-06-11T13:50:34+00:00"
@@ -162,7 +164,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "F. 200일선 상방 & BB 극단 저점"
+      ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
       "updatedAt": "2026-06-11T13:50:40+00:00"
@@ -324,7 +328,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "E. 200일선 상방 & 스퀴즈 저점"
+      ],
       "category": "성장주",
       "industry": "반도체, 데이터센터·AI 서버 칩, 파운드리, 네트워크·5G",
       "updatedAt": "2026-06-11T13:50:43+00:00"
@@ -551,22 +557,6 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
-      "updatedAt": "2026-06-11T13:50:46+00:00"
-    },
-    {
-      "ticker": "GOOGL",
-      "name": "Alphabet",
-      "market": "US",
-      "fairPrice": "$196.65 ~ $327.75",
-      "fairPriceReason": null,
-      "currentPrice": "$349.35",
-      "valuation": "고평가",
-      "opinion": "매도",
-      "opinionReason": "손절 기준 도달 -10.09% [급락 후 회복장 20일선 눌림 기준 -10%]",
-      "marketEvent": "당분간 없음",
-      "strategies": [],
-      "category": "혼합주",
-      "industry": "AI, 광고, 클라우드, Waymo, TPU",
       "updatedAt": "2026-06-11T13:50:46+00:00"
     },
     {
