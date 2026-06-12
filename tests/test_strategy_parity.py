@@ -145,7 +145,7 @@ def test_strategy_d_target_exit_reason_includes_return_and_strategy_target():
 
 
 def test_all_strategies_exit_when_fifteen_day_rebound_stalls():
-    row = IndicatorRow(stock_name="MSFT", current_price=107.99, entry_price=100)
+    row = IndicatorRow(stock_name="MSFT", current_price=102.99, entry_price=100)
 
     for strategy in ("A", "B", "C", "D", "E", "F", "G"):
         result = evaluate_exit_condition(row, strategy_type=strategy, trading_days=15)
@@ -154,15 +154,15 @@ def test_all_strategies_exit_when_fifteen_day_rebound_stalls():
         assert "15거래일 반등 미달" in result["reason"]
 
 
-def test_stalled_rebound_exit_waits_until_day_fifteen_and_below_eight_percent():
+def test_stalled_rebound_exit_waits_until_day_fifteen_and_below_three_percent():
     day_fourteen_row = IndicatorRow(stock_name="MSFT", current_price=104, entry_price=100)
-    eight_pct_row = IndicatorRow(stock_name="MSFT", current_price=108, entry_price=100)
+    three_pct_row = IndicatorRow(stock_name="MSFT", current_price=103, entry_price=100)
 
     day_fourteen = evaluate_exit_condition(day_fourteen_row, strategy_type="A", trading_days=14)
-    eight_pct = evaluate_exit_condition(eight_pct_row, strategy_type="A", trading_days=15)
+    three_pct = evaluate_exit_condition(three_pct_row, strategy_type="A", trading_days=15)
 
     assert day_fourteen["shouldExit"] is False
-    assert eight_pct["shouldExit"] is False
+    assert three_pct["shouldExit"] is False
 
 
 def test_exit_condition_for_ef_waits_for_macd_turn():
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     test_strategy_g_recovery_ma20_pullback_signal()
     test_strategy_g_uses_twelve_percent_target_and_ten_percent_stop()
     test_all_strategies_exit_when_fifteen_day_rebound_stalls()
-    test_stalled_rebound_exit_waits_until_day_fifteen_and_below_eight_percent()
+    test_stalled_rebound_exit_waits_until_day_fifteen_and_below_three_percent()
     test_exit_condition_for_ef_waits_for_macd_turn()
     test_enrich_exit_reason_adds_strategy_stop_threshold_to_legacy_reason()
     print("strategy parity smoke tests passed")
