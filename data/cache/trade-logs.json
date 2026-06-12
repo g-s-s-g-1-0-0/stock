@@ -81,7 +81,7 @@
     {
       "slotId": "ETN_F_20260517_1",
       "ticker": "ETN",
-      "name": "Eaton Corporation, PLC",
+      "name": "Eaton",
       "market": "US",
       "currentPrice": "$417.27",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
@@ -251,7 +251,7 @@
     {
       "slotId": "005380_G_20260606_1",
       "ticker": "005380",
-      "name": "현대자동차",
+      "name": "현대차",
       "market": "KR",
       "currentPrice": "₩631,000",
       "strategy": "G. 급락 후 회복장 20일선 눌림",
@@ -464,7 +464,7 @@
     {
       "slotId": "005380_F_20260611_1",
       "ticker": "005380",
-      "name": "현대자동차",
+      "name": "현대차",
       "market": "KR",
       "currentPrice": "₩631,000",
       "strategy": "F. 200일선 상방 & BB 극단 저점",

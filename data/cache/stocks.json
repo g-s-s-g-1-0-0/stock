@@ -41,7 +41,7 @@
     },
     {
       "ticker": "005380",
-      "name": "현대자동차",
+      "name": "현대차",
       "market": "KR",
       "fairPrice": "₩324,140 ~ ₩486,210",
       "fairPriceReason": null,
@@ -507,7 +507,7 @@
     },
     {
       "ticker": "STX",
-      "name": "Seagate Technology Holdings PLC - (Ireland)",
+      "name": "Seagate Technology Holdings",
       "market": "US",
       "fairPrice": "$316.20 ~ $421.60",
       "fairPriceReason": null,

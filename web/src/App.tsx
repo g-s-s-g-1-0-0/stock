@@ -2830,10 +2830,6 @@ function displayIndustryLabel(industry?: string) {
   return Array.from(new Set(items)).slice(0, 5).join(', ') || value
 }
 
-function primaryIndustryLabel(industry?: string) {
-  return displayIndustryLabel(industry).split(/[,|/]/)[0]?.trim() || '-'
-}
-
 function industryTrendKeywords(industry?: string) {
   return (industry ?? '')
     .split(/[,·|/()\s]+/)
@@ -2846,6 +2842,10 @@ function normalizeTrendText(value: string) {
     .toLowerCase()
     .replace(/\s+/g, '')
     .replace(/[·,|/()]/g, '')
+}
+
+function trendThemeLabel(rankText: string) {
+  return rankText.split('|', 1)[0]?.trim() || rankText.trim()
 }
 
 function isSameTrendWeek(tradeDate: string, trendDate: string) {
@@ -7496,16 +7496,14 @@ function App() {
   }
 
   function megaTrendStatus(trade: TradeLog) {
-    const stock = apiStocks.find((candidate) => candidate.ticker === trade.ticker)
-    const industry = primaryIndustryLabel(stock?.industry)
-    const rank = trendReportRankForTrade(trade)
+    const match = trendReportMatchForTrade(trade)
 
-    return rank !== null && rank <= 3
-      ? `충족(${industry})`
+    return match !== null && match.rank <= 3
+      ? `충족(${match.theme})`
       : '미충족'
   }
 
-  function trendReportRankForTrade(trade: TradeLog) {
+  function trendReportMatchForTrade(trade: TradeLog) {
     const stock = apiStocks.find((candidate) => candidate.ticker === trade.ticker)
     const keywords = industryTrendKeywords(stock?.industry)
     if (keywords.length === 0) return null
@@ -7516,7 +7514,16 @@ function App() {
       return keywords.some((keyword) => normalizedRankText.includes(keyword))
     }) ?? -1
 
-    return matchedIndex >= 0 ? matchedIndex + 1 : null
+    if (matchedIndex < 0 || !matchedTrend) return null
+    const rankText = matchedTrend.ranks[matchedIndex]
+    return {
+      rank: matchedIndex + 1,
+      theme: trendThemeLabel(rankText),
+    }
+  }
+
+  function trendReportRankForTrade(trade: TradeLog) {
+    return trendReportMatchForTrade(trade)?.rank ?? null
   }
 
   function tradeBuyPriority(trade: TradeLog): TradeBuyPriority {

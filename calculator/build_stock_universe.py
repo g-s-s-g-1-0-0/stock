@@ -52,6 +52,34 @@ def clean_us_name(name: str) -> str:
         " Class C",
     ]:
         name = name.replace(suffix, "")
+    name = re.sub(r"\s+-\s*$", "", name).strip()
+    name = re.sub(r"\s+-\s+\([^)]*\)$", "", name).strip()
+    name = re.sub(r"\s+\([^)]*\)$", "", name).strip()
+    name = re.sub(r"\s+Common Shares(?:\s+of\s+Beneficial\s+Interest)?$", "", name, flags=re.IGNORECASE).strip()
+    name = re.sub(r"\s+American Depositary Shares.*$", "", name, flags=re.IGNORECASE).strip()
+    name = re.sub(r"\s+Depositary Shares.*$", "", name, flags=re.IGNORECASE).strip()
+    name = re.sub(r"\s+Ordinary Share[s]?$", "", name, flags=re.IGNORECASE).strip()
+    name = re.sub(r"\s+New$", "", name, flags=re.IGNORECASE).strip()
+    suffix_patterns = (
+        r",?\s+Incorporated\.?$",
+        r",?\s+Corporation\.?$",
+        r",?\s+Corp\.?$",
+        r",?\s+Limited\.?$",
+        r",?\s+Ltd\.?$",
+        r",?\s+Inc\.?$",
+        r",?\s+PLC\.?$",
+        r",?\s+N\.V\.?$",
+        r",?\s+S\.A\.?$",
+        r",?\s+Co\.?$",
+    )
+    changed = True
+    while changed:
+        changed = False
+        for pattern in suffix_patterns:
+            cleaned = re.sub(pattern, "", name, flags=re.IGNORECASE).strip(" ,-")
+            if cleaned != name and cleaned:
+                name = cleaned
+                changed = True
     return " ".join(name.split())
 
 
@@ -88,7 +116,7 @@ def load_us_stocks() -> list[dict[str, str]]:
 def load_kr_stocks() -> list[dict[str, str]]:
     rows = load_kr_stocks_from_kind()
     if rows:
-        return rows
+        return refresh_kr_display_names(rows)
 
     try:
         from pykrx import stock
@@ -103,6 +131,25 @@ def load_kr_stocks() -> list[dict[str, str]]:
             if name:
                 rows[ticker] = {"ticker": ticker, "name": name, "market": "KR"}
     return sorted(rows.values(), key=lambda item: item["ticker"])
+
+
+def refresh_kr_display_names(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    try:
+        from pykrx import stock
+    except ImportError:
+        return rows
+
+    refreshed = []
+    for row in rows:
+        next_row = dict(row)
+        try:
+            name = stock.get_market_ticker_name(next_row["ticker"])
+        except Exception:
+            name = ""
+        if name:
+            next_row["name"] = name
+        refreshed.append(next_row)
+    return refreshed
 
 
 def load_kr_stocks_from_kind() -> list[dict[str, str]]:
