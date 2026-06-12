@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-06-12T06:55:41+00:00",
-    "lastSuccessfulRun": "2026-06-12T06:55:41+00:00",
+    "updatedAt": "2026-06-12T08:55:45+00:00",
+    "lastSuccessfulRun": "2026-06-12T08:55:45+00:00",
     "failedReason": null
   },
   "rows": [
@@ -14474,7 +14474,7 @@
       "name": "아리바이오랩",
       "market": "KR",
       "category": "성장주",
-      "industry": "백신 및 면역증강제"
+      "industry": "바이오, 제약·헬스케어"
     },
     {
       "ticker": "262260",
@@ -26399,7 +26399,7 @@
     },
     {
       "ticker": "BBAR",
-      "name": "Banco BBVA Argentina",
+      "name": "Banco BBVA Argentina S.A.",
       "market": "US",
       "category": "혼합주",
       "industry": "해외 보통주, 개별 사업영역 추가 확인 필요"
@@ -29780,7 +29780,7 @@
     },
     {
       "ticker": "BRBI",
-      "name": "BRBI BR Partners",
+      "name": "BRBI BR Partners S.A.",
       "market": "US",
       "category": "혼합주",
       "industry": "해외 보통주, 개별 사업영역 추가 확인 필요"
@@ -36367,7 +36367,7 @@
     },
     {
       "ticker": "CSAN",
-      "name": "Cosan",
+      "name": "Cosan S.A.",
       "market": "US",
       "category": "혼합주",
       "industry": "해외 보통주, 개별 사업영역 추가 확인 필요"
@@ -36906,7 +36906,7 @@
     },
     {
       "ticker": "CUK",
-      "name": "Carnival",
+      "name": "Carnival Plc",
       "market": "US",
       "category": "혼합주",
       "industry": "해외 보통주, 개별 사업영역 추가 확인 필요"
@@ -51291,7 +51291,7 @@
     },
     {
       "ticker": "GMTL",
-      "name": "Guardian Metal Resources",
+      "name": "Guardian Metal Resources PLC",
       "market": "US",
       "category": "혼합주",
       "industry": "해외 보통주, 개별 사업영역 추가 확인 필요"
@@ -70345,7 +70345,7 @@
     },
     {
       "ticker": "NBTX",
-      "name": "Nanobiotix",
+      "name": "Nanobiotix S.A.",
       "market": "US",
       "category": "성장주",
       "industry": "바이오, 제약·헬스케어"
