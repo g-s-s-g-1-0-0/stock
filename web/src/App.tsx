@@ -7630,7 +7630,7 @@ function App() {
                   <strong>{stock.name}</strong>
                   <small>{stock.ticker} · {stock.market}</small>
                 </span>
-                <span>{isAlreadyAdded ? '이미 추가됨' : '추가하기'}</span>
+                <span className="inline-result-action">{isAlreadyAdded ? '추가됨' : '추가'}</span>
               </button>
             )
           }) : (
