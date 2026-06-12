@@ -139,7 +139,7 @@
       "opinion": "관망",
       "strategies": [],
       "category": "성장주",
-      "industry": "동박적층판 등 제조 및 판매, 유압기기 등 제조 및 판매, 지게차 제조 및 판매, IT 시스템 개발/운영 서비스 등, 연료전지 등",
+      "industry": "AI 인프라, 전자소재 CCL, 데이터센터 전력, 피지컬 AI·로보틱스, 연료전지",
       "rawIndustry": "전자부품 제조업",
       "products": "동박적층판 등 제조 및 판매, 유압기기 등 제조 및 판매, 지게차 제조 및 판매, IT 시스템 개발/운영 서비스 등, 연료전지 등",
       "updatedAt": "2026-05-04T17:14:49+09:00"
@@ -3814,7 +3814,7 @@
       "opinion": "관망",
       "strategies": [],
       "category": "가치주",
-      "industry": "자동차, 전기차, 수소차, 로보틱스",
+      "industry": "자동차, 피지컬 AI, 자율주행·SDV, 로보틱스, 전기차",
       "rawIndustry": "자동차용 엔진 및 자동차 제조업",
       "products": "자동차(승용차,버스,트럭,특장차),자동차부품,자동차전착도료 제조,차량정비사업",
       "updatedAt": "2026-05-04T17:14:49+09:00"
@@ -5509,7 +5509,7 @@
       "opinion": "관망",
       "strategies": [],
       "category": "혼합주",
-      "industry": "MLCC, 패키지기판, 카메라 모듈",
+      "industry": "AI 반도체 기판, MLCC, FC-BGA, 글라스 기판, AI 서버 부품",
       "rawIndustry": "전자부품 제조업",
       "products": "수동소자 (MLCC, Inductor, Chip Resistor 등), 모듈(카메라모듈, 통신모듈), 반도체패키지 기판",
       "updatedAt": "2026-05-04T17:14:49+09:00"
@@ -6424,7 +6424,7 @@
       "opinion": "관망",
       "strategies": [],
       "category": "성장주",
-      "industry": "카메라 모듈, 기판소재, 자동차 전장, AI 반도체 기판",
+      "industry": "AI 반도체 기판, FC-BGA, 카메라 모듈, 자동차 전장, RF-SiP",
       "rawIndustry": "전자부품 제조업",
       "products": "기타 전자부품 제조업",
       "updatedAt": "2026-05-04T17:14:49+09:00"
@@ -12484,7 +12484,7 @@
       "opinion": "관망",
       "strategies": [],
       "category": "성장주",
-      "industry": "레이저 마커 및 레이저 응용기기",
+      "industry": "반도체 레이저 장비, HBM·AI 반도체, 레이저 어닐링, 그루빙·다이싱",
       "rawIndustry": "특수 목적용 기계 제조업",
       "products": "레이저 마커 및 레이저 응용기기",
       "updatedAt": "2026-05-04T17:14:49+09:00"
@@ -18724,7 +18724,7 @@
       "opinion": "관망",
       "strategies": [],
       "category": "성장주",
-      "industry": "방산, 유도무기, 레이더, 방산 수출",
+      "industry": "AI 방산, 유도무기, 레이더, 무인체계·드론, 우주·위성",
       "rawIndustry": "무기 및 총포탄 제조업",
       "products": "정밀유도무기 등",
       "updatedAt": "2026-05-04T17:14:49+09:00"
@@ -31939,7 +31939,7 @@
       "opinion": "관망",
       "strategies": [],
       "category": "성장주",
-      "industry": "뷰티테크, 화장품·건기식, 홈 뷰티 디바이스, D2C 브랜드",
+      "industry": "글로벌 K-뷰티, 뷰티테크, 홈 뷰티 디바이스, D2C·소셜커머스",
       "rawIndustry": "기타 화학제품 제조업",
       "products": "화장품, 피부미용기기 등",
       "updatedAt": "2026-05-04T17:14:49+09:00"

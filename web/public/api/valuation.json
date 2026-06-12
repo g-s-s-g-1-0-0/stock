@@ -29,7 +29,7 @@
       "epsNextYear": "₩22,953",
       "epsQoq": "126.71%",
       "earningsDate": "2026-04-29 (D+25)",
-      "industry": "동박적층판, 유압기기, 지게차, IT 시스템, 연료전지",
+      "industry": "AI 인프라, 전자소재 CCL, 데이터센터 전력, 피지컬 AI·로보틱스, 연료전지",
       "ruleOf40": "23.59%"
     },
     "000660": {
@@ -77,7 +77,7 @@
       "epsNextYear": "₩39,371",
       "epsQoq": "126.98%",
       "earningsDate": "2026-04-23 (D+28)",
-      "industry": "자동차, 전기차, 수소차, 로보틱스",
+      "industry": "자동차, 피지컬 AI, 자율주행·SDV, 로보틱스, 전기차",
       "ruleOf40": "8.96%"
     },
     "005930": {
@@ -125,7 +125,7 @@
       "epsNextYear": "₩16,551",
       "epsQoq": "11.84%",
       "earningsDate": "2026-04-30 (D+21)",
-      "industry": "MLCC, 패키지기판, 카메라 모듈",
+      "industry": "AI 반도체 기판, MLCC, FC-BGA, 글라스 기판, AI 서버 부품",
       "ruleOf40": "25.61%"
     },
     "011070": {
@@ -149,7 +149,7 @@
       "epsNextYear": "₩34,218",
       "epsQoq": "68.56%",
       "earningsDate": "-",
-      "industry": "카메라 모듈, 기판소재, 자동차 전장, AI 반도체 기판",
+      "industry": "AI 반도체 기판, FC-BGA, 카메라 모듈, 자동차 전장, RF-SiP",
       "ruleOf40": "14.80%"
     },
     "012450": {
@@ -197,7 +197,7 @@
       "epsNextYear": "₩9,614",
       "epsQoq": "82.17%",
       "earningsDate": "-",
-      "industry": "레이저 마커 및 레이저 응용기기",
+      "industry": "반도체 레이저 장비, HBM·AI 반도체, 레이저 어닐링, 그루빙·다이싱",
       "ruleOf40": "59.08%"
     },
     "042700": {
@@ -269,7 +269,7 @@
       "epsNextYear": "₩14,357",
       "epsQoq": "18.68%",
       "earningsDate": "2026-05-07 (D+13)",
-      "industry": "뷰티테크, 화장품·건기식, 홈 뷰티 디바이스, D2C 브랜드",
+      "industry": "글로벌 K-뷰티, 뷰티테크, 홈 뷰티 디바이스, D2C·소셜커머스",
       "ruleOf40": "148.06%"
     },
     "AEHR": {
@@ -845,7 +845,7 @@
       "epsNextYear": "₩16,563",
       "epsQoq": "2914.22%",
       "earningsDate": "2026-05-07 (D+16)",
-      "industry": "방산, 유도무기, 레이더, 방산 수출",
+      "industry": "AI 방산, 유도무기, 레이더, 무인체계·드론, 우주·위성",
       "ruleOf40": "36.93%"
     }
   },
