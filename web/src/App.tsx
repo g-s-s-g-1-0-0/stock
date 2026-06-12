@@ -2830,13 +2830,6 @@ function displayIndustryLabel(industry?: string) {
   return Array.from(new Set(items)).slice(0, 5).join(', ') || value
 }
 
-function industryTrendKeywords(industry?: string) {
-  return (industry ?? '')
-    .split(/[,·|/()\s]+/)
-    .map(normalizeTrendText)
-    .filter((keyword) => keyword.length > 1)
-}
-
 function normalizeTrendText(value: string) {
   return value
     .toLowerCase()
@@ -2844,8 +2837,117 @@ function normalizeTrendText(value: string) {
     .replace(/[·,|/()]/g, '')
 }
 
+const trendThemeRules = [
+  {
+    theme: 'AI 인프라',
+    keywords: ['AI 인프라', 'AI 서버', 'AI 팩토리', '데이터센터', 'GPU 클라우드', 'GPU 클러스터', 'HPC', '액침냉각', 'UPS'],
+  },
+  {
+    theme: 'AI 반도체',
+    keywords: ['AI GPU', 'AI칩', 'AI 칩', 'AI 반도체', 'AI 반도체 기판', 'CUDA', 'HBM', 'ASIC', 'GPU', '파운드리', '반도체', '첨단패키징', 'FC-BGA', '글라스 기판', 'CCL', '레이저 어닐링'],
+  },
+  {
+    theme: '우주항공',
+    keywords: ['우주', '위성', '발사체', '항공우주', '항공엔진', 'LEO', 'D2D', 'SpaceX', 'Rocket Lab', 'AST SpaceMobile', 'Planet Labs'],
+  },
+  {
+    theme: '방산·드론',
+    keywords: ['AI 방산', '방산', '국방', '드론', '무인기', '무인체계', '유도무기', '레이더', '자율무기'],
+  },
+  {
+    theme: '전력 인프라',
+    keywords: ['전력', '전력망', '전기장비', '가스터빈', '원전', 'SMR', '연료전지', '수소', '에너지 저장', '데이터센터 전력', 'AI 데이터센터'],
+  },
+  {
+    theme: '광통신·네트워크',
+    keywords: ['광통신', '광트랜시버', '트랜시버', '광케이블', '광송수신기', '광인터커넥트', '스위칭', '이더넷'],
+  },
+  {
+    theme: '로봇·자동화',
+    keywords: ['피지컬 AI', 'Physical AI', '로봇', '로보틱스', '협동로봇', '자동화', '휴머노이드', 'Optimus'],
+  },
+  {
+    theme: '양자컴퓨팅',
+    keywords: ['양자', '이온트랩', 'Quantum', '양자 네트워크'],
+  },
+  {
+    theme: '암호화폐·핀테크',
+    keywords: ['가상화폐', '비트코인', '이더리움', 'Solana', '스테이블코인', 'USDC', 'Coinbase', '블록체인'],
+  },
+  {
+    theme: '전기차·배터리',
+    keywords: ['전기차', '배터리', '2차전지', '리튬', '양극재', '자율주행', '로보택시'],
+  },
+  {
+    theme: '바이오·헬스케어',
+    keywords: ['바이오', '제약', '헬스케어', '의료', '재생의료', '바이오프린팅', 'Therapeutics'],
+  },
+  {
+    theme: '글로벌 K-뷰티',
+    keywords: ['K-뷰티', 'K뷰티', '글로벌 K-뷰티', '뷰티테크', '홈 뷰티', '화장품', '소셜커머스'],
+  },
+  {
+    theme: '원자재·희토류',
+    keywords: ['희토류', '리튬', '구리', '알루미늄', '광산', '금속', '자석'],
+  },
+]
+
+function normalizedTrendKeywords(values: string[]) {
+  return values
+    .map(normalizeTrendText)
+    .filter((keyword) => keyword.length > 1 && keyword !== 'ai')
+}
+
 function trendThemeLabel(rankText: string) {
   return rankText.split('|', 1)[0]?.trim() || rankText.trim()
+}
+
+function industryParts(industry?: string) {
+  return displayIndustryLabel(industry)
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+}
+
+function trendThemesForIndustry(industry?: string) {
+  const parts = industryParts(industry)
+  const normalizedIndustry = normalizeTrendText(parts.join(' '))
+  return trendThemeRules
+    .map((rule) => {
+      const matched = normalizedTrendKeywords(rule.keywords)
+        .some((keyword) => normalizedIndustry.includes(keyword))
+      if (!matched) return null
+      return {
+        ...rule,
+        displayLabel: bestIndustryPartForTheme(parts, rule.keywords) ?? rule.theme,
+      }
+    })
+    .filter((rule): rule is typeof trendThemeRules[number] & { displayLabel: string } => rule !== null)
+}
+
+function bestIndustryPartForTheme(parts: string[], keywords: string[]) {
+  const normalizedKeywords = normalizedTrendKeywords(keywords)
+  const candidates = parts
+    .map((part) => {
+      const normalizedPart = normalizeTrendText(part)
+      const matched = normalizedKeywords.some((keyword) => normalizedPart.includes(keyword))
+      if (!matched) return null
+      const aiScore = normalizedPart.includes('ai') ? 10 : 0
+      return { part, score: aiScore + normalizedPart.length }
+    })
+    .filter((item): item is { part: string; score: number } => item !== null)
+    .sort((a, b) => b.score - a.score)
+
+  return candidates[0]?.part
+}
+
+function trendRuleMatchesRank(rule: { theme: string; keywords: string[] }, rankText: string) {
+  const normalizedRankText = normalizeTrendText(rankText)
+  const normalizedTheme = normalizeTrendText(rule.theme)
+  if (normalizedRankText.includes(normalizedTheme)) return true
+
+  return normalizedTrendKeywords(rule.keywords)
+    .some((keyword) => normalizedRankText.includes(keyword))
 }
 
 function isSameTrendWeek(tradeDate: string, trendDate: string) {
@@ -7505,20 +7607,20 @@ function App() {
 
   function trendReportMatchForTrade(trade: TradeLog) {
     const stock = apiStocks.find((candidate) => candidate.ticker === trade.ticker)
-    const keywords = industryTrendKeywords(stock?.industry)
-    if (keywords.length === 0) return null
+    const trendThemes = trendThemesForIndustry(stock?.industry)
+    if (trendThemes.length === 0) return null
 
     const matchedTrend = apiMarketTrendRows.find((row) => isSameTrendWeek(trade.buyDate, row.date))
-    const matchedIndex = matchedTrend?.ranks.slice(0, 10).findIndex((rankText) => {
-      const normalizedRankText = normalizeTrendText(rankText)
-      return keywords.some((keyword) => normalizedRankText.includes(keyword))
-    }) ?? -1
+    const matchedIndex = matchedTrend?.ranks.slice(0, 10).findIndex((rankText) => (
+      trendThemes.some((rule) => trendRuleMatchesRank(rule, rankText))
+    )) ?? -1
 
     if (matchedIndex < 0 || !matchedTrend) return null
     const rankText = matchedTrend.ranks[matchedIndex]
+    const matchedTheme = trendThemes.find((rule) => trendRuleMatchesRank(rule, rankText))
     return {
       rank: matchedIndex + 1,
-      theme: trendThemeLabel(rankText),
+      theme: matchedTheme?.displayLabel ?? trendThemeLabel(rankText),
     }
   }
 
