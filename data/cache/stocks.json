@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-06-14T13:50:53+00:00",
-    "lastSuccessfulRun": "2026-06-14T13:50:53+00:00",
+    "updatedAt": "2026-06-14T14:59:25+00:00",
+    "lastSuccessfulRun": "2026-06-14T14:59:25+00:00",
     "failedReason": null
   },
   "rows": [
@@ -178,7 +178,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "E. 200일선 상방 & 스퀴즈 저점"
+      ],
       "category": "성장주",
       "industry": "글로벌 K-뷰티, 뷰티테크, 홈 뷰티 디바이스, D2C·소셜커머스",
       "updatedAt": "2026-06-14T13:50:48+00:00"
@@ -450,7 +452,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "F. 200일선 상방 & BB 극단 저점"
+      ],
       "category": "성장주",
       "industry": "우주 산업, 소형 발사체, 위성 배포",
       "updatedAt": "2026-06-14T13:50:51+00:00"
@@ -466,7 +470,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "E. 200일선 상방 & 스퀴즈 저점"
+      ],
       "category": "성장주",
       "industry": "리튬, 2차전지 원자재, EV 배터리 소재",
       "updatedAt": "2026-06-14T13:50:51+00:00"
@@ -482,7 +488,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "A. 200일선 상방 & 모멘텀 재가속"
+      ],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
       "updatedAt": "2026-06-14T13:50:52+00:00"
