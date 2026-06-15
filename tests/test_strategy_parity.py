@@ -144,24 +144,24 @@ def test_strategy_d_target_exit_reason_includes_return_and_strategy_target():
     )
 
 
-def test_all_strategies_exit_when_fifteen_day_rebound_stalls():
+def test_all_strategies_exit_when_twenty_five_day_rebound_stalls():
     row = IndicatorRow(stock_name="MSFT", current_price=102.99, entry_price=100)
 
     for strategy in ("A", "B", "C", "D", "E", "F", "G"):
-        result = evaluate_exit_condition(row, strategy_type=strategy, trading_days=15)
+        result = evaluate_exit_condition(row, strategy_type=strategy, trading_days=25)
 
         assert result["shouldExit"] is True
-        assert "15거래일 반등 미달" in result["reason"]
+        assert "25거래일 반등 미달" in result["reason"]
 
 
-def test_stalled_rebound_exit_waits_until_day_fifteen_and_below_three_percent():
-    day_fourteen_row = IndicatorRow(stock_name="MSFT", current_price=104, entry_price=100)
+def test_stalled_rebound_exit_waits_until_day_twenty_five_and_below_three_percent():
+    day_twenty_four_row = IndicatorRow(stock_name="MSFT", current_price=104, entry_price=100)
     three_pct_row = IndicatorRow(stock_name="MSFT", current_price=103, entry_price=100)
 
-    day_fourteen = evaluate_exit_condition(day_fourteen_row, strategy_type="A", trading_days=14)
-    three_pct = evaluate_exit_condition(three_pct_row, strategy_type="A", trading_days=15)
+    day_twenty_four = evaluate_exit_condition(day_twenty_four_row, strategy_type="A", trading_days=24)
+    three_pct = evaluate_exit_condition(three_pct_row, strategy_type="A", trading_days=25)
 
-    assert day_fourteen["shouldExit"] is False
+    assert day_twenty_four["shouldExit"] is False
     assert three_pct["shouldExit"] is False
 
 
