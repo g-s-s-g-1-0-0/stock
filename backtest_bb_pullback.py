@@ -82,7 +82,7 @@ def build_entries(df: pd.DataFrame) -> np.ndarray:
 
 EXITS = {
     # name: (target, stop, stalled_days, stalled_min, half_days(or None), max_hold, ef_style)
-    "G형(+12/-10/정체15/최대40)":       (0.12, 0.10, 15, 0.08, None, 40, False),
+    "G형(+12/-12/정체15/최대40)":       (0.12, 0.12, 15, 0.08, None, 40, False),
     "D형(+12/-25/정체15/최대30)":       (0.12, 0.25, 15, 0.08, 60, 30, False),
     "A·C형(+20/-30/정체15/하프60/120)": (0.20, 0.30, 15, 0.08, 60, 120, False),
     "EF형(+20후 MACD둔화/대기5)":        (0.20, 0.30, 15, 0.08, 60, 120, True),

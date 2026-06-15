@@ -58,7 +58,7 @@ const CONSTANTS = {
     CIRCUIT_PCT_F:   0.30,
     BB_PCT_B_LOW_MAX: 5,
     TARGET_PCT_G:    0.12,
-    CIRCUIT_PCT_G:   0.10,
+    CIRCUIT_PCT_G:   0.12,
     G_QQQ_DIST_MIN:  8,
     G_QQQ_DIST_MAX:  18,
     G_MA20_SLOPE5_MIN: 0.005,

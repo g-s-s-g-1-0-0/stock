@@ -1865,7 +1865,7 @@ function tradeCriteriaInfo(strategy: string) {
   }
 
   if (code === 'G') {
-    return 'G 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -10%에 닿으면 손절 실패이고, 매수 후 25거래일 종가 수익률이 +3% 미만이면 반등 미달로 청산합니다. 40거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
+    return 'G 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -12%에 닿으면 손절 실패이고, 매수 후 25거래일 종가 수익률이 +3% 미만이면 반등 미달로 청산합니다. 40거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
   }
 
   if (['E', 'F'].includes(code)) {
@@ -6220,7 +6220,7 @@ function App() {
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
     ? "장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 '보유중인 종목' 표에서 직접 처리합니다."
-    : '공통: 25거래일 +3% 미달 청산. A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%), G(+12%, -10%, 40일)'
+    : '공통: 25거래일 +3% 미달 청산. A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%), G(+12%, -12%, 40일)'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,

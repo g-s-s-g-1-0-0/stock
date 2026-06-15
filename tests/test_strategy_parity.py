@@ -118,9 +118,9 @@ def test_strategy_g_recovery_ma20_pullback_signal():
     assert result["strategyType"] == "G"
 
 
-def test_strategy_g_uses_twelve_percent_target_and_ten_percent_stop():
+def test_strategy_g_uses_twelve_percent_target_and_twelve_percent_stop():
     target_row = IndicatorRow(stock_name="MSFT", current_price=112, entry_price=100)
-    stop_row = IndicatorRow(stock_name="MSFT", current_price=90, entry_price=100)
+    stop_row = IndicatorRow(stock_name="MSFT", current_price=88, entry_price=100)
 
     target = evaluate_exit_condition(target_row, strategy_type="G", trading_days=10)
     stop = evaluate_exit_condition(stop_row, strategy_type="G", trading_days=10)
@@ -130,7 +130,7 @@ def test_strategy_g_uses_twelve_percent_target_and_ten_percent_stop():
     assert "급락 후 회복장 20일선 눌림 기준 +12%" in target["reason"]
     assert stop["shouldExit"] is True
     assert "손절" in stop["reason"]
-    assert "급락 후 회복장 20일선 눌림 기준 -10%" in stop["reason"]
+    assert "급락 후 회복장 20일선 눌림 기준 -12%" in stop["reason"]
 
 
 def test_strategy_d_target_exit_reason_includes_return_and_strategy_target():
@@ -184,7 +184,7 @@ def test_exit_condition_for_ef_waits_for_macd_turn():
 def test_enrich_exit_reason_adds_strategy_stop_threshold_to_legacy_reason():
     result = enrich_profit_exit_reason("손절 기준 도달", "G", -11.09)
 
-    assert result == "손절 기준 도달 -11.09% [급락 후 회복장 20일선 눌림 기준 -10%]"
+    assert result == "손절 기준 도달 -11.09% [급락 후 회복장 20일선 눌림 기준 -12%]"
 
 
 if __name__ == "__main__":
@@ -195,9 +195,9 @@ if __name__ == "__main__":
     test_nasdaq_peak_exit_skips_g_recovery_pullback()
     test_nasdaq_peak_exit_still_applies_to_b_and_d()
     test_strategy_g_recovery_ma20_pullback_signal()
-    test_strategy_g_uses_twelve_percent_target_and_ten_percent_stop()
-    test_all_strategies_exit_when_fifteen_day_rebound_stalls()
-    test_stalled_rebound_exit_waits_until_day_fifteen_and_below_three_percent()
+    test_strategy_g_uses_twelve_percent_target_and_twelve_percent_stop()
+    test_all_strategies_exit_when_twenty_five_day_rebound_stalls()
+    test_stalled_rebound_exit_waits_until_day_twenty_five_and_below_three_percent()
     test_exit_condition_for_ef_waits_for_macd_turn()
     test_enrich_exit_reason_adds_strategy_stop_threshold_to_legacy_reason()
     print("strategy parity smoke tests passed")
