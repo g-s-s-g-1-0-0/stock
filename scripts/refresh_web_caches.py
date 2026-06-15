@@ -12,10 +12,11 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from calculator.pipeline import read_search_universe, run
+from calculator import build_stock_universe
+from calculator.pipeline import build_stock_search_cache, read_search_universe, run, write_cache
 from scripts.record_signal_snapshots import record_daily_signal_snapshots
 
-VALID_TASKS = {"valuation", "technical", "stocks", "market-trends", "market-events"}
+VALID_TASKS = {"stock-universe", "valuation", "technical", "stocks", "market-trends", "market-events"}
 TRADE_LOG_PATHS = [
     ROOT_DIR / "web" / "public" / "api" / "trade-logs.json",
     ROOT_DIR / "data" / "cache" / "trade-logs.json",
@@ -106,6 +107,18 @@ def universe_for_tickers(tickers: list[str]) -> list[dict[str, str]]:
     return universe
 
 
+def refresh_search_universe() -> dict:
+    payload = build_stock_universe.build()
+    build_stock_universe.OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    build_stock_universe.OUTPUT_PATH.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    search_payload = build_stock_search_cache()
+    write_cache("stock-search", search_payload)
+    return payload
+
+
 def parse_tasks(argv: list[str]) -> list[str]:
     raw_values = argv or [os.environ.get("REFRESH_TASKS", "all")]
     tasks: list[str] = []
@@ -115,7 +128,7 @@ def parse_tasks(argv: list[str]) -> list[str]:
             if not task:
                 continue
             if task == "all":
-                return ["valuation", "technical", "stocks", "market-trends", "market-events"]
+                return ["stock-universe", "valuation", "technical", "stocks", "market-trends", "market-events"]
             if task not in VALID_TASKS:
                 raise SystemExit(f"unknown refresh task: {task}")
             if task not in tasks:
@@ -130,6 +143,9 @@ def parse_tasks(argv: list[str]) -> list[str]:
 
 def main() -> None:
     tasks = parse_tasks(sys.argv[1:])
+    if "stock-universe" in tasks:
+        payload = refresh_search_universe()
+        print(f"wrote search-universe: {payload['meta']['updatedAt']} ({payload['meta']['count']} stocks)")
     tickers = refresh_tickers()
     universe = universe_for_tickers(tickers)
     print(f"refresh universe size: {len(universe)}")

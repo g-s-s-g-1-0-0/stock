@@ -49,6 +49,8 @@ DEFAULT_TECHNICAL = ROOT_DIR / "web" / "public" / "api" / "technical.json"
 DEFAULT_VALUATION = ROOT_DIR / "web" / "public" / "api" / "valuation.json"
 DEFAULT_MARKET_TRENDS = ROOT_DIR / "web" / "public" / "api" / "market-trends.json"
 DEFAULT_MARKET_EVENTS = ROOT_DIR / "web" / "public" / "api" / "market-events.json"
+DEFAULT_PREVIOUS_SEARCH_UNIVERSE = ROOT_DIR / "data" / "cache" / "search-universe.before-refresh.json"
+DEFAULT_CURRENT_SEARCH_UNIVERSE = ROOT_DIR / "data" / "search_universe.json"
 DEFAULT_PREVIOUS_TRADE_LOGS = ROOT_DIR / "data" / "cache" / "trade-logs.before-refresh.json"
 DEFAULT_CURRENT_TRADE_LOGS = ROOT_DIR / "web" / "public" / "api" / "trade-logs.json"
 NOTIFICATION_STATE = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
@@ -88,6 +90,13 @@ def stock_rows_by_ticker(path: Path) -> dict[str, dict[str, Any]]:
         str(row.get("ticker", "")).strip(): row
         for row in rows
         if isinstance(row, dict) and str(row.get("ticker", "")).strip()
+    }
+
+
+def search_universe_rows_by_ticker(path: Path) -> dict[str, dict[str, Any]]:
+    return {
+        ticker.upper(): row
+        for ticker, row in stock_rows_by_ticker(path).items()
     }
 
 
@@ -1529,6 +1538,72 @@ def market_trend_ranks(trend: dict[str, Any]) -> list[dict[str, Any]]:
     return result
 
 
+def stock_universe_changes(previous: Path, current: Path = DEFAULT_CURRENT_SEARCH_UNIVERSE) -> dict[str, Any]:
+    previous_rows = search_universe_rows_by_ticker(previous)
+    current_rows = search_universe_rows_by_ticker(current)
+    added = [
+        current_rows[ticker]
+        for ticker in sorted(set(current_rows) - set(previous_rows))
+    ]
+    removed = [
+        previous_rows[ticker]
+        for ticker in sorted(set(previous_rows) - set(current_rows))
+    ]
+    return {
+        "previousCount": len(previous_rows),
+        "currentCount": len(current_rows),
+        "added": added,
+        "removed": removed,
+    }
+
+
+def stock_universe_change_section(changes: dict[str, Any]) -> str:
+    added = changes.get("added") if isinstance(changes.get("added"), list) else []
+    removed = changes.get("removed") if isinstance(changes.get("removed"), list) else []
+    if not added and not removed:
+        return ""
+
+    def row_label(row: dict[str, Any]) -> str:
+        ticker = str(row.get("ticker") or "").strip().upper()
+        name = str(row.get("name") or ticker or "-").strip()
+        market = str(row.get("market") or "-").strip()
+        industry = str(row.get("industry") or row.get("rawIndustry") or row.get("products") or "-").strip()
+        return f"<li><strong>{html.escape(ticker)}</strong> {html.escape(name)} <span style=\"color:#888;\">{html.escape(market)}</span><br><span style=\"color:#777;font-size:12px;\">{html.escape(industry)}</span></li>"
+
+    added_html = "".join(row_label(row) for row in added[:20])
+    removed_html = "".join(row_label(row) for row in removed[:12])
+    added_more = f"<li style=\"color:#888;\">외 {len(added) - 20}개 추가</li>" if len(added) > 20 else ""
+    removed_more = f"<li style=\"color:#888;\">외 {len(removed) - 12}개 제거</li>" if len(removed) > 12 else ""
+
+    return f"""
+      <div style="margin-top:18px;padding:12px 14px;border:1px solid #e8eef7;border-radius:8px;background:#fbfdff;">
+        <p style="margin:0 0 8px 0;font-weight:bold;color:#333;">상장사 검색 목록 업데이트</p>
+        <p style="margin:0 0 10px 0;color:#555;font-size:13px;">
+          전체 {changes.get('previousCount', 0):,}개 → {changes.get('currentCount', 0):,}개 ·
+          추가 {len(added):,}개 · 제거 {len(removed):,}개
+        </p>
+        {f'<p style="margin:10px 0 4px 0;color:#1f7a4d;font-weight:bold;">신규 추가</p><ul style="margin:0;padding-left:18px;">{added_html}{added_more}</ul>' if added else ''}
+        {f'<p style="margin:12px 0 4px 0;color:#9b4d00;font-weight:bold;">원천 목록에서 제거</p><ul style="margin:0;padding-left:18px;">{removed_html}{removed_more}</ul>' if removed else ''}
+      </div>
+    """
+
+
+def stock_universe_report_email_body(changes: dict[str, Any]) -> str:
+    now, _ = now_labels()
+    return f"""
+    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.7;max-width:640px;">
+      <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
+        상장사 검색 목록 업데이트
+      </p>
+      {stock_universe_change_section(changes)}
+      <p style="color:#888;font-size:12px;margin-top:18px;">
+        발송 시각: {html.escape(now)}<br>
+        공식 Nasdaq/KRX 원천 목록을 기준으로 검색 가능한 상장사 목록을 갱신했습니다.
+      </p>
+    </div>
+    """
+
+
 def weekly_trend_email_body(trend: dict[str, Any]) -> str:
     ranks = market_trend_ranks(trend)
     report_date = str(trend.get("date") or datetime.now(KST).strftime("%Y.%m.%d"))
@@ -1581,6 +1656,40 @@ def send_weekly_trend_notifications() -> int:
         send_notification(recipient, subject, append_notification_footer(body, recipient, "weeklyTrendReport"))
         sent += 1
     print(f"Sent weekly trend notifications: {sent}")
+    return sent
+
+
+def send_stock_universe_report_notifications(
+    previous: Path,
+    current: Path = DEFAULT_CURRENT_SEARCH_UNIVERSE,
+) -> int:
+    if not previous.exists():
+        print("No previous search universe snapshot.")
+        return 0
+    changes = stock_universe_changes(previous, current)
+    added = changes.get("added") if isinstance(changes.get("added"), list) else []
+    removed = changes.get("removed") if isinstance(changes.get("removed"), list) else []
+    if not added and not removed:
+        print("No stock universe changes.")
+        return 0
+
+    recipients = [
+        recipient
+        for recipient in load_recipients()
+        if recipient.is_admin and enabled(recipient, "weeklyTrendReport")
+    ]
+    if not recipients:
+        print("No admin recipients for stock universe report.")
+        return 0
+
+    report_date = datetime.now(KST).strftime("%Y.%m.%d")
+    subject = f"[상장사 목록 업데이트] 추가 {len(added):,}개 · 제거 {len(removed):,}개 ({report_date})"
+    body = stock_universe_report_email_body(changes)
+    sent = 0
+    for recipient in recipients:
+        send_notification(recipient, subject, append_notification_footer(body, recipient, "weeklyTrendReport"))
+        sent += 1
+    print(f"Sent stock universe report notifications: {sent}")
     return sent
 
 
@@ -2436,6 +2545,9 @@ def main() -> int:
     subparsers.add_parser("nasdaq-warn")
     subparsers.add_parser("regime-shift")
     subparsers.add_parser("weekly-trend")
+    stock_universe_parser = subparsers.add_parser("stock-universe-report")
+    stock_universe_parser.add_argument("--previous", type=Path, default=DEFAULT_PREVIOUS_SEARCH_UNIVERSE)
+    stock_universe_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_SEARCH_UNIVERSE)
     market_events_parser = subparsers.add_parser("market-events-review")
     market_events_parser.add_argument("--path", type=Path, default=DEFAULT_MARKET_EVENTS)
 
@@ -2471,6 +2583,9 @@ def main() -> int:
         return 0
     if args.command == "weekly-trend":
         send_weekly_trend_notifications()
+        return 0
+    if args.command == "stock-universe-report":
+        send_stock_universe_report_notifications(args.previous, args.current)
         return 0
     if args.command == "market-events-review":
         send_market_events_review_notification(args.path)

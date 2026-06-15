@@ -19,6 +19,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
 
         self.assertIn('"$RUNNER_TEMP/stocks.before-refresh.json"', workflow)
         self.assertIn('"$RUNNER_TEMP/trade-logs.before-refresh.json"', workflow)
+        self.assertIn('"$RUNNER_TEMP/search-universe.before-refresh.json"', workflow)
         self.assertIn(
             'python scripts/web_refresh_notifications.py opinion --previous "$RUNNER_TEMP/stocks.before-refresh.json" --previous-trade-logs "$RUNNER_TEMP/trade-logs.before-refresh.json"',
             workflow,
@@ -38,6 +39,8 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         send_opinion_index = workflow.index("- name: Send opinion change emails")
         send_peak_index = workflow.index("- name: Send Nasdaq peak emails")
         send_bb_pullback_index = workflow.index("- name: Send BB pullback candidate emails")
+        send_weekly_trend_index = workflow.index("- name: Send weekly trend report emails")
+        send_stock_universe_index = workflow.index("- name: Send stock universe update email")
         commit_state_index = workflow.index("- name: Commit refreshed caches and notification state")
         record_logs_index = workflow.index("- name: Record stock-level operation logs")
         deploy_index = workflow.index("- name: Deploy refreshed web")
@@ -48,6 +51,10 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertLess(send_opinion_index, commit_state_index)
         self.assertLess(send_peak_index, commit_state_index)
         self.assertLess(send_bb_pullback_index, commit_state_index)
+        self.assertLess(wait_index, send_weekly_trend_index)
+        self.assertLess(send_weekly_trend_index, commit_state_index)
+        self.assertLess(wait_index, send_stock_universe_index)
+        self.assertLess(send_stock_universe_index, commit_state_index)
         self.assertLess(commit_state_index, record_logs_index)
         self.assertLess(record_logs_index, deploy_index)
         self.assertLess(commit_state_index, failure_index)
@@ -58,11 +65,15 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn('if [ "$RAW_PUBLISH_AT" = "immediate" ]; then', workflow)
         self.assertIn("if now.minute >= 50 else", workflow)
         self.assertIn("WEB_REFRESH_PUBLISH_AT=$PUBLISH_AT", workflow)
+        self.assertIn('TASKS="stock-universe market-trends market-events"', workflow)
+        self.assertIn('market-trends) TASKS="stock-universe market-trends" ;;', workflow)
         self.assertIn("python scripts/record_web_api_logs.py --trade-logs-only $REFRESH_TASKS", workflow)
+        self.assertIn("python scripts/web_refresh_notifications.py weekly-trend", workflow)
+        self.assertIn('python scripts/web_refresh_notifications.py stock-universe-report --previous "$RUNNER_TEMP/search-universe.before-refresh.json"', workflow)
         self.assertIn("python scripts/web_refresh_notifications.py bb-pullback", workflow)
         self.assertIn("python scripts/record_web_api_logs.py --skip-trade-log-update $REFRESH_TASKS", workflow)
-        self.assertIn("git diff --quiet -- data/cache data/history web/public/api", workflow)
-        self.assertIn("git add data/cache data/history web/public/api", workflow)
+        self.assertIn("git diff --quiet -- data/cache data/history data/search_universe.json web/public/api", workflow)
+        self.assertIn("git add data/cache data/history data/search_universe.json web/public/api", workflow)
         self.assertIn('git commit -m "Update scheduled web data caches"', workflow)
 
 class WebRefreshNotificationsTest(unittest.TestCase):
@@ -183,6 +194,139 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("현재 매도 의견 종목", body)
         self.assertIn("TeraWulf (WULF)", body)
         self.assertNotIn("현재 매도 의견/청산 종목:</strong> 없음", body)
+
+    def test_stock_universe_report_email_body_lists_changes(self) -> None:
+        body = self.notifications.stock_universe_report_email_body(
+            {
+                "previousCount": 100,
+                "currentCount": 101,
+                "added": [{"ticker": "SPCX", "name": "Space Exploration Technologies", "market": "US", "industry": "우주 산업"}],
+                "removed": [{"ticker": "OLD", "name": "Old Corp", "market": "US", "industry": "상장폐지"}],
+            },
+        )
+
+        self.assertIn("상장사 검색 목록 업데이트", body)
+        self.assertIn("추가 1개", body)
+        self.assertIn("제거 1개", body)
+        self.assertIn("SPCX", body)
+        self.assertIn("Old Corp", body)
+
+    def test_stock_universe_changes_compares_previous_and_current_rows(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            previous.write_text(
+                json.dumps({"rows": [
+                    {"ticker": "OLD", "name": "Old Corp", "market": "US"},
+                    {"ticker": "KEEP", "name": "Keep Corp", "market": "US"},
+                ]}),
+                encoding="utf-8",
+            )
+            current.write_text(
+                json.dumps({"rows": [
+                    {"ticker": "KEEP", "name": "Keep Corp", "market": "US"},
+                    {"ticker": "SPCX", "name": "Space Exploration Technologies", "market": "US"},
+                ]}),
+                encoding="utf-8",
+            )
+
+            changes = self.notifications.stock_universe_changes(previous, current)
+
+        self.assertEqual(2, changes["previousCount"])
+        self.assertEqual(2, changes["currentCount"])
+        self.assertEqual(["SPCX"], [row["ticker"] for row in changes["added"]])
+        self.assertEqual(["OLD"], [row["ticker"] for row in changes["removed"]])
+
+    def test_stock_universe_report_skips_email_when_unchanged(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            payload = {"rows": [{"ticker": "KEEP", "name": "Keep Corp", "market": "US"}]}
+            previous.write_text(json.dumps(payload), encoding="utf-8")
+            current.write_text(json.dumps(payload), encoding="utf-8")
+
+            sent = self.notifications.send_stock_universe_report_notifications(previous, current)
+
+        self.assertEqual(0, sent)
+
+    def test_weekly_trend_report_sends_to_all_enabled_recipients(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        original_latest_market_trend = self.notifications.latest_market_trend
+        original_load_recipients = self.notifications.load_recipients
+        original_send_notification = self.notifications.send_notification
+
+        try:
+            self.notifications.latest_market_trend = lambda: {
+                "date": "2026.06.15",
+                "summary": "요약",
+                "ranks": ["우주항공 | SpaceX"],
+            }
+            self.notifications.load_recipients = lambda: [
+                self.notifications.Recipient(
+                    owner_id="admin",
+                    email="admin@example.com",
+                    is_admin=True,
+                    preferences={"weeklyTrendReport": True},
+                ),
+                self.notifications.Recipient(
+                    owner_id="user",
+                    email="user@example.com",
+                    is_admin=False,
+                    preferences={"weeklyTrendReport": True},
+                ),
+            ]
+            self.notifications.send_notification = (
+                lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
+            )
+
+            sent = self.notifications.send_weekly_trend_notifications()
+        finally:
+            self.notifications.latest_market_trend = original_latest_market_trend
+            self.notifications.load_recipients = original_load_recipients
+            self.notifications.send_notification = original_send_notification
+
+        self.assertEqual(2, sent)
+        self.assertEqual(["admin@example.com", "user@example.com"], [message[0] for message in sent_messages])
+
+    def test_stock_universe_report_sends_only_to_admins(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        original_load_recipients = self.notifications.load_recipients
+        original_send_notification = self.notifications.send_notification
+
+        try:
+            with TemporaryDirectory() as temp_dir:
+                previous = Path(temp_dir) / "previous.json"
+                current = Path(temp_dir) / "current.json"
+                previous.write_text(json.dumps({"rows": []}), encoding="utf-8")
+                current.write_text(
+                    json.dumps({"rows": [{"ticker": "SPCX", "name": "Space Exploration Technologies", "market": "US"}]}),
+                    encoding="utf-8",
+                )
+                self.notifications.load_recipients = lambda: [
+                    self.notifications.Recipient(
+                        owner_id="admin",
+                        email="admin@example.com",
+                        is_admin=True,
+                        preferences={"weeklyTrendReport": True},
+                    ),
+                    self.notifications.Recipient(
+                        owner_id="user",
+                        email="user@example.com",
+                        is_admin=False,
+                        preferences={"weeklyTrendReport": True},
+                    ),
+                ]
+                self.notifications.send_notification = (
+                    lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
+                )
+
+                sent = self.notifications.send_stock_universe_report_notifications(previous, current)
+        finally:
+            self.notifications.load_recipients = original_load_recipients
+            self.notifications.send_notification = original_send_notification
+
+        self.assertEqual(1, sent)
+        self.assertEqual(["admin@example.com"], [message[0] for message in sent_messages])
 
     def test_opinion_changes_labels_watch_to_buy_with_added_trade_as_additional_buy(self) -> None:
         with TemporaryDirectory() as temp_dir:

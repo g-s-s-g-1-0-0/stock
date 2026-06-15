@@ -33,6 +33,9 @@ class RefreshWebCachesTest(unittest.TestCase):
             self.refresh.load_watchlist_tickers = original_load_watchlist_tickers
             self.refresh.TRADE_LOG_PATHS = original_trade_log_paths
 
+    def test_stock_universe_task_can_run_without_full_stock_refresh(self) -> None:
+        self.assertEqual(["stock-universe"], self.refresh.parse_tasks(["stock-universe"]))
+
 
 if __name__ == "__main__":
     unittest.main()

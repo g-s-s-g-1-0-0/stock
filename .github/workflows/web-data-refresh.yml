@@ -16,6 +16,7 @@ on:
         options:
           - all
           - analysis
+          - stock-universe
           - valuation
           - technical
           - market-trends
@@ -83,12 +84,13 @@ jobs:
         run: |
           cp web/public/api/stocks.json "$RUNNER_TEMP/stocks.before-refresh.json" 2>/dev/null || echo '{"rows":[]}' > "$RUNNER_TEMP/stocks.before-refresh.json"
           cp web/public/api/trade-logs.json "$RUNNER_TEMP/trade-logs.before-refresh.json" 2>/dev/null || echo '{"rows":[]}' > "$RUNNER_TEMP/trade-logs.before-refresh.json"
+          cp data/search_universe.json "$RUNNER_TEMP/search-universe.before-refresh.json" 2>/dev/null || echo '{"rows":[]}' > "$RUNNER_TEMP/search-universe.before-refresh.json"
 
       - name: Resolve refresh tasks
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
             if [ "${{ github.event.schedule }}" = "0 0 * * 1" ]; then
-              TASKS="market-trends market-events"
+              TASKS="stock-universe market-trends market-events"
             else
               TASKS="valuation technical"
             fi
@@ -96,13 +98,14 @@ jobs:
             PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0); publish_at = publish_at + timedelta(hours=1) if publish_at <= now else publish_at; print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z"))')"
           else
             case "${{ inputs.refresh_scope }}" in
-              all) TASKS="valuation technical market-trends market-events" ;;
+              all) TASKS="stock-universe valuation technical market-trends market-events" ;;
               analysis) TASKS="valuation technical" ;;
+              stock-universe) TASKS="stock-universe" ;;
               valuation) TASKS="valuation" ;;
               technical) TASKS="technical" ;;
-              market-trends) TASKS="market-trends" ;;
+              market-trends) TASKS="stock-universe market-trends" ;;
               market-events) TASKS="market-events" ;;
-              *) TASKS="valuation technical market-trends market-events" ;;
+              *) TASKS="stock-universe valuation technical market-trends market-events" ;;
             esac
             SEND_NOTIFICATIONS="${{ inputs.send_notifications || 'true' }}"
             RAW_PUBLISH_AT="${{ inputs.scheduled_publish_at || '' }}"
@@ -205,6 +208,10 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
         run: python scripts/web_refresh_notifications.py weekly-trend
 
+      - name: Send stock universe update email
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'stock-universe') }}
+        run: python scripts/web_refresh_notifications.py stock-universe-report --previous "$RUNNER_TEMP/search-universe.before-refresh.json"
+
       - name: Notify admins for market event review
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'market-events') }}
         run: python scripts/web_refresh_notifications.py market-events-review
@@ -212,13 +219,13 @@ jobs:
       - name: Commit refreshed caches and notification state
         if: ${{ env.SKIP_REFRESH != 'true' }}
         run: |
-          if git diff --quiet -- data/cache data/history web/public/api; then
+          if git diff --quiet -- data/cache data/history data/search_universe.json web/public/api; then
             echo "No cache changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/cache data/history web/public/api
+          git add data/cache data/history data/search_universe.json web/public/api
           git commit -m "Update scheduled web data caches"
           BRANCH="${GITHUB_REF_NAME:-main}"
           for attempt in 1 2 3; do

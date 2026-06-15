@@ -1,6 +1,6 @@
 const DEFAULT_WORKFLOW_ID = 'web-data-refresh.yml'
 const DEFAULT_REPO = 'g-s-s-g-1-0-0/stock'
-const ALLOWED_SCOPES = new Set(['all', 'analysis', 'valuation', 'technical', 'market-trends', 'market-events'])
+const ALLOWED_SCOPES = new Set(['all', 'analysis', 'stock-universe', 'valuation', 'technical', 'market-trends', 'market-events'])
 
 function json(res, statusCode, payload) {
   res.statusCode = statusCode

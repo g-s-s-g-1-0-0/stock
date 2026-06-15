@@ -90,7 +90,7 @@ def load_us_stocks() -> list[dict[str, str]]:
     for row in csv.DictReader(StringIO(nasdaq_text), delimiter="|"):
         ticker = (row.get("Symbol") or "").strip()
         name = (row.get("Security Name") or "").strip()
-        if not ticker or ticker == "File Creation Time":
+        if not ticker or ticker.startswith("File Creation Time"):
             continue
         if row.get("Test Issue") == "Y":
             continue
@@ -102,7 +102,7 @@ def load_us_stocks() -> list[dict[str, str]]:
     for row in csv.DictReader(StringIO(other_text), delimiter="|"):
         ticker = (row.get("ACT Symbol") or "").strip()
         name = (row.get("Security Name") or "").strip()
-        if not ticker or ticker == "File Creation Time":
+        if not ticker or ticker.startswith("File Creation Time"):
             continue
         if row.get("Test Issue") == "Y":
             continue
