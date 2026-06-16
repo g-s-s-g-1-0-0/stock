@@ -368,15 +368,15 @@ const investmentProfileOptions: Array<{
 }> = [
   {
     value: 'long_term',
-    title: '천천히 모아가는 투자자 (가치 투자)',
-    description: '좋은 매수 시점과 보유 흐름을 중심으로 보고 싶어요.',
-    bullets: ['매수/관망 신호만 보기', '매도 관련 정보는 숨김', '보유 종목 수익률 중심'],
+    title: '가치투자',
+    description: '좋은 종목을 오래 보유하며 천천히 자산을 쌓는 방식',
+    bullets: ['큰 변동성을 자주 확인하고 싶지 않아요', '손절이나 잦은 매도가 부담스러워요', '투자금을 천천히 꾸준히 쌓고 싶어요', '매수/관망 신호 중심으로 볼게요', '보유 종목 수익률을 중심으로 확인할게요'],
   },
   {
     value: 'swing',
-    title: '빠르게 사고파는 투자자 (스윙 투자)',
-    description: '타이밍을 보며 수익 기회를 빠르게 잡고 싶어요.',
-    bullets: ['매수/관망/매도 신호 모두 보기', '수익 실현과 손절 기준 확인', '거래 기록으로 성과 확인'],
+    title: '스윙투자',
+    description: '시장 흐름에 맞춰 빠르게 사고팔며 수익 기회를 노리는 방식',
+    bullets: ['시드가 작아 빠르게 불리고 싶어요', '리스크를 감수하더라도 기회를 잡고 싶어요', '매수·매도 타이밍을 적극적으로 보고 싶어요', '익절·손절 기준을 함께 볼게요', '거래 기록과 성과를 확인할게요'],
   },
 ]
 const notificationIntegrationOptions: Array<{
@@ -8731,7 +8731,7 @@ function App() {
             <div className="investment-profile-header">
               <span>첫 설정</span>
               <h3>투자성향을 선택해 주세요</h3>
-              <p>원하는 성향을 선택한 뒤 확인을 눌러 주세요. 닫으면 기본값인 천천히 모아가는 투자자 (가치 투자)로 시작합니다.</p>
+              <p>원하는 성향을 선택한 뒤 확인을 눌러 주세요. 닫으면 기본값인 가치투자로 시작합니다.</p>
             </div>
             <div className="investment-option-grid">
               {investmentProfileOptions.map((option) => (
@@ -8908,6 +8908,9 @@ function App() {
                         >
                           <strong>{option.title}</strong>
                           <span>{option.description}</span>
+                          <ul>
+                            {option.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}
+                          </ul>
                         </button>
                       ))}
                     </div>

@@ -3415,7 +3415,7 @@
 .investment-option-card > span {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .investment-option-card ul {
@@ -5634,7 +5634,7 @@
     padding-right: 36px;
   }
 
-  /* 모바일에서 '천천히 모아가는 투자자 (가치 투자)' 같은 긴 제목이 줄바꿈되지 않도록 한 줄에 맞춰 폰트를 줄인다. */
+  /* 모바일에서 투자 성향 제목이 줄바꿈되지 않도록 한 줄에 맞춰 폰트를 줄인다. */
   .investment-option-card strong {
     font-size: 13.5px;
     white-space: nowrap;
