@@ -133,20 +133,38 @@ jobs:
           from datetime import datetime, timezone
           from pathlib import Path
 
-          path = Path("web/public/api/technical.json")
-          skip = False
-          if path.exists():
-              payload = json.loads(path.read_text(encoding="utf-8"))
-              meta = payload.get("meta", {}) if isinstance(payload, dict) else {}
-              raw_updated_at = meta.get("lastSuccessfulRun") or meta.get("updatedAt")
-              if raw_updated_at:
-                  updated_at = datetime.fromisoformat(str(raw_updated_at).replace("Z", "+00:00"))
-                  age_seconds = (datetime.now(timezone.utc) - updated_at.astimezone(timezone.utc)).total_seconds()
-                  skip = age_seconds < 90 * 60
-                  print(f"Technical cache age: {age_seconds:.0f}s")
+          # Only skip when every analysis cache scheduled to refresh this run is
+          # already fresh. Valuation refreshes daily while technical refreshes
+          # every two hours, so judging by technical alone made the daily
+          # valuation run skip whenever technical had just updated, leaving
+          # valuation a day stale.
+          cache_paths = {
+              "valuation": Path("web/public/api/valuation.json"),
+              "technical": Path("web/public/api/technical.json"),
+          }
+          refresh_tasks = os.environ.get("REFRESH_TASKS", "").split()
+          analysis_tasks = [task for task in refresh_tasks if task in cache_paths]
+          skip = bool(analysis_tasks)
+          for task in analysis_tasks:
+              path = cache_paths[task]
+              fresh = False
+              if path.exists():
+                  payload = json.loads(path.read_text(encoding="utf-8"))
+                  meta = payload.get("meta", {}) if isinstance(payload, dict) else {}
+                  raw_updated_at = meta.get("lastSuccessfulRun") or meta.get("updatedAt")
+                  if raw_updated_at:
+                      updated_at = datetime.fromisoformat(str(raw_updated_at).replace("Z", "+00:00"))
+                      age_seconds = (datetime.now(timezone.utc) - updated_at.astimezone(timezone.utc)).total_seconds()
+                      fresh = age_seconds < 90 * 60
+                      print(f"{task} cache age: {age_seconds:.0f}s (fresh={fresh})")
+                  else:
+                      print(f"{task} cache has no timestamp; treating as stale.")
+              else:
+                  print(f"{task} cache missing; treating as stale.")
+              skip = skip and fresh
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
               env_file.write(f"SKIP_REFRESH={'true' if skip else 'false'}\n")
-          print("Scheduled refresh skipped because cache is fresh." if skip else "Scheduled refresh will run.")
+          print("Scheduled refresh skipped because every scheduled cache is fresh." if skip else "Scheduled refresh will run.")
           PY
 
       - name: Refresh web caches

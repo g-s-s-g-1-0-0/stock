@@ -5000,6 +5000,8 @@ function App() {
   })
   // DB에서 유형별 운영자 관심종목을 한 번 복원한 뒤에만 어드민 변경분을 다시 저장하도록 게이트한다.
   const operatorWatchlistByTypeLoadedRef = useRef(false)
+  // 개인 유형별 관심종목도 DB 복원 이후에만 다시 저장해 초기 로드 시 빈 값으로 덮어쓰지 않게 한다.
+  const personalWatchlistByTypeLoadedRef = useRef(false)
   const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(() => (
     initialLocalTestSession ? resolveLocalTestPersonalTrades(initialLocalTestSession) : readStoredPersonalTradeLogs()
   ))
@@ -5639,9 +5641,9 @@ function App() {
 
     const baseColumns = scope === 'operator'
       ? 'tickers, watchlist_sort, updated_at, tickers_by_type'
-      : 'tickers, watchlist_sort, updated_at'
+      : 'tickers, watchlist_sort, updated_at, tickers_by_type'
     let { data, error } = await selectWatchlist(baseColumns)
-    if (error && scope === 'operator') {
+    if (error) {
       // tickers_by_type 컬럼이 없는 구버전 DB 대비 폴백.
       const retry = await selectWatchlist('tickers, watchlist_sort, updated_at')
       data = retry.data
@@ -5662,7 +5664,7 @@ function App() {
       tickers: normalizeWatchlistTickers(row?.tickers),
       watchlistSort,
       updatedAt: parseRemoteUpdatedAt(row?.updated_at),
-      tickersByType: scope === 'operator' ? normalizeWatchlistByType(row?.tickers_by_type) : null,
+      tickersByType: normalizeWatchlistByType(row?.tickers_by_type),
     }
   }
 
@@ -5815,6 +5817,41 @@ function App() {
     }
   }
 
+  // 개인 관심종목의 유형별(가치투자/스윙) 전체 목록을 DB에 저장해 기기 간 동기화한다.
+  // 활성 유형만 단일 tickers 컬럼으로 동기화되던 기존 구조 탓에 비활성 유형이 기기마다 달라지던 문제를 해결한다.
+  async function persistPersonalWatchlistByType(map: Record<InvestmentType, string[]>, session = userSession) {
+    storePersonalWatchlistByType(session, map)
+    if (!supabase || !session || isLocalTestSession(session)) return
+    const client = supabase
+
+    try {
+      const { data: sessionInfo } = await client.auth.getSession()
+      if (!sessionInfo.session) return
+
+      const { data, error } = await client
+        .from('watchlists')
+        .update({ tickers_by_type: map })
+        .eq('scope', 'personal')
+        .eq('owner_id', session.id)
+        .select('id')
+      if (error) return
+      if (data && data.length > 0) return
+
+      // 아직 개인 watchlist 행이 없으면 활성 유형 목록과 함께 새로 만든다.
+      const activeType = (investmentType ?? DEFAULT_INVESTMENT_TYPE)
+      await client
+        .from('watchlists')
+        .insert({
+          owner_id: session.id,
+          scope: 'personal',
+          tickers: map[activeType] ?? [],
+          tickers_by_type: map,
+        } as never)
+    } catch {
+      // tickers_by_type 컬럼이 없는 구버전 DB는 로컬 저장으로만 유지한다.
+    }
+  }
+
   async function loadBoardPosts() {
     if (!supabase) return
 
@@ -5895,7 +5932,8 @@ function App() {
         ? resolvedPersonalWatchlist.tickers
         : legacyTickers ?? initialWatchlist
 
-      setWatchlist(session ? nextPersonalTickers : readStoredWatchlist(null))
+      const resolvedActivePersonalTickers = session ? nextPersonalTickers : readStoredWatchlist(null)
+      setWatchlist(resolvedActivePersonalTickers)
       if (resolvedPersonalWatchlist.clearPending) {
         clearPendingPersonalWatchlist(session)
       } else if (session && resolvedPersonalWatchlist.pendingToSync) {
@@ -5904,6 +5942,22 @@ function App() {
 
       if (session && !resolvedPersonalWatchlist.pendingToSync && !personalTickers?.tickers?.length && legacyTickers) {
         await persistWatchlist('personal', legacyTickers, session)
+      }
+
+      // 개인 유형별(가치/스윙) 관심종목을 DB 값으로 복원해 기기 간 동기화한다.
+      // 서버값을 우선하고 없으면 로컬 캐시로 폴백하며, 활성 유형은 위에서 결정된 목록으로 맞춘다.
+      if (session) {
+        const personalByTypeFromDb = personalTickers?.tickersByType
+        const cachedPersonalByType = readPersonalWatchlistByType(session)
+        const nextPersonalByType: Record<InvestmentType, string[]> = {
+          long_term: personalByTypeFromDb?.long_term ?? cachedPersonalByType?.long_term ?? [],
+          swing: personalByTypeFromDb?.swing ?? cachedPersonalByType?.swing ?? [],
+        }
+        const activeType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
+        nextPersonalByType[activeType] = resolvedActivePersonalTickers
+        setPersonalWatchlistByType(nextPersonalByType)
+        storePersonalWatchlistByType(session, nextPersonalByType)
+        personalWatchlistByTypeLoadedRef.current = true
       }
     } finally {
       setIsRemoteDataReady(true)
@@ -6635,6 +6689,17 @@ function App() {
     }, 500)
     return () => window.clearTimeout(timeoutId)
   }, [operatorWatchlistByType, isAdminUser])
+
+  // 개인 유형별 관심종목이 바뀌면 DB에 동기화해 다른 기기에서도 같은 목록을 보게 한다.
+  // DB에서 한 번 복원(personalWatchlistByTypeLoadedRef)한 뒤에만 저장해 초기 로드 시 빈 값으로 덮어쓰지 않는다.
+  useEffect(() => {
+    if (!userSession) return undefined
+    if (!personalWatchlistByTypeLoadedRef.current) return undefined
+    const timeoutId = window.setTimeout(() => {
+      void persistPersonalWatchlistByType(personalWatchlistByType)
+    }, 500)
+    return () => window.clearTimeout(timeoutId)
+  }, [personalWatchlistByType, userSession?.id])
 
   const selectInvestmentType = (nextInvestmentType: InvestmentType) => {
     const currentType = investmentType ?? DEFAULT_INVESTMENT_TYPE
