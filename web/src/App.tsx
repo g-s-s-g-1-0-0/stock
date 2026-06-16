@@ -332,6 +332,7 @@ const DEFAULT_USER_SETTINGS: StoredUserSettings = {
 }
 const DEFAULT_INVESTMENT_TYPE: InvestmentType = 'long_term'
 const DEFAULT_PORTFOLIO_CASH = 10_000_000
+const MEGA_TREND_INVESTMENT_RANK_LIMIT = 5
 const DEFAULT_ALLOCATION_SETTINGS: Record<InvestmentType, AllocationSettings> = {
   swing: { slotCount: 3, slotPercents: [50, 25, 25], megaTrendOnly: true },
   long_term: { slotCount: 10, slotPercents: Array.from({ length: 10 }, () => 10), megaTrendOnly: true },
@@ -7600,7 +7601,7 @@ function App() {
   function megaTrendStatus(trade: TradeLog) {
     const match = trendReportMatchForTrade(trade)
 
-    return match !== null && match.rank <= 3
+    return match !== null && match.rank <= MEGA_TREND_INVESTMENT_RANK_LIMIT
       ? `충족(${match.theme})`
       : '미충족'
   }
@@ -7631,7 +7632,7 @@ function App() {
   function tradeBuyPriority(trade: TradeLog): TradeBuyPriority {
     const rank = trendReportRankForTrade(trade)
     return {
-      megaRank: rank !== null && rank <= 3 ? 0 : 1,
+      megaRank: rank !== null && rank <= MEGA_TREND_INVESTMENT_RANK_LIMIT ? 0 : 1,
       trendRank: rank ?? 99,
     }
   }
@@ -8115,7 +8116,7 @@ function App() {
                   <th>전략</th>
                   <th>
                     <MetricValue
-                      tooltip="매수한 종목의 산업군이 그 주 시장 트렌드 Top 3에 있으면 충족입니다. 아니면 미충족으로 표시합니다."
+                      tooltip={`매수한 종목의 산업군이 그 주 시장 트렌드 Top ${MEGA_TREND_INVESTMENT_RANK_LIMIT}에 있으면 충족입니다. 아니면 미충족으로 표시합니다.`}
                       onTooltipClose={() => setActiveTooltip(null)}
                       onTooltipOpen={setActiveTooltip}
                     >
@@ -9271,7 +9272,7 @@ function App() {
                       />
                       <span>
                         메가 트렌드만 매수 허용
-                        <em>체크 시, 매수 시점에 메가 트렌드를 충족한 종목만 투자금을 배정합니다. 해제하면 보유 현금이 있을 때 원래 기준대로 매수합니다. (로그 기록은 동일)</em>
+                        <em>체크 시, 매수 시점에 시장 트렌드 Top {MEGA_TREND_INVESTMENT_RANK_LIMIT}를 충족한 종목만 투자금을 배정합니다. 해제하면 보유 현금이 있을 때 원래 기준대로 매수합니다. (로그 기록은 동일)</em>
                       </span>
                     </label>
                     <label className="login-field">
