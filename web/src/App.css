@@ -5222,29 +5222,44 @@
 @media (max-width: 760px) {
   .pull-refresh-indicator {
     position: fixed;
-    top: 82px;
+    top: 74px;
     left: 50%;
     z-index: 790;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 30px;
-    border: 1px solid rgba(34, 136, 238, 0.18);
+    width: 34px;
+    height: 34px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.96);
     box-shadow: 0 8px 22px rgba(15, 23, 42, 0.14);
-    color: var(--accent-strong);
-    font-size: 12px;
-    font-weight: 800;
     opacity: 0;
-    padding: 6px 12px;
     pointer-events: none;
-    transition: opacity 0.14s ease;
-    white-space: nowrap;
+    transition:
+      opacity 0.14s ease,
+      transform 0.14s ease;
   }
 
   .pull-refresh-indicator.visible {
     opacity: 1;
+  }
+
+  .pull-refresh-spinner {
+    width: 17px;
+    height: 17px;
+    border: 2px solid rgba(34, 136, 238, 0.18);
+    border-top-color: var(--accent);
+    border-radius: 999px;
+  }
+
+  .pull-refresh-indicator.refreshing .pull-refresh-spinner {
+    animation: pull-refresh-spin 0.72s linear infinite;
+  }
+
+  @keyframes pull-refresh-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .app-header {

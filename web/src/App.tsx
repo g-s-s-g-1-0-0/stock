@@ -8139,11 +8139,11 @@ function App() {
         </button>
       </header>
       <div
-        aria-live="polite"
-        className={`pull-refresh-indicator ${pullRefreshDistance > 0 || isPullRefreshing ? 'visible' : ''}`}
+        aria-hidden="true"
+        className={`pull-refresh-indicator ${pullRefreshDistance > 0 || isPullRefreshing ? 'visible' : ''} ${isPullRefreshing ? 'refreshing' : ''}`}
         style={{ transform: `translate(-50%, ${Math.round((isPullRefreshing ? PULL_REFRESH_TRIGGER_DISTANCE : pullRefreshDistance) * 0.32)}px)` }}
       >
-        {isPullRefreshing ? '새로고침 중...' : pullRefreshDistance >= PULL_REFRESH_TRIGGER_DISTANCE ? '놓으면 새로고침' : '아래로 당겨 새로고침'}
+        <span className="pull-refresh-spinner" />
       </div>
 
       {currentActivePage === 'home' ? (

@@ -170,6 +170,12 @@ def technical_rows_by_ticker(path: Path = DEFAULT_TECHNICAL) -> dict[str, dict[s
     return rows if isinstance(rows, dict) else {}
 
 
+def technical_market_state(path: Path = DEFAULT_TECHNICAL) -> dict[str, Any]:
+    payload = read_json(path)
+    state = payload.get("qqqMarketState") if isinstance(payload, dict) else {}
+    return state if isinstance(state, dict) else {}
+
+
 def trade_rows(path: Path) -> list[dict[str, Any]]:
     payload = read_json(path)
     rows = payload.get("rows") if isinstance(payload, dict) else []
@@ -1930,6 +1936,9 @@ def send_nasdaq_warn_notifications() -> int:
 
 
 def regime_shift_snapshot() -> dict[str, Any]:
+    cached_state = technical_market_state()
+    if cached_state:
+        return cached_state
     row = calc_technical_row("QQQ")
     qqq_rows = fetch_us_ohlcv("QQQ", range_value="2y")
     recent_min_dist = qqq_recent_ma200_min_distance(qqq_rows)
@@ -1987,7 +1996,11 @@ def send_regime_shift_notifications() -> int:
     state = read_json(NOTIFICATION_STATE)
     if not isinstance(state, dict):
         state = {}
-    snapshot = regime_shift_snapshot()
+    try:
+        snapshot = regime_shift_snapshot()
+    except Exception as error:  # noqa: BLE001 - notification should not fail the refresh pipeline.
+        print(f"Regime shift snapshot unavailable; skipped notification: {error}")
+        return 0
     is_recovery = bool(snapshot.get("isRecoveryMarket"))
 
     regime_state = state.get("regimeShift") if isinstance(state.get("regimeShift"), dict) else {}

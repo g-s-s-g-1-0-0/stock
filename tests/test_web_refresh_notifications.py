@@ -818,6 +818,48 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("발송 시각 (한국):", sent_messages[0][2])
         self.assertIn("발송 시각 (미 동부):", sent_messages[0][2])
 
+    def test_regime_shift_uses_cached_technical_market_state(self) -> None:
+        original_technical = self.notifications.DEFAULT_TECHNICAL
+        original_state = self.notifications.NOTIFICATION_STATE
+        original_calc_technical_row = self.notifications.calc_technical_row
+        try:
+            with TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir)
+                self.notifications.DEFAULT_TECHNICAL = root / "technical.json"
+                self.notifications.NOTIFICATION_STATE = root / "state.json"
+                self.notifications.DEFAULT_TECHNICAL.write_text(
+                    json.dumps({"qqqMarketState": {"isRecoveryMarket": True, "regimeLabel": "급락 후 회복장"}}),
+                    encoding="utf-8",
+                )
+                self.notifications.calc_technical_row = lambda ticker: (_ for _ in ()).throw(AssertionError("network fallback should not run"))
+
+                sent = self.notifications.send_regime_shift_notifications()
+        finally:
+            self.notifications.DEFAULT_TECHNICAL = original_technical
+            self.notifications.NOTIFICATION_STATE = original_state
+            self.notifications.calc_technical_row = original_calc_technical_row
+
+        self.assertEqual(0, sent)
+
+    def test_regime_shift_snapshot_failure_does_not_fail_workflow(self) -> None:
+        original_technical = self.notifications.DEFAULT_TECHNICAL
+        original_state = self.notifications.NOTIFICATION_STATE
+        original_calc_technical_row = self.notifications.calc_technical_row
+        try:
+            with TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir)
+                self.notifications.DEFAULT_TECHNICAL = root / "missing-technical.json"
+                self.notifications.NOTIFICATION_STATE = root / "state.json"
+                self.notifications.calc_technical_row = lambda ticker: (_ for _ in ()).throw(ConnectionError("temporary disconnect"))
+
+                sent = self.notifications.send_regime_shift_notifications()
+        finally:
+            self.notifications.DEFAULT_TECHNICAL = original_technical
+            self.notifications.NOTIFICATION_STATE = original_state
+            self.notifications.calc_technical_row = original_calc_technical_row
+
+        self.assertEqual(0, sent)
+
     def test_opinion_notification_combines_trade_exit_changes(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
         original_load_recipients = self.notifications.load_recipients
