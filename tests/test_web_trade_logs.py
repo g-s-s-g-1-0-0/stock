@@ -6,6 +6,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import record_web_api_logs as logs
 
 
+def test_load_watchlist_tickers_includes_all_investment_types(monkeypatch):
+    monkeypatch.setattr(logs, "supabase_request", lambda path: [{
+        "tickers": ["AAPL"],
+        "tickers_by_type": {
+            "long_term": ["MSFT", "AAPL"],
+            "swing": ["NVDA"],
+        },
+    }])
+
+    assert logs.load_watchlist_tickers([]) == ["AAPL", "MSFT", "NVDA"]
+
+
 def patch_log_paths(monkeypatch, tmp_path):
     cache_path = tmp_path / "data" / "cache" / "trade-logs.json"
     public_path = tmp_path / "web" / "public" / "api" / "trade-logs.json"

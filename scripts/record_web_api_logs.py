@@ -145,18 +145,31 @@ def reset_api_logs() -> None:
         print(f"[api_logs] runtime reset cleanup failed; continuing: {error}")
 
 
+def append_unique_ticker(tickers: list[str], value: Any) -> None:
+    ticker = str(value or "").strip().upper()
+    if ticker and ticker not in tickers:
+        tickers.append(ticker)
+
+
+def append_watchlist_values(tickers: list[str], values: Any) -> None:
+    if not isinstance(values, list):
+        return
+    for value in values:
+        append_unique_ticker(tickers, value)
+
+
 def load_watchlist_tickers(stocks: list[dict[str, Any]]) -> list[str]:
-    rows = supabase_request("/rest/v1/watchlists?select=tickers&scope=eq.operator&owner_id=is.null")
+    rows = supabase_request("/rest/v1/watchlists?select=tickers,tickers_by_type&scope=eq.operator&owner_id=is.null")
     tickers: list[str] = []
     if isinstance(rows, list):
         for row in rows:
-            values = row.get("tickers") if isinstance(row, dict) else None
-            if not isinstance(values, list):
+            if not isinstance(row, dict):
                 continue
-            for value in values:
-                ticker = str(value or "").strip().upper()
-                if ticker and ticker not in tickers:
-                    tickers.append(ticker)
+            append_watchlist_values(tickers, row.get("tickers"))
+            by_type = row.get("tickers_by_type")
+            if isinstance(by_type, dict):
+                for values in by_type.values():
+                    append_watchlist_values(tickers, values)
     if tickers:
         return tickers[:MAX_LOG_ROWS]
     if os.environ.get("SUPABASE_URL", "").strip() and os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip():
@@ -906,7 +919,7 @@ def value_log_text(row: dict[str, Any]) -> str:
         f"  {label}: {checked_value(row.get(key))}"
         for key, label in VALUATION_LOG_FIELDS
     ]
-    can_judge = row.get("fairPriceReason") != "loss_making" and meaningful_log_value(row.get("fairPrice"))
+    can_judge = row.get("fairPriceReason") not in {"loss_making", "etf"} and meaningful_log_value(row.get("fairPrice"))
 
     return "\n".join([
         f"====== {' | '.join(header_parts)} ======",
@@ -945,7 +958,7 @@ def value_log_rows(stocks: list[dict[str, Any]], valuation: dict[str, Any], tick
             "fairPrice": stock.get("fairPrice") or "-",
             "fairPriceReason": stock.get("fairPriceReason") or "-",
             "valuation": stock.get("valuation") or "-",
-            "opinion": "-" if stock.get("fairPriceReason") == "loss_making" else stock.get("opinion", "-"),
+            "opinion": "-" if stock.get("fairPriceReason") in {"loss_making", "etf"} else stock.get("opinion", "-"),
             "updatedAt": stock.get("updatedAt") or "-",
             **{key: metric.get(key, "-") for key, _ in VALUATION_LOG_FIELDS if key != "valuationIndustry"},
             "valuationIndustry": metric.get("industry", "-"),

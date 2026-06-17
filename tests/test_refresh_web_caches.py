@@ -9,6 +9,22 @@ class RefreshWebCachesTest(unittest.TestCase):
     def setUp(self) -> None:
         self.refresh = importlib.import_module("scripts.refresh_web_caches")
 
+    def test_load_watchlist_tickers_includes_all_investment_types(self) -> None:
+        original_supabase_request = self.refresh.supabase_request
+
+        try:
+            self.refresh.supabase_request = lambda path: [{
+                "tickers": ["AAPL"],
+                "tickers_by_type": {
+                    "long_term": ["MSFT", "AAPL"],
+                    "swing": ["NVDA"],
+                },
+            }]
+
+            self.assertEqual(["AAPL", "MSFT", "NVDA"], self.refresh.load_watchlist_tickers())
+        finally:
+            self.refresh.supabase_request = original_supabase_request
+
     def test_refresh_tickers_includes_open_trades(self) -> None:
         original_load_watchlist_tickers = self.refresh.load_watchlist_tickers
         original_trade_log_paths = self.refresh.TRADE_LOG_PATHS

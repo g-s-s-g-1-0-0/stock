@@ -43,16 +43,14 @@ def supabase_request(path: str) -> list[dict]:
 
 
 def load_watchlist_tickers() -> list[str]:
-    rows = supabase_request("/rest/v1/watchlists?select=tickers&scope=eq.operator&owner_id=is.null")
+    rows = supabase_request("/rest/v1/watchlists?select=tickers,tickers_by_type&scope=eq.operator&owner_id=is.null")
     tickers: list[str] = []
     for row in rows:
-        values = row.get("tickers")
-        if not isinstance(values, list):
-            continue
-        for value in values:
-            ticker = str(value or "").strip().upper()
-            if ticker and ticker not in tickers:
-                tickers.append(ticker)
+        append_watchlist_values(tickers, row.get("tickers"))
+        by_type = row.get("tickers_by_type")
+        if isinstance(by_type, dict):
+            for values in by_type.values():
+                append_watchlist_values(tickers, values)
     return tickers
 
 
@@ -60,6 +58,13 @@ def append_unique(tickers: list[str], value: object) -> None:
     ticker = str(value or "").strip().upper()
     if ticker and ticker not in tickers:
         tickers.append(ticker)
+
+
+def append_watchlist_values(tickers: list[str], values: object) -> None:
+    if not isinstance(values, list):
+        return
+    for value in values:
+        append_unique(tickers, value)
 
 
 def load_open_trade_tickers() -> list[str]:

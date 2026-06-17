@@ -59,6 +59,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertLess(record_logs_index, deploy_index)
         self.assertLess(commit_state_index, failure_index)
         self.assertIn('  schedule:', workflow)
+        self.assertIn('- cron: "55 14 * * 1-5"', workflow)
         self.assertIn('cancel-in-progress: true', workflow)
         self.assertIn("scheduled_publish_at:", workflow)
         self.assertIn('RAW_PUBLISH_AT="${{ inputs.scheduled_publish_at || \'\' }}"', workflow)

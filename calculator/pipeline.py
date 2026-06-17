@@ -154,6 +154,13 @@ def publish_iso(default: str | None = None) -> str:
 
 
 def valuation_publish_iso(today: date | None = None) -> str:
+    raw_publish_at = os.environ.get("WEB_REFRESH_PUBLISH_AT", "").strip()
+    if raw_publish_at:
+        try:
+            publish_at = datetime.fromisoformat(raw_publish_at.replace("Z", "+00:00"))
+            return publish_at.astimezone(timezone.utc).isoformat(timespec="seconds")
+        except ValueError:
+            pass
     publish_date = today or datetime.now(KST).date()
     return datetime.combine(publish_date, time.min, tzinfo=KST).astimezone(timezone.utc).isoformat(timespec="seconds")
 
