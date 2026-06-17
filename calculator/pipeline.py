@@ -153,6 +153,11 @@ def publish_iso(default: str | None = None) -> str:
     return publish_at.astimezone(timezone.utc).isoformat(timespec="seconds")
 
 
+def valuation_publish_iso(today: date | None = None) -> str:
+    publish_date = today or datetime.now(KST).date()
+    return datetime.combine(publish_date, time.min, tzinfo=KST).astimezone(timezone.utc).isoformat(timespec="seconds")
+
+
 def clean_stock_name(name: Any) -> str:
     value = str(name or "").strip()
     if not value:
@@ -601,7 +606,22 @@ def stock_category(stock: dict[str, Any]) -> str:
     return classify_stock(stock)["category"]
 
 
-def fair_price_unavailable_reason(metric: dict[str, str]) -> str | None:
+def is_etf_stock(stock: dict[str, Any], metric: dict[str, str] | None = None) -> bool:
+    classified = classify_stock(stock)
+    text = " ".join(str(value or "") for value in (
+        stock.get("name"),
+        stock.get("category"),
+        stock.get("industry"),
+        stock.get("rawIndustry"),
+        metric.get("industry") if metric else None,
+        classified.get("industry"),
+    ))
+    return "ETF" in text.upper()
+
+
+def fair_price_unavailable_reason(stock: dict[str, Any], metric: dict[str, str]) -> str | None:
+    if is_etf_stock(stock, metric):
+        return "etf"
     eps = parse_amount(metric.get("epsTtm"))
     if eps is not None and eps <= 0:
         return "loss_making"
@@ -611,8 +631,11 @@ def fair_price_unavailable_reason(metric: dict[str, str]) -> str | None:
 def fair_price_range(stock: dict[str, Any], metric: dict[str, str]) -> str:
     category = stock_category(stock)
     eps = parse_amount(metric.get("epsTtm"))
-    if fair_price_unavailable_reason(metric) == "loss_making":
+    unavailable_reason = fair_price_unavailable_reason(stock, metric)
+    if unavailable_reason == "loss_making":
         return FAIR_PRICE_UNAVAILABLE_LABEL
+    if unavailable_reason == "etf":
+        return "-"
     if category not in ("가치주", "혼합주", "성장주") or eps is None:
         return "-"
 
@@ -967,14 +990,14 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
             "meta": {
                 **existing_meta,
                 "kind": "valuation",
-                "updatedAt": publish_iso(),
+                "updatedAt": valuation_publish_iso(),
                 "failedReason": "refresh universe is empty; preserved existing valuation cache",
             },
         }
     rows: dict[str, dict[str, str]] = {}
     errors: list[dict[str, str]] = []
     successful_rows = 0
-    refreshed_at = publish_iso()
+    refreshed_at = valuation_publish_iso()
     for stock in source_universe:
         try:
             values = fetch_valuation(stock["ticker"])
@@ -1097,7 +1120,7 @@ def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str
     for stock in rows_by_ticker.values():
         technical = technical_rows.get(stock["ticker"], {})
         valuation = valuation_rows.get(stock["ticker"], {})
-        fair_price_reason = fair_price_unavailable_reason(valuation)
+        fair_price_reason = fair_price_unavailable_reason(stock, valuation)
         fair_price = fair_price_range(stock, valuation)
         current_price = technical.get("currentPrice", "-")
         rows.append({

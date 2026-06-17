@@ -1,5 +1,5 @@
 import './App.css'
-import { Fragment, type CSSProperties, type FormEvent, type ReactNode, type RefObject, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, type CSSProperties, type FormEvent, type ReactNode, type RefObject, type TouchEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, saveTradeLogs, type AppData, type RuntimeMeta } from './api'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
@@ -602,6 +602,9 @@ function normalizeWatchlistByType(value: unknown): Partial<Record<InvestmentType
 const APP_DATA_CACHE_STORAGE_KEY = 'gssg-app-data-cache-v1'
 const APP_DATA_AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000
 const PENDING_WATCHLIST_MAX_AGE_MS = 24 * 60 * 60 * 1000
+const MOBILE_PULL_REFRESH_MAX_WIDTH = 760
+const PULL_REFRESH_TRIGGER_DISTANCE = 72
+const PULL_REFRESH_MAX_DISTANCE = 112
 
 type GssgAppData = AppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>
 type AppDataMetas = {
@@ -633,6 +636,14 @@ function storeCachedAppData(data: GssgAppData) {
 
 function wait(ms: number) {
   return new Promise<void>((resolve) => window.setTimeout(resolve, ms))
+}
+
+function isMobilePullRefreshViewport() {
+  return window.matchMedia(`(max-width: ${MOBILE_PULL_REFRESH_MAX_WIDTH}px)`).matches
+}
+
+function isInteractivePullRefreshTarget(target: EventTarget | null) {
+  return target instanceof Element && Boolean(target.closest('button, input, textarea, select, a, [role="button"], .modal-backdrop'))
 }
 
 function runtimeMetaChanged(current: RuntimeMeta | undefined, previous: RuntimeMeta | undefined) {
@@ -5086,6 +5097,8 @@ function App() {
   const [apiLogs, setApiLogs] = useState<ApiLog[]>(() => readStoredApiLogs())
   const [isLoadingApiLogs, setIsLoadingApiLogs] = useState(false)
   const [activePage, setActivePage] = useState<ActivePage>(() => readInitialActivePage())
+  const [pullRefreshDistance, setPullRefreshDistance] = useState(0)
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false)
   const [isTradingPinned, setIsTradingPinned] = useState(false)
   const [isWatchlistPinned, setIsWatchlistPinned] = useState(false)
   const [isHoldingPinned, setIsHoldingPinned] = useState(false)
@@ -5102,6 +5115,8 @@ function App() {
   const holdingSheetWheelRef = useEdgeScrollWheelRef(holdingSheetRef)
   const apiMetasRef = useRef<AppDataMetas>(apiMetas)
   const resetSyncGenerationRef = useRef(0)
+  const pullRefreshStartYRef = useRef<number | null>(null)
+  const pullRefreshDistanceRef = useRef(0)
 
   const resetHomeSheetScroll = () => {
     const reset = () => {
@@ -5883,8 +5898,6 @@ function App() {
         { tickers: operatorTickersFromDb?.tickers ?? null, updatedAt: operatorTickersFromDb?.updatedAt ?? null },
         readPendingOperatorWatchlist(),
       )
-      setOperatorWatchlist(resolvedOperatorWatchlist.tickers)
-      storeRemoteOperatorWatchlist(resolvedOperatorWatchlist.tickers)
       if (resolvedOperatorWatchlist.clearPending) {
         clearPendingOperatorWatchlist()
       } else if (resolvedOperatorWatchlist.pendingToSync && session && isConfiguredAdminEmail(session.email)) {
@@ -5911,15 +5924,20 @@ function App() {
       // 운영자 관심종목의 유형별 목록을 복원해 일반 계정의 '공수성가 가져오기'가 성향별로 분기되도록 한다.
       const operatorByTypeFromDb = operatorTickersFromDb?.tickersByType
       const cachedOperatorByType = readOperatorWatchlistByType()
+      const operatorActiveType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
+      const activeOperatorTickersFromDb = operatorByTypeFromDb?.[operatorActiveType]
+      const resolvedActiveOperatorTickers = resolvedOperatorWatchlist.pendingToSync
+        ? resolvedOperatorWatchlist.tickers
+        : activeOperatorTickersFromDb ?? resolvedOperatorWatchlist.tickers
       const nextOperatorByType: Record<InvestmentType, string[]> = {
         long_term: operatorByTypeFromDb?.long_term ?? cachedOperatorByType?.long_term ?? [],
         swing: operatorByTypeFromDb?.swing ?? cachedOperatorByType?.swing ?? [],
       }
       if (session && isConfiguredAdminEmail(session.email)) {
-        // 어드민은 단일 tickers(=현재 활성 유형 목록)를 해당 유형의 최신 원본으로 본다.
-        const adminActiveType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
-        nextOperatorByType[adminActiveType] = resolvedOperatorWatchlist.tickers
+        nextOperatorByType[operatorActiveType] = resolvedActiveOperatorTickers
       }
+      setOperatorWatchlist(resolvedActiveOperatorTickers)
+      storeRemoteOperatorWatchlist(resolvedActiveOperatorTickers)
       setOperatorWatchlistByType(nextOperatorByType)
       storeOperatorWatchlistByType(nextOperatorByType)
       operatorWatchlistByTypeLoadedRef.current = true
@@ -5928,9 +5946,11 @@ function App() {
         { tickers: personalTickers?.tickers ?? null, updatedAt: personalTickers?.updatedAt ?? null },
         readPendingPersonalWatchlist(session),
       )
-      const nextPersonalTickers = resolvedPersonalWatchlist.tickers.length > 0
-        ? resolvedPersonalWatchlist.tickers
-        : legacyTickers ?? initialWatchlist
+      const activeType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
+      const personalByTypeFromDb = personalTickers?.tickersByType
+      const activePersonalTickersFromDb = personalByTypeFromDb?.[activeType]
+      const nextPersonalTickers = activePersonalTickersFromDb
+        ?? (resolvedPersonalWatchlist.tickers.length > 0 ? resolvedPersonalWatchlist.tickers : legacyTickers ?? initialWatchlist)
 
       const resolvedActivePersonalTickers = session ? nextPersonalTickers : readStoredWatchlist(null)
       setWatchlist(resolvedActivePersonalTickers)
@@ -5947,13 +5967,11 @@ function App() {
       // 개인 유형별(가치/스윙) 관심종목을 DB 값으로 복원해 기기 간 동기화한다.
       // 서버값을 우선하고 없으면 로컬 캐시로 폴백하며, 활성 유형은 위에서 결정된 목록으로 맞춘다.
       if (session) {
-        const personalByTypeFromDb = personalTickers?.tickersByType
         const cachedPersonalByType = readPersonalWatchlistByType(session)
         const nextPersonalByType: Record<InvestmentType, string[]> = {
           long_term: personalByTypeFromDb?.long_term ?? cachedPersonalByType?.long_term ?? [],
           swing: personalByTypeFromDb?.swing ?? cachedPersonalByType?.swing ?? [],
         }
-        const activeType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
         nextPersonalByType[activeType] = resolvedActivePersonalTickers
         setPersonalWatchlistByType(nextPersonalByType)
         storePersonalWatchlistByType(session, nextPersonalByType)
@@ -6357,6 +6375,59 @@ function App() {
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = !isAdminUser && (activePage === 'board' || activePage === 'admin-logs') ? 'home' : activePage
   const homeSheetResetKey = `${currentActivePage}-${effectiveViewMode}-${displayedInvestmentType}-${userSession?.id ?? 'guest'}`
+  const refreshPageData = async () => {
+    const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>()
+    applyLoadedData(data)
+    await loadServiceData(userSession)
+    if (currentActivePage === 'admin-logs' && isAdminUser) {
+      await loadApiLogs()
+    }
+  }
+
+  const resetPullRefresh = () => {
+    pullRefreshStartYRef.current = null
+    pullRefreshDistanceRef.current = 0
+    setPullRefreshDistance(0)
+  }
+
+  const startPullRefresh = (event: TouchEvent<HTMLElement>) => {
+    if (isPullRefreshing || event.touches.length !== 1 || window.scrollY > 0) return
+    if (!isMobilePullRefreshViewport() || isInteractivePullRefreshTarget(event.target)) return
+    pullRefreshStartYRef.current = event.touches[0].clientY
+  }
+
+  const movePullRefresh = (event: TouchEvent<HTMLElement>) => {
+    const startY = pullRefreshStartYRef.current
+    if (startY === null || event.touches.length !== 1) return
+    if (window.scrollY > 0) {
+      resetPullRefresh()
+      return
+    }
+
+    const deltaY = event.touches[0].clientY - startY
+    if (deltaY <= 0) {
+      pullRefreshDistanceRef.current = 0
+      setPullRefreshDistance(0)
+      return
+    }
+
+    if (deltaY > 8) event.preventDefault()
+    const nextDistance = Math.min(PULL_REFRESH_MAX_DISTANCE, deltaY * 0.55)
+    pullRefreshDistanceRef.current = nextDistance
+    setPullRefreshDistance(nextDistance)
+  }
+
+  const finishPullRefresh = () => {
+    const shouldRefresh = pullRefreshDistanceRef.current >= PULL_REFRESH_TRIGGER_DISTANCE
+    resetPullRefresh()
+    if (!shouldRefresh || isPullRefreshing) return
+
+    setIsPullRefreshing(true)
+    void refreshPageData().finally(() => {
+      setIsPullRefreshing(false)
+    })
+  }
+
   useLayoutEffect(() => {
     resetHomeSheetScroll()
   }, [currentActivePage, displayedInvestmentType, effectiveViewMode, userSession?.id])
@@ -7821,7 +7892,13 @@ function App() {
   ) : null
 
   return (
-    <main className={`app-shell ${showViewModeHint ? 'onboarding-active' : ''}`}>
+    <main
+      className={`app-shell ${showViewModeHint ? 'onboarding-active' : ''}`}
+      onTouchCancel={resetPullRefresh}
+      onTouchEnd={finishPullRefresh}
+      onTouchMove={movePullRefresh}
+      onTouchStart={startPullRefresh}
+    >
       {showViewModeHint && <button className="view-mode-scrim" type="button" aria-label="안내 닫기" onClick={markViewModeHintSeen} />}
       {isOperatorImportOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={closeOperatorImportModal}>
@@ -8057,6 +8134,13 @@ function App() {
           {userSession ? userSession.name : '로그인'}
         </button>
       </header>
+      <div
+        aria-live="polite"
+        className={`pull-refresh-indicator ${pullRefreshDistance > 0 || isPullRefreshing ? 'visible' : ''}`}
+        style={{ transform: `translate(-50%, ${Math.round((isPullRefreshing ? PULL_REFRESH_TRIGGER_DISTANCE : pullRefreshDistance) * 0.32)}px)` }}
+      >
+        {isPullRefreshing ? '새로고침 중...' : pullRefreshDistance >= PULL_REFRESH_TRIGGER_DISTANCE ? '놓으면 새로고침' : '아래로 당겨 새로고침'}
+      </div>
 
       {currentActivePage === 'home' ? (
       <section className={`dashboard-grid ${isLongTermInvestor ? 'long-term-home-grid' : 'swing-home-grid'}`}>
