@@ -5894,11 +5894,12 @@ function App() {
 
       const operatorTickersFromDb = await loadWatchlist('operator', session)
       const operatorDefaultSort = operatorTickersFromDb?.watchlistSort
+      const remoteOperatorTickers = operatorTickersFromDb?.tickers ?? null
       const resolvedOperatorWatchlist = resolveWatchlistWithPending(
-        { tickers: operatorTickersFromDb?.tickers ?? null, updatedAt: operatorTickersFromDb?.updatedAt ?? null },
+        { tickers: remoteOperatorTickers, updatedAt: operatorTickersFromDb?.updatedAt ?? null },
         readPendingOperatorWatchlist(),
       )
-      if (resolvedOperatorWatchlist.clearPending) {
+      if (remoteOperatorTickers !== null || resolvedOperatorWatchlist.clearPending) {
         clearPendingOperatorWatchlist()
       } else if (resolvedOperatorWatchlist.pendingToSync && session && isConfiguredAdminEmail(session.email)) {
         void persistWatchlist('operator', resolvedOperatorWatchlist.pendingToSync, session).catch(() => undefined)
@@ -5926,9 +5927,10 @@ function App() {
       const cachedOperatorByType = readOperatorWatchlistByType()
       const operatorActiveType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
       const activeOperatorTickersFromDb = operatorByTypeFromDb?.[operatorActiveType]
-      const resolvedActiveOperatorTickers = resolvedOperatorWatchlist.pendingToSync
-        ? resolvedOperatorWatchlist.tickers
-        : activeOperatorTickersFromDb ?? resolvedOperatorWatchlist.tickers
+      const resolvedActiveOperatorTickers = remoteOperatorTickers
+        ?? (resolvedOperatorWatchlist.pendingToSync
+          ? resolvedOperatorWatchlist.tickers
+          : activeOperatorTickersFromDb ?? resolvedOperatorWatchlist.tickers)
       const nextOperatorByType: Record<InvestmentType, string[]> = {
         long_term: operatorByTypeFromDb?.long_term ?? cachedOperatorByType?.long_term ?? [],
         swing: operatorByTypeFromDb?.swing ?? cachedOperatorByType?.swing ?? [],
@@ -5942,25 +5944,27 @@ function App() {
       storeOperatorWatchlistByType(nextOperatorByType)
       operatorWatchlistByTypeLoadedRef.current = true
       const legacyTickers = session ? readLegacyWatchlist(session) : null
+      const remotePersonalTickers = personalTickers?.tickers ?? null
       const resolvedPersonalWatchlist = resolveWatchlistWithPending(
-        { tickers: personalTickers?.tickers ?? null, updatedAt: personalTickers?.updatedAt ?? null },
+        { tickers: remotePersonalTickers, updatedAt: personalTickers?.updatedAt ?? null },
         readPendingPersonalWatchlist(session),
       )
       const activeType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
       const personalByTypeFromDb = personalTickers?.tickersByType
       const activePersonalTickersFromDb = personalByTypeFromDb?.[activeType]
-      const nextPersonalTickers = activePersonalTickersFromDb
+      const nextPersonalTickers = remotePersonalTickers
+        ?? activePersonalTickersFromDb
         ?? (resolvedPersonalWatchlist.tickers.length > 0 ? resolvedPersonalWatchlist.tickers : legacyTickers ?? initialWatchlist)
 
       const resolvedActivePersonalTickers = session ? nextPersonalTickers : readStoredWatchlist(null)
       setWatchlist(resolvedActivePersonalTickers)
-      if (resolvedPersonalWatchlist.clearPending) {
+      if (remotePersonalTickers !== null || resolvedPersonalWatchlist.clearPending) {
         clearPendingPersonalWatchlist(session)
       } else if (session && resolvedPersonalWatchlist.pendingToSync) {
         void persistWatchlist('personal', resolvedPersonalWatchlist.pendingToSync, session).catch(() => undefined)
       }
 
-      if (session && !resolvedPersonalWatchlist.pendingToSync && !personalTickers?.tickers?.length && legacyTickers) {
+      if (session && remotePersonalTickers === null && !resolvedPersonalWatchlist.pendingToSync && legacyTickers) {
         await persistWatchlist('personal', legacyTickers, session)
       }
 
