@@ -6423,12 +6423,20 @@ function App() {
 
   const finishPullRefresh = () => {
     const shouldRefresh = pullRefreshDistanceRef.current >= PULL_REFRESH_TRIGGER_DISTANCE
-    resetPullRefresh()
-    if (!shouldRefresh || isPullRefreshing) return
+    pullRefreshStartYRef.current = null
+    if (isPullRefreshing) return
+    if (!shouldRefresh) {
+      pullRefreshDistanceRef.current = 0
+      setPullRefreshDistance(0)
+      return
+    }
 
+    pullRefreshDistanceRef.current = PULL_REFRESH_TRIGGER_DISTANCE
+    setPullRefreshDistance(PULL_REFRESH_TRIGGER_DISTANCE)
     setIsPullRefreshing(true)
     void refreshPageData().finally(() => {
       setIsPullRefreshing(false)
+      resetPullRefresh()
     })
   }
 
@@ -7895,10 +7903,15 @@ function App() {
     </div>
   ) : null
 
+  const pullRefreshIndicatorDistance = isPullRefreshing ? PULL_REFRESH_TRIGGER_DISTANCE : pullRefreshDistance
+  const isPullRefreshIndicatorVisible = isPullRefreshing || pullRefreshIndicatorDistance >= 36
+
   return (
     <main
       className={`app-shell ${showViewModeHint ? 'onboarding-active' : ''}`}
-      onTouchCancel={resetPullRefresh}
+      onTouchCancel={() => {
+        if (!isPullRefreshing) resetPullRefresh()
+      }}
       onTouchEnd={finishPullRefresh}
       onTouchMove={movePullRefresh}
       onTouchStart={startPullRefresh}
@@ -8058,6 +8071,13 @@ function App() {
           </section>
         </div>
       )}
+      <div
+        aria-hidden="true"
+        className={`pull-refresh-indicator ${isPullRefreshIndicatorVisible ? 'visible' : ''} ${isPullRefreshing ? 'refreshing' : ''}`}
+        style={{ height: Math.round(pullRefreshIndicatorDistance) }}
+      >
+        <span className="pull-refresh-spinner" />
+      </div>
       <header className={`app-header ${showViewModeHint ? 'onboarding-header' : ''}`}>
         <div className="brand">
           <img alt="공수성가 로고" className="brand-logo" src="/gongsu-logo.png" />
@@ -8138,13 +8158,6 @@ function App() {
           {userSession ? userSession.name : '로그인'}
         </button>
       </header>
-      <div
-        aria-hidden="true"
-        className={`pull-refresh-indicator ${pullRefreshDistance > 0 || isPullRefreshing ? 'visible' : ''} ${isPullRefreshing ? 'refreshing' : ''}`}
-        style={{ transform: `translate(-50%, ${Math.round((isPullRefreshing ? PULL_REFRESH_TRIGGER_DISTANCE : pullRefreshDistance) * 0.32)}px)` }}
-      >
-        <span className="pull-refresh-spinner" />
-      </div>
 
       {currentActivePage === 'home' ? (
       <section className={`dashboard-grid ${isLongTermInvestor ? 'long-term-home-grid' : 'swing-home-grid'}`}>

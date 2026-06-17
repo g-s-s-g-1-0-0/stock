@@ -5221,23 +5221,17 @@
 
 @media (max-width: 760px) {
   .pull-refresh-indicator {
-    position: fixed;
-    top: 74px;
-    left: 50%;
-    z-index: 790;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.96);
-    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.14);
+    min-height: 0;
+    margin-bottom: -12px;
+    overflow: hidden;
     opacity: 0;
     pointer-events: none;
     transition:
-      opacity 0.14s ease,
-      transform 0.14s ease;
+      height 0.18s ease,
+      opacity 0.14s ease;
   }
 
   .pull-refresh-indicator.visible {
@@ -5245,15 +5239,21 @@
   }
 
   .pull-refresh-spinner {
-    width: 17px;
-    height: 17px;
-    border: 2px solid rgba(34, 136, 238, 0.18);
-    border-top-color: var(--accent);
+    width: 20px;
+    height: 20px;
     border-radius: 999px;
+    background: conic-gradient(
+      from 90deg,
+      rgba(60, 60, 67, 0) 0deg,
+      rgba(60, 60, 67, 0.12) 90deg,
+      rgba(60, 60, 67, 0.85) 360deg
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
   }
 
   .pull-refresh-indicator.refreshing .pull-refresh-spinner {
-    animation: pull-refresh-spin 0.72s linear infinite;
+    animation: pull-refresh-spin 0.86s linear infinite;
   }
 
   @keyframes pull-refresh-spin {
