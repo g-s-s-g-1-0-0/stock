@@ -5256,9 +5256,63 @@
     animation: pull-refresh-spin 0.86s linear infinite;
   }
 
+  .app-shell.pull-refreshing .sheet-wrap,
+  .app-shell.pull-refreshing .admin-log-detail-table-wrap {
+    position: relative;
+  }
+
+  .app-shell.pull-refreshing .sheet-table,
+  .app-shell.pull-refreshing .admin-log-detail-table {
+    opacity: 0.32;
+    filter: blur(0.6px);
+    transform: translateY(2px);
+    transition:
+      filter 0.16s ease,
+      opacity 0.16s ease,
+      transform 0.16s ease;
+  }
+
+  .app-shell:not(.pull-refreshing) .sheet-table,
+  .app-shell:not(.pull-refreshing) .admin-log-detail-table {
+    transition:
+      filter 0.22s ease,
+      opacity 0.22s ease,
+      transform 0.22s ease;
+  }
+
+  .app-shell.pull-refreshing .sheet-wrap::after,
+  .app-shell.pull-refreshing .admin-log-detail-table-wrap::after {
+    position: absolute;
+    inset: 0;
+    z-index: 12;
+    display: grid;
+    place-items: center;
+    background:
+      linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent),
+      rgba(248, 250, 252, 0.54);
+    background-size: 220% 100%, auto;
+    color: var(--muted);
+    content: '새 데이터 불러오는 중';
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    pointer-events: none;
+    animation: pull-refresh-table-sheen 0.9s ease-in-out infinite;
+  }
+
   @keyframes pull-refresh-spin {
     to {
       transform: rotate(360deg);
+    }
+  }
+
+  @keyframes pull-refresh-table-sheen {
+    0% {
+      background-position: 120% 0, 0 0;
+    }
+
+    100% {
+      background-position: -120% 0, 0 0;
     }
   }
 

@@ -6434,7 +6434,7 @@ function App() {
     pullRefreshDistanceRef.current = PULL_REFRESH_TRIGGER_DISTANCE
     setPullRefreshDistance(PULL_REFRESH_TRIGGER_DISTANCE)
     setIsPullRefreshing(true)
-    void refreshPageData().finally(() => {
+    void Promise.all([refreshPageData(), wait(420)]).finally(() => {
       setIsPullRefreshing(false)
       resetPullRefresh()
     })
@@ -7908,7 +7908,7 @@ function App() {
 
   return (
     <main
-      className={`app-shell ${showViewModeHint ? 'onboarding-active' : ''}`}
+      className={`app-shell ${showViewModeHint ? 'onboarding-active' : ''} ${isPullRefreshing ? 'pull-refreshing' : ''}`}
       onTouchCancel={() => {
         if (!isPullRefreshing) resetPullRefresh()
       }}
