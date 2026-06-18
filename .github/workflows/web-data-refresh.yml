@@ -1,11 +1,6 @@
 name: Web data refresh
 
 on:
-  schedule:
-    # Weekday analysis refresh starts at 23:55 KST and publishes at 00:00 KST.
-    - cron: "55 14 * * 1-5"
-    # Weekly market trend report and official market-event verification.
-    - cron: "0 0 * * 1"
   workflow_dispatch:
     inputs:
       refresh_scope:
