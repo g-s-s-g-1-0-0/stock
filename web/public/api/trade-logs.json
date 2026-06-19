@@ -2,11 +2,11 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-06-19T14:00:00Z",
-    "lastSuccessfulRun": "2026-06-19T14:00:00Z",
+    "updatedAt": "2026-06-19T15:00:00Z",
+    "lastSuccessfulRun": "2026-06-19T15:00:00Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
-    "closedTrades": 0,
+    "closedTrades": 1,
     "nasdaqPeakLiquidation": false
   },
   "rows": [
@@ -291,13 +291,13 @@
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",
       "buyDate": "2026.06.06",
       "buyPrice": "$265.11",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
+      "sellDate": "2026.06.19",
+      "sellPrice": "$329.00",
+      "returnPct": 24.1,
       "holdingDays": "-",
-      "status": "보유 중",
-      "restoreWatchDate": "2026.06.09",
-      "upperExitArmedDate": "2026.06.19"
+      "status": "익절",
+      "sellTimestamp": "2026-06-19T15:00:00Z",
+      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +24.10% [200일선 상방 & 스퀴즈 저점 기준 +20%]"
     },
     {
       "slotId": "CRDO_G_20260606_1",
