@@ -6325,6 +6325,7 @@ function App() {
     ? '스윙 투자는 신호가 잡힌 순서대로 제한된 슬롯에 집중 배분합니다. 매도되어 슬롯이 비면 다음 새 매수 신호에서 현금 기준 비중을 다시 계산합니다.'
     : '가치 투자는 여러 종목을 오래 가져가는 전제로 슬롯을 넓게 나눕니다. 보유 중인 신호만 집계하고, 새 매수 신호가 들어올 때 빈 슬롯 비중만큼 배정합니다.'
   const displayedAllocationSummary = allocationSummaryText(displayedAllocationSettings)
+  const investedPrincipalAmount = portfolioSummary.totalAsset - portfolioSummary.profitAmount
   const assetSummaryItems: Array<{
     label: string
     value: string
@@ -6367,10 +6368,11 @@ function App() {
     {
       label: '총 자산',
       value: formatKrwAmount(portfolioSummary.totalAsset),
-      detail: `보유현금 ${formatKrwAmount(portfolioSummary.cash)} · 평가액 ${formatKrwAmount(portfolioSummary.positionValue)}`,
+      detail: `보유현금 ${formatKrwAmount(portfolioSummary.cash)} · 평가액 ${formatKrwAmount(portfolioSummary.positionValue)} · 투입원금 ${formatKrwAmount(investedPrincipalAmount)}`,
       detailTooltipRows: [
         { label: '보유현금', value: formatKrwAmount(portfolioSummary.cash) },
         { label: '평가액', value: formatKrwAmount(portfolioSummary.positionValue) },
+        { label: '투입원금', value: formatKrwAmount(investedPrincipalAmount) },
         { label: '총자산', value: formatKrwAmount(portfolioSummary.totalAsset) },
       ],
       strong: true,
