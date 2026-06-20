@@ -320,6 +320,7 @@ def calc_technical_row(ticker: str) -> dict[str, float]:
     ma20_d1 = sum(closes[-21:-1]) / 20
     ma20_prev5 = sum(closes[-25:-5]) / 20
     return {
+        "date": latest.get("date", ""),
         "open": open_,
         "high": high,
         "low": low,

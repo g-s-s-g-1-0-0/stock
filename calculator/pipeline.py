@@ -687,6 +687,21 @@ def parse_holding_strategy_code(value: Any) -> str | None:
     return match.group(1) if match else None
 
 
+def daily_price_date_label(raw_date: Any, market: str) -> str:
+    text = str(raw_date or "").strip()
+    if not text:
+        return ""
+    if market == "US":
+        try:
+            timestamp = int(float(text))
+        except ValueError:
+            return text
+        return datetime.fromtimestamp(timestamp, timezone.utc).astimezone(ZoneInfo("America/New_York")).date().isoformat()
+    if re.fullmatch(r"\d{8}", text):
+        return f"{text[:4]}-{text[4:6]}-{text[6:8]}"
+    return text
+
+
 def open_holding_strategies() -> dict[str, str]:
     """현재 '보유 중'인 종목의 PRIMARY 전략 코드 맵 (ticker → A-G).
 
@@ -839,6 +854,7 @@ def latest_technical_row(
         "name": clean_stock_name(stock["name"]),
         "market": stock["market"],
         "updatedAt": now_iso(),
+        "dailyPriceDate": daily_price_date_label(row.get("date"), stock["market"]),
         "currentPrice": fmt_price(display_price, stock["market"]),
         "opinion": opinion,
         "opinionReason": opinion_reason,

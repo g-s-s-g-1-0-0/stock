@@ -18,6 +18,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
         self.assertIn('"$RUNNER_TEMP/stocks.before-refresh.json"', workflow)
+        self.assertIn('"$RUNNER_TEMP/technical.before-refresh.json"', workflow)
         self.assertIn('"$RUNNER_TEMP/trade-logs.before-refresh.json"', workflow)
         self.assertIn('"$RUNNER_TEMP/search-universe.before-refresh.json"', workflow)
         self.assertIn(
@@ -27,6 +28,10 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertNotIn("python scripts/web_refresh_notifications.py trade-exit", workflow)
         self.assertIn(
             "PREVIOUS_STOCKS_PATH: ${{ runner.temp }}/stocks.before-refresh.json",
+            workflow,
+        )
+        self.assertIn(
+            "PREVIOUS_TECHNICAL_PATH: ${{ runner.temp }}/technical.before-refresh.json",
             workflow,
         )
         self.assertNotIn("data/cache/stocks.before-refresh.json", workflow)

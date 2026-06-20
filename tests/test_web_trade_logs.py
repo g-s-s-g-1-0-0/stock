@@ -111,6 +111,142 @@ def test_exit_updates_stock_and_technical_opinion_to_sell(monkeypatch, tmp_path)
     assert technical["WULF"]["entrySignalCodes"] == ""
 
 
+def test_extended_target_touch_exits_without_daily_indicator_confirmation(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "ticker": "BE",
+                "name": "Bloom Energy",
+                "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+                "buyDate": "2026.06.06",
+                "buyPrice": "$265.11",
+                "currentPrice": "$312.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+    stocks = [{"ticker": "BE", "name": "Bloom Energy", "market": "US", "currentPrice": "$329.00", "opinion": "관망", "strategies": []}]
+    technical = {
+        "BE": {
+            "opinion": "관망",
+            "opinionReason": "-",
+            "entrySignalCodes": "",
+            "현재가": "$329.00",
+            "C - Close": "$284.99",
+            "MACD Histogram (D)": "-1.59",
+            "M - H (D-1)": "-3.17",
+            "M - H (D-2)": "-5.07",
+            "dailyPriceDate": "2026-06-17",
+        }
+    }
+    previous_technical = {"BE": {"dailyPriceDate": "2026-06-18"}}
+
+    changed = logs.update_trade_logs(stocks, {}, technical, {"peakTriggered": False}, previous_technical)
+
+    updated = logs.load_json(cache_path, {})
+    row = updated["rows"][0]
+    assert changed is True
+    assert row["status"] == "익절"
+    assert row["sellPrice"] == "$329.00"
+    assert row["returnPct"] == 24.1
+    assert row["exitReason"] == "목표 수익 달성 즉시 매도 +24.10% [200일선 상방 & 스퀴즈 저점 기준 +20%]"
+    assert stocks[0]["opinionReason"] == row["exitReason"]
+    assert technical["BE"]["opinionReason"] == row["exitReason"]
+
+
+def test_stale_daily_indicator_exit_is_ignored_when_extended_target_not_touched(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "ticker": "BE",
+                "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+                "buyDate": "2026.06.06",
+                "buyPrice": "$265.11",
+                "currentPrice": "$280.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+    stocks = [{"ticker": "BE", "name": "Bloom Energy", "market": "US", "currentPrice": "$300.00", "opinion": "관망", "strategies": []}]
+    technical = {
+        "BE": {
+            "opinion": "관망",
+            "entrySignalCodes": "",
+            "현재가": "$300.00",
+            "C - Close": "$329.00",
+            "MACD Histogram (D)": "-1.59",
+            "M - H (D-1)": "-3.17",
+            "M - H (D-2)": "-5.07",
+            "dailyPriceDate": "2026-06-17",
+        }
+    }
+    previous_technical = {"BE": {"dailyPriceDate": "2026-06-18"}}
+
+    changed = logs.update_trade_logs(stocks, {}, technical, {"peakTriggered": False}, previous_technical)
+
+    updated = logs.load_json(cache_path, {})
+    assert changed is False
+    assert updated["rows"][0]["status"] == "보유 중"
+    assert updated["meta"]["closedTrades"] == 0
+
+
+def test_fresh_daily_indicator_exit_uses_daily_close_price(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "ticker": "BE",
+                "strategy": "E. 200일선 상방 & 스퀴즈 저점",
+                "buyDate": "2026.06.06",
+                "buyPrice": "$265.11",
+                "currentPrice": "$300.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+    stocks = [{"ticker": "BE", "name": "Bloom Energy", "market": "US", "currentPrice": "$300.00", "opinion": "관망", "strategies": []}]
+    technical = {
+        "BE": {
+            "opinion": "관망",
+            "entrySignalCodes": "",
+            "현재가": "$300.00",
+            "C - Close": "$329.00",
+            "MACD Histogram (D)": "-1.59",
+            "M - H (D-1)": "-3.17",
+            "M - H (D-2)": "-5.07",
+            "dailyPriceDate": "2026-06-19",
+        }
+    }
+    previous_technical = {"BE": {"dailyPriceDate": "2026-06-18"}}
+
+    changed = logs.update_trade_logs(stocks, {}, technical, {"peakTriggered": False}, previous_technical)
+
+    updated = logs.load_json(cache_path, {})
+    row = updated["rows"][0]
+    assert changed is True
+    assert row["status"] == "익절"
+    assert row["sellPrice"] == "$329.00"
+    assert row["returnPct"] == 24.1
+    assert row["exitReason"] == "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +24.10% [200일선 상방 & 스퀴즈 저점 기준 +20%]"
+
+
 def test_recent_closed_trade_preserves_sell_opinion_during_reentry_cooldown(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     today = logs.kst_trade_date()

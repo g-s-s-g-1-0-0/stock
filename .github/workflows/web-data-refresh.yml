@@ -78,6 +78,7 @@ jobs:
       - name: Snapshot previous web caches
         run: |
           cp web/public/api/stocks.json "$RUNNER_TEMP/stocks.before-refresh.json" 2>/dev/null || echo '{"rows":[]}' > "$RUNNER_TEMP/stocks.before-refresh.json"
+          cp web/public/api/technical.json "$RUNNER_TEMP/technical.before-refresh.json" 2>/dev/null || echo '{"rows":{}}' > "$RUNNER_TEMP/technical.before-refresh.json"
           cp web/public/api/trade-logs.json "$RUNNER_TEMP/trade-logs.before-refresh.json" 2>/dev/null || echo '{"rows":[]}' > "$RUNNER_TEMP/trade-logs.before-refresh.json"
           cp data/search_universe.json "$RUNNER_TEMP/search-universe.before-refresh.json" 2>/dev/null || echo '{"rows":[]}' > "$RUNNER_TEMP/search-universe.before-refresh.json"
 
@@ -170,6 +171,7 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         env:
           PREVIOUS_STOCKS_PATH: ${{ runner.temp }}/stocks.before-refresh.json
+          PREVIOUS_TECHNICAL_PATH: ${{ runner.temp }}/technical.before-refresh.json
         run: python scripts/record_web_api_logs.py --trade-logs-only $REFRESH_TASKS
 
       - name: Report operational scale metrics
@@ -258,6 +260,7 @@ jobs:
         continue-on-error: true
         env:
           PREVIOUS_STOCKS_PATH: ${{ runner.temp }}/stocks.before-refresh.json
+          PREVIOUS_TECHNICAL_PATH: ${{ runner.temp }}/technical.before-refresh.json
         run: python scripts/record_web_api_logs.py --skip-trade-log-update $REFRESH_TASKS
 
       - name: Deploy refreshed web

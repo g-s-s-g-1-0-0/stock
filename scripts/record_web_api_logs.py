@@ -17,12 +17,22 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from calculator.rules import IndicatorRow, evaluate_exit_condition, strategy_display_name
+from calculator.rules import (
+    STRATEGY_RULES,
+    IndicatorRow,
+    evaluate_exit_condition,
+    format_return_pct,
+    strategy_display_name,
+    strategy_target_criterion_label,
+)
 
 
 API_DIR = ROOT_DIR / "web" / "public" / "api"
 PREVIOUS_STOCKS_PATH = Path(
     os.environ.get("PREVIOUS_STOCKS_PATH", str(ROOT_DIR / "data" / "cache" / "stocks.before-refresh.json"))
+)
+PREVIOUS_TECHNICAL_PATH = Path(
+    os.environ.get("PREVIOUS_TECHNICAL_PATH", str(ROOT_DIR / "data" / "cache" / "technical.before-refresh.json"))
 )
 STOCK_CACHE_PATH = ROOT_DIR / "data" / "cache" / "stocks.json"
 STOCK_PUBLIC_PATH = API_DIR / "stocks.json"
@@ -554,6 +564,36 @@ def indicator_from_trade(row: dict[str, Any], trade: dict[str, Any], current_pri
     )
 
 
+def daily_price_date(row: dict[str, Any]) -> date | None:
+    raw_date = str(row.get("dailyPriceDate") or "").strip()
+    if not raw_date:
+        return None
+    try:
+        return datetime.fromisoformat(raw_date).date()
+    except ValueError:
+        return None
+
+
+def has_new_daily_price(row: dict[str, Any], previous_row: dict[str, Any] | None) -> bool:
+    current_date = daily_price_date(row)
+    previous_date = daily_price_date(previous_row or {})
+    if current_date is None or previous_date is None:
+        return True
+    return current_date > previous_date
+
+
+def target_touch_exit_reason(trade: dict[str, Any], sell_price: Any, strategy: str) -> str | None:
+    current_price = parse_price(sell_price)
+    entry_price = parse_price(trade.get("buyPrice"))
+    if current_price is None or entry_price is None or entry_price <= 0:
+        return None
+    target_pct = float(STRATEGY_RULES.get(f"TARGET_PCT_{strategy}", STRATEGY_RULES["TARGET_PCT_F"]))
+    return_pct_value = (current_price - entry_price) / entry_price
+    if return_pct_value < target_pct:
+        return None
+    return f"목표 수익 달성 즉시 매도 {format_return_pct(return_pct_value)} [{strategy_target_criterion_label(strategy)}]"
+
+
 def close_trade(
     trade: dict[str, Any],
     *,
@@ -689,6 +729,7 @@ def update_trade_logs(
     previous_stocks: dict[str, dict[str, Any]],
     technical: dict[str, Any],
     qqq_market_state: dict[str, Any] | None = None,
+    previous_technical: dict[str, Any] | None = None,
 ) -> bool:
     existing = load_json(TRADE_LOG_PUBLIC_PATH, load_json(TRADE_LOG_CACHE_PATH, {"rows": []}))
     rows = existing.get("rows", []) if isinstance(existing, dict) else []
@@ -718,27 +759,45 @@ def update_trade_logs(
             continue
         sell_price = stock.get("currentPrice") or trade.get("currentPrice") or "-"
         row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
-        ind = indicator_from_trade(row, trade, sell_price) if isinstance(row, dict) else None
-        if ind is None and not nasdaq_peak_alert:
+        previous_row = previous_technical.get(ticker, {}) if isinstance(previous_technical, dict) else {}
+        daily_sell_price = row.get("C - Close") or row.get("현재가") if isinstance(row, dict) else "-"
+        ind = indicator_from_trade(row, trade, daily_sell_price) if isinstance(row, dict) else None
+        strategy = strategy_code(trade.get("strategy")) or "A"
+        extended_target_reason = target_touch_exit_reason(trade, sell_price, strategy)
+        if ind is None and not nasdaq_peak_alert and not extended_target_reason:
             continue
         entry_codes = set(entry_signal_codes(row)) if isinstance(row, dict) else set()
         armed_date = parse_trade_date(trade.get("upperExitArmedDate"))
         upper_wait_days = trading_days_since(armed_date.strftime("%Y.%m.%d"), today_date) if armed_date else None
-        exit_result = evaluate_exit_condition(
-            ind or IndicatorRow(stock_name=ticker, current_price=parse_price(sell_price) or 0, entry_price=parse_price(trade.get("buyPrice"))),
-            strategy_type=strategy_code(trade.get("strategy")) or "A",
-            nasdaq_peak_alert=nasdaq_peak_alert,
-            trading_days=trading_days_since(trade.get("buyDate"), today_date),
-            upper_exit_wait_days=upper_wait_days,
-        )
+        exit_price = sell_price
+        if nasdaq_peak_alert:
+            exit_result = evaluate_exit_condition(
+                IndicatorRow(stock_name=ticker, current_price=parse_price(sell_price) or 0, entry_price=parse_price(trade.get("buyPrice"))),
+                strategy_type=strategy,
+                nasdaq_peak_alert=True,
+                trading_days=trading_days_since(trade.get("buyDate"), today_date),
+                upper_exit_wait_days=upper_wait_days,
+            )
+        elif extended_target_reason:
+            exit_result = {"shouldExit": True, "reason": extended_target_reason}
+        elif ind is not None and isinstance(row, dict) and has_new_daily_price(row, previous_row if isinstance(previous_row, dict) else None):
+            exit_result = evaluate_exit_condition(
+                ind,
+                strategy_type=strategy,
+                nasdaq_peak_alert=False,
+                trading_days=trading_days_since(trade.get("buyDate"), today_date),
+                upper_exit_wait_days=upper_wait_days,
+            )
+            exit_price = daily_sell_price
+        else:
+            exit_result = {"shouldExit": False, "reason": None}
         if exit_result["shouldExit"]:
             exit_reason = str(exit_result.get("reason") or "시스템 매도")
-            close_trade(trade, sell_price=sell_price, today=today, reason=exit_reason)
+            close_trade(trade, sell_price=exit_price, today=today, reason=exit_reason)
             if stock:
                 signal_state_changed = mark_exit_opinion(stock, row, exit_reason) or signal_state_changed
             closed += 1
             continue
-        strategy = strategy_code(trade.get("strategy"))
         clear_stale_restore_signal_counts(trade, entry_codes)
         buy_price = parse_price(trade.get("buyPrice"))
         current_price = parse_price(sell_price)
@@ -1126,14 +1185,16 @@ def update_trade_logs_for_tasks(enabled_tasks: set[str]) -> bool:
 
     stocks_payload = load_json(API_DIR / "stocks.json", {"rows": []})
     previous_stocks_payload = load_json(PREVIOUS_STOCKS_PATH, {"rows": []})
+    previous_technical_payload = load_json(PREVIOUS_TECHNICAL_PATH, {"rows": {}})
     technical_payload = load_json(API_DIR / "technical.json", {"rows": {}})
 
     stocks = stocks_payload.get("rows", []) if isinstance(stocks_payload, dict) else []
     previous_stocks_list = previous_stocks_payload.get("rows", []) if isinstance(previous_stocks_payload, dict) else []
     previous_stocks = stocks_by_ticker(previous_stocks_list)
+    previous_technical = previous_technical_payload.get("rows", {}) if isinstance(previous_technical_payload, dict) else {}
     technical = technical_payload.get("rows", {}) if isinstance(technical_payload, dict) else {}
     qqq_market_state = technical_payload.get("qqqMarketState", {}) if isinstance(technical_payload, dict) else {}
-    signal_state_changed = update_trade_logs(stocks, previous_stocks, technical, qqq_market_state)
+    signal_state_changed = update_trade_logs(stocks, previous_stocks, technical, qqq_market_state, previous_technical)
     if signal_state_changed:
         write_stock_payload(stocks_payload)
         write_technical_payload(technical_payload)
