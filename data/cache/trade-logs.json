@@ -1,9 +1,9 @@
 {
   "meta": {
     "kind": "trade-logs",
-    "schedule": "auto",
-    "updatedAt": "2026-06-20T09:00:00Z",
-    "lastSuccessfulRun": "2026-06-20T09:00:00Z",
+    "schedule": "manual",
+    "updatedAt": "2026-06-20T09:09:36.317Z",
+    "lastSuccessfulRun": "2026-06-20T09:09:36.317Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
     "closedTrades": 0,
@@ -19,13 +19,14 @@
       "strategy": "D. 200일선 상방 & 상승 흐름 강화",
       "buyDate": "2026.05.10",
       "buyPrice": "$67.43",
-      "sellDate": "2026.05.15",
-      "sellPrice": "$60.18",
-      "returnPct": -10.75,
-      "holdingDays": "-",
+      "sellDate": "2026.06.20",
+      "sellPrice": "$64.20",
+      "returnPct": -4.7901527510010435,
+      "holdingDays": 41,
       "status": "손절",
       "sellTimestamp": "2026-05-14T16:55:47.670831Z",
-      "exitReason": "나스닥 고점 청산/강제매도"
+      "exitReason": "나스닥 고점 청산/강제매도",
+      "manualExit": true
     },
     {
       "slotId": "NBIS_D_20260513_1",
