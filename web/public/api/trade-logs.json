@@ -291,13 +291,12 @@
       "strategy": "E. 200일선 상방 & 스퀴즈 저점",
       "buyDate": "2026.06.06",
       "buyPrice": "$265.11",
-      "sellDate": "2026.06.19",
-      "sellPrice": "$329.00",
-      "returnPct": 24.1,
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
       "holdingDays": "-",
-      "status": "익절",
-      "sellTimestamp": "2026-06-19T15:00:00Z",
-      "exitReason": "목표 수익 달성 즉시 매도 +24.10% [200일선 상방 & 스퀴즈 저점 기준 +20%]"
+      "status": "보유 중",
+      "upperExitArmedDate": "2026.06.19"
     },
     {
       "slotId": "CRDO_G_20260606_1",

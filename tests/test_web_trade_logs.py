@@ -111,7 +111,7 @@ def test_exit_updates_stock_and_technical_opinion_to_sell(monkeypatch, tmp_path)
     assert technical["WULF"]["entrySignalCodes"] == ""
 
 
-def test_extended_target_touch_exits_without_daily_indicator_confirmation(monkeypatch, tmp_path):
+def test_extended_target_touch_arms_ef_exit_without_selling(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
@@ -151,13 +151,15 @@ def test_extended_target_touch_exits_without_daily_indicator_confirmation(monkey
 
     updated = logs.load_json(cache_path, {})
     row = updated["rows"][0]
-    assert changed is True
-    assert row["status"] == "익절"
-    assert row["sellPrice"] == "$329.00"
-    assert row["returnPct"] == 24.1
-    assert row["exitReason"] == "목표 수익 달성 즉시 매도 +24.10% [200일선 상방 & 스퀴즈 저점 기준 +20%]"
-    assert stocks[0]["opinionReason"] == row["exitReason"]
-    assert technical["BE"]["opinionReason"] == row["exitReason"]
+    assert changed is False
+    assert row["status"] == "보유 중"
+    assert row["sellDate"] == "보유 중"
+    assert row["sellPrice"] == "-"
+    assert row["returnPct"] == 0
+    assert "exitReason" not in row
+    assert row["upperExitArmedDate"] == logs.kst_trade_date()
+    assert stocks[0]["opinion"] == "관망"
+    assert technical["BE"]["opinion"] == "관망"
 
 
 def test_stale_daily_indicator_exit_is_ignored_when_extended_target_not_touched(monkeypatch, tmp_path):

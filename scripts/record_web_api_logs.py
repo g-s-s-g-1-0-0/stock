@@ -17,14 +17,7 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from calculator.rules import (
-    STRATEGY_RULES,
-    IndicatorRow,
-    evaluate_exit_condition,
-    format_return_pct,
-    strategy_display_name,
-    strategy_target_criterion_label,
-)
+from calculator.rules import IndicatorRow, evaluate_exit_condition, strategy_display_name
 
 
 API_DIR = ROOT_DIR / "web" / "public" / "api"
@@ -582,18 +575,6 @@ def has_new_daily_price(row: dict[str, Any], previous_row: dict[str, Any] | None
     return current_date > previous_date
 
 
-def target_touch_exit_reason(trade: dict[str, Any], sell_price: Any, strategy: str) -> str | None:
-    current_price = parse_price(sell_price)
-    entry_price = parse_price(trade.get("buyPrice"))
-    if current_price is None or entry_price is None or entry_price <= 0:
-        return None
-    target_pct = float(STRATEGY_RULES.get(f"TARGET_PCT_{strategy}", STRATEGY_RULES["TARGET_PCT_F"]))
-    return_pct_value = (current_price - entry_price) / entry_price
-    if return_pct_value < target_pct:
-        return None
-    return f"목표 수익 달성 즉시 매도 {format_return_pct(return_pct_value)} [{strategy_target_criterion_label(strategy)}]"
-
-
 def close_trade(
     trade: dict[str, Any],
     *,
@@ -763,8 +744,7 @@ def update_trade_logs(
         daily_sell_price = row.get("C - Close") or row.get("현재가") if isinstance(row, dict) else "-"
         ind = indicator_from_trade(row, trade, daily_sell_price) if isinstance(row, dict) else None
         strategy = strategy_code(trade.get("strategy")) or "A"
-        extended_target_reason = target_touch_exit_reason(trade, sell_price, strategy)
-        if ind is None and not nasdaq_peak_alert and not extended_target_reason:
+        if ind is None and not nasdaq_peak_alert:
             continue
         entry_codes = set(entry_signal_codes(row)) if isinstance(row, dict) else set()
         armed_date = parse_trade_date(trade.get("upperExitArmedDate"))
@@ -778,8 +758,6 @@ def update_trade_logs(
                 trading_days=trading_days_since(trade.get("buyDate"), today_date),
                 upper_exit_wait_days=upper_wait_days,
             )
-        elif extended_target_reason:
-            exit_result = {"shouldExit": True, "reason": extended_target_reason}
         elif ind is not None and isinstance(row, dict) and has_new_daily_price(row, previous_row if isinstance(previous_row, dict) else None):
             exit_result = evaluate_exit_condition(
                 ind,

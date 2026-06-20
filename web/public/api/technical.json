@@ -1160,8 +1160,8 @@
       "market": "US",
       "updatedAt": "2026-06-20T06:55:37+00:00",
       "currentPrice": "$329.00",
-      "opinion": "매도",
-      "opinionReason": "목표 수익 달성 즉시 매도 +24.10% [200일선 상방 & 스퀴즈 저점 기준 +20%]",
+      "opinion": "관망",
+      "opinionReason": "-",
       "marketEvent": "당분간 없음",
       "entryStrategy": "-",
       "entrySignalCodes": "",
@@ -1222,7 +1222,6 @@
       "진입가": "-",
       "진입일": "-",
       "진입 전략": "-",
-      "exitReason": "목표 수익 달성 즉시 매도 +24.10% [200일선 상방 & 스퀴즈 저점 기준 +20%]",
       "dailyPriceDate": "2026-06-18"
     },
     "CIFR": {
