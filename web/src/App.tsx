@@ -376,7 +376,7 @@ const investmentProfileOptions: Array<{
     value: 'swing',
     title: '스윙투자',
     description: '흐름 맞춰 빠르게 매매해 기회 포착',
-    bullets: ['시드가 작아 빠르게 불리고 싶어요', '리스크를 감수하더라도 기회를 잡고 싶어요', '매수·매도 타이밍을 적극적으로 보고 싶어요', '익절·손절 기준을 함께 볼게요', '거래 기록과 성과를 확인할게요'],
+    bullets: ['시드가 작아 빠르게 불리고 싶어요', '리스크 감수하더라도 기회를 잡고 싶어요', '매수·매도 타이밍 적극적으로 보고 싶어요', '익절·손절 기준을 함께 볼게요', '거래 기록과 성과를 확인할게요'],
   },
 ]
 const notificationIntegrationOptions: Array<{
@@ -1862,10 +1862,11 @@ function strategyInfo(strategy: string) {
   return descriptions[strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
 }
 
-function tradeResultLabel(status: TradeStatus) {
-  if (status === '익절') return '성공(익절)'
-  if (status === '손절') return '실패(손절)'
-  if (status === '실패 익절') return '실패(익절)'
+function tradeResultLabel(trade: TradeLog) {
+  if (trade.manualExit && trade.status !== '보유 중') return `청산(${trade.status})`
+  if (trade.status === '익절') return '성공(익절)'
+  if (trade.status === '손절') return '실패(손절)'
+  if (trade.status === '실패 익절') return '실패(익절)'
   return '보유중'
 }
 
@@ -1892,6 +1893,9 @@ function tradeCriteriaInfo(strategy: string) {
 }
 
 function tradeResultInfo(trade: TradeLog) {
+  if (trade.manualExit && trade.status !== '보유 중') {
+    return '보유종목에서 직접 청산한 기록입니다. 자동 매도 신호가 아니라 입력한 청산가와 청산일 기준으로 수익률을 계산합니다.'
+  }
   if (trade.status !== '보유 중') return tradeCriteriaInfo(trade.strategy)
   return '아직 매도 신호가 없어 성공/실패를 확정하지 않은 보유 중 거래입니다. 보유 여부는 투자금 산정과 별개로 구분해서 봅니다.'
 }
@@ -2239,7 +2243,7 @@ function ResultBadge({
       onMouseLeave={onTooltipClose}
       tabIndex={0}
     >
-      {tradeResultLabel(trade.status)}
+      {tradeResultLabel(trade)}
     </span>
   )
 }
@@ -6598,6 +6602,11 @@ function App() {
   const commitManagedHoldingTradeLogs = async (updater: (current: TradeLog[]) => TradeLog[]) => {
     if (isAdminUser && isOperatorDataMode) {
       const nextTrades = updater(systemTradeLogs)
+      if (import.meta.env.DEV || isLocalTestSession(userSession)) {
+        setSystemTradeLogs(nextTrades)
+        setRefreshDataMessage('로컬 테스트용으로 보유 종목 변경이 반영됐습니다.')
+        return
+      }
       setIsSavingTradeLogs(true)
       try {
         await saveAdminSystemTradeLogs(nextTrades)
@@ -8285,6 +8294,7 @@ function App() {
                   {!isLongTermInvestor && <th>권장 매도가</th>}
                   {!isLongTermInvestor && <th>매도 신호일</th>}
                   {!isLongTermInvestor && <th>매도 신호 가격</th>}
+                  {isLongTermInvestor && <th>청산일</th>}
                   <th>전략</th>
                   <th>
                     <MetricValue
@@ -8295,11 +8305,11 @@ function App() {
                       메가 트렌드
                     </MetricValue>
                   </th>
-                  <th>{isLongTermInvestor ? '현재가(수익률)' : '가격(수익률)'}</th>
+                  <th>{isLongTermInvestor ? '현재/청산가(수익률)' : '가격(수익률)'}</th>
                   <th>투자금</th>
                   <th>예상 손익</th>
                   <th>보유 기간</th>
-                  {!isLongTermInvestor && <th>결과</th>}
+                  <th>결과</th>
                 </tr>
               </thead>
               <tbody>
@@ -8320,13 +8330,14 @@ function App() {
                     {!isLongTermInvestor && <td className="dash-cell">-</td>}
                     {!isLongTermInvestor && <td className="dash-cell">-</td>}
                     {!isLongTermInvestor && <td className="dash-cell">-</td>}
+                    {isLongTermInvestor && <td className="dash-cell">-</td>}
                     <td><span className="example-note">매수 시그널 충족 시 기록됩니다.</span></td>
                     <td className="dash-cell">미충족</td>
                     <td className="dash-cell">-</td>
                     <td className="dash-cell">-</td>
                     <td className="dash-cell">-</td>
                     <td className="dash-cell">-</td>
-                    {!isLongTermInvestor && <td><span className="example-note">예시</span></td>}
+                    <td><span className="example-note">예시</span></td>
                   </tr>
                 )}
                 {displayedTradeRows.map(({ trade, rowNumber }) => {
@@ -8359,6 +8370,11 @@ function App() {
                       )}
                       {!isLongTermInvestor && <td>{trade.sellDate}</td>}
                       {!isLongTermInvestor && <td className={trade.sellPrice === '-' ? 'dash-cell' : 'number-cell'}>{trade.sellPrice}</td>}
+                      {isLongTermInvestor && (
+                        <td className={trade.manualExit && trade.sellDate !== '-' ? '' : 'dash-cell'}>
+                          {trade.manualExit && trade.sellDate !== '-' ? trade.sellDate : '-'}
+                        </td>
+                      )}
                       <td className="strategy-data-cell">
                         <StrategyTag
                           onTooltipClose={() => setActiveTooltip(null)}
@@ -8379,21 +8395,19 @@ function App() {
                       <td className="number-cell">{formatKrwAmount(investedAmount)}</td>
                       <td className={`number-cell ${tradeProfitClass(profitAmount)}`}>{profitAmount === null ? '-' : formatKrwAmount(profitAmount)}</td>
                       <td>{holdingPeriodDays(trade)}</td>
-                      {!isLongTermInvestor && (
-                        <td>
-                          <ResultBadge
-                            onTooltipClose={() => setActiveTooltip(null)}
-                            onTooltipOpen={setActiveTooltip}
-                            trade={trade}
-                          />
-                        </td>
-                      )}
+                      <td>
+                        <ResultBadge
+                          onTooltipClose={() => setActiveTooltip(null)}
+                          onTooltipOpen={setActiveTooltip}
+                          trade={trade}
+                        />
+                      </td>
                     </tr>
                   )
                 })}
                 {Array.from({ length: tradeBlankRows }).map((_, index) => (
                   <tr className="blank-row" key={`trade-blank-${index}`}>
-                    {Array.from({ length: isLongTermInvestor ? 11 : 15 }).map((_, cellIndex) => (
+                    {Array.from({ length: isLongTermInvestor ? 13 : 15 }).map((_, cellIndex) => (
                       <td className={cellIndex === 0 ? 'numbering-cell' : undefined} key={`trade-blank-${index}-${cellIndex}`}>{cellIndex === 0 ? '\u00a0' : ''}</td>
                     ))}
                   </tr>

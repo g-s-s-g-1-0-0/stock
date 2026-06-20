@@ -27,11 +27,11 @@
       />
     </noscript>
     <style>
-      /* 번들이 로드되기 전에도 즉시 보이는 로딩 화면. React가 마운트되면 #root가 교체되며 사라진다. */
+      /* 초기 로딩이 지연될 때만 보여주는 로딩 화면. React가 마운트되면 #root가 교체되며 사라진다. */
       .app-loading {
         position: fixed;
         inset: 0;
-        display: flex;
+        display: none;
         flex-direction: column;
         align-items: center;
         justify-content: center;
@@ -40,6 +40,9 @@
         color: #6b7280;
         font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         z-index: 9999;
+      }
+      .app-loading.visible {
+        display: flex;
       }
       .app-loading__logo {
         width: 64px;
@@ -59,29 +62,6 @@
         margin: 0;
         font-size: 14px;
         letter-spacing: 0.01em;
-      }
-      .app-loading__error {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        max-width: 280px;
-        text-align: center;
-      }
-      .app-loading__error p {
-        margin: 0;
-        font-size: 14px;
-        line-height: 1.5;
-      }
-      .app-loading__retry {
-        padding: 10px 20px;
-        font-size: 14px;
-        font-weight: 600;
-        color: #ffffff;
-        background: #2288ee;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
       }
       @keyframes app-loading-spin {
         to {
@@ -106,10 +86,6 @@
           border-color: rgba(90, 169, 244, 0.22);
           border-top-color: #5aa9f4;
         }
-        .app-loading__retry {
-          background: #5aa9f4;
-          color: #08111f;
-        }
       }
       @media (prefers-reduced-motion: reduce) {
         .app-loading__logo,
@@ -125,35 +101,44 @@
         <img class="app-loading__logo" src="/gongsu-logo.png" alt="공수성가" width="64" height="64" />
         <div class="app-loading__spinner" aria-hidden="true"></div>
         <p class="app-loading__text" id="app-loading-text">불러오는 중…</p>
-        <div class="app-loading__error" id="app-loading-error" hidden>
-          <p>불러오기가 평소보다 오래 걸리고 있어요.<br />네트워크 상태를 확인한 뒤 다시 시도해 주세요.</p>
-          <button type="button" class="app-loading__retry" onclick="window.location.reload()">새로고침</button>
-        </div>
       </div>
     </div>
     <script>
-      // 로딩 버퍼/오류 감지: 일정 시간 안에 React가 마운트되지 않거나 스크립트 로드가 실패하면 재시도 UI를 보여준다.
+      // 로딩 버퍼/오류 감지: 즉시 로드가 안 될 때만 스피너를 보여주고 자동으로 재시도한다.
       (function () {
-        var SLOW_MS = 10000
-        function showError() {
+        var SHOW_LOADING_MS = 1200
+        var AUTO_RELOAD_MS = 10000
+        function currentLoader() {
+          return document.getElementById('app-loading')
+        }
+        function showLoading(message) {
+          var loader = currentLoader()
+          if (!loader) return // React가 이미 마운트되어 #root가 교체됨
+          var text = document.getElementById('app-loading-text')
+          if (message && text) text.textContent = message
+          loader.classList.add('visible')
+        }
+        function reloadIfStillLoading() {
           var loader = document.getElementById('app-loading')
           if (!loader) return // React가 이미 마운트되어 #root가 교체됨
-          var spinner = loader.querySelector('.app-loading__spinner')
-          var text = document.getElementById('app-loading-text')
-          var error = document.getElementById('app-loading-error')
-          if (spinner) spinner.style.display = 'none'
-          if (text) text.style.display = 'none'
-          if (error) error.hidden = false
+          showLoading('연결이 지연되어 다시 불러오는 중…')
+          window.setTimeout(function () {
+            if (currentLoader()) window.location.reload()
+          }, 250)
         }
-        var timer = setTimeout(showError, SLOW_MS)
+        var showTimer = setTimeout(function () {
+          showLoading()
+        }, SHOW_LOADING_MS)
+        var reloadTimer = setTimeout(reloadIfStillLoading, AUTO_RELOAD_MS)
         // 메인 스크립트 등 리소스 로드 실패 감지
         window.addEventListener(
           'error',
           function (event) {
             var target = event && event.target
             if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
-              clearTimeout(timer)
-              showError()
+              clearTimeout(showTimer)
+              clearTimeout(reloadTimer)
+              reloadIfStillLoading()
             }
           },
           true,

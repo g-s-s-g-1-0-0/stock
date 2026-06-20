@@ -1145,7 +1145,7 @@
 }
 
 .long-term-trading-log-table {
-  min-width: 940px;
+  min-width: 1080px;
 }
 
 .watchlist-table {
@@ -5148,7 +5148,7 @@
   }
 
   .long-term-trading-log-table {
-    min-width: 760px;
+    min-width: 880px;
   }
 
   .watchlist-table,
