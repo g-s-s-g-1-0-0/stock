@@ -3419,7 +3419,7 @@
 .investment-option-card > span {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .investment-option-card ul {
@@ -5741,9 +5741,7 @@
   }
 
   .investment-option-card > span {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
+    white-space: nowrap;
   }
 
   .technical-summary-disclosure summary {

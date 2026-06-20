@@ -1,5 +1,5 @@
 import './App.css'
-import { Fragment, type CSSProperties, type FormEvent, type ReactNode, type RefObject, type TouchEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, type CSSProperties, type FormEvent, type MouseEvent as ReactMouseEvent, type ReactNode, type RefObject, type TouchEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, saveTradeLogs, type AppData, type RuntimeMeta } from './api'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
@@ -369,13 +369,13 @@ const investmentProfileOptions: Array<{
   {
     value: 'long_term',
     title: '가치투자',
-    description: '좋은 종목을 오래 보유하며 천천히 자산을 쌓는 방식',
+    description: '좋은 종목 오래 보유해 자산 축적',
     bullets: ['큰 변동성을 자주 확인하고 싶지 않아요', '손절이나 잦은 매도가 부담스러워요', '투자금을 천천히 꾸준히 쌓고 싶어요', '매수/관망 신호 중심으로 볼게요', '보유 종목 수익률을 중심으로 확인할게요'],
   },
   {
     value: 'swing',
     title: '스윙투자',
-    description: '시장 흐름에 맞춰 빠르게 사고팔며 수익 기회를 노리는 방식',
+    description: '흐름 맞춰 빠르게 매매해 기회 포착',
     bullets: ['시드가 작아 빠르게 불리고 싶어요', '리스크를 감수하더라도 기회를 잡고 싶어요', '매수·매도 타이밍을 적극적으로 보고 싶어요', '익절·손절 기준을 함께 볼게요', '거래 기록과 성과를 확인할게요'],
   },
 ]
@@ -644,6 +644,10 @@ function isMobilePullRefreshViewport() {
 
 function isInteractivePullRefreshTarget(target: EventTarget | null) {
   return target instanceof Element && Boolean(target.closest('button, input, textarea, select, a, [role="button"], .modal-backdrop'))
+}
+
+function closeModalOnBackdropMouseDown(event: ReactMouseEvent<HTMLElement>, close: () => void) {
+  if (event.target === event.currentTarget) close()
 }
 
 function runtimeMetaChanged(current: RuntimeMeta | undefined, previous: RuntimeMeta | undefined) {
@@ -7920,7 +7924,7 @@ function App() {
     >
       {showViewModeHint && <button className="view-mode-scrim" type="button" aria-label="안내 닫기" onClick={markViewModeHintSeen} />}
       {isOperatorImportOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={closeOperatorImportModal}>
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, closeOperatorImportModal)}>
           <section
             aria-labelledby="operator-import-title"
             aria-modal="true"
@@ -7997,7 +8001,7 @@ function App() {
         </div>
       )}
       {isWatchlistTypeImportOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={closeWatchlistTypeImportModal}>
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, closeWatchlistTypeImportModal)}>
           <section
             aria-labelledby="watchlist-type-import-title"
             aria-modal="true"
@@ -8891,7 +8895,7 @@ function App() {
         </div>
       )}
       {shouldShowInvestmentProfileOnboarding && (
-        <div className="modal-backdrop" role="presentation">
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, closeInvestmentProfileOnboarding)}>
           <section aria-modal="true" className="confirm-modal investment-profile-modal" role="dialog">
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={closeInvestmentProfileOnboarding}>
               ×
@@ -8926,7 +8930,7 @@ function App() {
         </div>
       )}
       {isLoginOpen && (
-        <div className="modal-backdrop" role="presentation">
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, closeLoginModal)}>
           <form
             aria-modal="true"
             className={`confirm-modal login-modal ${userSession && authMode !== 'reset' ? 'account-modal' : ''}`}
@@ -9275,7 +9279,7 @@ function App() {
         </div>
       )}
       {isResetConfirmOpen && (
-        <div className="modal-backdrop" role="presentation">
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => setIsResetConfirmOpen(false))}>
           <div aria-modal="true" className="confirm-modal" role="dialog">
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setIsResetConfirmOpen(false)}>×</button>
             <h3>{isAdminUser ? '공수성가 기록을 모두 초기화할까요?' : '본인 기록을 모두 초기화할까요?'}</h3>
@@ -9296,7 +9300,7 @@ function App() {
         </div>
       )}
       {pendingBoardDeleteIds.length > 0 && (
-        <div className="modal-backdrop" role="presentation">
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => setPendingBoardDeleteIds([]))}>
           <div aria-modal="true" className="confirm-modal" role="dialog">
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setPendingBoardDeleteIds([])}>×</button>
             <h3>게시글을 삭제할까요?</h3>
@@ -9315,7 +9319,7 @@ function App() {
         </div>
       )}
       {isAccountDeleteConfirmOpen && (
-        <div className="modal-backdrop" role="presentation">
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => { if (!isDeletingAccount) setIsAccountDeleteConfirmOpen(false) })}>
           <div aria-modal="true" className="confirm-modal account-delete-modal" role="dialog">
             <button
               className="modal-close-button"
@@ -9343,7 +9347,7 @@ function App() {
         </div>
       )}
       {contributionDraft && (
-        <div className="modal-backdrop" role="presentation">
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => setContributionDraft(null))}>
           <div aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setContributionDraft(null)}>×</button>
             {contributionSettingsMode === 'cash' ? (
@@ -9516,7 +9520,7 @@ function App() {
         </div>
       )}
       {isHoldingLiquidationOpen && (
-        <div className="modal-backdrop" role="presentation">
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => { if (!isSavingTradeLogs) closeHoldingLiquidationModal() })}>
           <div aria-modal="true" className="confirm-modal holding-liquidation-modal" role="dialog">
             <button className="modal-close-button" disabled={isSavingTradeLogs} type="button" aria-label="닫기" onClick={closeHoldingLiquidationModal}>×</button>
             <h3>선택한 보유 종목을 청산할까요?</h3>
@@ -9582,7 +9586,7 @@ function App() {
         </div>
       )}
       {isHoldingDeleteConfirmOpen && (
-        <div className="modal-backdrop" role="presentation">
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => { if (!isSavingTradeLogs) setIsHoldingDeleteConfirmOpen(false) })}>
           <div aria-modal="true" className="confirm-modal" role="dialog">
             <button className="modal-close-button" disabled={isSavingTradeLogs} type="button" aria-label="닫기" onClick={() => setIsHoldingDeleteConfirmOpen(false)}>×</button>
             <h3>선택한 보유 종목을 삭제할까요?</h3>
@@ -9599,7 +9603,7 @@ function App() {
         </div>
       )}
       {pendingMarketTrendDeleteKeys.length > 0 && (
-        <div className="modal-backdrop" role="presentation">
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => { if (!isSavingMarketTrends) setPendingMarketTrendDeleteKeys([]) })}>
           <div aria-modal="true" className="confirm-modal" role="dialog">
             <button className="modal-close-button" disabled={isSavingMarketTrends} type="button" aria-label="닫기" onClick={() => setPendingMarketTrendDeleteKeys([])}>×</button>
             <h3>선택한 시장 트렌드를 삭제할까요?</h3>

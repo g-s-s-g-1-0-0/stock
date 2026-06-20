@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'gongsu-pwa-v4'
+const CACHE_VERSION = 'gongsu-pwa-v5'
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`
 const DATA_CACHE = `${CACHE_VERSION}-data`
 const APP_SHELL = ['/']
@@ -50,33 +50,18 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (request.mode === 'navigate') {
-    // 캐시된 앱 셸(인라인 스피너 포함)을 즉시 보여주고 백그라운드에서 갱신한다.
-    // networkFirst는 네트워크 응답을 기다리느라 첫 화면(흰 화면)이 지연되므로 사용하지 않는다.
-    event.respondWith(staleWhileRevalidate(request, APP_SHELL_CACHE))
+    // 홈 화면에 설치한 PWA도 새로고침/재진입 시 최신 앱 셸을 먼저 확인한다.
+    event.respondWith(networkFirst(request, APP_SHELL_CACHE, { cache: 'reload' }))
     return
   }
 
   event.respondWith(cacheFirst(request, APP_SHELL_CACHE))
 })
 
-async function staleWhileRevalidate(request, cacheName) {
-  const cache = await caches.open(cacheName)
-  const cached = await cache.match(request)
-  const networkPromise = fetch(request)
-    .then((response) => {
-      if (response && response.ok) {
-        void cache.put(request, response.clone())
-      }
-      return response
-    })
-    .catch(() => null)
-  return cached || (await networkPromise) || fetch(request)
-}
-
-async function networkFirst(request, cacheName) {
+async function networkFirst(request, cacheName, fetchOptions) {
   const cache = await caches.open(cacheName)
   try {
-    const response = await fetch(request)
+    const response = await fetch(request, fetchOptions)
     if (response.ok) {
       await cache.put(request, response.clone())
     }
