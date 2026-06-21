@@ -6311,7 +6311,7 @@ function App() {
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
     ? "장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 '보유중인 종목' 표에서 직접 처리합니다."
-    : 'A-G 공통: 25거래일 +3% 미달 청산. A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%), G(+12%, -12%, 40일), H(+12%, -20%, 30일 +5% 미달, 40일)'
+    : '청산: A-C +20/-30 · D +12/-25/30일 · E/F +20 후 MACD·5일/-30 · G +12/-12/40일 · H +12/-20/30일+5%/40일'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,
