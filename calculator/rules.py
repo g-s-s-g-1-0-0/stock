@@ -50,6 +50,11 @@ STRATEGY_RULES: dict[str, float | int] = {
     "G_RSI_MAX": 80,
     "G_VOL_RATIO20_MAX": 2.0,
     "G_MA200_OVERHEAT_MAX": 0.80,
+    "TARGET_PCT_H": 0.12,
+    "CIRCUIT_PCT_H": 0.20,
+    "STALLED_EXIT_DAYS_H": 30,
+    "STALLED_EXIT_MIN_RETURN_H": 0.05,
+    "MAX_HOLD_DAYS_H": 40,
     "STALLED_EXIT_DAYS": 25,
     "STALLED_EXIT_MIN_RETURN": 0.03,
     "HALF_EXIT_DAYS": 60,
@@ -75,6 +80,7 @@ STRATEGY_LABELS = {
     "E": "200일선 상방 & 스퀴즈 저점",
     "F": "200일선 상방 & BB 극단 저점",
     "G": "급락 후 회복장 20일선 눌림",
+    "H": "20일선 지지·재돌파",
 }
 
 NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES = {"A", "C", "E", "F", "G"}
@@ -107,6 +113,7 @@ class IndicatorRow:
     adx_d1: float | None = None
     lr_slope: float | None = None
     lr_trendline: float | None = None
+    candle_open: float | None = None
     candle_low: float | None = None
     entry_price: float | None = None
     entry_date: date | None = None
@@ -175,7 +182,7 @@ def evaluate_buy_condition(
     is_recovery_market: bool = False,
     recovery_momentum_exception: bool = False,
 ) -> dict[str, Any]:
-    """Evaluate A-G entry/hold conditions in the same priority as the sheet."""
+    """Evaluate A-H entry/hold conditions in the same priority as the sheet."""
 
     s = STRATEGY_RULES
     vix_threshold = float(s["VIX_RELEASE"] if is_holding else s["VIX_MIN"])
@@ -295,10 +302,52 @@ def evaluate_buy_condition(
         and g_cond1 and g_cond2 and g_cond3 and g_cond4 and g_cond5
         and g_cond6 and g_cond7 and g_cond8 and g_cond9 and g_cond10
     )
+    ma20_slope_ratio = (
+        (ind.ma20 / ind.ma20_prev5 - 1)
+        if ind.ma20 is not None and ind.ma20_prev5 is not None and ind.ma20_prev5 > 0
+        else None
+    )
+    h_support = (
+        ind.candle_open is not None
+        and ind.ma20 is not None
+        and ind.ma20 > 0
+        and ind.candle_low is not None
+        and ind.current_price is not None
+        and ind.candle_open > ind.ma20
+        and ind.candle_low <= ind.ma20 * 1.003
+        and ind.candle_low >= ind.ma20 * 0.965
+        and ind.current_price > ind.ma20
+        and ind.current_price >= ind.candle_open * 0.995
+        and ma20_slope_ratio is not None
+        and ma20_slope_ratio > -0.01
+    )
+    h_reclaim = (
+        ind.candle_open is not None
+        and ind.ma20 is not None
+        and ind.ma20 > 0
+        and ind.candle_low is not None
+        and ind.current_price is not None
+        and (ind.candle_open < ind.ma20 or ind.candle_low < ind.ma20)
+        and ind.current_price > ind.ma20 * 1.002
+        and ind.current_price > ind.candle_open
+        and ma20_slope_ratio is not None
+        and ma20_slope_ratio > -0.015
+    )
+    h_hold = (
+        ind.current_price is not None
+        and ind.ma20 is not None
+        and ind.current_price > ind.ma20
+        and nasdaq_bottom
+    )
+    entry_h = (
+        not entry_a and not entry_b and not entry_c and not entry_d and not entry_e and not entry_f and not entry_g
+        and (h_support or h_reclaim)
+        and nasdaq_bottom
+    )
 
     entry_strategy = (
         "A" if entry_a else "B" if entry_b else "C" if entry_c else "D" if entry_d
-        else "E" if entry_e else "F" if entry_f else "G" if entry_g else None
+        else "E" if entry_e else "F" if entry_f else "G" if entry_g else "H" if entry_h else None
     )
     triggered = entry_strategy is not None
     recovery_exception_used = (
@@ -344,6 +393,8 @@ def evaluate_buy_condition(
             triggered = f_cond1 and not ixic_filter_active and nasdaq_below_buy_block and f_cond2
         elif holding_strategy_type == "G":
             triggered = g_cond1 and g_cond2 and g_cond3 and g_cond5 and g_cond6 and g_cond7 and g_cond8 and g_cond9 and g_cond10
+        elif holding_strategy_type == "H":
+            triggered = h_hold
 
     return {
         "triggered": triggered,
@@ -359,6 +410,7 @@ def evaluate_buy_condition(
             "E": [e_cond1, e_cond2, e_cond3, nasdaq_bottom],
             "F": [f_cond1, f_cond2, nasdaq_bottom],
             "G": [g_cond1, g_cond2, g_cond3, g_cond4, g_cond5, g_cond6, g_cond7, g_cond8, g_cond9, g_cond10],
+            "H": [h_support or h_reclaim, nasdaq_bottom],
         },
     }
 
@@ -399,7 +451,21 @@ def strategy_max_hold_days(strategy_type: str) -> int:
         return int(STRATEGY_RULES["MAX_HOLD_DAYS_D"])
     if strategy_type == "G":
         return int(STRATEGY_RULES["MAX_HOLD_DAYS_G"])
+    if strategy_type == "H":
+        return int(STRATEGY_RULES["MAX_HOLD_DAYS_H"])
     return int(STRATEGY_RULES["MAX_HOLD_DAYS"])
+
+
+def strategy_stalled_exit_days(strategy_type: str) -> int:
+    if strategy_type == "H":
+        return int(STRATEGY_RULES["STALLED_EXIT_DAYS_H"])
+    return int(STRATEGY_RULES["STALLED_EXIT_DAYS"])
+
+
+def strategy_stalled_min_return(strategy_type: str) -> float:
+    if strategy_type == "H":
+        return float(STRATEGY_RULES["STALLED_EXIT_MIN_RETURN_H"])
+    return float(STRATEGY_RULES["STALLED_EXIT_MIN_RETURN"])
 
 
 def enrich_profit_exit_reason(
@@ -489,12 +555,14 @@ def evaluate_exit_condition(
 
     if return_pct <= -circuit_pct:
         return {"shouldExit": True, "reason": f"손절 기준 도달 {return_signed} [{stop_label}]"}
-    if trading_days >= int(s["STALLED_EXIT_DAYS"]) and return_pct < float(s["STALLED_EXIT_MIN_RETURN"]):
+    stalled_days = strategy_stalled_exit_days(strategy_type)
+    stalled_min_return = strategy_stalled_min_return(strategy_type)
+    if trading_days >= stalled_days and return_pct < stalled_min_return:
         return {
             "shouldExit": True,
             "reason": (
-                f"{s['STALLED_EXIT_DAYS']}거래일 반등 미달 청산 "
-                f"({trading_days}일, {return_pct * 100:.2f}% < +{float(s['STALLED_EXIT_MIN_RETURN']) * 100:.0f}%)"
+                f"{stalled_days}거래일 반등 미달 청산 "
+                f"({trading_days}일, {return_pct * 100:.2f}% < +{stalled_min_return * 100:.0f}%)"
             ),
         }
     if strategy_type != "G" and trading_days >= int(s["HALF_EXIT_DAYS"]) and return_pct > 0:
@@ -537,6 +605,7 @@ def indicator_from_mapping(values: dict[str, Any]) -> IndicatorRow:
         adx_d1=_num(values.get("adxD1")),
         lr_slope=_num(values.get("lrSlope")),
         lr_trendline=_num(values.get("lrTrendline")),
+        candle_open=_num(values.get("candleOpen")),
         candle_low=_num(values.get("candleLow")),
         entry_price=_num(values.get("entryPrice")),
     )

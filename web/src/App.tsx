@@ -1367,7 +1367,7 @@ function resolveStockForTicker(ticker: string, primaryStocks: Stock[], fallbackS
 const initialWatchlist: string[] = []
 
 const operatorTickers: string[] = []
-const strategyFilters = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+const strategyFilters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
 const personalTrades: TradeLog[] = []
 const localTestWatchlist = ['AVGO', 'NVDA', 'MSFT', '005930']
 const localTestPersonalTrades: TradeLog[] = [
@@ -1858,6 +1858,7 @@ function strategyInfo(strategy: string) {
     E: '상승 흐름은 유지되지만 가격이 잠시 눌린 구간입니다. 다시 들어갈 만한 저점 후보로 봅니다.',
     F: '상승 흐름 안에서 가격이 아래쪽까지 과하게 밀린 구간입니다. 반등을 노리지만 흔들림이 클 수 있습니다.',
     G: '급락 후 회복장에서 20일선까지 눌렸다가 다시 회복하는 구간입니다. 회복장 눌림목만 선별합니다.',
+    H: '시장 과열을 피하면서 개별 종목이 20일선을 지지하거나 다시 회복하는 구간입니다.',
   }
   return descriptions[strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
 }
@@ -1883,6 +1884,10 @@ function tradeCriteriaInfo(strategy: string) {
 
   if (code === 'G') {
     return 'G 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -12%에 닿으면 손절 실패이고, 매수 후 25거래일 종가 수익률이 +3% 미만이면 반등 미달로 청산합니다. 40거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
+  }
+
+  if (code === 'H') {
+    return 'H 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -20%에 닿으면 손절 실패이고, 매수 후 30거래일 종가 수익률이 +5% 미만이면 반등 미달로 청산합니다. 40거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
   }
 
   if (['E', 'F'].includes(code)) {
@@ -2024,7 +2029,7 @@ function formatTradePrice(trade: TradeLog, value: number | null, fallback: strin
 function strategyTargetReturnPct(strategy: string) {
   const code = strategyCode(strategy)
   if (['A', 'B', 'C', 'E', 'F'].includes(code)) return 0.2
-  if (['D', 'G'].includes(code)) return 0.12
+  if (['D', 'G', 'H'].includes(code)) return 0.12
   return null
 }
 
@@ -2038,6 +2043,7 @@ function recommendedSellPriceText(trade: TradeLog) {
 function recommendedSellPriceNote(strategy: string) {
   const code = strategyCode(strategy)
   if (['E', 'F'].includes(code)) return 'E/F는 목표가 도달 후 MACD 둔화 확인 또는 5거래일 대기 만료 시 청산합니다.'
+  if (code === 'H') return 'H 전략 목표 익절가입니다. 단, -20% 손절과 30거래일 +5% 미달 정체청산 기준도 함께 봅니다.'
   if (code) return `${code} 전략 목표 익절가입니다.`
   return undefined
 }
@@ -3507,7 +3513,7 @@ const technicalMetricColumns: TechnicalColumn[] = [
   { label: '실적발표일 (한국 시간 기준)', tooltip: '한국 시간 기준 실적 발표일입니다. 실적 전후에는 가격이 크게 움직일 수 있어 주의합니다.', value: (stock) => technicalEarningsDate(stock) },
   { label: '진입가', tooltip: '현재 보유 중인 종목을 산 가격입니다. 보유 전이면 빈 값으로 표시합니다.', value: (stock) => technicalEntryPrice(stock) },
   { label: '진입일', tooltip: '현재 보유 중인 종목을 산 날짜입니다. 보유 전이면 빈 값으로 표시합니다.', value: (stock) => technicalEntryDate(stock) },
-  { label: '진입 전략', tooltip: '매수할 때 사용된 전략명입니다. A~F 전략 설명은 Home의 전략 툴팁과 같은 기준입니다.', value: (stock) => technicalEntryStrategy(stock) },
+  { label: '진입 전략', tooltip: '매수할 때 사용된 전략명입니다. A~H 전략 설명은 Home의 전략 툴팁과 같은 기준입니다.', value: (stock) => technicalEntryStrategy(stock) },
 ]
 
 function MetricValue({
@@ -6305,7 +6311,7 @@ function App() {
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
     ? "장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 '보유중인 종목' 표에서 직접 처리합니다."
-    : '공통: 25거래일 +3% 미달 청산. A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%), G(+12%, -12%, 40일)'
+    : 'A-G 공통: 25거래일 +3% 미달 청산. A/B/C(+20%, -30%), D(+12%, -25%, 30일), E/F(+20% 후 MACD·5일, -30%), G(+12%, -12%, 40일), H(+12%, -20%, 30일 +5% 미달, 40일)'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,

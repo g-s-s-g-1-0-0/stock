@@ -863,7 +863,7 @@ def tech_text(row: dict[str, Any], *keys: str) -> str:
 
 def strategy_code(value: Any) -> str:
     text = str(value or "").strip()
-    return text[:1] if text[:1] in {"A", "B", "C", "D", "E", "F", "G"} else ""
+    return text[:1] if text[:1] in {"A", "B", "C", "D", "E", "F", "G", "H"} else ""
 
 
 STRATEGY_LABELS = {
@@ -874,6 +874,7 @@ STRATEGY_LABELS = {
     "E": "E. 200일선 상방 & 스퀴즈 저점",
     "F": "F. 200일선 상방 & BB 극단 저점",
     "G": "G. 급락 후 회복장 20일선 눌림",
+    "H": "H. 20일선 지지·재돌파",
 }
 
 
@@ -1003,6 +1004,8 @@ def buy_reason_detail(code: str, stock: dict[str, Any], technical_row: dict[str,
         detail = f"현재가 {price} / MA200 {ma200} | 저가 %B {pct_b_low}"
     elif code == "G":
         detail = f"현재가 {price} / MA20 {ma20} / MA200 {ma200} | RSI {rsi} | MA20 5일 기울기 {ma20_slope} | 20일 거래량비 {vol_ratio20}"
+    elif code == "H":
+        detail = f"현재가 {price} / 저가 {tech_text(technical_row, 'C - Low', '저가')} / MA20 {ma20} | MA20 5일 기울기 {ma20_slope} | 20일 거래량비 {vol_ratio20}"
     else:
         detail = f"현재가 {price} / MA200 {ma200}"
     return detail
@@ -1156,6 +1159,11 @@ def watch_release_detail(strategy: str, current_stock: dict[str, Any], technical
         if ma20_slope_num is not None and ma20_slope_num < 0.5:
             return f"MA20 기울기 둔화 ({c['ma20_slope']} < +0.5%)"
         return f"G그룹 눌림 조건 이탈 (현재가 {c['price']} / MA20 {c['ma20']} / MA200 {c['ma200']})"
+
+    if strategy == "H":
+        if ma20_num is not None and price_num is not None and price_num <= ma20_num:
+            return f"20일선 지지 이탈 (현재가 {c['price']} / MA20 {c['ma20']})"
+        return f"H그룹 20일선 조건 이탈 (현재가 {c['price']} / MA20 {c['ma20']} / MA20 기울기 {c['ma20_slope']})"
 
     if pct_b_low_num is not None and pct_b_low_num > float(s["BB_PCT_B_LOW_MAX"]):
         return f"BB 하단 눌림 해소 (저가 %B {c['pct_b_low']} > {s['BB_PCT_B_LOW_MAX']})"

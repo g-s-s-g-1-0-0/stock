@@ -683,7 +683,7 @@ def valuation_from_price_range(current_price: str, fair_price: str) -> str:
 
 
 def parse_holding_strategy_code(value: Any) -> str | None:
-    match = re.match(r"\s*([A-G])\b", str(value or "").strip().upper())
+    match = re.match(r"\s*([A-H])\b", str(value or "").strip().upper())
     return match.group(1) if match else None
 
 
@@ -768,6 +768,7 @@ def latest_technical_row(
         adx_d1=row["adxD1"],
         lr_slope=row["lrSlope"],
         lr_trendline=row["lrTrendline"],
+        candle_open=row["open"],
         candle_low=row["low"],
     )
     ixic_dist = qqq_market_state.get("premiumPercent") if qqq_market_state else None
@@ -828,6 +829,7 @@ def latest_technical_row(
             "거래량 <= 20일평균 2.0x",
             f"MA200 이격 <= {float(STRATEGY_RULES['G_MA200_OVERHEAT_MAX']) * 100:.0f}%",
         ],
+        "H": ["20일선 지지반등 또는 재돌파", "나스닥 바닥/정상 필터"],
     }
     condition_summaries = []
     for group, labels in strategy_labels.items():
@@ -1081,7 +1083,7 @@ def strategy_codes_from_technical(technical: dict[str, Any]) -> list[str]:
     codes: list[str] = []
     for value in values:
         code = str(value or "").split(".", 1)[0].strip().upper()
-        if code in {"A", "B", "C", "D", "E", "F", "G"} and code not in codes:
+        if code in {"A", "B", "C", "D", "E", "F", "G", "H"} and code not in codes:
             codes.append(code)
     return codes
 

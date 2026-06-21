@@ -185,6 +185,33 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertNotIn("권장 매도가", body)
         self.assertNotIn("₩110,760", body)
 
+    def test_h_strategy_buy_reason_and_target_price_use_existing_email_format(self) -> None:
+        trade = {
+            "ticker": "SOXL",
+            "strategy": "H. 20일선 지지·재돌파",
+            "buyPrice": "$100.00",
+        }
+        stock = {
+            "ticker": "SOXL",
+            "name": "Direxion Daily Semiconductor Bull 3X ETF",
+            "currentPrice": "$100.00",
+            "strategies": ["H. 20일선 지지·재돌파"],
+        }
+        technical = {
+            "entrySignalCodes": "H",
+            "20일 이동평균선": "$98.00",
+            "MA20 5일 기울기": "+0.40%",
+            "20일 평균 대비 거래량 (D)": "125%",
+            "C - Low": "$97.50",
+        }
+
+        self.assertEqual("$112.00", self.notifications.recommended_sell_price_for_trade(trade, stock, technical))
+        reason = self.notifications.buy_reason_for_trade(trade, stock, technical)
+
+        self.assertIn("H. 20일선 지지·재돌파", reason)
+        self.assertIn("MA20", reason)
+        self.assertIn("20일 거래량비", reason)
+
     def test_opinion_email_body_includes_trade_exit_in_sell_summary(self) -> None:
         body = self.notifications.opinion_email_body([
             {

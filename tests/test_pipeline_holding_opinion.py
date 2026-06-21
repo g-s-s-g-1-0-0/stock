@@ -120,6 +120,32 @@ def test_non_holding_stock_uses_entry_signal_only(monkeypatch):
     assert result["opinion"] == "관망"
 
 
+def test_non_holding_h_stock_uses_20ma_support_signal(monkeypatch):
+    row = make_technical_row(
+        close=103.0,
+        open=102.0,
+        low=99.8,
+        ma20=100.0,
+        ma20Prev5=99.5,
+        ma200=90.0,
+        macdHist=-0.1,
+        macdHistD1=-0.2,
+        pctB=45.0,
+        pctBLow=30.0,
+        bbWidth=20.0,
+        bbWidthAvg60=30.0,
+    )
+    patch_sources(monkeypatch, row)
+
+    result = pipeline.latest_technical_row(
+        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type=None
+    )
+
+    assert result["opinion"] == "매수"
+    assert result["entrySignalCodes"] == "H"
+    assert result["entryStrategy"] == "H. 20일선 지지·재돌파"
+
+
 def test_open_holding_strategies_reads_primary_code(monkeypatch):
     monkeypatch.setattr(
         pipeline,
