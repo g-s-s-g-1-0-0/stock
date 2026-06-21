@@ -2,8 +2,8 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-06-21T14:00:00Z",
-    "lastSuccessfulRun": "2026-06-21T14:00:00Z",
+    "updatedAt": "2026-06-21T17:00:00Z",
+    "lastSuccessfulRun": "2026-06-21T17:00:00Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
     "closedTrades": 0,
@@ -252,7 +252,7 @@
     {
       "slotId": "005380_G_20260606_1",
       "ticker": "005380",
-      "name": "현대차",
+      "name": "현대자동차",
       "market": "KR",
       "currentPrice": "₩613,000",
       "strategy": "G. 급락 후 회복장 20일선 눌림",
@@ -468,7 +468,7 @@
     {
       "slotId": "005380_F_20260611_1",
       "ticker": "005380",
-      "name": "현대차",
+      "name": "현대자동차",
       "market": "KR",
       "currentPrice": "₩613,000",
       "strategy": "F. 200일선 상방 & BB 극단 저점",
