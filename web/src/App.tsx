@@ -6311,7 +6311,7 @@ function App() {
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
     ? "장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 '보유중인 종목' 표에서 직접 처리합니다."
-    : '청산: A-C +20/-30 · D +12/-25/30일 · E/F +20 후 MACD·5일/-30 · G +12/-12/40일 · H +12/-20/30일+5%/40일'
+    : '청산 기준: A-C +20/-30 · D +12/-25/30일 · E/F +20 후 MACD·5일/-30 · G +12/-12/40일 · H +12/-20/30일+5%/40일'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,
@@ -8204,7 +8204,7 @@ function App() {
               <div className="log-meta">
                 <p>총 투자 기간 {investingDays}일</p>
                 {!isLongTermInvestor && <p>승률: {visibleWinRates}</p>}
-                <p className="log-criteria-line">성공/실패: {strategyCriteriaLine}</p>
+                <p className="log-criteria-line">{strategyCriteriaLine}</p>
               </div>
               <button
                 className="sort-button"
