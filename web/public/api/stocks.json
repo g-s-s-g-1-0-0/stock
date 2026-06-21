@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-06-21T13:50:52+00:00",
-    "lastSuccessfulRun": "2026-06-21T13:50:52+00:00",
+    "updatedAt": "2026-06-21T14:56:05+00:00",
+    "lastSuccessfulRun": "2026-06-21T14:56:05+00:00",
     "failedReason": null
   },
   "rows": [
@@ -130,7 +130,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "G. 급락 후 회복장 20일선 눌림"
+      ],
       "category": "성장주",
       "industry": "반도체 레이저 장비, HBM·AI 반도체, 레이저 어닐링, 그루빙·다이싱",
       "updatedAt": "2026-06-21T13:50:36+00:00"
@@ -290,7 +292,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "D. 200일선 상방 & 상승 흐름 강화"
+      ],
       "category": "성장주",
       "industry": "데이터센터, AI 인프라, 고속 인터커넥트",
       "updatedAt": "2026-06-21T13:50:42+00:00"
@@ -482,7 +486,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "A. 200일선 상방 & 모멘텀 재가속"
+      ],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
       "updatedAt": "2026-06-21T13:50:48+00:00"
@@ -514,7 +520,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "A. 200일선 상방 & 모멘텀 재가속"
+      ],
       "category": "성장주",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
       "updatedAt": "2026-06-21T13:50:50+00:00"
@@ -546,7 +554,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "A. 200일선 상방 & 모멘텀 재가속"
+      ],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
       "updatedAt": "2026-06-21T13:50:51+00:00"
@@ -555,10 +565,10 @@
       "ticker": "TE",
       "name": "T1 Energy",
       "market": "US",
-      "fairPrice": "-",
-      "fairPriceReason": null,
+      "fairPrice": "적자 상태라 판단 불가",
+      "fairPriceReason": "loss_making",
       "currentPrice": "$9.40",
-      "valuation": "보통",
+      "valuation": "판단 불가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
@@ -571,10 +581,10 @@
       "ticker": "COHR",
       "name": "Coherent",
       "market": "US",
-      "fairPrice": "-",
+      "fairPrice": "$41.80 ~ $62.70",
       "fairPriceReason": null,
       "currentPrice": "$394.00",
-      "valuation": "보통",
+      "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
