@@ -246,7 +246,7 @@ function handleOpinionChange(stockName, fromOpinion, toOpinion, row, currentGlob
   const C             = Utils.COL_INDICES;
   const entryStrategyCode = String(row[C.entryStrategy] || "").trim().charAt(0).toUpperCase();
   const buyStrategyHint = toOpinion === "매수"
-    ? (evaluatedStrategyType || (/^[A-G]$/.test(entryStrategyCode) ? entryStrategyCode : null))
+    ? (evaluatedStrategyType || (/^[A-H]$/.test(entryStrategyCode) ? entryStrategyCode : null))
     : null;
 
   let reason;
@@ -714,6 +714,11 @@ const Utils = {
     G_RSI_MAX:       80,
     G_VOL_RATIO20_MAX: 2.0,
     G_MA200_OVERHEAT_MAX: 0.80,
+    TARGET_PCT_H:    0.12,
+    CIRCUIT_PCT_H:   0.20,
+    STALLED_EXIT_DAYS_H: 30,
+    STALLED_EXIT_MIN_RETURN_H: 0.05,
+    MAX_HOLD_DAYS_H: 40,
     STALLED_EXIT_DAYS: 25,
     STALLED_EXIT_MIN_RETURN: 0.03,
     HALF_EXIT_DAYS:    60,
@@ -1148,7 +1153,7 @@ const Utils = {
     const legacyMap = {
       "squeeze": "E", "ma200u": "F", "ma200d": "B"
     };
-    const strategyType = /^[A-G]$/.test(rawType)
+    const strategyType = /^[A-H]$/.test(rawType)
       ? rawType
       : (legacyMap[rawType] !== undefined ? legacyMap[rawType] : rawType);
     return { price: Number(parts[0]) || 0, date: parts[1] ? Utils.parseDateKST(parts[1]) : null, strategyType };
@@ -1333,6 +1338,7 @@ const Utils = {
                       : savedStrategy === "D" ? S.TARGET_PCT_D
                       : savedStrategy === "E" ? S.TARGET_PCT_E
                       : savedStrategy === "F" ? S.TARGET_PCT_F
+                      : savedStrategy === "H" ? S.TARGET_PCT_H
                       : S.TARGET_PCT_G;
       const circuitPct = savedStrategy === "A" ? S.CIRCUIT_PCT_A
                        : savedStrategy === "B" ? S.CIRCUIT_PCT_B
@@ -1340,6 +1346,7 @@ const Utils = {
                        : savedStrategy === "D" ? S.CIRCUIT_PCT_D
                        : savedStrategy === "E" ? S.CIRCUIT_PCT_E
                        : savedStrategy === "F" ? S.CIRCUIT_PCT_F
+                       : savedStrategy === "H" ? S.CIRCUIT_PCT_H
                        : S.CIRCUIT_PCT_G;
       const label = savedStrategy === "A" ? "200일선 상방 & 모멘텀 재가속"
                   : savedStrategy === "B" ? "200일선 하방 & 공황 저점"
@@ -1347,8 +1354,9 @@ const Utils = {
                   : savedStrategy === "D" ? "200일선 상방 & 상승 흐름 강화"
                   : savedStrategy === "E" ? "200일선 상방 & 스퀴즈 저점"
                   : savedStrategy === "F" ? "200일선 상방 & BB 극단 저점"
+                  : savedStrategy === "H" ? "20일선 지지·재돌파"
                   : "급락 후 회복장 20일선 눌림";
-      const maxHoldDays = savedStrategy === "D" ? S.MAX_HOLD_DAYS_D : savedStrategy === "G" ? S.MAX_HOLD_DAYS_G : S.MAX_HOLD_DAYS;
+      const maxHoldDays = savedStrategy === "D" ? S.MAX_HOLD_DAYS_D : savedStrategy === "G" ? S.MAX_HOLD_DAYS_G : savedStrategy === "H" ? S.MAX_HOLD_DAYS_H : S.MAX_HOLD_DAYS;
 
       const isEfStrategy = savedStrategy === "E" || savedStrategy === "F";
       let upperExitArmDate = isEfStrategy ? Utils.loadUpperExitArmFrom(stockName, allProperties) : null;
@@ -1377,10 +1385,12 @@ const Utils = {
 
       if (returnPct <= -circuitPct)                           return { opinion: "매도", reason: `손절 기준 도달 -${Math.abs(returnPct * 100).toFixed(2)}% [${label}]`, strategyType: savedStrategy };
       // 반등 미달 청산은 기간 내 터치 여부가 아니라 판단 시점의 현재 수익률로 판정한다.
-      if (tradingDays >= S.STALLED_EXIT_DAYS && returnPct < S.STALLED_EXIT_MIN_RETURN) {
+      const stalledExitDays = savedStrategy === "H" ? S.STALLED_EXIT_DAYS_H : S.STALLED_EXIT_DAYS;
+      const stalledExitMinReturn = savedStrategy === "H" ? S.STALLED_EXIT_MIN_RETURN_H : S.STALLED_EXIT_MIN_RETURN;
+      if (tradingDays >= stalledExitDays && returnPct < stalledExitMinReturn) {
         return {
           opinion: "매도",
-          reason: `${S.STALLED_EXIT_DAYS}거래일 반등 미달 청산 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}% < +${(S.STALLED_EXIT_MIN_RETURN * 100).toFixed(0)}%)`,
+          reason: `${stalledExitDays}거래일 반등 미달 청산 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}% < +${(stalledExitMinReturn * 100).toFixed(0)}%)`,
           strategyType: savedStrategy
         };
       }
@@ -1542,7 +1552,7 @@ const Utils = {
     const fCond2   = pctBLow !== null && pctBLow <= S.BB_PCT_B_LOW_MAX;
     const groupF   = !groupA && !groupB && !groupC && !groupD && !groupE && fCond1 && fCond2 && nasdaqAllowsBottomBuy;
 
-    const gState = (nasdaqAllowsGRecovery || hintStrategyType === "G") && currentPrice !== null && ma200 !== null && currentPrice > ma200
+    const gState = ((nasdaqAllowsGRecovery && currentPrice !== null && ma200 !== null && currentPrice > ma200) || hintStrategyType === "G" || hintStrategyType === "H")
       ? fetchGMa20PullbackState_(stockName)
       : null;
     const gMa20 = gState && Number.isFinite(Number(gState.ma20)) ? Number(gState.ma20) : ma20;
@@ -1595,6 +1605,7 @@ const Utils = {
       if (type === "E") return `E. 200일선 상방 & 스퀴즈 저점 — 현재가 ${fmtP(currentPrice)} / MA200 ${fmtP(ma200)} | BB폭 ${bbWidth !== null ? fmt(bbWidth) : "-"} / 60일평균 ${bbWidthAvg60 !== null ? fmt(bbWidthAvg60) : "-"} (압축 ${sqRatio}) | 저가 %B ${pctBLow !== null ? fmt(pctBLow) : "-"}`;
       if (type === "F") return `F. 200일선 상방 & BB 극단 저점 — 현재가 ${fmtP(currentPrice)} / MA200 ${fmtP(ma200)} | 저가 %B ${pctBLow !== null ? fmt(pctBLow) : "-"}`;
       if (type === "G") return `G. 급락 후 회복장 20일선 눌림 — 현재가 ${fmtP(currentPrice)} / MA20 ${fmtP(gMa20)} / MA200 ${fmtP(ma200)} | RSI ${Utils.fmtNumOrDash(rsi, 2)} | MA20 기울기 ${gSlopeText} | 20일 거래량비 ${gVol20Text}`;
+      if (type === "H") return `H. 20일선 지지·재돌파 — 현재가 ${fmtP(currentPrice)} / MA20 ${fmtP(gMa20)} / 저가 ${candleLow !== null ? fmtP(candleLow) : "-"} | MA20 기울기 ${gSlopeText} | 20일 거래량비 ${gVol20Text}`;
       return currentPrice !== null && ma200 !== null && currentPrice > ma200
         ? `200일선 상방 진입 — 현재가 ${fmtP(currentPrice)} / MA200 ${fmtP(ma200)}`
         : `200일선 하방 진입 — 현재가 ${fmtP(currentPrice)} / MA200 ${fmtP(ma200)}`;
@@ -1843,7 +1854,7 @@ const Utils = {
 
   parseTradingLogStrategyCode(label) {
     const text = String(label || "").trim();
-    const match = text.match(/^([A-G])\s*\./i) || text.match(/^([A-G])$/i);
+    const match = text.match(/^([A-H])\s*\./i) || text.match(/^([A-H])$/i);
     return match ? match[1].toUpperCase() : null;
   },
 
@@ -2104,6 +2115,7 @@ const Utils = {
                       : strategy === "D" ? S.TARGET_PCT_D
                       : strategy === "E" ? S.TARGET_PCT_E
                       : strategy === "F" ? S.TARGET_PCT_F
+                      : strategy === "H" ? S.TARGET_PCT_H
                       : S.TARGET_PCT_G;
     const circuitPct  = strategy === "A" ? S.CIRCUIT_PCT_A
                       : strategy === "B" ? S.CIRCUIT_PCT_B
@@ -2111,6 +2123,7 @@ const Utils = {
                       : strategy === "D" ? S.CIRCUIT_PCT_D
                       : strategy === "E" ? S.CIRCUIT_PCT_E
                       : strategy === "F" ? S.CIRCUIT_PCT_F
+                      : strategy === "H" ? S.CIRCUIT_PCT_H
                       : S.CIRCUIT_PCT_G;
     const label       = strategy === "A" ? "200일선 상방 & 모멘텀 재가속"
                       : strategy === "B" ? "200일선 하방 & 공황 저점"
@@ -2118,16 +2131,19 @@ const Utils = {
                       : strategy === "D" ? "200일선 상방 & 상승 흐름 강화"
                       : strategy === "E" ? "200일선 상방 & 스퀴즈 저점"
                       : strategy === "F" ? "200일선 상방 & BB 극단 저점"
+                      : strategy === "H" ? "20일선 지지·재돌파"
                       : "급락 후 회복장 20일선 눌림";
-    const maxHoldDays = strategy === "D" ? S.MAX_HOLD_DAYS_D : strategy === "G" ? S.MAX_HOLD_DAYS_G : S.MAX_HOLD_DAYS;
+    const maxHoldDays = strategy === "D" ? S.MAX_HOLD_DAYS_D : strategy === "G" ? S.MAX_HOLD_DAYS_G : strategy === "H" ? S.MAX_HOLD_DAYS_H : S.MAX_HOLD_DAYS;
     const isEfStrategy = strategy === "E" || strategy === "F";
     let upperExitArmDate = isEfStrategy ? Utils.loadSlotUpperExitArm(stockName, strategy, allProperties) : null;
 
     if (globalData.nasdaqPeakAlert && typeof nasdaqPeakExitApplies === "function" && nasdaqPeakExitApplies(strategy)) return { reason: `나스닥 고점 청산/강제매도 — ${globalData.nasdaqPeakReason || "국면별 QQQ 과열 기준 충족"} [${label}]` };
     if (returnPct <= -circuitPct)                return { reason: `손절 기준 도달 -${Math.abs(returnPct * 100).toFixed(2)}% [${label}]` };
     // 반등 미달 청산은 기간 내 터치 여부가 아니라 판단 시점의 현재 수익률로 판정한다.
-    if (tradingDays >= S.STALLED_EXIT_DAYS && returnPct < S.STALLED_EXIT_MIN_RETURN) {
-      return { reason: `${S.STALLED_EXIT_DAYS}거래일 반등 미달 청산 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}% < +${(S.STALLED_EXIT_MIN_RETURN * 100).toFixed(0)}%) [${label}]` };
+    const stalledExitDays = strategy === "H" ? S.STALLED_EXIT_DAYS_H : S.STALLED_EXIT_DAYS;
+    const stalledExitMinReturn = strategy === "H" ? S.STALLED_EXIT_MIN_RETURN_H : S.STALLED_EXIT_MIN_RETURN;
+    if (tradingDays >= stalledExitDays && returnPct < stalledExitMinReturn) {
+      return { reason: `${stalledExitDays}거래일 반등 미달 청산 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}% < +${(stalledExitMinReturn * 100).toFixed(0)}%) [${label}]` };
     }
 
     if (isEfStrategy && returnPct >= targetPct && !upperExitArmDate) {
@@ -2163,7 +2179,7 @@ const Utils = {
     const data = logSheet.getRange(3, 1, lastRow - 2, 6).getValues();
 
     const targetLabel = strategyDisplayName(strategy);
-    const normalizeLabel = (l) => String(l || "").replace(/^[A-G]\.\s*/, "").trim();
+    const normalizeLabel = (l) => String(l || "").replace(/^[A-H]\.\s*/, "").trim();
 
     for (let i = 0; i < data.length; i++) {
       if (String(data[i][0]).trim() === stockName
@@ -2260,7 +2276,7 @@ const Utils = {
     const lastRow = logSheet.getLastRow();
     if (lastRow < 3) return;
     const data         = logSheet.getRange(3, 1, lastRow - 2, 6).getValues();
-    const normalizeLabel = (l) => String(l || "").replace(/^[A-G]\.\s*/, "").trim();
+    const normalizeLabel = (l) => String(l || "").replace(/^[A-H]\.\s*/, "").trim();
     let updateCount    = 0;
     for (let i = 0; i < data.length; i++) {
       if (String(data[i][0]).trim() === stockName && !data[i][3]) {

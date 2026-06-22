@@ -66,6 +66,11 @@ const CONSTANTS = {
     G_RSI_MAX:       80,
     G_VOL_RATIO20_MAX: 2.0,
     G_MA200_OVERHEAT_MAX: 0.80,
+    TARGET_PCT_H:    0.12,
+    CIRCUIT_PCT_H:   0.20,
+    STALLED_EXIT_DAYS_H: 30,
+    STALLED_EXIT_MIN_RETURN_H: 0.05,
+    MAX_HOLD_DAYS_H: 40,
     STALLED_EXIT_DAYS: 25,
     STALLED_EXIT_MIN_RETURN: 0.03,
     HALF_EXIT_DAYS:    60,
@@ -371,7 +376,7 @@ function getUSExtendedSellPrice_(stockName, displayName, fallbackPrice, isKR, is
   return price;
 }
 
-/** A~F 전략 코드 → 시트 표시용 전체 이름 */
+/** A~H 전략 코드 → 시트 표시용 전체 이름 */
 function strategyDisplayName(type) {
   const map = {
     "A": "A. 200일선 상방 & 모멘텀 재가속",
@@ -380,17 +385,18 @@ function strategyDisplayName(type) {
     "D": "D. 200일선 상방 & 상승 흐름 강화",
     "E": "E. 200일선 상방 & 스퀴즈 저점",
     "F": "F. 200일선 상방 & BB 극단 저점",
-    "G": "G. 급락 후 회복장 20일선 눌림"
+    "G": "G. 급락 후 회복장 20일선 눌림",
+    "H": "H. 20일선 지지·재돌파"
   };
   return map[type] || type;
 }
 
-/** 시트 BC열 값(전체 이름 또는 단일 문자) → A~G 코드 추출 */
+/** 시트 BC열 값(전체 이름 또는 단일 문자) → A~H 코드 추출 */
 function parseStrategyCode(cellValue) {
   if (!cellValue) return null;
   const s = String(cellValue).trim();
-  if (/^[A-G]$/.test(s)) return s;                  // 단일 문자 (레거시)
-  if (/^[A-G]\.\s/.test(s)) return s.charAt(0);     // "E. 200일선 ..." 형식
+  if (/^[A-H]$/.test(s)) return s;                  // 단일 문자 (레거시)
+  if (/^[A-H]\.\s/.test(s)) return s.charAt(0);     // "E. 200일선 ..." 형식
   return null;
 }
 
@@ -414,14 +420,16 @@ function fetchGMa20PullbackState_(symbol) {
     const data = JSON.parse(response.getContentText());
     const result = ((((data || {}).chart || {}).result || [])[0] || {});
     const quote = ((result.indicators || {}).quote || [])[0] || {};
+    const opens = quote.open || [];
     const closes = quote.close || [];
     const lows = quote.low || [];
     const volumes = quote.volume || [];
     for (let i = 0; i < closes.length; i++) {
+      const open = Number(opens[i]);
       const close = Number(closes[i]);
       const low = Number(lows[i]);
-      if (!Number.isFinite(close) || !Number.isFinite(low)) continue;
-      rows.push({ close, low, volume: Number(volumes[i]) || 0 });
+      if (!Number.isFinite(close) || !Number.isFinite(low) || !Number.isFinite(open)) continue;
+      rows.push({ open, close, low, volume: Number(volumes[i]) || 0 });
     }
   } else if (resolved.type === "KR") {
     const url = "https://fchart.stock.naver.com/sise.nhn?symbol=" + resolved.code + "&timeframe=day&count=260&requestType=0";
@@ -432,10 +440,11 @@ function fetchGMa20PullbackState_(symbol) {
     let match;
     while ((match = itemRegex.exec(xml)) !== null) {
       const parts = match[1].split("|");
+      const open = Number(parts[1]);
       const low = Number(parts[3]);
       const close = Number(parts[4]);
-      if (!Number.isFinite(close) || !Number.isFinite(low)) continue;
-      rows.push({ close, low, volume: Number(parts[5]) || 0 });
+      if (!Number.isFinite(close) || !Number.isFinite(low) || !Number.isFinite(open)) continue;
+      rows.push({ open, close, low, volume: Number(parts[5]) || 0 });
     }
   }
 
@@ -451,6 +460,7 @@ function fetchGMa20PullbackState_(symbol) {
   const vol20 = volumes.slice(-20);
   const avgVol20 = vol20.length ? avg(vol20) : 0;
   const state = {
+    open: latest.open,
     close: latest.close,
     low: latest.low,
     closeD1: prev.close,
@@ -472,6 +482,7 @@ function isCompleteGMa20PullbackState_(state) {
   return !!state
     && isFiniteGNumber_(state.close)
     && isFiniteGNumber_(state.low)
+    && isFiniteGNumber_(state.open)
     && isFiniteGNumber_(state.closeD1)
     && isFiniteGNumber_(state.ma20)
     && isFiniteGNumber_(state.ma20D1)
@@ -633,11 +644,11 @@ function parseEntryInfo(val) {
   if (!val) return { price: 0, date: null, strategyType: "A" };
   const parts = val.split("|");
   const rawType = parts[2] || "A";
-  // 레거시 문자열 키만 재매핑, A-G letter는 현재 체계를 그대로 사용
+  // 레거시 문자열 키만 재매핑, A-H letter는 현재 체계를 그대로 사용
   const legacyMap = {
     "squeeze": "E", "ma200u": "F", "ma200d": "B"
   };
-  const strategyType = /^[A-G]$/.test(rawType)
+  const strategyType = /^[A-H]$/.test(rawType)
     ? rawType
     : (legacyMap[rawType] !== undefined ? legacyMap[rawType] : rawType);
   return { price: Number(parts[0]) || 0, date: parts[1] ? parseDateKST(parts[1]) : null, strategyType };
@@ -693,7 +704,7 @@ function clearExitReason(stockName) {
 }
 
 /**
- * 매수 조건 평가 — 우선순위: A > B > C > D > E > F > G
+ * 매수 조건 평가 — 우선순위: A > B > C > D > E > F > G > H
  *
  * A: MA200 위 + MACD 골든크로스 + %B>80 + RSI>70          (강세장 전용, 나스닥 ≥ -3%)
  * B: MA200 아래 + VIX≥25 + 과매도 + 추세선 터치            (나스닥 필터 미적용)
@@ -702,6 +713,7 @@ function clearExitReason(stockName) {
  * E: MA200 위 + BB스퀴즈 + 저가%B≤50                       (히스테리시스 + 찐바닥 허용)
  * F: MA200 위 + 저가%B≤5                                   (히스테리시스 + 찐바닥 허용)
  * G: 회복장 + QQQ 8~18% + MA20 눌림 후 회복                 (고점 청산 적용)
+ * H: QQQ 상단 차단 통과 + MA20 지지반등/재돌파               (고점 청산 적용)
  */
 function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding = false, holdingStrategyType = null, allProperties = null, nasdaqBuyBlockMax = null) {
   const S            = CONSTANTS.STRATEGY;
@@ -797,7 +809,32 @@ function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding =
   const entryGroupG = !entryGroupA && !entryGroupB && !entryGroupC && !entryGroupD && !entryGroupE && !entryGroupF
                    && gCond1 && gCond2 && gCond3 && gCond4 && gCond5 && gCond6 && gCond7 && gCond8 && gCond9 && gCond10;
 
-  const entryTriggered = entryGroupA || entryGroupB || entryGroupC || entryGroupD || entryGroupE || entryGroupF || entryGroupG;
+  const hCandidate = !entryGroupG && ind.currentPrice !== null && ind.ma20 !== null && ind.currentPrice > ind.ma20 && nasdaqAllowsBottomBuy;
+  const hState = hCandidate
+    ? fetchGMa20PullbackState_(ind.stockName)
+    : null;
+  const hOpen = hState && Number.isFinite(Number(hState.open)) ? Number(hState.open) : null;
+  const hClose = hState && Number.isFinite(Number(hState.close)) ? Number(hState.close) : ind.currentPrice;
+  const hLow = hState && Number.isFinite(Number(hState.low)) ? Number(hState.low) : ind.candleLow;
+  const hMa20 = hState && Number.isFinite(Number(hState.ma20)) ? Number(hState.ma20) : ind.ma20;
+  const hSlope = hState && Number.isFinite(Number(hState.ma20Slope5)) ? Number(hState.ma20Slope5) : null;
+  const hSupport = hOpen !== null && hClose !== null && hLow !== null && hMa20 !== null && hMa20 > 0
+                && hOpen > hMa20
+                && hLow <= hMa20 * 1.003
+                && hLow >= hMa20 * 0.965
+                && hClose > hMa20
+                && hClose >= hOpen * 0.995
+                && hSlope !== null && hSlope > -0.01;
+  const hReclaim = hOpen !== null && hClose !== null && hLow !== null && hMa20 !== null && hMa20 > 0
+                && (hOpen < hMa20 || hLow < hMa20)
+                && hClose > hMa20 * 1.002
+                && hClose > hOpen
+                && hSlope !== null && hSlope > -0.015;
+  const hHold = hClose !== null && hMa20 !== null && hClose > hMa20 && nasdaqAllowsBottomBuy;
+  const entryGroupH = !entryGroupA && !entryGroupB && !entryGroupC && !entryGroupD && !entryGroupE && !entryGroupF && !entryGroupG
+                   && (hSupport || hReclaim) && nasdaqAllowsBottomBuy;
+
+  const entryTriggered = entryGroupA || entryGroupB || entryGroupC || entryGroupD || entryGroupE || entryGroupF || entryGroupG || entryGroupH;
 
   let triggered = entryTriggered;
   if (isHolding && holdingStrategyType) {
@@ -821,11 +858,13 @@ function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding =
                && ind.pctBLow !== null && fCond2;
     } else if (holdingStrategyType === "G") {
       triggered = gCond1 && gCond2 && gCond3 && gCond5 && gCond6 && gCond7 && gCond8 && gCond9 && gCond10;
+    } else if (holdingStrategyType === "H") {
+      triggered = hHold;
     }
   }
 
   const strategyType = entryGroupA ? "A" : entryGroupB ? "B" : entryGroupC ? "C"
-                     : entryGroupD ? "D" : entryGroupE ? "E" : entryGroupF ? "F" : entryGroupG ? "G" : null;
+                     : entryGroupD ? "D" : entryGroupE ? "E" : entryGroupF ? "F" : entryGroupG ? "G" : entryGroupH ? "H" : null;
 
   return {
     triggered, strategyType,
@@ -838,6 +877,7 @@ function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding =
     fCond1, fCond2,
     gCond1, gCond2, gCond3, gCond4, gCond5, gCond6, gCond7, gCond8, gCond9, gCond10,
     gState, gMa20, gClose, gLow, nasdaqAllowsGRecovery,
+    hCond1: hSupport || hReclaim, hCond2: nasdaqAllowsBottomBuy, hState, hMa20, hClose, hLow,
     nasdaqAllowsStrictMomentum, nasdaqAllowsBottomBuy, nasdaqBelowBuyBlock, ixicDist, ixicFilterActive,
     entryTriggered,
     cond2: bCond2, cond3: bCond3, cond3Hold: bCond3Hold,
@@ -856,6 +896,7 @@ function evaluateExitCondition(ind, now, nasdaqPeakAlert, strategyType = "A", al
                   : strategyType === "D" ? S.TARGET_PCT_D
                   : strategyType === "E" ? S.TARGET_PCT_E
                   : strategyType === "F" ? S.TARGET_PCT_F
+                  : strategyType === "H" ? S.TARGET_PCT_H
                   : S.TARGET_PCT_G;
   const circuitPct = strategyType === "A" ? S.CIRCUIT_PCT_A
                    : strategyType === "B" ? S.CIRCUIT_PCT_B
@@ -863,6 +904,7 @@ function evaluateExitCondition(ind, now, nasdaqPeakAlert, strategyType = "A", al
                    : strategyType === "D" ? S.CIRCUIT_PCT_D
                    : strategyType === "E" ? S.CIRCUIT_PCT_E
                    : strategyType === "F" ? S.CIRCUIT_PCT_F
+                   : strategyType === "H" ? S.CIRCUIT_PCT_H
                    : S.CIRCUIT_PCT_G;
   const stratLabel = strategyType === "A" ? `200일선 상방 & 모멘텀 재가속 기준 +${targetPct * 100}%`
                    : strategyType === "B" ? `200일선 하방 & 공황 저점 기준 +${targetPct * 100}%`
@@ -870,8 +912,9 @@ function evaluateExitCondition(ind, now, nasdaqPeakAlert, strategyType = "A", al
                    : strategyType === "D" ? `200일선 상방 & 상승 흐름 강화 기준 +${targetPct * 100}%`
                    : strategyType === "E" ? `200일선 상방 & 스퀴즈 저점 기준 +${targetPct * 100}%`
                    : strategyType === "F" ? `200일선 상방 & BB 극단 저점 기준 +${targetPct * 100}%`
+                   : strategyType === "H" ? `20일선 지지·재돌파 기준 +${targetPct * 100}%`
                    :                        `급락 후 회복장 20일선 눌림 기준 +${targetPct * 100}%`;
-  const maxHoldDays = strategyType === "D" ? S.MAX_HOLD_DAYS_D : strategyType === "G" ? S.MAX_HOLD_DAYS_G : S.MAX_HOLD_DAYS;
+  const maxHoldDays = strategyType === "D" ? S.MAX_HOLD_DAYS_D : strategyType === "G" ? S.MAX_HOLD_DAYS_G : strategyType === "H" ? S.MAX_HOLD_DAYS_H : S.MAX_HOLD_DAYS;
 
   const returnPct   = (ind.currentPrice - ind.entryPrice) / ind.entryPrice;
   const tradingDays = calcTradingDays(ind.entryDate, now);
@@ -903,10 +946,12 @@ function evaluateExitCondition(ind, now, nasdaqPeakAlert, strategyType = "A", al
 
   if (returnPct <= -circuitPct)    return { shouldExit: true, reason: `손절 기준 도달 -${Math.abs(returnPct * 100).toFixed(2)}% [손절 -${circuitPct * 100}%]` };
   // 반등 미달 청산은 기간 내 터치 여부가 아니라 판단 시점의 현재 수익률로 판정한다.
-  if (tradingDays >= S.STALLED_EXIT_DAYS && returnPct < S.STALLED_EXIT_MIN_RETURN) {
+  const stalledExitDays = strategyType === "H" ? S.STALLED_EXIT_DAYS_H : S.STALLED_EXIT_DAYS;
+  const stalledExitMinReturn = strategyType === "H" ? S.STALLED_EXIT_MIN_RETURN_H : S.STALLED_EXIT_MIN_RETURN;
+  if (tradingDays >= stalledExitDays && returnPct < stalledExitMinReturn) {
     return {
       shouldExit: true,
-      reason: `${S.STALLED_EXIT_DAYS}거래일 반등 미달 청산 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}% < +${(S.STALLED_EXIT_MIN_RETURN * 100).toFixed(0)}%)`
+      reason: `${stalledExitDays}거래일 반등 미달 청산 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}% < +${(stalledExitMinReturn * 100).toFixed(0)}%)`
     };
   }
   if (strategyType !== "G" && tradingDays >= S.HALF_EXIT_DAYS && returnPct > 0) return { shouldExit: true, reason: `60거래일 경과 + 수익 중 자동 매도 (${tradingDays}일, +${(returnPct * 100).toFixed(2)}%)` };
@@ -1031,7 +1076,7 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
         entryDateWrites[i + 3] = savedDateStr;
         console.log(` → [진입일 동기화] ${ind.displayName}: 시트 "${sheetDateStr}" → ENTRY_ "${savedDateStr}"`);
       }
-      if (sheetStratCode !== saved.strategyType && /^[A-G]$/.test(saved.strategyType)) {
+      if (sheetStratCode !== saved.strategyType && /^[A-H]$/.test(saved.strategyType)) {
         entryStrategyWrites[i + 3] = strategyDisplayName(saved.strategyType);
         console.log(` → [전략 동기화] ${ind.displayName}: 시트 "${sheetStratCode || "없음"}" → ENTRY_ "${strategyDisplayName(saved.strategyType)}"`);
       }
@@ -1322,6 +1367,12 @@ function _buildEntryLog(stratType, ind, vixD) {
       const gMa20 = gState && Number.isFinite(Number(gState.ma20)) ? Number(gState.ma20) : ind.ma20;
       return `급락 후 회복장 20일선 눌림 — 현재가 ${fP(ind.currentPrice)} > MA200 ${fP(ind.ma200)}, MA20 ${fP(gMa20)}, RSI ${fn(ind.rsi, 1)}, MA20 기울기 ${formatGMa20Slope_(gState)}, 20일 거래량비 ${formatGVolRatio20_(gState)}`;
     }
+    case "H": {
+      const hState = fetchGMa20PullbackState_(ind.stockName);
+      const hMa20 = hState && Number.isFinite(Number(hState.ma20)) ? Number(hState.ma20) : ind.ma20;
+      const hLow = hState && Number.isFinite(Number(hState.low)) ? Number(hState.low) : ind.candleLow;
+      return `20일선 지지·재돌파 — 현재가 ${fP(ind.currentPrice)}, 저가 ${fP(hLow)}, MA20 ${fP(hMa20)}, MA20 기울기 ${formatGMa20Slope_(hState)}, 20일 거래량비 ${formatGVolRatio20_(hState)}`;
+    }
     default:  return `진입 — 현재가 ${fP(ind.currentPrice)}`;
   }
 }
@@ -1344,6 +1395,12 @@ function _buildChangeReasonBuy(stratType, ind, vixD) {
       const gState = fetchGMa20PullbackState_(ind.stockName);
       const gMa20 = gState && Number.isFinite(Number(gState.ma20)) ? Number(gState.ma20) : ind.ma20;
       return `급락 후 회복장 20일선 눌림 진입 — 현재가 ${fP(ind.currentPrice)} / MA20 ${fP(gMa20)} / MA200 ${fP(ind.ma200)} | RSI ${fn(ind.rsi, 1)} | MA20 기울기 ${formatGMa20Slope_(gState)} | 20일 거래량비 ${formatGVolRatio20_(gState)}`;
+    }
+    case "H": {
+      const hState = fetchGMa20PullbackState_(ind.stockName);
+      const hMa20 = hState && Number.isFinite(Number(hState.ma20)) ? Number(hState.ma20) : ind.ma20;
+      const hLow = hState && Number.isFinite(Number(hState.low)) ? Number(hState.low) : ind.candleLow;
+      return `20일선 지지·재돌파 진입 — 현재가 ${fP(ind.currentPrice)} / 저가 ${fP(hLow)} / MA20 ${fP(hMa20)} | MA20 기울기 ${formatGMa20Slope_(hState)} | 20일 거래량비 ${formatGVolRatio20_(hState)}`;
     }
     default:  return `진입 — 현재가 ${fP(ind.currentPrice)}`;
   }
@@ -1411,6 +1468,12 @@ function _buildReleaseReason(stratType, ind, buy, vixD, ixicDist, S) {
       if (!buy.gCond7) return `MA20 기울기 둔화 (${fn(buy.gState.ma20Slope5 * 100, 2)}% < ${(S.G_MA20_SLOPE5_MIN * 100).toFixed(1)}%)`;
       return `G그룹 눌림 조건 이탈 (현재가 ${fP(ind.currentPrice)} / MA20 ${fP(buy.gMa20)} / RSI ${fn(ind.rsi, 1)})`;
     }
+    case "H": {
+      if (!buy.hCond2) return `나스닥 H 차단 유지 (QQQ 이격도 ${ixicDist.toFixed(1)}%, 상단 차단 기준 초과)`;
+      if (!buy.hState) return "MA20 지지·재돌파 데이터 일시 결측";
+      if (buy.hClose !== null && buy.hMa20 !== null && buy.hClose <= buy.hMa20) return `20일선 회복 실패 (종가 ${fP(buy.hClose)} / MA20 ${fP(buy.hMa20)})`;
+      return `H그룹 20일선 조건 이탈 (현재가 ${fP(ind.currentPrice)} / MA20 ${fP(buy.hMa20)})`;
+    }
     default: return "매수 조건 이탈";
   }
 }
@@ -1431,6 +1494,8 @@ function shouldDeferHoldingOpinionChange(stratType, ind, buy) {
       return ind.pctBLow === null;
     case "G":
       return !buy.gState;
+    case "H":
+      return !buy.hState;
     default:
       return false;
   }
