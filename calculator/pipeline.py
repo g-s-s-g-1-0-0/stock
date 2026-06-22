@@ -69,6 +69,7 @@ MAX_REFRESH_UNIVERSE = int(os.environ.get("MAX_REFRESH_UNIVERSE", "200"))
 KST = ZoneInfo("Asia/Seoul")
 ET = ZoneInfo("America/New_York")
 MARKET_EVENTS_WEEKLY_SCHEDULE = "0 0 * * 1"
+IGNORED_MARKET_EVENT_TITLES = {"나스닥 100 리밸런싱"}
 FED_FOMC_SCHEDULE_URL = "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm"
 BLS_RELEASE_SCHEDULE_URLS = {
     "고용보고서 발표": "https://www.bls.gov/schedule/news_release/empsit.htm",
@@ -298,7 +299,7 @@ def current_market_event_label(
             continue
         title = str(group.get("title") or "").strip()
         entries = group.get("entries")
-        if not title or not isinstance(entries, list):
+        if not title or title in IGNORED_MARKET_EVENT_TITLES or not isinstance(entries, list):
             continue
         if any(isinstance(entry, dict) and is_market_event_active(entry, now) for entry in entries):
             if title not in active_titles:
@@ -1901,6 +1902,12 @@ def apply_market_event_verification(payload: dict[str, Any]) -> tuple[dict[str, 
     today = datetime.now(KST).date()
     sources, issues = official_market_event_sources(year)
     groups = payload.get("groups") if isinstance(payload.get("groups"), list) else []
+    payload["groups"] = [
+        group
+        for group in groups
+        if not (isinstance(group, dict) and str(group.get("title") or "").strip() in IGNORED_MARKET_EVENT_TITLES)
+    ]
+    groups = payload["groups"]
     changes: list[str] = []
 
     for group in groups:

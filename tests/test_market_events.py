@@ -105,6 +105,33 @@ class MarketEventsTest(unittest.TestCase):
 
         self.assertEqual("PPI 발표", pipeline.current_market_event_label(payload, now=noon))
 
+    def test_current_market_event_label_ignores_nasdaq_100_rebalancing(self) -> None:
+        payload = {
+            "groups": [
+                {
+                    "title": "나스닥 100 리밸런싱",
+                    "entries": [{"date": "2026. 6. 22", "time": "22:30"}],
+                },
+            ],
+        }
+        before = datetime(2026, 6, 22, 13, 0, tzinfo=KST)
+
+        self.assertEqual("당분간 없음", pipeline.current_market_event_label(payload, now=before))
+
+    def test_market_event_verification_removes_ignored_rebalancing_group(self) -> None:
+        payload = {
+            "meta": {"yearLabel": "2026"},
+            "groups": [
+                {"title": "나스닥 100 리밸런싱", "entries": [{"month": "6월", "date": "2026. 6. 22", "dday": "0", "time": "22:30"}]},
+                {"title": "네마녀의 날", "entries": [{"month": "6월", "date": "2026. 6. 19", "dday": "-3", "time": "5:00"}]},
+            ],
+        }
+
+        with patch("calculator.pipeline.official_market_event_sources", return_value=({}, [])):
+            updated, _, _ = pipeline.apply_market_event_verification(payload)
+
+        self.assertEqual(["네마녀의 날"], [group["title"] for group in updated["groups"]])
+
 
 if __name__ == "__main__":
     unittest.main()

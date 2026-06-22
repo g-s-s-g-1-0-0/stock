@@ -1546,8 +1546,11 @@
   width: 56px;
   min-width: 56px;
   max-width: 56px;
+  overflow: visible;
   background: var(--sheet-bg);
   border-right: 0;
+  padding-right: 6px;
+  padding-left: 6px;
 }
 
 .market-events-table .event-month-head::after,

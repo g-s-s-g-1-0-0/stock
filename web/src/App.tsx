@@ -3248,24 +3248,6 @@ const marketEventGroups: MarketEventGroup[] = [
       { month: '12월', date: '2026. 12. 19', dday: '-230', time: '6:00', highlighted: true },
     ],
   },
-  {
-    title: '나스닥 100 리밸런싱',
-    tooltip: '나스닥100 안의 종목과 비중이 바뀌는 일정입니다. 펀드들이 비중을 맞추며 관련 종목 가격이 크게 움직일 수 있습니다.',
-    entries: [
-      { month: '1월', date: '-', dday: '-', time: '-' },
-      { month: '2월', date: '-', dday: '-', time: '-' },
-      { month: '3월', date: '2026. 3. 23', dday: '48', time: '22:30' },
-      { month: '4월', date: '-', dday: '-', time: '-' },
-      { month: '5월', date: '-', dday: '-', time: '-' },
-      { month: '6월', date: '2026. 6. 22', dday: '-43', time: '22:30', highlighted: true },
-      { month: '7월', date: '-', dday: '-', time: '-' },
-      { month: '8월', date: '-', dday: '-', time: '-' },
-      { month: '9월', date: '2026. 9. 21', dday: '-134', time: '22:30', highlighted: true },
-      { month: '10월', date: '-', dday: '-', time: '-' },
-      { month: '11월', date: '-', dday: '-', time: '-' },
-      { month: '12월', date: '2026. 12. 21', dday: '-225', time: '23:30', highlighted: true },
-    ],
-  },
 ]
 
 const valueMetricColumns: Array<{ label: string; value: (metric: ValuationMetric) => string; tooltip?: string }> = [
@@ -4015,7 +3997,7 @@ function MarketEventsPage({
       <div className="section-heading value-analysis-heading">
         <div>
           <h2>시장 주요 이벤트</h2>
-          <p>금리, 고용, 물가, 리밸런싱 등 시장 변동성을 키울 수 있는 주요 이벤트 일정을 확인합니다. 모든 날짜 및 시간은 한국 기준입니다.</p>
+          <p>금리, 고용, 물가 등 시장 변동성을 키울 수 있는 주요 이벤트 일정을 확인합니다. 모든 날짜 및 시간은 한국 기준입니다.</p>
           <p className="page-warning">※ 이벤트 일정은 미국 정부 상황에 따라 유동적으로 달라져 간혹 맞지 않을 수 있습니다.</p>
         </div>
         <span className="section-heading-meta">{formatCurrentDateLabel()} <b>|</b> D-day 자동 계산 <b>|</b> 일정은 수동 확인</span>
