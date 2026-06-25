@@ -4,7 +4,33 @@
     "sent": false
   },
   "regimeShift": {
-    "isRecoveryMarket": true,
-    "updatedAt": "2026-06-25T13:00:03.207624+00:00"
+    "changedAt": "2026-06-25T14:00:05.149607+00:00",
+    "isRecoveryMarket": false,
+    "snapshot": {
+      "buyBlockMax": 9.0,
+      "currentPrice": 714.3300170898438,
+      "dailyRsi": 43.18,
+      "dailyRsiPrev": 41.27,
+      "isRecoveryMarket": false,
+      "ma144": 641.6610412597656,
+      "ma20": 726.1140014648438,
+      "ma200": 631.5135992431641,
+      "ma60": 684.4233337402344,
+      "macdHist": -3.59,
+      "macdHistD1": -3.31,
+      "macdHistD2": -2.35,
+      "macdHistSlowing": true,
+      "peakConfirmDist": 14.0,
+      "peakDirectDist": 16.0,
+      "peakResetDist": 14.0,
+      "peakTriggered": false,
+      "peakWarnDist": 13.0,
+      "premiumPercent": 13.113956365457646,
+      "recent60MinPremiumPercent": -2.899417114509495,
+      "regimeLabel": "비회복장/고점 횡보장",
+      "rsiHotAndFalling": false,
+      "warnTriggered": true,
+      "weeklyRsi": 76.83
+    }
   }
 }
