@@ -54,6 +54,13 @@ def load_watchlist_tickers() -> list[str]:
     return tickers
 
 
+def load_requested_tickers() -> list[str]:
+    tickers: list[str] = []
+    for value in os.environ.get("REFRESH_TICKERS", "").replace(",", " ").split():
+        append_unique(tickers, value)
+    return tickers
+
+
 def append_unique(tickers: list[str], value: object) -> None:
     ticker = str(value or "").strip().upper()
     if ticker and ticker not in tickers:
@@ -86,6 +93,8 @@ def load_open_trade_tickers() -> list[str]:
 
 def refresh_tickers() -> list[str]:
     tickers = load_watchlist_tickers()
+    for ticker in load_requested_tickers():
+        append_unique(tickers, ticker)
     for ticker in load_open_trade_tickers():
         append_unique(tickers, ticker)
     return tickers

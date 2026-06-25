@@ -28,13 +28,17 @@ on:
         description: "UTC ISO time to wait until before notifications, commit, and deploy"
         required: false
         default: ""
+      refresh_tickers:
+        description: "Comma-separated tickers to force into this refresh"
+        required: false
+        default: ""
 
 permissions:
   contents: write
 
 concurrency:
   group: web-data-refresh-main
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   refresh:
@@ -116,6 +120,7 @@ jobs:
           echo "REFRESH_TASKS=$TASKS" >> "$GITHUB_ENV"
           echo "SEND_NOTIFICATIONS=$SEND_NOTIFICATIONS" >> "$GITHUB_ENV"
           echo "WEB_REFRESH_PUBLISH_AT=$PUBLISH_AT" >> "$GITHUB_ENV"
+          echo "REFRESH_TICKERS=${{ inputs.refresh_tickers || '' }}" >> "$GITHUB_ENV"
           echo "Resolved refresh tasks: $TASKS"
           echo "Send notifications: $SEND_NOTIFICATIONS"
           echo "Publish at: ${PUBLISH_AT:-immediate}"

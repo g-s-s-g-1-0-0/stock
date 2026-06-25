@@ -1,5 +1,6 @@
 import importlib
 import json
+import os
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -28,6 +29,7 @@ class RefreshWebCachesTest(unittest.TestCase):
     def test_refresh_tickers_includes_open_trades(self) -> None:
         original_load_watchlist_tickers = self.refresh.load_watchlist_tickers
         original_trade_log_paths = self.refresh.TRADE_LOG_PATHS
+        original_refresh_tickers = os.environ.get("REFRESH_TICKERS")
 
         try:
             with TemporaryDirectory() as temp_dir:
@@ -43,11 +45,16 @@ class RefreshWebCachesTest(unittest.TestCase):
                 )
                 self.refresh.load_watchlist_tickers = lambda: ["AAPL"]
                 self.refresh.TRADE_LOG_PATHS = [trade_logs]
+                os.environ["REFRESH_TICKERS"] = "LRCX, aapl"
 
-                self.assertEqual(["AAPL", "MP"], self.refresh.refresh_tickers())
+                self.assertEqual(["AAPL", "LRCX", "MP"], self.refresh.refresh_tickers())
         finally:
             self.refresh.load_watchlist_tickers = original_load_watchlist_tickers
             self.refresh.TRADE_LOG_PATHS = original_trade_log_paths
+            if original_refresh_tickers is None:
+                os.environ.pop("REFRESH_TICKERS", None)
+            else:
+                os.environ["REFRESH_TICKERS"] = original_refresh_tickers
 
     def test_stock_universe_task_can_run_without_full_stock_refresh(self) -> None:
         self.assertEqual(["stock-universe"], self.refresh.parse_tasks(["stock-universe"]))

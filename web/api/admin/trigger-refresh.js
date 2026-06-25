@@ -30,6 +30,23 @@ function readRequestScope(req) {
   return normalizeScope(req.query?.scope || req.body?.scope || 'all')
 }
 
+function normalizeTicker(value) {
+  return String(value || '').trim().toUpperCase()
+}
+
+function readRequestTickers(req) {
+  const rawTickers = req.body?.tickers || req.query?.tickers || ''
+  const values = Array.isArray(rawTickers)
+    ? rawTickers
+    : String(rawTickers).split(/[,\s]+/)
+  const tickers = []
+  for (const value of values) {
+    const ticker = normalizeTicker(value)
+    if (ticker && !tickers.includes(ticker)) tickers.push(ticker)
+  }
+  return tickers
+}
+
 function readCronSecret(req) {
   return String(
     req.query?.secret ||
@@ -76,7 +93,7 @@ async function readSupabaseUser(accessToken) {
   return response.json()
 }
 
-async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = '') {
+async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = '', tickers = []) {
   const token = process.env.GITHUB_ACTIONS_TOKEN
   const repo = process.env.GITHUB_REPO || DEFAULT_REPO
   const workflowId = process.env.GITHUB_REFRESH_WORKFLOW_ID || DEFAULT_WORKFLOW_ID
@@ -101,6 +118,7 @@ async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = ''
         refresh_scope: scope,
         send_notifications: sendNotifications ? 'true' : 'false',
         scheduled_publish_at: scheduledPublishAt,
+        refresh_tickers: tickers.join(','),
       },
     }),
   })
@@ -118,6 +136,7 @@ async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = ''
     workflowId,
     ref,
     scope,
+    tickers,
     actionsUrl: `https://github.com/${repo}/actions/workflows/${workflowId}`,
   }
 }
@@ -153,7 +172,8 @@ export default async function handler(req, res) {
 
     const scheduledPublishAt = isCronRequest ? nextTopOfHourIso() : ''
     const workflowScheduledPublishAt = scheduledPublishAt || 'immediate'
-    const workflow = await triggerWorkflow(scope, true, workflowScheduledPublishAt)
+    const tickers = isCronRequest ? [] : readRequestTickers(req)
+    const workflow = await triggerWorkflow(scope, true, workflowScheduledPublishAt, tickers)
     return json(res, 202, {
       ok: true,
       mode: 'workflow_dispatch',
