@@ -26,7 +26,7 @@ class RefreshWebCachesTest(unittest.TestCase):
         finally:
             self.refresh.supabase_request = original_supabase_request
 
-    def test_refresh_tickers_includes_open_trades(self) -> None:
+    def test_refresh_tickers_includes_trade_log_tickers(self) -> None:
         original_load_watchlist_tickers = self.refresh.load_watchlist_tickers
         original_trade_log_paths = self.refresh.TRADE_LOG_PATHS
         original_refresh_tickers = os.environ.get("REFRESH_TICKERS")
@@ -38,7 +38,7 @@ class RefreshWebCachesTest(unittest.TestCase):
                     json.dumps({
                         "rows": [
                             {"ticker": "MP", "status": "보유 중"},
-                            {"ticker": "NVDA", "status": "익절"},
+                            {"ticker": "079550", "status": "익절"},
                         ]
                     }),
                     encoding="utf-8",
@@ -47,7 +47,7 @@ class RefreshWebCachesTest(unittest.TestCase):
                 self.refresh.TRADE_LOG_PATHS = [trade_logs]
                 os.environ["REFRESH_TICKERS"] = "LRCX, aapl"
 
-                self.assertEqual(["AAPL", "LRCX", "MP"], self.refresh.refresh_tickers())
+                self.assertEqual(["AAPL", "LRCX", "MP", "079550"], self.refresh.refresh_tickers())
         finally:
             self.refresh.load_watchlist_tickers = original_load_watchlist_tickers
             self.refresh.TRADE_LOG_PATHS = original_trade_log_paths

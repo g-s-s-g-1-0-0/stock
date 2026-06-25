@@ -74,7 +74,7 @@ def append_watchlist_values(tickers: list[str], values: object) -> None:
         append_unique(tickers, value)
 
 
-def load_open_trade_tickers() -> list[str]:
+def load_trade_log_tickers() -> list[str]:
     for path in TRADE_LOG_PATHS:
         if not path.exists():
             continue
@@ -85,7 +85,7 @@ def load_open_trade_tickers() -> list[str]:
         rows = payload.get("rows") if isinstance(payload, dict) else []
         tickers: list[str] = []
         for row in rows if isinstance(rows, list) else []:
-            if isinstance(row, dict) and str(row.get("status") or "") == "보유 중":
+            if isinstance(row, dict):
                 append_unique(tickers, row.get("ticker"))
         return tickers
     return []
@@ -95,7 +95,7 @@ def refresh_tickers() -> list[str]:
     tickers = load_watchlist_tickers()
     for ticker in load_requested_tickers():
         append_unique(tickers, ticker)
-    for ticker in load_open_trade_tickers():
+    for ticker in load_trade_log_tickers():
         append_unique(tickers, ticker)
     return tickers
 
