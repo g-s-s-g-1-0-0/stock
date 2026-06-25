@@ -599,6 +599,18 @@ function normalizeWatchlistByType(value: unknown): Partial<Record<InvestmentType
   return result
 }
 
+function watchlistByTypeWithActive(
+  current: Record<InvestmentType, string[]>,
+  activeType: InvestmentType,
+  tickers: string[],
+): Record<InvestmentType, string[]> {
+  return {
+    long_term: current.long_term ?? [],
+    swing: current.swing ?? [],
+    [activeType]: tickers,
+  }
+}
+
 const APP_DATA_CACHE_STORAGE_KEY = 'gssg-app-data-cache-v1'
 const APP_DATA_AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000
 const PENDING_WATCHLIST_MAX_AGE_MS = 24 * 60 * 60 * 1000
@@ -5701,14 +5713,20 @@ function App() {
 
     if (scope === 'personal' && !session) return { ok: false, reason: 'auth' }
     const client = supabase
+    const activeType = investmentType ?? DEFAULT_INVESTMENT_TYPE
+    const nextWatchlistByType = scope === 'operator'
+      ? watchlistByTypeWithActive(operatorWatchlistByType, activeType, tickers)
+      : watchlistByTypeWithActive(personalWatchlistByType, activeType, tickers)
     const markWatchlistPersisted = () => {
       if (scope === 'operator') {
         storeRemoteOperatorWatchlist(tickers)
+        storeOperatorWatchlistByType(nextWatchlistByType)
         clearPendingOperatorWatchlist()
         return
       }
       if (session) {
         localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(tickers))
+        storePersonalWatchlistByType(session, nextWatchlistByType)
         clearPendingPersonalWatchlist(session)
       }
     }
@@ -5724,8 +5742,8 @@ function App() {
     }
 
     const payload = scope === 'operator'
-      ? { tickers, watchlist_sort: watchlistSortSettings }
-      : { tickers }
+      ? { tickers, watchlist_sort: watchlistSortSettings, tickers_by_type: nextWatchlistByType }
+      : { tickers, tickers_by_type: nextWatchlistByType }
 
     const updateWatchlist = async (nextPayload: Record<string, unknown>) => {
       let updateQuery = client
@@ -5742,8 +5760,11 @@ function App() {
 
     try {
       let { data, error } = await updateWatchlist(payload)
-      if (error && scope === 'operator') {
-        const fallback = await updateWatchlist({ tickers })
+      if (error) {
+        const fallbackPayload = scope === 'operator'
+          ? { tickers, watchlist_sort: watchlistSortSettings }
+          : { tickers }
+        const fallback = await updateWatchlist(fallbackPayload)
         data = fallback.data
         error = fallback.error
       }
@@ -5895,7 +5916,7 @@ function App() {
         { tickers: remoteOperatorTickers, updatedAt: operatorTickersFromDb?.updatedAt ?? null },
         readPendingOperatorWatchlist(),
       )
-      if (remoteOperatorTickers !== null || resolvedOperatorWatchlist.clearPending) {
+      if (resolvedOperatorWatchlist.clearPending) {
         clearPendingOperatorWatchlist()
       } else if (resolvedOperatorWatchlist.pendingToSync && session && isConfiguredAdminEmail(session.email)) {
         void persistWatchlist('operator', resolvedOperatorWatchlist.pendingToSync, session).catch(() => undefined)
@@ -5923,10 +5944,9 @@ function App() {
       const cachedOperatorByType = readOperatorWatchlistByType()
       const operatorActiveType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
       const activeOperatorTickersFromDb = operatorByTypeFromDb?.[operatorActiveType]
-      const resolvedActiveOperatorTickers = remoteOperatorTickers
-        ?? (resolvedOperatorWatchlist.pendingToSync
-          ? resolvedOperatorWatchlist.tickers
-          : activeOperatorTickersFromDb ?? resolvedOperatorWatchlist.tickers)
+      const resolvedActiveOperatorTickers = resolvedOperatorWatchlist.pendingToSync
+        ? resolvedOperatorWatchlist.tickers
+        : activeOperatorTickersFromDb ?? remoteOperatorTickers ?? resolvedOperatorWatchlist.tickers
       const nextOperatorByType: Record<InvestmentType, string[]> = {
         long_term: operatorByTypeFromDb?.long_term ?? cachedOperatorByType?.long_term ?? [],
         swing: operatorByTypeFromDb?.swing ?? cachedOperatorByType?.swing ?? [],
@@ -5948,19 +5968,21 @@ function App() {
       const activeType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
       const personalByTypeFromDb = personalTickers?.tickersByType
       const activePersonalTickersFromDb = personalByTypeFromDb?.[activeType]
-      const nextPersonalTickers = remotePersonalTickers
-        ?? activePersonalTickersFromDb
-        ?? (resolvedPersonalWatchlist.tickers.length > 0 ? resolvedPersonalWatchlist.tickers : legacyTickers ?? initialWatchlist)
+      const nextPersonalTickers = resolvedPersonalWatchlist.pendingToSync
+        ? resolvedPersonalWatchlist.tickers
+        : activePersonalTickersFromDb
+          ?? remotePersonalTickers
+          ?? (resolvedPersonalWatchlist.tickers.length > 0 ? resolvedPersonalWatchlist.tickers : legacyTickers ?? initialWatchlist)
 
       const resolvedActivePersonalTickers = session ? nextPersonalTickers : readStoredWatchlist(null)
       setWatchlist(resolvedActivePersonalTickers)
-      if (remotePersonalTickers !== null || resolvedPersonalWatchlist.clearPending) {
+      if (resolvedPersonalWatchlist.clearPending) {
         clearPendingPersonalWatchlist(session)
       } else if (session && resolvedPersonalWatchlist.pendingToSync) {
         void persistWatchlist('personal', resolvedPersonalWatchlist.pendingToSync, session).catch(() => undefined)
       }
 
-      if (session && remotePersonalTickers === null && !resolvedPersonalWatchlist.pendingToSync && legacyTickers) {
+      if (session && remotePersonalTickers === null && activePersonalTickersFromDb === undefined && !resolvedPersonalWatchlist.pendingToSync && legacyTickers) {
         await persistWatchlist('personal', legacyTickers, session)
       }
 
