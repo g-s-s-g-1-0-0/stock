@@ -1852,8 +1852,7 @@ function returnClass(value: number) {
   return ''
 }
 
-function tradeReturnClass(trade: TradeLog, value: number) {
-  if (trade.status === '손절' || trade.status === '실패 익절') return 'return-negative'
+function tradeReturnClass(value: number) {
   return returnClass(value)
 }
 
@@ -5691,7 +5690,17 @@ function App() {
     }
   }
 
-  async function persistWatchlist(scope: 'personal' | 'operator', tickers: string[], session = userSession): Promise<WatchlistPersistResult> {
+  async function persistWatchlist(
+    scope: 'personal' | 'operator',
+    tickers: string[],
+    session = userSession,
+    watchlistByTypeOverride?: Record<InvestmentType, string[]>,
+  ): Promise<WatchlistPersistResult> {
+    const activeType = investmentType ?? DEFAULT_INVESTMENT_TYPE
+    const nextWatchlistByType = watchlistByTypeOverride ?? (scope === 'operator'
+      ? watchlistByTypeWithActive(operatorWatchlistByType, activeType, tickers)
+      : watchlistByTypeWithActive(personalWatchlistByType, activeType, tickers))
+
     if (scope === 'operator') {
       storePendingOperatorWatchlist(tickers)
     } else if (session) {
@@ -5703,9 +5712,11 @@ function App() {
     if (!supabase || isLocalTestSession(session)) {
       if (scope === 'operator') {
         storeRemoteOperatorWatchlist(tickers)
+        storeOperatorWatchlistByType(nextWatchlistByType)
         clearPendingOperatorWatchlist()
       } else if (session) {
         localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(tickers))
+        storePersonalWatchlistByType(session, nextWatchlistByType)
         clearPendingPersonalWatchlist(session)
       }
       return { ok: true }
@@ -5713,10 +5724,6 @@ function App() {
 
     if (scope === 'personal' && !session) return { ok: false, reason: 'auth' }
     const client = supabase
-    const activeType = investmentType ?? DEFAULT_INVESTMENT_TYPE
-    const nextWatchlistByType = scope === 'operator'
-      ? watchlistByTypeWithActive(operatorWatchlistByType, activeType, tickers)
-      : watchlistByTypeWithActive(personalWatchlistByType, activeType, tickers)
     const markWatchlistPersisted = () => {
       if (scope === 'operator') {
         storeRemoteOperatorWatchlist(tickers)
@@ -5918,8 +5925,6 @@ function App() {
       )
       if (resolvedOperatorWatchlist.clearPending) {
         clearPendingOperatorWatchlist()
-      } else if (resolvedOperatorWatchlist.pendingToSync && session && isConfiguredAdminEmail(session.email)) {
-        void persistWatchlist('operator', resolvedOperatorWatchlist.pendingToSync, session).catch(() => undefined)
       }
 
       const [personalTickers, loadedSettings, loadedPortfolioState] = await Promise.all([
@@ -5959,6 +5964,12 @@ function App() {
       setOperatorWatchlistByType(nextOperatorByType)
       storeOperatorWatchlistByType(nextOperatorByType)
       operatorWatchlistByTypeLoadedRef.current = true
+      if (!resolvedOperatorWatchlist.clearPending && resolvedOperatorWatchlist.pendingToSync && session && isConfiguredAdminEmail(session.email)) {
+        const pendingOperatorByType = watchlistByTypeWithActive(nextOperatorByType, operatorActiveType, resolvedOperatorWatchlist.pendingToSync)
+        void persistWatchlist('operator', resolvedOperatorWatchlist.pendingToSync, session, pendingOperatorByType)
+          .then(notifyWatchlistPersistFailure)
+          .catch(() => notifyWatchlistPersistFailure({ ok: false }))
+      }
       const legacyTickers = session ? readLegacyWatchlist(session) : null
       const remotePersonalTickers = personalTickers?.tickers ?? null
       const resolvedPersonalWatchlist = resolveWatchlistWithPending(
@@ -5978,12 +5989,6 @@ function App() {
       setWatchlist(resolvedActivePersonalTickers)
       if (resolvedPersonalWatchlist.clearPending) {
         clearPendingPersonalWatchlist(session)
-      } else if (session && resolvedPersonalWatchlist.pendingToSync) {
-        void persistWatchlist('personal', resolvedPersonalWatchlist.pendingToSync, session).catch(() => undefined)
-      }
-
-      if (session && remotePersonalTickers === null && activePersonalTickersFromDb === undefined && !resolvedPersonalWatchlist.pendingToSync && legacyTickers) {
-        await persistWatchlist('personal', legacyTickers, session)
       }
 
       // 개인 유형별(가치/스윙) 관심종목을 DB 값으로 복원해 기기 간 동기화한다.
@@ -5998,6 +6003,14 @@ function App() {
         setPersonalWatchlistByType(nextPersonalByType)
         storePersonalWatchlistByType(session, nextPersonalByType)
         personalWatchlistByTypeLoadedRef.current = true
+        if (resolvedPersonalWatchlist.pendingToSync) {
+          void persistWatchlist('personal', resolvedPersonalWatchlist.pendingToSync, session, nextPersonalByType)
+            .then(notifyWatchlistPersistFailure)
+            .catch(() => notifyWatchlistPersistFailure({ ok: false }))
+        }
+        if (remotePersonalTickers === null && activePersonalTickersFromDb === undefined && !resolvedPersonalWatchlist.pendingToSync && legacyTickers) {
+          await persistWatchlist('personal', legacyTickers, session, nextPersonalByType)
+        }
       }
     } finally {
       setIsRemoteDataReady(true)
@@ -6540,12 +6553,18 @@ function App() {
       const nextWatchlist = operatorWatchlist.includes(resolvedTicker)
         ? operatorWatchlist
         : [...operatorWatchlist, resolvedTicker]
+      const nextWatchlistByType = watchlistByTypeWithActive(operatorWatchlistByType, displayedInvestmentType, nextWatchlist)
       setOperatorWatchlist(nextWatchlist)
-      void persistWatchlist('operator', nextWatchlist).then(notifyWatchlistPersistFailure)
+      setOperatorWatchlistByType(nextWatchlistByType)
+      storeOperatorWatchlistByType(nextWatchlistByType)
+      void persistWatchlist('operator', nextWatchlist, userSession, nextWatchlistByType).then(notifyWatchlistPersistFailure)
     } else {
       const nextWatchlist = watchlist.includes(resolvedTicker) ? watchlist : [...watchlist, resolvedTicker]
+      const nextWatchlistByType = watchlistByTypeWithActive(personalWatchlistByType, displayedInvestmentType, nextWatchlist)
       setWatchlist(nextWatchlist)
-      void persistWatchlist('personal', nextWatchlist).then(notifyWatchlistPersistFailure)
+      setPersonalWatchlistByType(nextWatchlistByType)
+      if (userSession) storePersonalWatchlistByType(userSession, nextWatchlistByType)
+      void persistWatchlist('personal', nextWatchlist, userSession, nextWatchlistByType).then(notifyWatchlistPersistFailure)
     }
     setQuery('')
     setIsAddingStock(true)
@@ -6555,12 +6574,18 @@ function App() {
     let result: WatchlistPersistResult
     if (isOperatorDataMode) {
       const nextWatchlist = operatorWatchlist.filter((ticker) => !selectedTickers.includes(ticker))
+      const nextWatchlistByType = watchlistByTypeWithActive(operatorWatchlistByType, displayedInvestmentType, nextWatchlist)
       setOperatorWatchlist(nextWatchlist)
-      result = await persistWatchlist('operator', nextWatchlist)
+      setOperatorWatchlistByType(nextWatchlistByType)
+      storeOperatorWatchlistByType(nextWatchlistByType)
+      result = await persistWatchlist('operator', nextWatchlist, userSession, nextWatchlistByType)
     } else {
       const nextWatchlist = watchlist.filter((ticker) => !selectedTickers.includes(ticker))
+      const nextWatchlistByType = watchlistByTypeWithActive(personalWatchlistByType, displayedInvestmentType, nextWatchlist)
       setWatchlist(nextWatchlist)
-      result = await persistWatchlist('personal', nextWatchlist)
+      setPersonalWatchlistByType(nextWatchlistByType)
+      if (userSession) storePersonalWatchlistByType(userSession, nextWatchlistByType)
+      result = await persistWatchlist('personal', nextWatchlist, userSession, nextWatchlistByType)
     }
     notifyWatchlistPersistFailure(result)
     setSelectedTickers([])
@@ -6758,6 +6783,7 @@ function App() {
   // 세션이 바뀌면(로그인/로그아웃/계정 전환) 해당 세션의 유형별 보관소를 다시 읽어온다.
   // (아래 동기화 effect보다 먼저 정의해 마운트/세션 전환 시 활성 유형 값이 덮어써지지 않게 한다.)
   useEffect(() => {
+    personalWatchlistByTypeLoadedRef.current = !userSession || isLocalTestSession(userSession)
     const stored = readPersonalWatchlistByType(userSession)
     setPersonalWatchlistByType({
       long_term: stored?.long_term ?? [],
@@ -6768,6 +6794,7 @@ function App() {
 
   // 활성 유형의 관심종목(watchlist)을 유형별 보관소에 계속 반영해 둔다.
   useEffect(() => {
+    if (userSession && !personalWatchlistByTypeLoadedRef.current) return
     setPersonalWatchlistByType((prev) => {
       if (sameWatchlistTickers(prev[displayedInvestmentType], watchlist)) return prev
       const next = { ...prev, [displayedInvestmentType]: watchlist }
@@ -6816,18 +6843,20 @@ function App() {
       if (isOperatorDataMode) {
         const saved: Record<InvestmentType, string[]> = { ...operatorWatchlistByType, [currentType]: effectiveOperatorWatchlist }
         const nextList = saved[nextInvestmentType] ?? []
-        setOperatorWatchlistByType(saved)
-        storeOperatorWatchlistByType(saved)
+        const nextSaved = { ...saved, [nextInvestmentType]: nextList }
+        setOperatorWatchlistByType(nextSaved)
+        storeOperatorWatchlistByType(nextSaved)
         setOperatorWatchlist(nextList)
-        void persistWatchlist('operator', nextList).then(notifyWatchlistPersistFailure)
+        void persistWatchlist('operator', nextList, userSession, nextSaved).then(notifyWatchlistPersistFailure)
       } else {
         const saved: Record<InvestmentType, string[]> = { ...personalWatchlistByType, [currentType]: watchlist }
         const nextList = saved[nextInvestmentType] ?? []
-        setPersonalWatchlistByType(saved)
-        storePersonalWatchlistByType(userSession, saved)
+        const nextSaved = { ...saved, [nextInvestmentType]: nextList }
+        setPersonalWatchlistByType(nextSaved)
+        storePersonalWatchlistByType(userSession, nextSaved)
         setWatchlist(nextList)
         if (userSession) {
-          void persistWatchlist('personal', nextList).then(notifyWatchlistPersistFailure)
+          void persistWatchlist('personal', nextList, userSession, nextSaved).then(notifyWatchlistPersistFailure)
         }
       }
     }
@@ -6878,7 +6907,7 @@ function App() {
     const syncGeneration = resetSyncGenerationRef.current
     const ownerId = session.id
     void Promise.all([
-      persistWatchlist('personal', [], session),
+      persistWatchlist('personal', [], session, emptyWatchlistByType),
       persistPortfolioState(emptyTrades, contributionSettings, session),
     ]).catch(() => {
       if (resetSyncGenerationRef.current !== syncGeneration) return
@@ -7688,8 +7717,11 @@ function App() {
     }
 
     const nextWatchlist = [...watchlist, ...tickersToImport]
+    const nextWatchlistByType = watchlistByTypeWithActive(personalWatchlistByType, displayedInvestmentType, nextWatchlist)
     setWatchlist(nextWatchlist)
-    await persistWatchlist('personal', nextWatchlist)
+    setPersonalWatchlistByType(nextWatchlistByType)
+    storePersonalWatchlistByType(userSession, nextWatchlistByType)
+    await persistWatchlist('personal', nextWatchlist, userSession, nextWatchlistByType)
 
     const importedStocks = tickersToImport
       .map((ticker) => operatorImportCandidates.find((stock) => stock.ticker === ticker))
@@ -7752,11 +7784,17 @@ function App() {
 
     const nextWatchlist = [...currentWatchlistTickers, ...tickersToImport]
     if (isOperatorDataMode) {
+      const nextWatchlistByType = watchlistByTypeWithActive(operatorWatchlistByType, displayedInvestmentType, nextWatchlist)
       setOperatorWatchlist(nextWatchlist)
-      await persistWatchlist('operator', nextWatchlist)
+      setOperatorWatchlistByType(nextWatchlistByType)
+      storeOperatorWatchlistByType(nextWatchlistByType)
+      await persistWatchlist('operator', nextWatchlist, userSession, nextWatchlistByType)
     } else {
+      const nextWatchlistByType = watchlistByTypeWithActive(personalWatchlistByType, displayedInvestmentType, nextWatchlist)
       setWatchlist(nextWatchlist)
-      await persistWatchlist('personal', nextWatchlist)
+      setPersonalWatchlistByType(nextWatchlistByType)
+      storePersonalWatchlistByType(userSession, nextWatchlistByType)
+      await persistWatchlist('personal', nextWatchlist, userSession, nextWatchlistByType)
     }
 
     const importedStocks = tickersToImport
@@ -8398,7 +8436,7 @@ function App() {
                       {profileReturnPct === null ? (
                         <td className={returnPriceText === '-' ? 'dash-cell' : 'number-cell'}>{returnPriceText === '-' ? '-' : formatPriceWithReturn(returnPriceText, null)}</td>
                       ) : (
-                        <td className={`number-cell ${tradeReturnClass(trade, profileReturnPct)}`}>
+                        <td className={`number-cell ${tradeReturnClass(profileReturnPct)}`}>
                           {formatPriceWithReturn(returnPriceText, profileReturnPct)}
                         </td>
                       )}

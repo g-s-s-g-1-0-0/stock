@@ -284,7 +284,7 @@ def return_pct(buy_price: Any, sell_price: Any) -> float:
 
 def target_return_pct(strategy: str) -> float:
     code = strategy_code(strategy)
-    if code in {"D", "G"}:
+    if code in {"D", "G", "H"}:
         return 12.0
     if code in {"A", "B", "C", "E", "F"}:
         return 20.0
