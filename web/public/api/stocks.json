@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-06-26T14:55:43+00:00",
-    "lastSuccessfulRun": "2026-06-26T14:55:43+00:00",
+    "updatedAt": "2026-06-26T15:01:12+00:00",
+    "lastSuccessfulRun": "2026-06-26T15:01:12+00:00",
     "failedReason": null
   },
   "rows": [
@@ -619,10 +619,10 @@
       "ticker": "ALAB",
       "name": "Astera Labs",
       "market": "US",
-      "fairPrice": "-",
+      "fairPrice": "$22.20 ~ $37.00",
       "fairPriceReason": null,
       "currentPrice": "$378.91",
-      "valuation": "보통",
+      "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
