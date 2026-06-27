@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-06-27T14:55:41+00:00",
-    "lastSuccessfulRun": "2026-06-27T14:55:41+00:00",
+    "updatedAt": "2026-06-27T15:01:08+00:00",
+    "lastSuccessfulRun": "2026-06-27T15:01:08+00:00",
     "failedReason": null
   },
   "rows": [
@@ -395,7 +395,7 @@
       "ticker": "MU",
       "name": "Micron Technology",
       "market": "US",
-      "fairPrice": "$662.70 ~ $1,104.50",
+      "fairPrice": "$662.55 ~ $1,104.25",
       "fairPriceReason": null,
       "currentPrice": "$1,133.36",
       "valuation": "고평가",
@@ -592,6 +592,7 @@
       "currentPrice": "$220.22",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "-",
       "marketEvent": "당분간 없음",
       "strategies": [],
       "category": "성장주",
