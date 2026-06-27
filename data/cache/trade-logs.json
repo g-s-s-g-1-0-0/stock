@@ -2,11 +2,11 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-06-27T05:00:00Z",
-    "lastSuccessfulRun": "2026-06-27T05:00:00Z",
+    "updatedAt": "2026-06-27T07:00:00Z",
+    "lastSuccessfulRun": "2026-06-27T07:00:00Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
-    "closedTrades": 0,
+    "closedTrades": 1,
     "nasdaqPeakLiquidation": false
   },
   "rows": [
@@ -620,12 +620,13 @@
       "strategy": "H. 20일선 지지·재돌파",
       "buyDate": "2026.06.23",
       "buyPrice": "$10.38",
-      "sellDate": "보유 중",
-      "sellPrice": "-",
-      "returnPct": 0,
+      "sellDate": "2026.06.27",
+      "sellPrice": "$8.21",
+      "returnPct": -20.91,
       "holdingDays": "-",
-      "status": "보유 중",
-      "restoreWatchDate": "2026.06.24"
+      "status": "손절",
+      "sellTimestamp": "2026-06-27T07:00:00Z",
+      "exitReason": "손절 기준 도달 -20.91% [20일선 지지·재돌파 기준 -20%]"
     },
     {
       "slotId": "COHR_H_20260623_1",
