@@ -5960,17 +5960,9 @@ function App() {
 
       const activeType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
       const resolvedActiveOperatorTickers = resolvedOperatorWatchlist.tickers
-      const operatorByTypeFromDb = operatorTickersFromDb?.tickersByType
-      // 운영자 유형별 목록도 서버 tickers_by_type을 정본으로 삼고 비활성 유형은 보존한다.
-      const localOperatorByType = readOperatorWatchlistByType()
-      const nextOperatorByType: Record<InvestmentType, string[]> = {
-        long_term: activeType === 'long_term'
-          ? resolvedActiveOperatorTickers
-          : (operatorByTypeFromDb?.long_term ?? localOperatorByType?.long_term ?? []),
-        swing: activeType === 'swing'
-          ? resolvedActiveOperatorTickers
-          : (operatorByTypeFromDb?.swing ?? localOperatorByType?.swing ?? []),
-      }
+      // 운영자(공용) 관심종목은 투자유형과 무관한 '단일 목록'이다. 서버 flat tickers를 정본으로 삼아
+      // 모든 기기/유형이 같은 목록을 보게 한다. (유형별로 갈라져 기기마다 달라지던 꼬임 제거)
+      const nextOperatorByType = watchlistByTypeFromCanonical(resolvedActiveOperatorTickers)
       setOperatorWatchlist(resolvedActiveOperatorTickers)
       storeRemoteOperatorWatchlist(resolvedActiveOperatorTickers)
       setOperatorWatchlistByType(nextOperatorByType)
@@ -5993,11 +5985,13 @@ function App() {
       // 활성 유형값으로 덮어쓰지 않도록 한다. (가치투자/스윙투자 독립 유지)
       const otherType: InvestmentType = activeType === 'long_term' ? 'swing' : 'long_term'
       const otherTypeTickersFromDb = personalByTypeFromDb?.[otherType] ?? null
-      // 활성 유형 목록은 pending(미동기화 로컬 변경) > 서버 flat > 서버 유형별 > 로컬 폴백 순으로 결정한다.
+      // 활성 유형 목록은 pending(미동기화 로컬 변경) > 서버 유형별 > 서버 flat > 로컬 폴백 순으로 결정한다.
+      // 서버 flat(tickers)은 '마지막에 활성이던 유형'의 값이라 현재 유형과 다를 수 있으므로,
+      // 유형별 값(tickers_by_type)이 있으면 반드시 그것을 우선해 유형 간 목록이 섞이지 않게 한다.
       const nextPersonalTickers = resolvedPersonalWatchlist.pendingToSync
         ? resolvedPersonalWatchlist.tickers
-        : remotePersonalTickers
-          ?? activePersonalTickersFromDb
+        : activePersonalTickersFromDb
+          ?? remotePersonalTickers
           ?? (resolvedPersonalWatchlist.tickers.length > 0 ? resolvedPersonalWatchlist.tickers : legacyTickers ?? initialWatchlist)
 
       const resolvedActivePersonalTickers = session ? nextPersonalTickers : readStoredWatchlist(null)
@@ -6571,7 +6565,7 @@ function App() {
       const nextWatchlist = operatorWatchlist.includes(resolvedTicker)
         ? operatorWatchlist
         : [...operatorWatchlist, resolvedTicker]
-      const nextWatchlistByType = watchlistByTypeWithActive(operatorWatchlistByType, displayedInvestmentType, nextWatchlist)
+      const nextWatchlistByType = watchlistByTypeFromCanonical(nextWatchlist)
       setOperatorWatchlist(nextWatchlist)
       setOperatorWatchlistByType(nextWatchlistByType)
       storeOperatorWatchlistByType(nextWatchlistByType)
@@ -6592,7 +6586,7 @@ function App() {
     let result: WatchlistPersistResult
     if (isOperatorDataMode) {
       const nextWatchlist = operatorWatchlist.filter((ticker) => !selectedTickers.includes(ticker))
-      const nextWatchlistByType = watchlistByTypeWithActive(operatorWatchlistByType, displayedInvestmentType, nextWatchlist)
+      const nextWatchlistByType = watchlistByTypeFromCanonical(nextWatchlist)
       setOperatorWatchlist(nextWatchlist)
       setOperatorWatchlistByType(nextWatchlistByType)
       storeOperatorWatchlistByType(nextWatchlistByType)
@@ -6822,16 +6816,16 @@ function App() {
     })
   }, [watchlist, userSession?.id, displayedInvestmentType])
 
-  // 운영자 모드도 동일하게 활성 유형 목록만 보관소에 반영하고 비활성 유형은 보존한다.
+  // 운영자(공용) 관심종목은 단일 목록이므로 유형 구분 없이 양쪽 슬롯을 같은 목록으로 유지한다.
   useEffect(() => {
     if (!isOperatorDataMode) return
     setOperatorWatchlistByType((prev) => {
-      if (sameWatchlistTickers(prev[displayedInvestmentType], effectiveOperatorWatchlist)) return prev
-      const next = watchlistByTypeWithActive(prev, displayedInvestmentType, effectiveOperatorWatchlist)
+      if (sameWatchlistTickers(prev.long_term, effectiveOperatorWatchlist) && sameWatchlistTickers(prev.swing, effectiveOperatorWatchlist)) return prev
+      const next = watchlistByTypeFromCanonical(effectiveOperatorWatchlist)
       storeOperatorWatchlistByType(next)
       return next
     })
-  }, [effectiveOperatorWatchlist, isOperatorDataMode, displayedInvestmentType])
+  }, [effectiveOperatorWatchlist, isOperatorDataMode])
 
   // 어드민이 유형별 운영자 관심종목을 변경하면 DB에 반영해 일반 계정이 성향별로 가져올 수 있게 한다.
   // DB에서 한 번 복원(operatorWatchlistByTypeLoadedRef)한 뒤에만 저장해 초기 로드 시 빈 값으로 덮어쓰지 않는다.
@@ -6859,20 +6853,13 @@ function App() {
     const currentType = investmentType ?? DEFAULT_INVESTMENT_TYPE
     // 투자 유형 전환은 표시 기준과 함께 '활성 관심종목 목록'을 해당 유형의 보관소 값으로 바꾼다.
     // 현재 유형의 변경분은 미러링 effect가 이미 유형별 보관소에 반영해 두므로 여기선 다음 유형 목록만 로드한다.
-    if (nextInvestmentType !== currentType) {
-      if (isOperatorDataMode) {
-        const nextList = operatorWatchlistByType[nextInvestmentType] ?? []
-        setOperatorWatchlist(nextList)
-        if (isAdminUser) {
-          void persistWatchlist('operator', nextList, userSession, operatorWatchlistByType).then(notifyWatchlistPersistFailure)
-        }
-      } else {
-        const nextList = personalWatchlistByType[nextInvestmentType] ?? []
-        setWatchlist(nextList)
-        if (userSession) {
-          // 활성 유형 flat 컬럼이 새 유형 목록을 가리키도록 갱신한다. (유형별 목록은 보존)
-          void persistWatchlist('personal', nextList, userSession, personalWatchlistByType).then(notifyWatchlistPersistFailure)
-        }
+    if (nextInvestmentType !== currentType && !isOperatorDataMode) {
+      // 개인 관심종목만 유형별로 분리된다. 운영자(공용) 목록은 단일 목록이라 유형 전환 시 그대로 유지한다.
+      const nextList = personalWatchlistByType[nextInvestmentType] ?? []
+      setWatchlist(nextList)
+      if (userSession) {
+        // 활성 유형 flat 컬럼이 새 유형 목록을 가리키도록 갱신한다. (유형별 목록은 보존)
+        void persistWatchlist('personal', nextList, userSession, personalWatchlistByType).then(notifyWatchlistPersistFailure)
       }
     }
     setInvestmentType(nextInvestmentType)
@@ -7691,19 +7678,14 @@ function App() {
   const shouldDimPanelsForFirstVisitGuide = isCurrentWatchlistEmpty && scopedTrades.length === 0
   const isCurrentWatchlistFull = canEditCurrentWatchlist && currentWatchlistTickers.length >= MAX_WATCHLIST_ITEMS
   const personalRemainingSlots = Math.max(0, MAX_WATCHLIST_ITEMS - watchlist.length)
-  // 일반 계정의 '공수성가 가져오기'는 자신의 투자 성향에 맞는 운영자 관심종목만 후보로 노출한다.
-  // 유형별 데이터가 아직 없는(구버전) 경우에만 단일 운영자 목록으로 폴백한다.
+  // 일반 계정의 '공수성가 가져오기' 후보는 단일 운영자(공용) 목록에서 자신이 아직 담지 않은 종목만 노출한다.
   const operatorImportCandidates = useMemo(() => {
-    const hasByTypeData = operatorWatchlistByType.long_term.length > 0 || operatorWatchlistByType.swing.length > 0
-    const sourceTickers = hasByTypeData
-      ? operatorWatchlistByType[displayedInvestmentType] ?? []
-      : effectiveOperatorWatchlist
-    return sourceTickers
+    return effectiveOperatorWatchlist
       .filter((ticker) => !watchlist.includes(ticker))
       .map((ticker) => apiStocks.find((stock) => stock.ticker === ticker) ?? apiSearchStocks.find((stock) => stock.ticker === ticker))
       .filter((stock): stock is Stock => Boolean(stock))
       .sort((a, b) => marketSortRank(a.market) - marketSortRank(b.market))
-  }, [apiSearchStocks, apiStocks, effectiveOperatorWatchlist, operatorWatchlistByType, displayedInvestmentType, watchlist])
+  }, [apiSearchStocks, apiStocks, effectiveOperatorWatchlist, watchlist])
   const isOperatorImportSelectionFull = operatorImportTickers.length >= personalRemainingSlots
   const canShowOperatorImport = Boolean(userSession) && effectiveViewMode === 'personal' && canEditCurrentWatchlist
   const toggleOperatorImportTicker = (ticker: string) => {
@@ -7767,7 +7749,8 @@ function App() {
     [apiSearchStocks, apiStocks, otherTypeWatchlistTickers, currentWatchlistTickers],
   )
   const isWatchlistTypeImportSelectionFull = watchlistTypeImportTickers.length >= activeWatchlistRemainingSlots
-  const canShowWatchlistTypeImport = Boolean(userSession) && canEditCurrentWatchlist
+  // 운영자(공용) 관심종목은 단일 목록이라 유형 간 불러오기 개념이 없으므로 운영자 모드에서는 숨긴다.
+  const canShowWatchlistTypeImport = Boolean(userSession) && canEditCurrentWatchlist && !isOperatorDataMode
   const closeWatchlistTypeImportModal = () => {
     setIsWatchlistTypeImportOpen(false)
     setWatchlistTypeImportTickers([])
@@ -7799,7 +7782,7 @@ function App() {
 
     const nextWatchlist = [...currentWatchlistTickers, ...tickersToImport]
     if (isOperatorDataMode) {
-      const nextWatchlistByType = watchlistByTypeWithActive(operatorWatchlistByType, displayedInvestmentType, nextWatchlist)
+      const nextWatchlistByType = watchlistByTypeFromCanonical(nextWatchlist)
       setOperatorWatchlist(nextWatchlist)
       setOperatorWatchlistByType(nextWatchlistByType)
       storeOperatorWatchlistByType(nextWatchlistByType)
