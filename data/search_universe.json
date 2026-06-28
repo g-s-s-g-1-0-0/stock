@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15054,
-    "industryEnrichedAt": "2026-06-29T00:24:01+09:00",
-    "industryEnrichedTickers": 2
+    "industryEnrichedAt": "2026-06-28T16:55:28+00:00",
+    "industryEnrichedTickers": 19
   },
   "rows": [
     {
@@ -44647,7 +44647,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 반도체 테스트 장비, 후공정 검사",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Semiconductor Equipment &amp; Materials",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -48622,7 +48622,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Semiconductors",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -53257,7 +53257,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 위성통신, LEO 위성, D2D 통신",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Communication Equipment",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -53332,7 +53332,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Semiconductors",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -58807,7 +58807,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 에너지, 연료전지·수소, 데이터센터 전력",
-      "rawIndustry": "-",
+      "rawIndustry": "Industrials | Electrical Equipment &amp; Parts",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -73402,7 +73402,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, HPC",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Information Technology Services",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -76057,7 +76057,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "광학·레이저, 광인터커넥트, AI 데이터센터 부품",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Scientific &amp; Technical Instruments",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -78232,7 +78232,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "데이터센터, AI 인프라, 고속 인터커넥트",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Semiconductors",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -95302,7 +95302,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "전력관리, 전기장비, 데이터센터 전력 인프라, 항공·차량 전장",
-      "rawIndustry": "-",
+      "rawIndustry": "Industrials | Specialty Industrial Machinery",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -111037,7 +111037,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "광통신 인프라, 특수유리, 광케이블, AI 데이터센터 광섬유",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Electronic Components",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -111952,7 +111952,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "AI, 광고, 클라우드, Waymo, TPU",
-      "rawIndustry": "-",
+      "rawIndustry": "Communication Services | Internet Content &amp; Information",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -118162,7 +118162,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "레버리지·테마 ETF",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial | Exchange Traded Fund",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -126052,7 +126052,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 데이터센터·AI 서버 칩, 파운드리, 네트워크·5G",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Semiconductors",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -126427,7 +126427,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "양자컴퓨팅, 이온트랩, 양자 네트워크",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Computer Hardware",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -127402,7 +127402,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, GPU 클라우드, HPC",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial | Capital Markets",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -139297,7 +139297,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Communication Equipment",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -140707,7 +140707,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "광학·포토닉스, 적외선·열화상 부품, 방산 광학",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Electronic Components",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -148492,7 +148492,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "희토류, EV 모터 소재, 자석 원료",
-      "rawIndustry": "-",
+      "rawIndustry": "Basic Materials | Other Industrial Metals &amp; Mining",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
@@ -150472,7 +150472,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체, 메모리, DRAM, NAND, HBM",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Semiconductors",
       "products": "-",
       "updatedAt": "2026-06-22T04:30:46+00:00"
     },
