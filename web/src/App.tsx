@@ -6147,12 +6147,12 @@ function App() {
       }
 
       const nextSession = sessionFromSupabaseUser(user)
-      const storedTestSession = isConfiguredAdminEmail(nextSession.email)
-        ? readStoredLocalTestSession({ allowProduction: true })
+      const storedTestSession = import.meta.env.DEV && isConfiguredAdminEmail(nextSession.email)
+        ? readStoredLocalTestSession()
         : null
       const effectiveSession = storedTestSession ?? nextSession
       setUserSession(effectiveSession)
-      setCanUseAccountSwitch(isConfiguredAdminEmail(nextSession.email))
+      setCanUseAccountSwitch(import.meta.env.DEV && isConfiguredAdminEmail(nextSession.email))
       if (hasAuthCallbackPayload()) {
         if (authSuccessMessage) {
           setAuthInfoMessage(authSuccessMessage)
@@ -7154,6 +7154,7 @@ function App() {
   }
 
   const switchTestSession = (mode: 'admin' | 'user') => {
+    if (!import.meta.env.DEV) return
     closeLoginModalAfterAccountSwitch()
     setRefreshDataMessage('')
     const adminEmail = configuredAdminEmails()[0] ?? DEFAULT_ADMIN_EMAILS[0]
@@ -7170,7 +7171,7 @@ function App() {
         }
 
     setUserSession(nextSession)
-    storeLocalTestSession(nextSession, { allowProduction: true })
+    storeLocalTestSession(nextSession)
     setCanUseAccountSwitch(true)
     applyLocalTestSessionData(nextSession)
     setSelectedTickers([])
