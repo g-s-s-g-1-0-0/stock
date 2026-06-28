@@ -71,6 +71,13 @@ function nextTopOfHourIso() {
   return publishAt.toISOString().replace(/\.000Z$/, 'Z')
 }
 
+function scheduledPublishAtForCron(scope) {
+  // Weekly trend cron already runs at its intended publish time.
+  // Waiting for the next top of hour makes a 00:00 KST run send at 01:00 KST.
+  if (scope === 'market-trends') return ''
+  return nextTopOfHourIso()
+}
+
 async function readSupabaseUser(accessToken) {
   const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '')
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -170,7 +177,7 @@ export default async function handler(req, res) {
       }
     }
 
-    const scheduledPublishAt = isCronRequest ? nextTopOfHourIso() : ''
+    const scheduledPublishAt = isCronRequest ? scheduledPublishAtForCron(scope) : ''
     const workflowScheduledPublishAt = scheduledPublishAt || 'immediate'
     const tickers = isCronRequest ? [] : readRequestTickers(req)
     const workflow = await triggerWorkflow(scope, true, workflowScheduledPublishAt, tickers)

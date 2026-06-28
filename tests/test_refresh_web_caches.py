@@ -57,7 +57,7 @@ class RefreshWebCachesTest(unittest.TestCase):
                 os.environ["REFRESH_TICKERS"] = original_refresh_tickers
 
     def test_stock_universe_task_can_run_without_full_stock_refresh(self) -> None:
-        self.assertEqual(["stock-universe"], self.refresh.parse_tasks(["stock-universe"]))
+        self.assertEqual(["stock-universe", "stocks"], self.refresh.parse_tasks(["stock-universe"]))
 
 
 if __name__ == "__main__":

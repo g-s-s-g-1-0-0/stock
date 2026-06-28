@@ -6541,6 +6541,19 @@ function App() {
     setIsAddingStock((value) => !value)
   }
 
+  const refreshAddedWatchlistStock = async (ticker: string) => {
+    if (!isAdminUser || !supabase) return
+    try {
+      const { data: authData } = await supabase.auth.getSession()
+      const accessToken = authData.session?.access_token
+      await refreshAppData([ticker], accessToken, 'valuation')
+      setRefreshDataMessage(`${ticker} 산업군/가치 데이터 갱신 워크플로를 실행했습니다.`)
+      void recordRefreshDataLogs('success', `${ticker} 관심종목 추가 후 산업군/가치 데이터 갱신을 실행했습니다.`, { tickers: [ticker] })
+    } catch (error) {
+      void recordRefreshDataLogs('failure', error instanceof Error ? error.message : `${ticker} 산업군/가치 데이터 갱신 실행에 실패했습니다.`, { tickers: [ticker] })
+    }
+  }
+
   const addToWatchlist = async (ticker: string) => {
     if (!userSession) {
       openLoginForAddStock()
@@ -6562,6 +6575,7 @@ function App() {
     const resolvedTicker = stockToAdd?.ticker ?? ticker
 
     if (isOperatorDataMode) {
+      const isNewTicker = !operatorWatchlist.includes(resolvedTicker)
       const nextWatchlist = operatorWatchlist.includes(resolvedTicker)
         ? operatorWatchlist
         : [...operatorWatchlist, resolvedTicker]
@@ -6569,14 +6583,21 @@ function App() {
       setOperatorWatchlist(nextWatchlist)
       setOperatorWatchlistByType(nextWatchlistByType)
       storeOperatorWatchlistByType(nextWatchlistByType)
-      void persistWatchlist('operator', nextWatchlist, userSession, nextWatchlistByType).then(notifyWatchlistPersistFailure)
+      void persistWatchlist('operator', nextWatchlist, userSession, nextWatchlistByType).then((result) => {
+        notifyWatchlistPersistFailure(result)
+        if (result.ok && isNewTicker) void refreshAddedWatchlistStock(resolvedTicker)
+      })
     } else {
+      const isNewTicker = !watchlist.includes(resolvedTicker)
       const nextWatchlist = watchlist.includes(resolvedTicker) ? watchlist : [...watchlist, resolvedTicker]
       const nextWatchlistByType = watchlistByTypeWithActive(personalWatchlistByType, displayedInvestmentType, nextWatchlist)
       setWatchlist(nextWatchlist)
       setPersonalWatchlistByType(nextWatchlistByType)
       if (userSession) storePersonalWatchlistByType(userSession, nextWatchlistByType)
-      void persistWatchlist('personal', nextWatchlist, userSession, nextWatchlistByType).then(notifyWatchlistPersistFailure)
+      void persistWatchlist('personal', nextWatchlist, userSession, nextWatchlistByType).then((result) => {
+        notifyWatchlistPersistFailure(result)
+        if (result.ok && isNewTicker) void refreshAddedWatchlistStock(resolvedTicker)
+      })
     }
     setQuery('')
     setIsAddingStock(true)

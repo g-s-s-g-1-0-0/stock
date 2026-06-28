@@ -30,6 +30,30 @@ class BuildStockUniverseTest(unittest.TestCase):
         self.assertIn("BNY", tickers)
         self.assertFalse(any(ticker.startswith("File Creation Time") for ticker in tickers))
 
+    def test_enrich_industries_updates_target_us_rows_from_valuation_source(self) -> None:
+        original_fetch_valuation = build_stock_universe.fetch_valuation
+
+        try:
+            build_stock_universe.fetch_valuation = lambda ticker: ["-"] * 20 + ["Technology | Semiconductors"]
+            payload, changed = build_stock_universe.enrich_industries(
+                {
+                    "meta": {"kind": "search-universe"},
+                    "rows": [
+                        {"ticker": "ALAB", "name": "Astera Labs", "market": "US", "industry": "-"},
+                        {"ticker": "AAPL", "name": "Apple", "market": "US", "industry": "-"},
+                    ],
+                },
+                ["ALAB"],
+            )
+        finally:
+            build_stock_universe.fetch_valuation = original_fetch_valuation
+
+        rows = {row["ticker"]: row for row in payload["rows"]}
+        self.assertEqual(1, changed)
+        self.assertEqual("Technology | Semiconductors", rows["ALAB"]["rawIndustry"])
+        self.assertNotEqual("-", rows["ALAB"]["industry"])
+        self.assertEqual("-", rows["AAPL"]["industry"])
+
 
 if __name__ == "__main__":
     unittest.main()

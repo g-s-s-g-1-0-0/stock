@@ -6,6 +6,10 @@ from typing import Any
 
 CATEGORY_VALUES = ("가치주", "혼합주", "성장주", "스윙주")
 MAX_INDUSTRY_ITEMS = 5
+UNKNOWN_INDUSTRY_LABELS = {
+    "해외 보통주, 개별 사업영역 추가 확인 필요",
+    "상장기업, 개별 사업영역 추가 확인 필요",
+}
 
 CURATED_BY_TICKER: dict[str, tuple[str, str]] = {
     "000150": ("성장주", "AI 인프라, 전자소재 CCL, 데이터센터 전력, 피지컬 AI·로보틱스, 연료전지"),
@@ -44,6 +48,8 @@ CURATED_BY_TICKER: dict[str, tuple[str, str]] = {
     "NVDA": ("성장주", "반도체, AI GPU, 데이터센터, CUDA"),
     "TSLA": ("성장주", "전기차, 에너지, AI, FSD, 로보택시, 로봇(Optimus)"),
     "MU": ("혼합주", "반도체, 메모리, DRAM, NAND, HBM"),
+    "MRVL": ("성장주", "반도체, 데이터센터 ASIC, 네트워크·스토리지 반도체, 광인터커넥트"),
+    "ALAB": ("성장주", "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머"),
     "LRCX": ("혼합주", "반도체 장비, 식각·증착"),
     "ON": ("성장주", "반도체, 전력·자동차용, SiC 전력반도체"),
     "SNDK": ("가치주", "반도체, 플래시 스토리지, NAND, SSD"),
@@ -169,7 +175,7 @@ def _clean(value: Any) -> str:
 
 def _valid(value: Any) -> str:
     cleaned = _clean(value)
-    return "" if cleaned in ("", "-") else cleaned
+    return "" if cleaned in ("", "-", *UNKNOWN_INDUSTRY_LABELS) else cleaned
 
 
 def summarize_industry(value: Any, max_items: int = MAX_INDUSTRY_ITEMS) -> str:
@@ -238,9 +244,7 @@ def classify_stock(row: dict[str, Any]) -> dict[str, str]:
                 category = "스윙주"
                 industry = "ETF, 테마·지수형 상장상품"
             else:
-                industry = "해외 보통주, 개별 사업영역 추가 확인 필요"
-        if not industry:
-            industry = "상장기업, 개별 사업영역 추가 확인 필요"
+                industry = "-"
     if category not in CATEGORY_VALUES:
         category = "성장주"
     return {

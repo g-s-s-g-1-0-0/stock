@@ -43,7 +43,7 @@ def supabase_request(path: str) -> list[dict]:
 
 
 def load_watchlist_tickers() -> list[str]:
-    rows = supabase_request("/rest/v1/watchlists?select=tickers,tickers_by_type&scope=eq.operator&owner_id=is.null")
+    rows = supabase_request("/rest/v1/watchlists?select=tickers,tickers_by_type")
     tickers: list[str] = []
     for row in rows:
         append_watchlist_values(tickers, row.get("tickers"))
@@ -133,6 +133,29 @@ def refresh_search_universe() -> dict:
     return payload
 
 
+def enrich_search_universe(tickers: list[str]) -> int:
+    if not tickers or not build_stock_universe.OUTPUT_PATH.exists():
+        return 0
+    try:
+        payload = json.loads(build_stock_universe.OUTPUT_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return 0
+    if not isinstance(payload, dict):
+        return 0
+
+    enriched_payload, changed = build_stock_universe.enrich_industries(payload, tickers)
+    if not changed:
+        return 0
+
+    build_stock_universe.OUTPUT_PATH.write_text(
+        json.dumps(enriched_payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    search_payload = build_stock_search_cache()
+    write_cache("stock-search", search_payload)
+    return changed
+
+
 def parse_tasks(argv: list[str]) -> list[str]:
     raw_values = argv or [os.environ.get("REFRESH_TASKS", "all")]
     tasks: list[str] = []
@@ -150,6 +173,8 @@ def parse_tasks(argv: list[str]) -> list[str]:
 
     if not tasks:
         return ["valuation", "technical", "stocks", "market-trends", "market-events"]
+    if "stock-universe" in tasks and "stocks" not in tasks:
+        tasks.append("stocks")
     if ("valuation" in tasks or "technical" in tasks) and "stocks" not in tasks:
         tasks.append("stocks")
     return tasks
@@ -157,10 +182,13 @@ def parse_tasks(argv: list[str]) -> list[str]:
 
 def main() -> None:
     tasks = parse_tasks(sys.argv[1:])
+    tickers = refresh_tickers()
     if "stock-universe" in tasks:
         payload = refresh_search_universe()
         print(f"wrote search-universe: {payload['meta']['updatedAt']} ({payload['meta']['count']} stocks)")
-    tickers = refresh_tickers()
+    if any(task in tasks for task in ("stock-universe", "valuation", "stocks")):
+        enriched_count = enrich_search_universe(tickers)
+        print(f"industry enriched search-universe rows: {enriched_count}")
     universe = universe_for_tickers(tickers)
     print(f"refresh universe size: {len(universe)}")
     print(f"refresh tasks: {', '.join(tasks)}")

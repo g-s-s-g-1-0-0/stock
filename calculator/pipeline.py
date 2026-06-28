@@ -1117,8 +1117,25 @@ def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str
     existing = read_cache("stocks")
     existing_rows = existing.get("rows", []) if isinstance(existing, dict) else []
     source_universe = universe if universe is not None else read_universe()
+    technical_rows = read_cache("technical").get("rows", {})
+    valuation_rows = read_cache("valuation").get("rows", {})
+    technical_rows = technical_rows if isinstance(technical_rows, dict) else {}
+    valuation_rows = valuation_rows if isinstance(valuation_rows, dict) else {}
     if not source_universe and existing_rows:
-        technical_rows = read_cache("technical").get("rows", {})
+        synced_rows = sync_existing_stock_strategies(existing_rows, technical_rows)
+        normalized_rows = []
+        for row in synced_rows:
+            if not isinstance(row, dict):
+                normalized_rows.append(row)
+                continue
+            ticker = str(row.get("ticker", "")).strip().upper()
+            metric = valuation_rows.get(ticker, {})
+            classified = classify_stock(row)
+            normalized_rows.append({
+                **row,
+                "category": classified["category"],
+                "industry": stock_industry(row, metric if isinstance(metric, dict) else {}),
+            })
         return {
             **existing,
             "meta": {
@@ -1127,10 +1144,8 @@ def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str
                 "updatedAt": now_iso(),
                 "failedReason": None,
             },
-            "rows": sync_existing_stock_strategies(existing_rows, technical_rows if isinstance(technical_rows, dict) else {}),
+            "rows": normalized_rows,
         }
-    technical_rows = read_cache("technical").get("rows", {})
-    valuation_rows = read_cache("valuation").get("rows", {})
     search_rows_by_ticker = {
         str(row.get("ticker", "")).strip().upper(): row
         for row in read_search_universe()

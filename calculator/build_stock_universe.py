@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from .industry_classification import classify_stock
+from .sheet_sources import fetch_valuation, resolve_market
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT_DIR / "data"
@@ -193,6 +194,74 @@ def stock_shell(row: dict[str, str], updated_at: str) -> dict[str, Any]:
         "products": row.get("products", "-"),
         "updatedAt": updated_at,
     }
+
+
+def valid_industry(value: Any) -> str:
+    cleaned = str(value or "").strip()
+    if cleaned in ("", "-"):
+        return ""
+    if "개별 사업영역 추가 확인 필요" in cleaned:
+        return ""
+    return cleaned
+
+
+def enrich_stock_industry(row: dict[str, Any]) -> dict[str, Any]:
+    ticker = str(row.get("ticker") or "").strip().upper()
+    if not ticker:
+        return row
+
+    next_row = {**row, "ticker": ticker}
+    if resolve_market(ticker) == "US":
+        try:
+            fetched_industry = valid_industry(fetch_valuation(ticker)[-1])
+        except Exception:  # noqa: BLE001 - a single profile fetch should not block the universe refresh
+            fetched_industry = ""
+        if fetched_industry:
+            next_row["rawIndustry"] = fetched_industry
+
+    classification = classify_stock(next_row)
+    next_row["category"] = classification["category"]
+    next_row["industry"] = classification["industry"]
+    return next_row
+
+
+def enrich_industries(payload: dict[str, Any], tickers: list[str]) -> tuple[dict[str, Any], int]:
+    targets = {
+        str(ticker or "").strip().upper()
+        for ticker in tickers
+        if str(ticker or "").strip()
+    }
+    rows = payload.get("rows") if isinstance(payload, dict) else []
+    if not targets or not isinstance(rows, list):
+        return payload, 0
+
+    changed = 0
+    enriched_rows: list[Any] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            enriched_rows.append(row)
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        if ticker not in targets:
+            enriched_rows.append(row)
+            continue
+        enriched = enrich_stock_industry(row)
+        if enriched != row:
+            changed += 1
+        enriched_rows.append(enriched)
+
+    if not changed:
+        return payload, 0
+
+    return {
+        **payload,
+        "meta": {
+            **(payload.get("meta", {}) if isinstance(payload.get("meta"), dict) else {}),
+            "industryEnrichedAt": now_iso(),
+            "industryEnrichedTickers": changed,
+        },
+        "rows": enriched_rows,
+    }, changed
 
 
 def build() -> dict[str, Any]:
