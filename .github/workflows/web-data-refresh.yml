@@ -125,6 +125,9 @@ jobs:
           echo "Send notifications: $SEND_NOTIFICATIONS"
           echo "Publish at: ${PUBLISH_AT:-immediate}"
 
+      - name: Sync watchlist type maps
+        run: python scripts/sync_watchlist_type_maps.py
+
       - name: Skip fresh scheduled refresh
         if: ${{ github.event_name == 'schedule' }}
         run: |
