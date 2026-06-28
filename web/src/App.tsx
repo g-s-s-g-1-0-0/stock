@@ -58,6 +58,7 @@ type LoadedWatchlist = {
 type PendingWatchlistEntry = {
   tickers: string[]
   updatedAt: number
+  baseRemoteUpdatedAt: number | null
 }
 
 type ResolvedWatchlistState = {
@@ -479,7 +480,7 @@ function readPendingWatchlistEntry(storageKey: string): PendingWatchlistEntry | 
   if (!storedWatchlist) return null
 
   try {
-    const parsed = JSON.parse(storedWatchlist) as { tickers?: unknown; updatedAt?: unknown }
+    const parsed = JSON.parse(storedWatchlist) as { tickers?: unknown; updatedAt?: unknown; baseRemoteUpdatedAt?: unknown }
     const updatedAt = typeof parsed.updatedAt === 'number' ? parsed.updatedAt : 0
     if (!updatedAt || Date.now() - updatedAt > PENDING_WATCHLIST_MAX_AGE_MS) {
       localStorage.removeItem(storageKey)
@@ -488,6 +489,7 @@ function readPendingWatchlistEntry(storageKey: string): PendingWatchlistEntry | 
     return {
       tickers: normalizeWatchlistTickers(parsed.tickers) ?? [],
       updatedAt,
+      baseRemoteUpdatedAt: typeof parsed.baseRemoteUpdatedAt === 'number' ? parsed.baseRemoteUpdatedAt : null,
     }
   } catch {
     localStorage.removeItem(storageKey)
@@ -507,7 +509,7 @@ function resolveWatchlistWithPending(
     return { tickers: remoteTickers, pendingToSync: null, clearPending: true }
   }
   const remoteUpdatedAt = remote.updatedAt ?? 0
-  if (pending.updatedAt > remoteUpdatedAt) {
+  if (pending.baseRemoteUpdatedAt !== null && remoteUpdatedAt <= pending.baseRemoteUpdatedAt && pending.updatedAt > remoteUpdatedAt) {
     return { tickers: pending.tickers, pendingToSync: pending.tickers, clearPending: false }
   }
   return { tickers: remoteTickers, pendingToSync: null, clearPending: true }
@@ -521,15 +523,15 @@ function readPendingOperatorWatchlist() {
   return readPendingWatchlistEntry(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY)
 }
 
-function storePendingPersonalWatchlist(session: UserSession | null, tickers: string[]) {
+function storePendingPersonalWatchlist(session: UserSession | null, tickers: string[], baseRemoteUpdatedAt: number | null = null) {
   if (!session) return
   localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(tickers))
-  localStorage.setItem(personalWatchlistPendingStorageKey(session), JSON.stringify({ tickers, updatedAt: Date.now() }))
+  localStorage.setItem(personalWatchlistPendingStorageKey(session), JSON.stringify({ tickers, updatedAt: Date.now(), baseRemoteUpdatedAt }))
 }
 
-function storePendingOperatorWatchlist(tickers: string[]) {
+function storePendingOperatorWatchlist(tickers: string[], baseRemoteUpdatedAt: number | null = null) {
   storeRemoteOperatorWatchlist(tickers)
-  localStorage.setItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY, JSON.stringify({ tickers, updatedAt: Date.now() }))
+  localStorage.setItem(OPERATOR_WATCHLIST_PENDING_STORAGE_KEY, JSON.stringify({ tickers, updatedAt: Date.now(), baseRemoteUpdatedAt }))
 }
 
 function clearPendingPersonalWatchlist(session: UserSession | null) {
@@ -5122,6 +5124,8 @@ function App() {
   const holdingSheetWheelRef = useEdgeScrollWheelRef(holdingSheetRef)
   const apiMetasRef = useRef<AppDataMetas>(apiMetas)
   const resetSyncGenerationRef = useRef(0)
+  const operatorWatchlistRemoteUpdatedAtRef = useRef<number | null>(null)
+  const personalWatchlistRemoteUpdatedAtRef = useRef<number | null>(null)
   const pullRefreshStartYRef = useRef<number | null>(null)
   const pullRefreshDistanceRef = useRef(0)
 
@@ -5702,9 +5706,9 @@ function App() {
       : watchlistByTypeWithActive(personalWatchlistByType, activeType, tickers))
 
     if (scope === 'operator') {
-      storePendingOperatorWatchlist(tickers)
+      storePendingOperatorWatchlist(tickers, operatorWatchlistRemoteUpdatedAtRef.current)
     } else if (session) {
-      storePendingPersonalWatchlist(session, tickers)
+      storePendingPersonalWatchlist(session, tickers, personalWatchlistRemoteUpdatedAtRef.current)
     }
 
     // 로컬 테스트 세션은 원격 인증 세션이 없어 원격 저장이 항상 실패한다.
@@ -5725,13 +5729,16 @@ function App() {
     if (scope === 'personal' && !session) return { ok: false, reason: 'auth' }
     const client = supabase
     const markWatchlistPersisted = () => {
+      const persistedAt = Date.now()
       if (scope === 'operator') {
+        operatorWatchlistRemoteUpdatedAtRef.current = persistedAt
         storeRemoteOperatorWatchlist(tickers)
         storeOperatorWatchlistByType(nextWatchlistByType)
         clearPendingOperatorWatchlist()
         return
       }
       if (session) {
+        personalWatchlistRemoteUpdatedAtRef.current = persistedAt
         localStorage.setItem(personalWatchlistStorageKey(session), JSON.stringify(tickers))
         storePersonalWatchlistByType(session, nextWatchlistByType)
         clearPendingPersonalWatchlist(session)
@@ -5919,6 +5926,7 @@ function App() {
       const operatorTickersFromDb = await loadWatchlist('operator', session)
       const operatorDefaultSort = operatorTickersFromDb?.watchlistSort
       const remoteOperatorTickers = operatorTickersFromDb?.tickers ?? null
+      operatorWatchlistRemoteUpdatedAtRef.current = operatorTickersFromDb?.updatedAt ?? null
       const resolvedOperatorWatchlist = resolveWatchlistWithPending(
         { tickers: remoteOperatorTickers, updatedAt: operatorTickersFromDb?.updatedAt ?? null },
         readPendingOperatorWatchlist(),
@@ -5933,6 +5941,7 @@ function App() {
         loadedPortfolioStatePromise,
       ])
       const nextSortSettings = session ? loadedSettings.watchlistSort : operatorDefaultSort ?? loadedSettings.watchlistSort
+      personalWatchlistRemoteUpdatedAtRef.current = personalTickers?.updatedAt ?? null
       setWatchlistSortSettings(nextSortSettings)
       if (session && isConfiguredAdminEmail(session.email)) {
         await persistOperatorWatchlistSort(loadedSettings.watchlistSort, session)
@@ -6889,7 +6898,7 @@ function App() {
     setPersonalTradeLogs(emptyTrades)
     storePersonalTradeLogs(session, emptyTrades)
     if (session) {
-      storePendingPersonalWatchlist(session, [])
+      storePendingPersonalWatchlist(session, [], personalWatchlistRemoteUpdatedAtRef.current)
     }
 
     setSelectedTickers([])
@@ -6912,7 +6921,7 @@ function App() {
     ]).catch(() => {
       if (resetSyncGenerationRef.current !== syncGeneration) return
       if (userSession?.id !== ownerId) return
-      storePendingPersonalWatchlist(session, [])
+      storePendingPersonalWatchlist(session, [], personalWatchlistRemoteUpdatedAtRef.current)
     })
   }
 
