@@ -385,6 +385,20 @@ def trade_status_for_exit(trade: dict[str, Any], result: float) -> str:
     return "익절" if result >= target_return_pct(str(trade.get("strategy") or "")) else "실패 익절"
 
 
+def normalize_closed_trade_status(trade: dict[str, Any]) -> bool:
+    if str(trade.get("status") or "").strip() == "보유 중":
+        return False
+    try:
+        result = float(trade.get("returnPct"))
+    except (TypeError, ValueError):
+        return False
+    status = trade_status_for_exit(trade, result)
+    if trade.get("status") == status:
+        return False
+    trade["status"] = status
+    return True
+
+
 def strategy_code(value: Any) -> str:
     text = str(value or "").strip()
     if not text:
@@ -813,8 +827,13 @@ def update_trade_logs(
     now = datetime.now(timezone.utc)
     appended = 0
     closed = 0
+    corrected_closed_statuses = 0
     signal_state_changed = False
     deferred_tickers: set[str] = set()
+
+    for trade in trades:
+        if normalize_closed_trade_status(trade):
+            corrected_closed_statuses += 1
 
     for stock in stocks:
         ticker = str(stock.get("ticker") or "").strip().upper()
@@ -1015,6 +1034,7 @@ def update_trade_logs(
             "failedReason": None,
             "appendedOpenTrades": appended,
             "closedTrades": closed,
+            "correctedClosedStatuses": corrected_closed_statuses,
             "nasdaqPeakLiquidation": nasdaq_peak_alert,
         },
         "rows": deduped,

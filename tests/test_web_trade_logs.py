@@ -467,6 +467,40 @@ def test_profitable_exit_before_strategy_target_is_failure_profit(monkeypatch, t
     assert row["status"] == "실패 익절"
 
 
+def test_h_strategy_twelve_percent_target_is_success_profit():
+    trade = {"strategy": "H. 20일선 지지·재돌파"}
+
+    assert logs.target_return_pct(trade["strategy"]) == 12.0
+    assert logs.trade_status_for_exit(trade, 15.46) == "익절"
+
+
+def test_closed_trade_status_is_normalized_to_strategy_target(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "slotId": "GLW_H_20260622_1",
+                "ticker": "GLW",
+                "strategy": "H. 20일선 지지·재돌파",
+                "buyDate": "2026.06.22",
+                "buyPrice": "$194.92",
+                "sellDate": "2026.06.25",
+                "sellPrice": "$225.05",
+                "returnPct": 15.46,
+                "holdingDays": "-",
+                "status": "실패 익절",
+            }
+        ]
+    }), encoding="utf-8")
+
+    logs.update_trade_logs([], {}, {}, {"peakTriggered": False})
+
+    updated = logs.load_json(cache_path, {})
+    assert updated["rows"][0]["status"] == "익절"
+    assert updated["meta"]["correctedClosedStatuses"] == 1
+
+
 def test_buy_signals_append_one_open_trade_per_strategy(monkeypatch, tmp_path):
     cache_path, _ = patch_log_paths(monkeypatch, tmp_path)
 
@@ -704,6 +738,7 @@ def test_offlist_held_trade_keeps_tracking_but_blocks_additional_buy(monkeypatch
     # (청산되기 전까지는 trade-log에 남아 청산 조건을 계속 추적)
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     monkeypatch.setattr(logs, "load_watchlist_tickers", lambda stocks: ["MSFT"])
+    monkeypatch.setattr(logs, "kst_trade_date", lambda: "2026.05.25")
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
         "rows": [
