@@ -16,6 +16,11 @@ function checkNasdaqMASignals() {
   if (!recipientEmail || recipientEmail.length === 0) return;
 
   try {
+    if (typeof Utils !== "undefined" && typeof Utils.checkMarketOpen === "function" && !Utils.checkMarketOpen(now, false)) {
+      Logger.log("[고점 청산/강제매도 알림] 미국 거래 가능 시간이 아니므로 상태 변경과 메일 발송을 장중 실행까지 보류합니다.");
+      return;
+    }
+
     if (typeof getNasdaqPeakSignalState_ !== "function") {
       Logger.log("[고점 청산/강제매도 알림 FATAL] getNasdaqPeakSignalState_ 함수를 찾을 수 없습니다.");
       return;
@@ -36,6 +41,7 @@ function checkNasdaqMASignals() {
     var regimeLabel = peakState.regimeLabel || "-";
     var directDist = Number(peakState.peakDirectDist) || 0;
     var confirmDist = Number(peakState.peakConfirmDist) || 0;
+    var resetDist = Number(peakState.peakAlertResetDist) || 5;
     var isPeakTriggered = peakState.nasdaqPeakAlert === true;
 
     if (!currentPrice || !nasdaqMA200 || !qqqWeeklyRsi || !qqqDailyRsi || !qqqDailyRsiPrev) {
@@ -80,7 +86,7 @@ function checkNasdaqMASignals() {
             " 보유 종목의 실제 청산 반영은 이어서 발송되는 투자의견 변경 메일에서 확인해 주세요." +
           "</p>" +
           '<p style="margin:0 0 12px 0;">' +
-            "※ 알림은 조건 충족 시 <strong>한 번만</strong> 발송되며, QQQ가 기준선 아래로 하락 시 재알림이 가능합니다." +
+            "※ 알림은 조건 충족 시 <strong>한 번만</strong> 발송되며, QQQ 200일선 이격도가 +" + resetDist.toFixed(0) + "% 이하까지 식어야 재알림이 가능합니다." +
           "</p>" +
           '<p style="margin:0;">' +
             "발송 시각 (한국 날짜): " + kstDate + "<br>" +
@@ -99,7 +105,7 @@ function checkNasdaqMASignals() {
     }
 
     if (!isPeakTriggered && lastPeakState) {
-      Logger.log("[고점 청산/강제매도 알림] QQQ가 국면별 청산 확인선 아래 또는 조건 미충족 상태로 전환. 상태 FALSE 초기화됨 (재알림 가능).");
+      Logger.log("[고점 청산/강제매도 알림] QQQ가 과열 해소선 +" + resetDist.toFixed(0) + "% 이하 또는 조건 미충족 상태로 전환. 상태 FALSE 초기화됨 (재알림 가능).");
     }
   } catch (e) {
     Logger.log("[고점 청산/강제매도 알림 FATAL] 처리 중 오류: " + e.toString());

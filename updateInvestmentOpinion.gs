@@ -91,6 +91,7 @@ const CONSTANTS = {
     QQQ_RECOVERY_PEAK_DIRECT_DIST: 22,
     QQQ_RECOVERY_PEAK_CONFIRM_DIST: 18,
     QQQ_PEAK_RSI_THRESHOLD: 65,
+    QQQ_PEAK_ALERT_RESET_DIST: 5,
     UPPER_EXIT_MAX_WAIT_DAYS: 5,
     HOLD_RESTORE_DROP:               0.10,
     HOLD_RESTORE_MIN_TRADING_DAYS:   10
@@ -507,14 +508,14 @@ function checkMarketOpen(now, isKR = false) {
   const kstDayOfWeek = Number(Utilities.formatDate(now, "Asia/Seoul", "u")) % 7;
   if (isKR) {
     if (kstDayOfWeek === 0 || kstDayOfWeek === 6) return false;
-    return (kstHour > 9 || (kstHour === 9 && kstMinute >= 0)) && (kstHour < 15 || (kstHour === 15 && kstMinute <= 30));
+    return (kstHour > 8 || (kstHour === 8 && kstMinute >= 30)) && (kstHour < 18);
   } else {
-    // 미국장은 뉴욕 현지 요일/시간으로 판정해야 KST 자정 이후(뉴욕 전일 장중)를 오판하지 않는다.
+    // 미국장은 프리마켓/애프터마켓을 포함해 뉴욕 현지 거래 가능 시간으로 판정한다.
     const nyHour      = Number(Utilities.formatDate(now, "America/New_York", "HH"));
     const nyMinute    = Number(Utilities.formatDate(now, "America/New_York", "mm"));
     const nyDayOfWeek = Number(Utilities.formatDate(now, "America/New_York", "u")) % 7;
     if (nyDayOfWeek === 0 || nyDayOfWeek === 6) return false;
-    return (nyHour > 9 || (nyHour === 9 && nyMinute >= 30)) && (nyHour < 16);
+    return (nyHour >= 4) && (nyHour < 20);
   }
 }
 
@@ -1019,6 +1020,11 @@ function processStocks(stockData, marketData, targetSheet, allProperties, outerS
 
     const isInitializing = ind.opinion === "";
     if (isInitializing) { opinionWrites[i + 3] = "관망"; ind.opinion = "관망"; console.log(`[초기화] ${ind.displayName} — 빈칸 → 관망`); }
+
+    if (!isMarketOpen && !isInitializing) {
+      console.log(` → [장외 보류] ${ind.displayName}: ${isKR ? "한국" : "미국"} 거래 가능 시간이 아니므로 투자의견/매수·매도 반영을 다음 장중 실행까지 보류`);
+      continue;
+    }
 
     const rawEntry = allProperties[`ENTRY_${ind.stockName}`];
     let saved      = parseEntryInfo(rawEntry);
