@@ -1157,6 +1157,92 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual([("user@example.com", "나스닥 과열 청산 조건 알림")], sent_messages)
         self.assertIs(state["nasdaqPeak"]["sent"], True)
 
+    def test_nasdaq_peak_defers_email_while_us_market_is_closed(self) -> None:
+        original_env = dict()
+        for key in ("DEFER_CLOSED_MARKET_SIGNALS", "GITHUB_WORKFLOW"):
+            if key in self.notifications.os.environ:
+                original_env[key] = self.notifications.os.environ[key]
+        original_snapshot = self.notifications.qqq_peak_snapshot
+        original_is_open = self.notifications.is_us_market_open
+        self.notifications.os.environ["DEFER_CLOSED_MARKET_SIGNALS"] = "true"
+        self.notifications.qqq_peak_snapshot = lambda: (_ for _ in ()).throw(AssertionError("snapshot should be deferred"))
+        self.notifications.is_us_market_open = lambda now=None: False
+
+        try:
+            sent = self.notifications.send_nasdaq_peak_notifications()
+        finally:
+            self.notifications.qqq_peak_snapshot = original_snapshot
+            self.notifications.is_us_market_open = original_is_open
+            self.notifications.os.environ.pop("DEFER_CLOSED_MARKET_SIGNALS", None)
+            self.notifications.os.environ.pop("GITHUB_WORKFLOW", None)
+            self.notifications.os.environ.update(original_env)
+
+        self.assertEqual(0, sent)
+
+    def test_us_market_open_includes_premarket_and_aftermarket(self) -> None:
+        et = ZoneInfo("America/New_York")
+
+        self.assertTrue(self.notifications.is_us_market_open(datetime(2026, 6, 26, 4, 0, tzinfo=et)))
+        self.assertTrue(self.notifications.is_us_market_open(datetime(2026, 6, 26, 19, 59, tzinfo=et)))
+        self.assertFalse(self.notifications.is_us_market_open(datetime(2026, 6, 26, 20, 0, tzinfo=et)))
+        self.assertFalse(self.notifications.is_us_market_open(datetime(2026, 6, 27, 12, 0, tzinfo=et)))
+
+    def test_nasdaq_warn_does_not_reset_until_deeper_pullback(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            state_path = Path(temp_dir) / "web-notification-state.json"
+            state_path.write_text(json.dumps({"nasdaqWarn": {"sent": True}}), encoding="utf-8")
+            original_state_path = self.notifications.NOTIFICATION_STATE
+            original_snapshot = self.notifications.qqq_peak_snapshot
+            self.notifications.NOTIFICATION_STATE = state_path
+            self.notifications.qqq_peak_snapshot = lambda: {
+                "currentPrice": 112.0,
+                "ma200": 100.0,
+                "premiumPercent": 12.0,
+                "recent60MinPremiumPercent": -2.0,
+                "regimeLabel": "test",
+                "peakDirectDist": 16.0,
+                "peakConfirmDist": 14.0,
+                "peakWarnDist": 13.0,
+                "peakWarnResetDist": 5.0,
+                "warnThreshold": 113.0,
+                "warnResetThreshold": 105.0,
+                "directThreshold": 116.0,
+                "isRecoveryMarket": False,
+                "warnTriggered": False,
+            }
+            try:
+                sent = self.notifications.send_nasdaq_warn_notifications()
+                state = json.loads(state_path.read_text(encoding="utf-8"))
+            finally:
+                self.notifications.NOTIFICATION_STATE = original_state_path
+                self.notifications.qqq_peak_snapshot = original_snapshot
+
+        self.assertEqual(0, sent)
+        self.assertIs(state["nasdaqWarn"]["sent"], True)
+
+    def test_nasdaq_warn_resets_after_deeper_pullback(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            state_path = Path(temp_dir) / "web-notification-state.json"
+            state_path.write_text(json.dumps({"nasdaqWarn": {"sent": True}}), encoding="utf-8")
+            original_state_path = self.notifications.NOTIFICATION_STATE
+            original_snapshot = self.notifications.qqq_peak_snapshot
+            self.notifications.NOTIFICATION_STATE = state_path
+            self.notifications.qqq_peak_snapshot = lambda: {
+                "currentPrice": 104.0,
+                "warnThreshold": 113.0,
+                "warnResetThreshold": 105.0,
+                "warnTriggered": False,
+            }
+            try:
+                sent = self.notifications.send_nasdaq_warn_notifications()
+                state = json.loads(state_path.read_text(encoding="utf-8"))
+            finally:
+                self.notifications.NOTIFICATION_STATE = original_state_path
+                self.notifications.qqq_peak_snapshot = original_snapshot
+
+        self.assertEqual(0, sent)
+        self.assertIs(state["nasdaqWarn"]["sent"], False)
+
 
 class WebMarketEventPipelineTest(unittest.TestCase):
     def setUp(self) -> None:

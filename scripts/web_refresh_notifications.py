@@ -59,6 +59,26 @@ ET = ZoneInfo("America/New_York")
 VALID_OPINIONS = {"매수", "관망", "매도"}
 
 
+def defer_closed_market_signals_enabled() -> bool:
+    raw = os.environ.get("DEFER_CLOSED_MARKET_SIGNALS")
+    if raw is not None:
+        return raw.strip().lower() in {"1", "true", "yes", "on"}
+    return os.environ.get("GITHUB_WORKFLOW") == "Web data refresh"
+
+
+def is_us_market_open(now: datetime | None = None) -> bool:
+    current = now or datetime.now().astimezone()
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=KST)
+    et_now = current.astimezone(ET)
+    minutes = et_now.hour * 60 + et_now.minute
+    return et_now.weekday() < 5 and (4 * 60) <= minutes < (20 * 60)
+
+
+def should_defer_us_market_signal(now: datetime | None = None) -> bool:
+    return defer_closed_market_signals_enabled() and not is_us_market_open(now)
+
+
 @dataclass(frozen=True)
 class Recipient:
     owner_id: str
@@ -1738,6 +1758,7 @@ def qqq_peak_snapshot() -> dict[str, Any]:
     snapshot["directThreshold"] = ma200 * (1 + float(snapshot["peakDirectDist"]) / 100) if ma200 > 0 else 0
     snapshot["confirmThreshold"] = ma200 * (1 + float(snapshot["peakConfirmDist"]) / 100) if ma200 > 0 else 0
     snapshot["warnThreshold"] = ma200 * (1 + float(snapshot["peakWarnDist"]) / 100) if ma200 > 0 else 0
+    snapshot["warnResetThreshold"] = ma200 * (1 + float(snapshot.get("peakWarnResetDist") or snapshot["peakWarnDist"]) / 100) if ma200 > 0 else 0
     snapshot["resetThreshold"] = ma200 * (1 + float(snapshot["peakResetDist"]) / 100) if ma200 > 0 else 0
     snapshot["triggered"] = snapshot["peakTriggered"]
     return snapshot
@@ -1797,6 +1818,10 @@ def nasdaq_peak_email_body(snapshot: dict[str, Any]) -> str:
 
 
 def send_nasdaq_peak_notifications() -> int:
+    if should_defer_us_market_signal():
+        print("Nasdaq peak notification deferred until the US market is open.")
+        return 0
+
     state = read_json(NOTIFICATION_STATE)
     if not isinstance(state, dict):
         state = {}
@@ -1896,6 +1921,10 @@ def nasdaq_warn_email_body(snapshot: dict[str, Any]) -> str:
 
 
 def send_nasdaq_warn_notifications() -> int:
+    if should_defer_us_market_signal():
+        print("Nasdaq warn notification deferred until the US market is open.")
+        return 0
+
     state = read_json(NOTIFICATION_STATE)
     if not isinstance(state, dict):
         state = {}
@@ -1903,7 +1932,8 @@ def send_nasdaq_warn_notifications() -> int:
     warn_state = state.get("nasdaqWarn") if isinstance(state.get("nasdaqWarn"), dict) else {}
     was_sent = warn_state.get("sent") is True
 
-    if snapshot["currentPrice"] <= snapshot["warnThreshold"] and was_sent:
+    warn_reset_threshold = snapshot.get("warnResetThreshold") or snapshot["warnThreshold"]
+    if snapshot["currentPrice"] <= warn_reset_threshold and was_sent:
         state["nasdaqWarn"] = {"sent": False, "resetAt": datetime.now().astimezone().isoformat()}
         write_json(NOTIFICATION_STATE, state)
         print("Nasdaq warn state reset.")

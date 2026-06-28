@@ -27,11 +27,11 @@
       />
     </noscript>
     <style>
-      /* 초기 로딩이 지연될 때만 보여주는 로딩 화면. React가 마운트되면 #root가 교체되며 사라진다. */
+      /* React가 마운트되기 전부터 보여주는 로컬 로딩 화면. 마운트되면 #root가 교체되며 사라진다. */
       .app-loading {
         position: fixed;
         inset: 0;
-        display: none;
+        display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
@@ -104,9 +104,8 @@
       </div>
     </div>
     <script>
-      // 로딩 버퍼/오류 감지: 즉시 로드가 안 될 때만 스피너를 보여주고 자동으로 재시도한다.
+      // 오류 감지: 로컬 스피너는 즉시 보여주고, 장시간 마운트되지 않으면 자동으로 재시도한다.
       (function () {
-        var SHOW_LOADING_MS = 1200
         var AUTO_RELOAD_MS = 10000
         function currentLoader() {
           return document.getElementById('app-loading')
@@ -126,9 +125,7 @@
             if (currentLoader()) window.location.reload()
           }, 250)
         }
-        var showTimer = setTimeout(function () {
-          showLoading()
-        }, SHOW_LOADING_MS)
+        showLoading()
         var reloadTimer = setTimeout(reloadIfStillLoading, AUTO_RELOAD_MS)
         // 메인 스크립트 등 리소스 로드 실패 감지
         window.addEventListener(
@@ -136,7 +133,6 @@
           function (event) {
             var target = event && event.target
             if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
-              clearTimeout(showTimer)
               clearTimeout(reloadTimer)
               reloadIfStillLoading()
             }

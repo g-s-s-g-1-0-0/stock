@@ -14,6 +14,7 @@ QQQ_RECOVERY_PEAK_DIRECT_DIST = 22.0
 QQQ_RECOVERY_PEAK_CONFIRM_DIST = 18.0
 QQQ_PEAK_RSI_THRESHOLD = 65.0
 QQQ_PEAK_WARN_MARGIN = 3.0
+QQQ_PEAK_ALERT_RESET_DIST = 5.0
 
 
 def _num(value: Any) -> float | None:
@@ -145,7 +146,8 @@ def build_qqq_market_state(
         "peakDirectDist": peak_dist["direct"],
         "peakConfirmDist": peak_dist["confirm"],
         "peakWarnDist": warn_dist,
-        "peakResetDist": peak_dist["direct"] if is_recovery else peak_dist["confirm"],
+        "peakWarnResetDist": QQQ_PEAK_ALERT_RESET_DIST,
+        "peakResetDist": QQQ_PEAK_ALERT_RESET_DIST,
         "weeklyRsi": _num(weekly_rsi),
         "dailyRsi": _num(qqq_row.get("rsi")),
         "dailyRsiPrev": _num(qqq_row.get("rsiD1")),

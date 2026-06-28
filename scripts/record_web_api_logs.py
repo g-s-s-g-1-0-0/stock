@@ -38,6 +38,7 @@ MAX_LOG_ROWS = 80
 OPERATION_LOG_RETENTION_DAYS = int(os.environ.get("OPERATION_LOG_RETENTION_DAYS", "7"))
 VALID_TASKS = {"value-analysis", "technical-analysis", "market-trends"}
 KST = ZoneInfo("Asia/Seoul")
+ET = ZoneInfo("America/New_York")
 SELL_HOLD_DAYS = 2
 REENTRY_DAYS = 10
 REENTRY_DROP = 0.03
@@ -196,6 +197,93 @@ def stocks_by_ticker(stocks: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
 
 def kst_trade_date() -> str:
     return datetime.now(timezone.utc).astimezone(KST).strftime("%Y.%m.%d")
+
+
+def defer_closed_market_signals_enabled() -> bool:
+    raw = os.environ.get("DEFER_CLOSED_MARKET_SIGNALS")
+    if raw is not None:
+        return raw.strip().lower() in {"1", "true", "yes", "on"}
+    return os.environ.get("GITHUB_WORKFLOW") == "Web data refresh"
+
+
+def minutes_since_midnight(value: datetime) -> int:
+    return value.hour * 60 + value.minute
+
+
+def is_kr_market_open(now: datetime) -> bool:
+    kst_now = now.astimezone(KST)
+    minutes = minutes_since_midnight(kst_now)
+    return kst_now.weekday() < 5 and (8 * 60 + 30) <= minutes < (18 * 60)
+
+
+def is_us_market_open(now: datetime) -> bool:
+    et_now = now.astimezone(ET)
+    minutes = minutes_since_midnight(et_now)
+    return et_now.weekday() < 5 and (4 * 60) <= minutes < (20 * 60)
+
+
+def normalize_market(value: Any, ticker: str = "") -> str:
+    market = str(value or "").strip().upper()
+    if market in {"KR", "KOSPI", "KOSDAQ"}:
+        return "KR"
+    if market in {"US", "NASDAQ", "NYSE", "AMEX"}:
+        return "US"
+    return "KR" if ticker.isdigit() else "US"
+
+
+def is_stock_market_open(market: Any, now: datetime) -> bool:
+    normalized = normalize_market(market)
+    if normalized == "KR":
+        return is_kr_market_open(now)
+    return is_us_market_open(now)
+
+
+def should_defer_market_signal(market: Any, now: datetime) -> bool:
+    return defer_closed_market_signals_enabled() and not is_stock_market_open(market, now)
+
+
+def restore_signal_field(target: dict[str, Any], source: dict[str, Any], key: str, default: Any = None) -> bool:
+    if key in source:
+        value = source[key]
+        if target.get(key) != value:
+            target[key] = value
+            return True
+        return False
+    if default is not None:
+        if target.get(key) != default:
+            target[key] = default
+            return True
+        return False
+    if key in target:
+        target.pop(key, None)
+        return True
+    return False
+
+
+def restore_previous_signal_state(
+    stock: dict[str, Any],
+    technical_row: dict[str, Any],
+    previous_stock: dict[str, Any] | None,
+    previous_technical_row: dict[str, Any] | None,
+) -> bool:
+    changed = False
+    previous_stock = previous_stock or {}
+    previous_technical_row = previous_technical_row or {}
+
+    changed = restore_signal_field(stock, previous_stock, "opinion", "관망") or changed
+    changed = restore_signal_field(stock, previous_stock, "opinionReason") or changed
+    changed = restore_signal_field(stock, previous_stock, "strategies", []) or changed
+
+    for key, default in (
+        ("opinion", "관망"),
+        ("opinionReason", None),
+        ("exitReason", None),
+        ("entryStrategy", "-"),
+        ("entrySignalCodes", ""),
+        ("entrySignals", ""),
+    ):
+        changed = restore_signal_field(technical_row, previous_technical_row, key, default) or changed
+    return changed
 
 
 def trade_key(trade: dict[str, Any]) -> tuple[str, str, str]:
@@ -712,6 +800,7 @@ def update_trade_logs(
     qqq_market_state: dict[str, Any] | None = None,
     previous_technical: dict[str, Any] | None = None,
 ) -> bool:
+    previous_technical = previous_technical or {}
     existing = load_json(TRADE_LOG_PUBLIC_PATH, load_json(TRADE_LOG_CACHE_PATH, {"rows": []}))
     rows = existing.get("rows", []) if isinstance(existing, dict) else []
     trades = [row for row in rows if isinstance(row, dict)]
@@ -721,9 +810,29 @@ def update_trade_logs(
     today_date = parse_trade_date(today) or datetime.now(timezone.utc).astimezone(KST).date()
     nasdaq_peak_alert = bool((qqq_market_state or {}).get("peakTriggered"))
     seed_after_reset = runtime_reset_requested()
+    now = datetime.now(timezone.utc)
     appended = 0
     closed = 0
     signal_state_changed = False
+    deferred_tickers: set[str] = set()
+
+    for stock in stocks:
+        ticker = str(stock.get("ticker") or "").strip().upper()
+        if not ticker:
+            continue
+        market = normalize_market(stock.get("market"), ticker)
+        if not should_defer_market_signal(market, now):
+            continue
+        row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
+        if not isinstance(row, dict):
+            row = {}
+        deferred_tickers.add(ticker)
+        signal_state_changed = restore_previous_signal_state(
+            stock,
+            row,
+            previous_stocks.get(ticker),
+            previous_technical.get(ticker, {}) if isinstance(previous_technical, dict) else {},
+        ) or signal_state_changed
 
     # 관심종목(watchlist)에서 제거된 종목이라도 이미 '보유 중'인 포지션은 청산(매도)될 때까지
     # 그대로 추적한다. 매수/추가매수 시그널만 차단되며(아래 진입 루프 참고), 청산 추적은 유지된다.
@@ -737,6 +846,10 @@ def update_trade_logs(
             trade["market"] = stock.get("market") or trade.get("market") or "-"
             trade["currentPrice"] = stock.get("currentPrice") or trade.get("currentPrice") or "-"
         if str(trade.get("status") or "") != "보유 중":
+            continue
+        market = normalize_market(stock.get("market") or trade.get("market"), ticker)
+        if should_defer_market_signal(market, now):
+            deferred_tickers.add(ticker)
             continue
         sell_price = stock.get("currentPrice") or trade.get("currentPrice") or "-"
         row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
@@ -792,6 +905,8 @@ def update_trade_logs(
         ticker = str(stock.get("ticker") or "").strip().upper()
         if not ticker:
             continue
+        if ticker in deferred_tickers:
+            continue
         row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
         if not isinstance(row, dict):
             row = {}
@@ -812,6 +927,8 @@ def update_trade_logs(
     for stock in stocks:
         ticker = str(stock.get("ticker") or "").strip().upper()
         if not ticker:
+            continue
+        if ticker in deferred_tickers:
             continue
         current_opinion = str(stock.get("opinion") or "").strip()
         row = technical.get(ticker, {}) if isinstance(technical, dict) else {}

@@ -111,6 +111,83 @@ def test_exit_updates_stock_and_technical_opinion_to_sell(monkeypatch, tmp_path)
     assert technical["WULF"]["entrySignalCodes"] == ""
 
 
+def test_closed_market_defers_peak_liquidation_and_restores_previous_opinion(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "ticker": "TE",
+                "name": "TE Connectivity",
+                "market": "US",
+                "strategy": "H. 20일선 지지·재돌파",
+                "buyDate": "2026.06.23",
+                "buyPrice": "$100.00",
+                "currentPrice": "$115.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+    monkeypatch.setenv("DEFER_CLOSED_MARKET_SIGNALS", "true")
+    monkeypatch.setattr(logs, "is_stock_market_open", lambda market, now: False)
+    stocks = [{
+        "ticker": "TE",
+        "name": "TE Connectivity",
+        "market": "US",
+        "currentPrice": "$115.00",
+        "opinion": "매도",
+        "opinionReason": "나스닥 고점 청산/강제매도",
+        "strategies": [],
+    }]
+    previous_stocks = {
+        "TE": {
+            "ticker": "TE",
+            "name": "TE Connectivity",
+            "market": "US",
+            "currentPrice": "$114.00",
+            "opinion": "매수",
+            "opinionReason": "보유 유지",
+            "strategies": ["H. 20일선 지지·재돌파"],
+        }
+    }
+    technical = {
+        "TE": {
+            "opinion": "매도",
+            "opinionReason": "나스닥 고점 청산/강제매도",
+            "exitReason": "나스닥 고점 청산/강제매도",
+            "entrySignalCodes": "",
+            "현재가": "$115.00",
+        }
+    }
+    previous_technical = {
+        "TE": {
+            "opinion": "매수",
+            "opinionReason": "보유 유지",
+            "entrySignalCodes": "H",
+            "entryStrategy": "H. 20일선 지지·재돌파",
+        }
+    }
+
+    changed = logs.update_trade_logs(stocks, previous_stocks, technical, {"peakTriggered": True}, previous_technical)
+
+    updated = logs.load_json(cache_path, {})
+    assert changed is True
+    assert updated["rows"][0]["status"] == "보유 중"
+    assert updated["rows"][0]["sellDate"] == "보유 중"
+    assert updated["meta"]["closedTrades"] == 0
+    assert stocks[0]["opinion"] == "매수"
+    assert stocks[0]["opinionReason"] == "보유 유지"
+    assert stocks[0]["strategies"] == ["H. 20일선 지지·재돌파"]
+    assert technical["TE"]["opinion"] == "매수"
+    assert technical["TE"]["opinionReason"] == "보유 유지"
+    assert technical["TE"]["entrySignalCodes"] == "H"
+    assert "exitReason" not in technical["TE"]
+
+
 def test_extended_target_touch_arms_ef_exit_without_selling(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     public_path.parent.mkdir(parents=True)
