@@ -581,6 +581,17 @@ def load_watchlists() -> dict[str, set[str]]:
     return result
 
 
+def watchlist_tickers_for_recipient(
+    recipient: Recipient,
+    watchlists: dict[str, set[str]],
+    *,
+    admin_uses_operator: bool = False,
+) -> set[str]:
+    if admin_uses_operator and recipient.is_admin:
+        return watchlists.get("", set())
+    return watchlists.get(recipient.owner_id, set())
+
+
 def dedupe_recipients(recipients: list[Recipient]) -> list[Recipient]:
     seen: set[str] = set()
     result: list[Recipient] = []
@@ -2289,7 +2300,7 @@ def send_bb_pullback_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> in
     sent = 0
     newly_sent_keys: set[str] = set()
     for recipient in recipients:
-        tickers = watchlists.get(recipient.owner_id, set())
+        tickers = watchlist_tickers_for_recipient(recipient, watchlists, admin_uses_operator=True)
         if not tickers:
             continue
         candidates: list[dict[str, Any]] = []
@@ -2522,7 +2533,7 @@ def send_ma_support_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> int
     sent = 0
     newly_sent_keys: set[str] = set()
     for recipient in recipients:
-        tickers = watchlists.get(recipient.owner_id, set())
+        tickers = watchlist_tickers_for_recipient(recipient, watchlists, admin_uses_operator=True)
         if not tickers:
             continue
         candidates: list[dict[str, Any]] = []

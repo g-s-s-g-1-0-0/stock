@@ -568,7 +568,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                     preferences={"bbPullbackEmail": True},
                 )
             ]
-            self.notifications.load_watchlists = lambda: {"user-1": {"HIT", "MISS"}}
+            self.notifications.load_watchlists = lambda: {"": {"HIT", "MISS"}, "user-1": {"PERSONAL"}}
             self.notifications.stock_rows_by_ticker = lambda path: {
                 "HIT": {"ticker": "HIT", "name": "Hit Corp", "market": "US"},
                 "MISS": {"ticker": "MISS", "name": "Miss Corp", "market": "US"},
@@ -667,7 +667,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                     preferences={"maSupportEmail": True},
                 ),
             ]
-            self.notifications.load_watchlists = lambda: {"admin-1": {"HIT"}, "user-1": {"HIT"}}
+            self.notifications.load_watchlists = lambda: {"": {"HIT"}, "admin-1": {"PERSONAL"}, "user-1": {"HIT"}}
             self.notifications.stock_rows_by_ticker = lambda path: {
                 "HIT": {"ticker": "HIT", "name": "Hit Corp", "market": "US"},
             }
