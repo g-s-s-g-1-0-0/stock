@@ -874,9 +874,10 @@ def update_trade_logs(
         row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
         previous_row = previous_technical.get(ticker, {}) if isinstance(previous_technical, dict) else {}
         daily_sell_price = row.get("C - Close") or row.get("현재가") if isinstance(row, dict) else "-"
-        ind = indicator_from_trade(row, trade, daily_sell_price) if isinstance(row, dict) else None
+        daily_ind = indicator_from_trade(row, trade, daily_sell_price) if isinstance(row, dict) else None
+        live_ind = indicator_from_trade(row if isinstance(row, dict) else {}, trade, sell_price)
         strategy = strategy_code(trade.get("strategy")) or "A"
-        if ind is None and not nasdaq_peak_alert:
+        if daily_ind is None and live_ind is None and not nasdaq_peak_alert:
             continue
         entry_codes = set(entry_signal_codes(row)) if isinstance(row, dict) else set()
         armed_date = parse_trade_date(trade.get("upperExitArmedDate"))
@@ -890,15 +891,23 @@ def update_trade_logs(
                 trading_days=trading_days_since(trade.get("buyDate"), today_date),
                 upper_exit_wait_days=upper_wait_days,
             )
-        elif ind is not None and isinstance(row, dict) and has_new_daily_price(row, previous_row if isinstance(previous_row, dict) else None):
+        elif daily_ind is not None and isinstance(row, dict) and has_new_daily_price(row, previous_row if isinstance(previous_row, dict) else None):
             exit_result = evaluate_exit_condition(
-                ind,
+                daily_ind,
                 strategy_type=strategy,
                 nasdaq_peak_alert=False,
                 trading_days=trading_days_since(trade.get("buyDate"), today_date),
                 upper_exit_wait_days=upper_wait_days,
             )
             exit_price = daily_sell_price
+        elif live_ind is not None and strategy not in {"E", "F"}:
+            exit_result = evaluate_exit_condition(
+                live_ind,
+                strategy_type=strategy,
+                nasdaq_peak_alert=False,
+                trading_days=trading_days_since(trade.get("buyDate"), today_date),
+                upper_exit_wait_days=upper_wait_days,
+            )
         else:
             exit_result = {"shouldExit": False, "reason": None}
         if exit_result["shouldExit"]:

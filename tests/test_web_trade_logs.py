@@ -188,6 +188,54 @@ def test_closed_market_defers_peak_liquidation_and_restores_previous_opinion(mon
     assert "exitReason" not in technical["TE"]
 
 
+def test_live_h_strategy_target_exit_runs_when_daily_price_date_is_unchanged(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "slotId": "TE_H_20260624_1",
+                "ticker": "TE",
+                "name": "TE Connectivity",
+                "market": "US",
+                "strategy": "H. 20일선 지지·재돌파",
+                "buyDate": "2026.06.24",
+                "buyPrice": "$100.00",
+                "currentPrice": "$105.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+    stocks = [{"ticker": "TE", "name": "TE Connectivity", "market": "US", "currentPrice": "$113.00", "opinion": "관망", "strategies": []}]
+    technical = {
+        "TE": {
+            "opinion": "관망",
+            "opinionReason": "-",
+            "entrySignalCodes": "",
+            "현재가": "$113.00",
+            "C - Close": "$105.00",
+            "dailyPriceDate": "2026-06-30",
+        }
+    }
+    previous_technical = {"TE": {"dailyPriceDate": "2026-06-30"}}
+
+    changed = logs.update_trade_logs(stocks, {}, technical, {"peakTriggered": False}, previous_technical)
+
+    updated = logs.load_json(cache_path, {})
+    row = updated["rows"][0]
+    assert changed is True
+    assert row["status"] == "익절"
+    assert row["sellPrice"] == "$113.00"
+    assert row["returnPct"] == 13.0
+    assert row["exitReason"] == "목표 수익 달성 즉시 매도 +13.00% [20일선 지지·재돌파 기준 +12%]"
+    assert stocks[0]["opinion"] == "매도"
+    assert technical["TE"]["opinion"] == "매도"
+
+
 def test_extended_target_touch_arms_ef_exit_without_selling(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     public_path.parent.mkdir(parents=True)
