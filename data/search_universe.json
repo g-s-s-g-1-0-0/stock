@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15145,
-    "industryEnrichedAt": "2026-06-30T16:26:43+00:00",
+    "industryEnrichedAt": "2026-06-30T16:31:06+00:00",
     "industryEnrichedTickers": 1
   },
   "rows": [
@@ -216082,7 +216082,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 데이터센터 전력·냉각, 액침냉각, UPS",
-      "rawIndustry": "-",
+      "rawIndustry": "Industrials | Electrical Equipment &amp; Parts",
       "products": "-",
       "updatedAt": "2026-06-30T11:05:22+00:00"
     },

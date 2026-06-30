@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-06-30T16:30:19+00:00",
-    "lastSuccessfulRun": "2026-06-30T16:30:19+00:00",
+    "updatedAt": "2026-06-30T16:34:22+00:00",
+    "lastSuccessfulRun": "2026-06-30T16:34:22+00:00",
     "failedReason": null
   },
   "rows": [
@@ -597,7 +597,23 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "산업재, 장비·제조, 자동화",
-      "updatedAt": "2026-06-30T16:30:19+00:00"
+      "updatedAt": "2026-06-30T16:34:22+00:00"
+    },
+    {
+      "ticker": "VRT",
+      "name": "Vertiv Holdings, LLC",
+      "market": "US",
+      "fairPrice": "$119.40 ~ $159.20",
+      "fairPriceReason": null,
+      "currentPrice": "-",
+      "valuation": "보통",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "성장주",
+      "industry": "AI 인프라, 데이터센터 전력·냉각, 액침냉각, UPS",
+      "updatedAt": "2026-06-30T16:34:22+00:00"
     },
     {
       "ticker": "MP",
