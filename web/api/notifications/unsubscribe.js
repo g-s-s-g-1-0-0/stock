@@ -6,6 +6,7 @@ const DEFAULT_NOTIFICATION_PREFERENCES = {
   nasdaqWarnEmail: true,
   regimeShiftEmail: true,
   bbPullbackEmail: true,
+  maSupportEmail: true,
   weeklyTrendReport: true,
   earningsDayBefore: true,
   adminAutoUpdateFailureEmail: true,

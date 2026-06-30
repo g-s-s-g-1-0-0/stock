@@ -44,6 +44,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         send_opinion_index = workflow.index("- name: Send opinion change emails")
         send_peak_index = workflow.index("- name: Send Nasdaq peak emails")
         send_bb_pullback_index = workflow.index("- name: Send BB pullback candidate emails")
+        send_ma_support_index = workflow.index("- name: Send moving average support candidate emails")
         send_weekly_trend_index = workflow.index("- name: Send weekly trend report emails")
         send_stock_universe_index = workflow.index("- name: Send stock universe update email")
         commit_state_index = workflow.index("- name: Commit refreshed caches and notification state")
@@ -56,6 +57,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertLess(send_opinion_index, commit_state_index)
         self.assertLess(send_peak_index, commit_state_index)
         self.assertLess(send_bb_pullback_index, commit_state_index)
+        self.assertLess(send_ma_support_index, commit_state_index)
         self.assertLess(wait_index, send_weekly_trend_index)
         self.assertLess(send_weekly_trend_index, commit_state_index)
         self.assertLess(wait_index, send_stock_universe_index)
@@ -80,6 +82,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn("python scripts/web_refresh_notifications.py weekly-trend", workflow)
         self.assertIn('python scripts/web_refresh_notifications.py stock-universe-report --previous "$RUNNER_TEMP/search-universe.before-refresh.json"', workflow)
         self.assertIn("python scripts/web_refresh_notifications.py bb-pullback", workflow)
+        self.assertIn("python scripts/web_refresh_notifications.py ma-support", workflow)
         self.assertIn("python scripts/record_web_api_logs.py --skip-trade-log-update $REFRESH_TASKS", workflow)
         self.assertIn("git diff --quiet -- data/cache data/history data/search_universe.json web/public/api", workflow)
         self.assertIn("git add data/cache data/history data/search_universe.json web/public/api", workflow)
@@ -274,6 +277,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual(["OLD"], [row["ticker"] for row in changes["removed"]])
 
     def test_stock_universe_report_skips_email_when_unchanged(self) -> None:
+        original_window = self.notifications.is_weekly_report_window
         with TemporaryDirectory() as temp_dir:
             previous = Path(temp_dir) / "previous.json"
             current = Path(temp_dir) / "current.json"
@@ -281,7 +285,11 @@ class WebRefreshNotificationsTest(unittest.TestCase):
             previous.write_text(json.dumps(payload), encoding="utf-8")
             current.write_text(json.dumps(payload), encoding="utf-8")
 
-            sent = self.notifications.send_stock_universe_report_notifications(previous, current)
+            try:
+                self.notifications.is_weekly_report_window = lambda: True
+                sent = self.notifications.send_stock_universe_report_notifications(previous, current)
+            finally:
+                self.notifications.is_weekly_report_window = original_window
 
         self.assertEqual(0, sent)
 
@@ -290,8 +298,10 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         original_latest_market_trend = self.notifications.latest_market_trend
         original_load_recipients = self.notifications.load_recipients
         original_send_notification = self.notifications.send_notification
+        original_window = self.notifications.is_weekly_report_window
 
         try:
+            self.notifications.is_weekly_report_window = lambda: True
             self.notifications.latest_market_trend = lambda: {
                 "date": "2026.06.15",
                 "summary": "요약",
@@ -320,6 +330,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
             self.notifications.latest_market_trend = original_latest_market_trend
             self.notifications.load_recipients = original_load_recipients
             self.notifications.send_notification = original_send_notification
+            self.notifications.is_weekly_report_window = original_window
 
         self.assertEqual(2, sent)
         self.assertEqual(["admin@example.com", "user@example.com"], [message[0] for message in sent_messages])
@@ -328,8 +339,10 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         sent_messages: list[tuple[str, str, str]] = []
         original_load_recipients = self.notifications.load_recipients
         original_send_notification = self.notifications.send_notification
+        original_window = self.notifications.is_weekly_report_window
 
         try:
+            self.notifications.is_weekly_report_window = lambda: True
             with TemporaryDirectory() as temp_dir:
                 previous = Path(temp_dir) / "previous.json"
                 current = Path(temp_dir) / "current.json"
@@ -360,9 +373,17 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         finally:
             self.notifications.load_recipients = original_load_recipients
             self.notifications.send_notification = original_send_notification
+            self.notifications.is_weekly_report_window = original_window
 
         self.assertEqual(1, sent)
         self.assertEqual(["admin@example.com"], [message[0] for message in sent_messages])
+
+    def test_weekly_reports_skip_outside_monday_midnight_window(self) -> None:
+        kst = ZoneInfo("Asia/Seoul")
+
+        self.assertTrue(self.notifications.is_weekly_report_window(datetime(2026, 7, 6, 0, 30, tzinfo=kst)))
+        self.assertFalse(self.notifications.is_weekly_report_window(datetime(2026, 7, 6, 1, 0, tzinfo=kst)))
+        self.assertFalse(self.notifications.is_weekly_report_window(datetime(2026, 6, 30, 20, 5, tzinfo=kst)))
 
     def test_opinion_changes_labels_watch_to_buy_with_added_trade_as_additional_buy(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -575,6 +596,107 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual(1, len(sent_messages))
         self.assertIn("HIT", sent_messages[0][1])
         self.assertIn("Hit Corp", sent_messages[0][2])
+
+    def test_ma_support_signal_detects_kr_morning_candidate(self) -> None:
+        original_fetch_ohlcv = self.notifications.fetch_ohlcv
+        kst = ZoneInfo("Asia/Seoul")
+        now = datetime(2026, 6, 30, 9, 35, tzinfo=kst)
+        rows = [
+            {"date": "20260629", "open": 100.0, "high": 101.0, "low": 99.5, "close": 100.0, "volume": 1000.0}
+            for _ in range(200)
+        ]
+        rows.append({"date": "20260630", "open": 100.5, "high": 102.0, "low": 99.7, "close": 101.2, "volume": 1200.0})
+
+        try:
+            self.notifications.fetch_ohlcv = lambda ticker: rows
+            signal = self.notifications.ma_support_signal("005930", {"ticker": "005930", "name": "삼성전자", "market": "KR"}, now)
+        finally:
+            self.notifications.fetch_ohlcv = original_fetch_ohlcv
+
+        self.assertIsNotNone(signal)
+        assert signal is not None
+        self.assertEqual("005930", signal["ticker"])
+        self.assertEqual("2026-06-30", signal["date"])
+        self.assertTrue(any(item["period"] == 20 for item in signal["signals"]))
+
+    def test_ma_support_signal_skips_stale_us_holiday_data(self) -> None:
+        original_fetch_ohlcv = self.notifications.fetch_ohlcv
+        et = ZoneInfo("America/New_York")
+        kst = ZoneInfo("Asia/Seoul")
+        stale_timestamp = int(datetime(2026, 7, 3, 16, 0, tzinfo=et).timestamp())
+        now = datetime(2026, 7, 7, 9, 35, tzinfo=kst)
+        rows = [
+            {"date": str(stale_timestamp), "open": 100.0, "high": 101.0, "low": 99.5, "close": 100.0, "volume": 1000.0}
+            for _ in range(200)
+        ]
+        rows.append({"date": str(stale_timestamp), "open": 100.5, "high": 102.0, "low": 99.7, "close": 101.2, "volume": 1200.0})
+
+        try:
+            self.notifications.fetch_ohlcv = lambda ticker: rows
+            signal = self.notifications.ma_support_signal("NVDA", {"ticker": "NVDA", "name": "NVIDIA", "market": "US"}, now)
+        finally:
+            self.notifications.fetch_ohlcv = original_fetch_ohlcv
+
+        self.assertIsNone(signal)
+
+    def test_ma_support_notifications_are_admin_only_and_pref_gated(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        original_load_recipients = self.notifications.load_recipients
+        original_load_watchlists = self.notifications.load_watchlists
+        original_stock_rows_by_ticker = self.notifications.stock_rows_by_ticker
+        original_ma_support_signal = self.notifications.ma_support_signal
+        original_send_notification = self.notifications.send_notification
+        original_state_path = self.notifications.NOTIFICATION_STATE
+        original_window = self.notifications.is_morning_ma_scan_window
+
+        with TemporaryDirectory() as temp_dir:
+            current = Path(temp_dir) / "stocks.json"
+            current.write_text(json.dumps({"rows": []}), encoding="utf-8")
+            self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
+            self.notifications.load_recipients = lambda: [
+                self.notifications.Recipient(
+                    owner_id="admin-1",
+                    email="admin@example.com",
+                    is_admin=True,
+                    preferences={"maSupportEmail": True},
+                ),
+                self.notifications.Recipient(
+                    owner_id="user-1",
+                    email="user@example.com",
+                    is_admin=False,
+                    preferences={"maSupportEmail": True},
+                ),
+            ]
+            self.notifications.load_watchlists = lambda: {"admin-1": {"HIT"}, "user-1": {"HIT"}}
+            self.notifications.stock_rows_by_ticker = lambda path: {
+                "HIT": {"ticker": "HIT", "name": "Hit Corp", "market": "US"},
+            }
+            self.notifications.ma_support_signal = lambda ticker, stock=None: {
+                "ticker": "HIT",
+                "name": "Hit Corp",
+                "market": "US",
+                "date": "2026-06-29",
+                "signals": [{"period": 20, "signal": "20일선 지지 반등", "ma": 100.0, "price": 101.0, "open": 100.5, "low": 99.8, "distancePercent": 1.0}],
+            }
+            self.notifications.is_morning_ma_scan_window = lambda: True
+            self.notifications.send_notification = lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
+
+            try:
+                sent_count = self.notifications.send_ma_support_notifications(current)
+            finally:
+                self.notifications.load_recipients = original_load_recipients
+                self.notifications.load_watchlists = original_load_watchlists
+                self.notifications.stock_rows_by_ticker = original_stock_rows_by_ticker
+                self.notifications.ma_support_signal = original_ma_support_signal
+                self.notifications.send_notification = original_send_notification
+                self.notifications.NOTIFICATION_STATE = original_state_path
+                self.notifications.is_morning_ma_scan_window = original_window
+
+        self.assertEqual(1, sent_count)
+        self.assertEqual(1, len(sent_messages))
+        self.assertEqual("admin@example.com", sent_messages[0][0])
+        self.assertIn("HIT", sent_messages[0][1])
+        self.assertIn("이평선 반등/돌파 후보", sent_messages[0][2])
 
     def test_opinion_changes_marks_sell_to_buy_without_open_slot_as_new_entry(self) -> None:
         with TemporaryDirectory() as temp_dir:

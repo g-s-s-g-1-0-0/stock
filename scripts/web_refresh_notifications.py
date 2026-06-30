@@ -834,6 +834,7 @@ def notification_preference_label(preference_key: str) -> str:
         "weeklyTrendReport": "주간 트렌드 리포트",
         "earningsDayBefore": "실적발표 전날 알림",
         "bbPullbackEmail": "BB 상단 눌림 반등 후보 알림",
+        "maSupportEmail": "이평선 반등/돌파 후보 알림",
         "adminAutoUpdateFailureEmail": "자동 업데이트 실패 알림",
     }
     return labels.get(preference_key, "이 알림")
@@ -1591,6 +1592,15 @@ def stock_universe_changes(previous: Path, current: Path = DEFAULT_CURRENT_SEARC
     }
 
 
+def is_weekly_report_window(now: datetime | None = None) -> bool:
+    if os.environ.get("WEEKLY_REPORT_FORCE", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return True
+    current = now or datetime.now().astimezone()
+    kst_now = current.astimezone(KST)
+    minutes = kst_now.hour * 60 + kst_now.minute
+    return kst_now.weekday() == 0 and 0 <= minutes < 60
+
+
 def stock_universe_change_section(changes: dict[str, Any]) -> str:
     added = changes.get("added") if isinstance(changes.get("added"), list) else []
     removed = changes.get("removed") if isinstance(changes.get("removed"), list) else []
@@ -1668,6 +1678,10 @@ def weekly_trend_email_body(trend: dict[str, Any]) -> str:
 
 
 def send_weekly_trend_notifications() -> int:
+    if not is_weekly_report_window():
+        print("Weekly trend notification skipped outside KST Monday 00:00-01:00 window.")
+        return 0
+
     trend = latest_market_trend()
     if not trend:
         print("No market trend data.")
@@ -1697,6 +1711,10 @@ def send_stock_universe_report_notifications(
     previous: Path,
     current: Path = DEFAULT_CURRENT_SEARCH_UNIVERSE,
 ) -> int:
+    if not is_weekly_report_window():
+        print("Stock universe report skipped outside KST Monday 00:00-01:00 window.")
+        return 0
+
     if not previous.exists():
         print("No previous search universe snapshot.")
         return 0
@@ -2308,6 +2326,240 @@ def send_bb_pullback_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> in
     return sent
 
 
+def latest_ohlcv_date(row: dict[str, Any], market: str) -> str:
+    raw_date = str(row.get("date") or "").strip()
+    if market == "KR" and re.fullmatch(r"\d{8}", raw_date):
+        return f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:8]}"
+    if market == "US" and re.fullmatch(r"\d{10}", raw_date):
+        try:
+            return datetime.fromtimestamp(int(raw_date), tz=ET).strftime("%Y-%m-%d")
+        except (OverflowError, ValueError):
+            return raw_date
+    return format_ohlcv_date(raw_date)
+
+
+def is_morning_ma_scan_window(now: datetime | None = None) -> bool:
+    if os.environ.get("MA_SUPPORT_SCAN_FORCE", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return True
+    current = now or datetime.now().astimezone()
+    kst_now = current.astimezone(KST)
+    minutes = kst_now.hour * 60 + kst_now.minute
+    return kst_now.weekday() < 5 and (9 * 60 + 25) <= minutes <= (10 * 60 + 30)
+
+
+def is_latest_row_fresh_for_morning_scan(row: dict[str, Any], market: str, now: datetime | None = None) -> bool:
+    current = now or datetime.now().astimezone()
+    kst_today = current.astimezone(KST).date()
+    latest_date = latest_ohlcv_date(row, market)
+    if market == "KR":
+        return latest_date == kst_today.isoformat()
+    if market == "US":
+        return latest_date == (kst_today - timedelta(days=1)).isoformat()
+    return False
+
+
+def moving_average(values: list[float], period: int) -> float | None:
+    if len(values) < period:
+        return None
+    return sum(values[-period:]) / period
+
+
+def previous_moving_average(values: list[float], period: int) -> float | None:
+    if len(values) <= period:
+        return None
+    return sum(values[-period - 1:-1]) / period
+
+
+def ma_signal_for_period(rows: list[dict[str, Any]], period: int) -> dict[str, Any] | None:
+    closes = [float(row["close"]) for row in rows]
+    latest = rows[-1]
+    previous = rows[-2]
+    ma = moving_average(closes, period)
+    previous_ma = previous_moving_average(closes, period)
+    if ma is None or previous_ma is None or ma <= 0 or previous_ma <= 0:
+        return None
+
+    open_ = float(latest["open"])
+    low = float(latest["low"])
+    close = float(latest["close"])
+    previous_close = float(previous["close"])
+    support = low <= ma * 1.003 and low >= ma * 0.97 and close > ma
+    breakout = (previous_close <= previous_ma or open_ < ma) and close > ma * 1.002
+    if not support and not breakout:
+        return None
+
+    return {
+        "period": period,
+        "signal": f"{period}일선 지지 반등" if support else f"{period}일선 돌파",
+        "ma": ma,
+        "price": close,
+        "open": open_,
+        "low": low,
+        "distancePercent": (close / ma - 1) * 100,
+    }
+
+
+def ma_support_signal(ticker: str, stock: dict[str, Any] | None = None, now: datetime | None = None) -> dict[str, Any] | None:
+    rows = fetch_ohlcv(ticker)
+    rows = [row for row in rows if all(row.get(key) is not None for key in ("open", "high", "low", "close", "volume"))]
+    if len(rows) < 201:
+        return None
+    market = str((stock or {}).get("market") or resolve_market_from_ticker(ticker)).strip() or resolve_market_from_ticker(ticker)
+    if not is_latest_row_fresh_for_morning_scan(rows[-1], market, now):
+        return None
+
+    signals = [
+        signal
+        for period in (20, 200)
+        if (signal := ma_signal_for_period(rows, period)) is not None
+    ]
+    if not signals:
+        return None
+
+    latest = rows[-1]
+    return {
+        "ticker": ticker.upper(),
+        "name": str((stock or {}).get("name") or ticker).strip(),
+        "market": market,
+        "date": latest_ohlcv_date(latest, market),
+        "signals": signals,
+    }
+
+
+def resolve_market_from_ticker(ticker: str) -> str:
+    return "KR" if re.fullmatch(r"\d{6}", str(ticker or "").strip()) else "US"
+
+
+def ma_candidate_price(value: Any, market: str) -> str:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    if parsed != parsed:
+        return "-"
+    if market == "KR":
+        return f"₩{round(parsed):,}"
+    return f"${parsed:,.2f}"
+
+
+def ma_support_email_body(candidates: list[dict[str, Any]]) -> str:
+    kst_date, et_date = now_labels()
+    rows_html = []
+    for candidate in candidates:
+        market = str(candidate.get("market") or "")
+        label = display_stock(candidate, candidate["ticker"])
+        signal = candidate["signals"][0]
+        extra_signals = ""
+        if len(candidate["signals"]) > 1:
+            extra_signals = "<br>" + "<br>".join(
+                f"<span style=\"color:#666;font-size:12px;\">+ {html.escape(str(item['signal']))} ({fmt_signed(item['distancePercent'], '%')})</span>"
+                for item in candidate["signals"][1:]
+            )
+        rows_html.append(
+            "<tr>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;\"><strong>{html.escape(label)}</strong><br><span style=\"color:#888;\">{html.escape(str(candidate['date']))} · {html.escape(market)}</span></td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;\">{html.escape(str(signal['signal']))}{extra_signals}</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_candidate_price(signal['price'], market))}</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_candidate_price(signal['low'], market))}</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_candidate_price(signal['ma'], market))}</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{fmt_signed(signal['distancePercent'], '%')}</td>"
+            "</tr>"
+        )
+    return f"""
+    <div style="font-family:Arial,sans-serif;max-width:760px;color:#222;line-height:1.55;">
+      <h2 style="margin:0 0 12px 0;">이평선 반등/돌파 후보</h2>
+      <p style="margin:0 0 12px 0;">
+        전략 매수 신호에는 반영하지 않고, 관리자 관심종목 중 20일/200일 이동평균선 가격 반응만 별도로 감지했습니다.
+      </p>
+      <div style="margin:0 0 14px 0;padding:12px;border:1px solid #eee;border-radius:8px;background:#fafafa;">
+        조건: 저가가 이평선 97.0~100.3% 구간을 터치하고 종가가 이평선 위로 회복하거나,
+        전일 종가 또는 당일 시가가 이평선 아래였고 종가가 이평선 위로 돌파한 경우입니다.
+        나스닥 필터, RSI, 거래량, MA20 기울기 조건은 적용하지 않습니다.
+      </div>
+      <table style="border-collapse:collapse;width:100%;font-size:14px;">
+        <thead>
+          <tr style="background:#f6f6f6;">
+            <th style="padding:8px;text-align:left;">종목</th>
+            <th style="padding:8px;text-align:left;">신호</th>
+            <th style="padding:8px;text-align:right;">현재가</th>
+            <th style="padding:8px;text-align:right;">저가</th>
+            <th style="padding:8px;text-align:right;">기준 이평선</th>
+            <th style="padding:8px;text-align:right;">이격</th>
+          </tr>
+        </thead>
+        <tbody>{''.join(rows_html)}</tbody>
+      </table>
+      <p style="color:#888;font-size:12px;margin-top:14px;">
+        발송 시각 (한국): {html.escape(kst_date)}<br>
+        발송 시각 (미 동부): {html.escape(et_date)}
+      </p>
+    </div>
+    """
+
+
+def send_ma_support_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> int:
+    if not is_morning_ma_scan_window():
+        print("MA support notification skipped outside KST morning scan window.")
+        return 0
+
+    stocks = stock_rows_by_ticker(current)
+    watchlists = load_watchlists()
+    recipients = [
+        recipient
+        for recipient in load_recipients()
+        if recipient.is_admin and enabled(recipient, "maSupportEmail")
+    ]
+    if not recipients:
+        print("No recipients for maSupportEmail.")
+        return 0
+
+    state = read_json(NOTIFICATION_STATE)
+    if not isinstance(state, dict):
+        state = {}
+    sent_keys = set(state.get("maSupportSignals", {}).get("sentKeys", [])) if isinstance(state.get("maSupportSignals"), dict) else set()
+
+    signal_cache: dict[str, dict[str, Any] | None] = {}
+    sent = 0
+    newly_sent_keys: set[str] = set()
+    for recipient in recipients:
+        tickers = watchlists.get(recipient.owner_id, set())
+        if not tickers:
+            continue
+        candidates: list[dict[str, Any]] = []
+        for ticker in sorted(tickers):
+            if ticker not in signal_cache:
+                stock = stocks.get(ticker, {"ticker": ticker, "name": ticker, "market": resolve_market_from_ticker(ticker)})
+                try:
+                    signal_cache[ticker] = ma_support_signal(ticker, stock)
+                except Exception as exc:  # noqa: BLE001
+                    print(f"MA support check skipped for {ticker}: {exc}")
+                    signal_cache[ticker] = None
+            signal = signal_cache[ticker]
+            if not signal:
+                continue
+            signal_key = "+".join(str(item["period"]) for item in signal["signals"])
+            key = f"{recipient.owner_id}:{signal['ticker']}:{signal['date']}:{signal_key}"
+            if key in sent_keys:
+                continue
+            candidates.append(signal)
+            newly_sent_keys.add(key)
+        if not candidates:
+            continue
+        subject = "[이평선 반등/돌파 후보] " + ", ".join(candidate["ticker"] for candidate in candidates[:8])
+        send_notification(recipient, subject, append_notification_footer(ma_support_email_body(candidates), recipient, "maSupportEmail"))
+        sent += 1
+
+    if newly_sent_keys:
+        recent_keys = sorted((sent_keys | newly_sent_keys))[-500:]
+        state["maSupportSignals"] = {
+            "sentKeys": recent_keys,
+            "updatedAt": datetime.now().astimezone().isoformat(),
+        }
+        write_json(NOTIFICATION_STATE, state)
+    print(f"Sent MA support notifications: {sent}")
+    return sent
+
+
 def earnings_candidates(tickers: set[str], stocks: dict[str, dict[str, Any]], valuations: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     candidates: list[dict[str, Any]] = []
     for ticker in sorted(tickers):
@@ -2591,6 +2843,8 @@ def main() -> int:
 
     bb_pullback_parser = subparsers.add_parser("bb-pullback")
     bb_pullback_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
+    ma_support_parser = subparsers.add_parser("ma-support")
+    ma_support_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
 
     subparsers.add_parser("nasdaq-peak")
     subparsers.add_parser("nasdaq-warn")
@@ -2622,6 +2876,9 @@ def main() -> int:
         return 0
     if args.command == "bb-pullback":
         send_bb_pullback_notifications(args.current)
+        return 0
+    if args.command == "ma-support":
+        send_ma_support_notifications(args.current)
         return 0
     if args.command == "nasdaq-peak":
         send_nasdaq_peak_notifications()

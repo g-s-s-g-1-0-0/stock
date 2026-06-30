@@ -78,6 +78,12 @@ function scheduledPublishAtForCron(scope) {
   return nextTopOfHourIso()
 }
 
+function readCronScheduledPublishAt(req) {
+  const raw = String(req.query?.scheduled_publish_at || req.body?.scheduled_publish_at || '').trim()
+  if (!raw) return null
+  return raw === 'immediate' ? 'immediate' : raw
+}
+
 async function readSupabaseUser(accessToken) {
   const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '')
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -177,15 +183,15 @@ export default async function handler(req, res) {
       }
     }
 
-    const scheduledPublishAt = isCronRequest ? scheduledPublishAtForCron(scope) : ''
+    const scheduledPublishAt = isCronRequest ? (readCronScheduledPublishAt(req) ?? scheduledPublishAtForCron(scope)) : ''
     const workflowScheduledPublishAt = scheduledPublishAt || 'immediate'
     const tickers = isCronRequest ? [] : readRequestTickers(req)
     const workflow = await triggerWorkflow(scope, true, workflowScheduledPublishAt, tickers)
     return json(res, 202, {
       ok: true,
       mode: 'workflow_dispatch',
-      message: scheduledPublishAt
-        ? 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다. 정각까지 대기 후 메일 발송과 배포를 진행합니다.'
+      message: scheduledPublishAt && scheduledPublishAt !== 'immediate'
+        ? 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다. 지정 시각까지 대기 후 메일 발송과 배포를 진행합니다.'
         : 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다.',
       scheduledPublishAt,
       ...workflow,
