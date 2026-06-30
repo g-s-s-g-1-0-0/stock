@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-06-30T15:01:34+00:00",
-    "lastSuccessfulRun": "2026-06-30T15:01:34+00:00",
+    "updatedAt": "2026-06-30T16:30:19+00:00",
+    "lastSuccessfulRun": "2026-06-30T16:30:19+00:00",
     "failedReason": null
   },
   "rows": [
@@ -520,38 +520,6 @@
       "updatedAt": "2026-06-30T14:55:47+00:00"
     },
     {
-      "ticker": "VST",
-      "name": "Vistra",
-      "market": "US",
-      "fairPrice": "$89.85 ~ $119.80",
-      "fairPriceReason": null,
-      "currentPrice": "$163.99",
-      "valuation": "고평가",
-      "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
-      "strategies": [],
-      "category": "성장주",
-      "industry": "전력 발전, 원전·가스, AI 데이터센터 전력수요, AI 인프라",
-      "updatedAt": "2026-06-30T14:55:47+00:00"
-    },
-    {
-      "ticker": "WULF",
-      "name": "TeraWulf",
-      "market": "US",
-      "fairPrice": "적자 상태라 판단 불가",
-      "fairPriceReason": "loss_making",
-      "currentPrice": "$25.21",
-      "valuation": "판단 불가",
-      "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
-      "strategies": [],
-      "category": "성장주",
-      "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
-      "updatedAt": "2026-06-30T14:55:47+00:00"
-    },
-    {
       "ticker": "TE",
       "name": "T1 Energy",
       "market": "US",
@@ -614,6 +582,22 @@
       "category": "성장주",
       "industry": "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머",
       "updatedAt": "2026-06-30T14:55:48+00:00"
+    },
+    {
+      "ticker": "GEV",
+      "name": "GE Vernova",
+      "market": "US",
+      "fairPrice": "$514.80 ~ $858.00",
+      "fairPriceReason": null,
+      "currentPrice": "-",
+      "valuation": "보통",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "혼합주",
+      "industry": "산업재, 장비·제조, 자동화",
+      "updatedAt": "2026-06-30T16:30:19+00:00"
     },
     {
       "ticker": "MP",
@@ -694,6 +678,22 @@
       "category": "혼합주",
       "industry": "AI, 광고, 클라우드, Waymo, TPU",
       "updatedAt": "2026-06-30T14:55:50+00:00"
+    },
+    {
+      "ticker": "WULF",
+      "name": "TeraWulf",
+      "market": "US",
+      "fairPrice": "적자 상태라 판단 불가",
+      "fairPriceReason": "loss_making",
+      "currentPrice": "$25.21",
+      "valuation": "판단 불가",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "성장주",
+      "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
+      "updatedAt": "2026-06-30T14:55:47+00:00"
     }
   ]
 }

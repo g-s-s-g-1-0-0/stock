@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15145,
-    "industryEnrichedAt": "2026-06-30T11:05:35+00:00",
-    "industryEnrichedTickers": 30
+    "industryEnrichedAt": "2026-06-30T16:26:43+00:00",
+    "industryEnrichedTickers": 1
   },
   "rows": [
     {
@@ -109806,8 +109806,8 @@
       "opinion": "관망",
       "strategies": [],
       "category": "혼합주",
-      "industry": "-",
-      "rawIndustry": "-",
+      "industry": "산업재, 장비·제조, 자동화",
+      "rawIndustry": "Industrials | Specialty Industrial Machinery",
       "products": "-",
       "updatedAt": "2026-06-30T11:05:22+00:00"
     },

@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-06-30T15:01:35+00:00",
-    "lastSuccessfulRun": "2026-06-30T15:01:35+00:00",
+    "updatedAt": "2026-06-30T16:30:20+00:00",
+    "lastSuccessfulRun": "2026-06-30T16:30:20+00:00",
     "failedReason": null
   },
   "rows": [
@@ -51245,7 +51245,7 @@
       "name": "GE Vernova",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "산업재, 장비·제조, 자동화"
     },
     {
       "ticker": "GEVG",
