@@ -1,10 +1,14 @@
 {
   "maSupportSignals": {
+    "sentDailyKeys": [
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-02"
+    ],
     "sentKeys": [
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:012450:2026-07-01:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:039030:2026-07-01:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:278470:2026-07-01:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:ASTS:2026-06-30:20+200",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:ASTS:2026-07-01:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:BE:2026-06-30:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:COHR:2026-06-30:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:CRDO:2026-06-30:20",
@@ -16,7 +20,7 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:TE:2026-06-30:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VRT:2026-06-30:20"
     ],
-    "updatedAt": "2026-07-01T01:00:28.667123+00:00"
+    "updatedAt": "2026-07-01T23:00:33.145558+00:00"
   },
   "nasdaqPeak": {
     "resetAt": "2026-05-14T20:55:50.998617+00:00",
@@ -58,6 +62,6 @@
   },
   "regimeShift": {
     "isRecoveryMarket": false,
-    "updatedAt": "2026-07-01T21:00:00.858706+00:00"
+    "updatedAt": "2026-07-01T23:00:01.490519+00:00"
   }
 }
