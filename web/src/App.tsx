@@ -6312,19 +6312,9 @@ function App() {
       ? systemTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
       : systemTradeLogs
     : personalTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
-  // 가치투자는 자동 매도(청산)를 시스템상 수행하지 않는다. 공용 트레이딩 로그에서 자동 청산된 거래는
-  // 보유 중으로 되돌려 보유 종목·로그·포트폴리오에서 계속 보유한 것으로 취급한다.
-  // 단, 개인이 직접 청산한 거래(manualExit)는 실제 청산으로 그대로 둔다.
-  const scopedTrades = isLongTermInvestor
-    ? rawScopedTrades.map((trade) => (trade.status !== '보유 중' && !trade.manualExit
-      ? { ...trade, status: '보유 중' as TradeStatus, sellDate: '-', sellPrice: '-', returnPct: 0, holdingDays: '-' as const }
-      : trade))
-    : rawScopedTrades
+  const scopedTrades = rawScopedTrades
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
-  // 가치투자는 자동 매도가 없으므로 보유 중 + 개인 수동 청산(manualExit)만 로그에 노출한다.
-  const visibleProfileTrades = isLongTermInvestor
-    ? scopedTrades.filter((trade) => trade.status === '보유 중' || trade.manualExit)
-    : scopedTrades
+  const visibleProfileTrades = scopedTrades
   const filteredTrades = visibleProfileTrades
     .filter((trade) => selectedStrategy === '전체' || strategyCode(trade.strategy) === selectedStrategy)
     .slice()
@@ -6343,7 +6333,7 @@ function App() {
       .map((code) => formatWinRate(code, scopedTrades.filter((trade) => strategyCode(trade.strategy) === code))),
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
-    ? "장기형은 매도 신호를 제외하고 매수/관망 기준으로만 보여줍니다. 실제 청산은 '보유중인 종목' 표에서 직접 처리합니다."
+    ? '장기형은 청산된 거래가 슬롯을 비우고, 현재 보유 중인 거래만 투자금 슬롯을 차지합니다.'
     : '청산 기준: A-C +20/-30 · D +12/-25/30일 · E/F +20 후 MACD·5일/-30 · G +12/-12/40일 · H +12/-20/30일+5%/40일'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
@@ -8443,8 +8433,8 @@ function App() {
                       {!isLongTermInvestor && <td>{trade.sellDate}</td>}
                       {!isLongTermInvestor && <td className={trade.sellPrice === '-' ? 'dash-cell' : 'number-cell'}>{trade.sellPrice}</td>}
                       {isLongTermInvestor && (
-                        <td className={trade.manualExit && trade.sellDate !== '-' ? '' : 'dash-cell'}>
-                          {trade.manualExit && trade.sellDate !== '-' ? trade.sellDate : '-'}
+                        <td className={trade.status !== '보유 중' && trade.sellDate !== '-' ? '' : 'dash-cell'}>
+                          {trade.status !== '보유 중' && trade.sellDate !== '-' ? trade.sellDate : '-'}
                         </td>
                       )}
                       <td className="strategy-data-cell">
