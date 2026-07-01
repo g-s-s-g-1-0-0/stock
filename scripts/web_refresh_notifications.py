@@ -2459,8 +2459,42 @@ def ma_candidate_price(value: Any, market: str) -> str:
     return f"${parsed:,.2f}"
 
 
-def ma_support_email_body(candidates: list[dict[str, Any]]) -> str:
+def ma_support_qqq_status(market_state: dict[str, Any] | None = None) -> str:
+    state = market_state or technical_market_state()
+    try:
+        current_dist = float(state.get("premiumPercent"))
+        upper_limit = float(state.get("buyBlockMax"))
+    except (TypeError, ValueError):
+        return ""
+    if current_dist != current_dist or upper_limit != upper_limit:
+        return ""
+
+    lower_limit = float(STRATEGY_RULES["NASDAQ_DIST_UPPER"])
+    regime = str(state.get("regimeLabel") or ("급락 후 회복장" if state.get("isRecoveryMarket") else "비회복장/고점 횡보장"))
+    if current_dist < lower_limit:
+        remaining = f"하단 기준까지 {lower_limit - current_dist:.2f}%p 부족"
+        status = "기준 하단 미달"
+    elif current_dist > upper_limit:
+        remaining = f"상단 기준보다 {current_dist - upper_limit:.2f}%p 초과"
+        status = "기준 상단 초과"
+    else:
+        remaining = f"상단까지 {upper_limit - current_dist:.2f}%p, 하단까지 {current_dist - lower_limit:.2f}%p"
+        status = "기준 범위 내"
+
+    return (
+        '<div style="margin:0 0 14px 0;padding:12px;border:1px solid #eee;border-radius:8px;background:#fafafa;">'
+        f"<strong>QQQ 이격도:</strong> {fmt_signed(current_dist, '%')} "
+        f"({html.escape(status)})<br>"
+        f"허용 범위: {fmt_signed(lower_limit, '%')} ~ {fmt_signed(upper_limit, '%')} "
+        f"· {html.escape(regime)}<br>"
+        f"여유: {html.escape(remaining)}"
+        "</div>"
+    )
+
+
+def ma_support_email_body(candidates: list[dict[str, Any]], market_state: dict[str, Any] | None = None) -> str:
     kst_date, et_date = now_labels()
+    qqq_status_html = ma_support_qqq_status(market_state)
     rows_html = []
     for candidate in candidates:
         market = str(candidate.get("market") or "")
@@ -2485,14 +2519,7 @@ def ma_support_email_body(candidates: list[dict[str, Any]]) -> str:
     return f"""
     <div style="font-family:Arial,sans-serif;max-width:760px;color:#222;line-height:1.55;">
       <h2 style="margin:0 0 12px 0;">이평선 반등/돌파 후보</h2>
-      <p style="margin:0 0 12px 0;">
-        전략 매수 신호에는 반영하지 않고, 관리자 관심종목 중 20일/200일 이동평균선 가격 반응만 별도로 감지했습니다.
-      </p>
-      <div style="margin:0 0 14px 0;padding:12px;border:1px solid #eee;border-radius:8px;background:#fafafa;">
-        조건: 저가가 이평선 97.0~100.3% 구간을 터치하고 종가가 이평선 위로 회복하거나,
-        전일 종가 또는 당일 시가가 이평선 아래였고 종가가 이평선 위로 돌파한 경우입니다.
-        나스닥 필터, RSI, 거래량, MA20 기울기 조건은 적용하지 않습니다.
-      </div>
+      {qqq_status_html}
       <table style="border-collapse:collapse;width:100%;font-size:14px;">
         <thead>
           <tr style="background:#f6f6f6;">
@@ -2538,6 +2565,7 @@ def send_ma_support_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> int
     sent_daily_keys = set(ma_support_state.get("sentDailyKeys", [])) if isinstance(ma_support_state, dict) else set()
 
     signal_cache: dict[str, dict[str, Any] | None] = {}
+    market_state = technical_market_state()
     sent = 0
     newly_sent_keys: set[str] = set()
     newly_sent_daily_keys: set[str] = set()
@@ -2569,7 +2597,11 @@ def send_ma_support_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> int
         if not candidates:
             continue
         subject = "[이평선 반등/돌파 후보] " + ", ".join(candidate["ticker"] for candidate in candidates[:8])
-        send_notification(recipient, subject, append_notification_footer(ma_support_email_body(candidates), recipient, "maSupportEmail"))
+        send_notification(
+            recipient,
+            subject,
+            append_notification_footer(ma_support_email_body(candidates, market_state), recipient, "maSupportEmail"),
+        )
         sent += 1
         newly_sent_daily_keys.add(daily_key)
 

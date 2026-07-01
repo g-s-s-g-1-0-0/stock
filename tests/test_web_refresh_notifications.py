@@ -647,6 +647,31 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertFalse(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 9, 0, tzinfo=kst)))
         self.assertFalse(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 10, 0, tzinfo=kst)))
 
+    def test_ma_support_email_body_includes_qqq_distance_status_without_explainer(self) -> None:
+        body = self.notifications.ma_support_email_body(
+            [
+                {
+                    "ticker": "HIT",
+                    "name": "Hit Corp",
+                    "market": "US",
+                    "date": "2026-06-29",
+                    "signals": [{"period": 20, "signal": "20일선 지지 반등", "ma": 100.0, "price": 101.0, "open": 100.5, "low": 99.8, "distancePercent": 1.0}],
+                },
+            ],
+            {
+                "premiumPercent": 7.5,
+                "buyBlockMax": 9.0,
+                "regimeLabel": "비회복장/고점 횡보장",
+            },
+        )
+
+        self.assertIn("QQQ 이격도", body)
+        self.assertIn("+7.50%", body)
+        self.assertIn("-3.00% ~ +9.00%", body)
+        self.assertIn("상단까지 1.50%p", body)
+        self.assertNotIn("전략 매수 신호에는 반영하지 않고", body)
+        self.assertNotIn("나스닥 필터, RSI, 거래량", body)
+
     def test_ma_support_notifications_are_admin_only_and_pref_gated(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
         original_load_recipients = self.notifications.load_recipients
