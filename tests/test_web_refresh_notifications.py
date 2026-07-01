@@ -639,6 +639,14 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
         self.assertIsNone(signal)
 
+    def test_ma_support_notifications_only_run_in_8am_kst_window(self) -> None:
+        kst = ZoneInfo("Asia/Seoul")
+
+        self.assertTrue(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 8, 0, tzinfo=kst)))
+        self.assertTrue(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 8, 59, tzinfo=kst)))
+        self.assertFalse(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 9, 0, tzinfo=kst)))
+        self.assertFalse(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 10, 0, tzinfo=kst)))
+
     def test_ma_support_notifications_are_admin_only_and_pref_gated(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
         original_load_recipients = self.notifications.load_recipients
@@ -697,6 +705,59 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("admin@example.com", sent_messages[0][0])
         self.assertIn("HIT", sent_messages[0][1])
         self.assertIn("이평선 반등/돌파 후보", sent_messages[0][2])
+
+    def test_ma_support_notifications_send_once_per_recipient_per_kst_day(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        original_load_recipients = self.notifications.load_recipients
+        original_load_watchlists = self.notifications.load_watchlists
+        original_stock_rows_by_ticker = self.notifications.stock_rows_by_ticker
+        original_ma_support_signal = self.notifications.ma_support_signal
+        original_send_notification = self.notifications.send_notification
+        original_state_path = self.notifications.NOTIFICATION_STATE
+        original_window = self.notifications.is_morning_ma_scan_window
+
+        with TemporaryDirectory() as temp_dir:
+            current = Path(temp_dir) / "stocks.json"
+            current.write_text(json.dumps({"rows": []}), encoding="utf-8")
+            self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
+            self.notifications.load_recipients = lambda: [
+                self.notifications.Recipient(
+                    owner_id="admin-1",
+                    email="admin@example.com",
+                    is_admin=True,
+                    preferences={"maSupportEmail": True},
+                ),
+            ]
+            self.notifications.load_watchlists = lambda: {"": {"HIT"}, "admin-1": {"PERSONAL"}}
+            self.notifications.stock_rows_by_ticker = lambda path: {
+                "HIT": {"ticker": "HIT", "name": "Hit Corp", "market": "US"},
+                "PERSONAL": {"ticker": "PERSONAL", "name": "Personal Corp", "market": "US"},
+            }
+            self.notifications.ma_support_signal = lambda ticker, stock=None: {
+                "ticker": str(ticker).upper(),
+                "name": str((stock or {}).get("name") or ticker),
+                "market": "US",
+                "date": "2026-06-29",
+                "signals": [{"period": 20, "signal": "20일선 지지 반등", "ma": 100.0, "price": 101.0, "open": 100.5, "low": 99.8, "distancePercent": 1.0}],
+            }
+            self.notifications.is_morning_ma_scan_window = lambda: True
+            self.notifications.send_notification = lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
+
+            try:
+                first_sent_count = self.notifications.send_ma_support_notifications(current)
+                second_sent_count = self.notifications.send_ma_support_notifications(current)
+            finally:
+                self.notifications.load_recipients = original_load_recipients
+                self.notifications.load_watchlists = original_load_watchlists
+                self.notifications.stock_rows_by_ticker = original_stock_rows_by_ticker
+                self.notifications.ma_support_signal = original_ma_support_signal
+                self.notifications.send_notification = original_send_notification
+                self.notifications.NOTIFICATION_STATE = original_state_path
+                self.notifications.is_morning_ma_scan_window = original_window
+
+        self.assertEqual(1, first_sent_count)
+        self.assertEqual(0, second_sent_count)
+        self.assertEqual(1, len(sent_messages))
 
     def test_opinion_changes_marks_sell_to_buy_without_open_slot_as_new_entry(self) -> None:
         with TemporaryDirectory() as temp_dir:

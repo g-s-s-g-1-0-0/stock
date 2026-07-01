@@ -2355,7 +2355,13 @@ def is_morning_ma_scan_window(now: datetime | None = None) -> bool:
     current = now or datetime.now().astimezone()
     kst_now = current.astimezone(KST)
     minutes = kst_now.hour * 60 + kst_now.minute
-    return kst_now.weekday() < 5 and (9 * 60 + 25) <= minutes <= (10 * 60 + 30)
+    return kst_now.weekday() < 5 and (8 * 60) <= minutes < (9 * 60)
+
+
+def ma_support_daily_send_key(recipient: Recipient, now: datetime | None = None) -> str:
+    current = now or datetime.now().astimezone()
+    kst_date = current.astimezone(KST).date().isoformat()
+    return f"{recipient.owner_id}:{kst_date}"
 
 
 def is_latest_row_fresh_for_morning_scan(row: dict[str, Any], market: str, now: datetime | None = None) -> bool:
@@ -2527,12 +2533,18 @@ def send_ma_support_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> int
     state = read_json(NOTIFICATION_STATE)
     if not isinstance(state, dict):
         state = {}
-    sent_keys = set(state.get("maSupportSignals", {}).get("sentKeys", [])) if isinstance(state.get("maSupportSignals"), dict) else set()
+    ma_support_state = state.get("maSupportSignals") if isinstance(state.get("maSupportSignals"), dict) else {}
+    sent_keys = set(ma_support_state.get("sentKeys", [])) if isinstance(ma_support_state, dict) else set()
+    sent_daily_keys = set(ma_support_state.get("sentDailyKeys", [])) if isinstance(ma_support_state, dict) else set()
 
     signal_cache: dict[str, dict[str, Any] | None] = {}
     sent = 0
     newly_sent_keys: set[str] = set()
+    newly_sent_daily_keys: set[str] = set()
     for recipient in recipients:
+        daily_key = ma_support_daily_send_key(recipient)
+        if daily_key in sent_daily_keys:
+            continue
         tickers = watchlist_tickers_for_recipient(recipient, watchlists, admin_uses_operator=True)
         if not tickers:
             continue
@@ -2559,11 +2571,14 @@ def send_ma_support_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> int
         subject = "[이평선 반등/돌파 후보] " + ", ".join(candidate["ticker"] for candidate in candidates[:8])
         send_notification(recipient, subject, append_notification_footer(ma_support_email_body(candidates), recipient, "maSupportEmail"))
         sent += 1
+        newly_sent_daily_keys.add(daily_key)
 
-    if newly_sent_keys:
+    if newly_sent_keys or newly_sent_daily_keys:
         recent_keys = sorted((sent_keys | newly_sent_keys))[-500:]
+        recent_daily_keys = sorted((sent_daily_keys | newly_sent_daily_keys))[-500:]
         state["maSupportSignals"] = {
             "sentKeys": recent_keys,
+            "sentDailyKeys": recent_daily_keys,
             "updatedAt": datetime.now().astimezone().isoformat(),
         }
         write_json(NOTIFICATION_STATE, state)
