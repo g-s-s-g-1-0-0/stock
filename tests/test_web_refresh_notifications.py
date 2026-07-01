@@ -618,6 +618,8 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("005930", signal["ticker"])
         self.assertEqual("2026-06-30", signal["date"])
         self.assertTrue(any(item["period"] == 20 for item in signal["signals"]))
+        self.assertEqual("support", signal["signals"][0]["signalType"])
+        self.assertEqual("상승 중 이평선 지지", signal["signals"][0]["contextLabel"])
 
     def test_ma_support_signal_skips_stale_us_holiday_data(self) -> None:
         original_fetch_ohlcv = self.notifications.fetch_ohlcv
@@ -655,13 +657,26 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                     "name": "Hit Corp",
                     "market": "US",
                     "date": "2026-06-29",
-                    "signals": [{"period": 20, "signal": "20일선 지지 반등", "ma": 100.0, "price": 101.0, "open": 100.5, "low": 99.8, "distancePercent": 1.0}],
+                    "signals": [{
+                        "period": 20,
+                        "signal": "20일선 지지 반등",
+                        "signalType": "support",
+                        "contextLabel": "하락/보합 중 지지",
+                        "contextNote": "당일 약세에도 저가가 이평선을 지키고 종가가 위에서 마감",
+                        "ma": 100.0,
+                        "price": 101.0,
+                        "open": 100.5,
+                        "low": 99.8,
+                        "dayReturnPercent": -0.4,
+                        "distancePercent": 1.0,
+                    }],
                 },
             ],
             {
                 "premiumPercent": 7.5,
                 "buyBlockMax": 9.0,
                 "regimeLabel": "비회복장/고점 횡보장",
+                "dailyReturnPercent": -0.8,
             },
         )
 
@@ -669,6 +684,13 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("+7.50%", body)
         self.assertIn("-3.00% ~ +9.00%", body)
         self.assertIn("상단까지 1.50%p", body)
+        self.assertIn("QQQ 전일 대비", body)
+        self.assertIn("-0.80%", body)
+        self.assertIn("하락일", body)
+        self.assertIn("흐름", body)
+        self.assertIn("하락/보합 중 지지", body)
+        self.assertIn("당일 -0.40%", body)
+        self.assertIn("저가가 이평선을 지키고", body)
         self.assertNotIn("전략 매수 신호에는 반영하지 않고", body)
         self.assertNotIn("나스닥 필터, RSI, 거래량", body)
 

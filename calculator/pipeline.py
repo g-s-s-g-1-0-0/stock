@@ -470,10 +470,14 @@ def qqq_market_state_snapshot() -> dict[str, Any]:
     weekly_rsi = fetch_weekly_rsi("QQQ")
     recent_min_dist = qqq_recent_ma200_min_distance(qqq_rows)
     state = build_qqq_market_state(qqq, recent_min_dist=recent_min_dist, weekly_rsi=weekly_rsi)
+    daily_return = None
+    if qqq.get("closeD1"):
+        daily_return = (float(qqq["close"]) / float(qqq["closeD1"]) - 1) * 100
     state.update({
         "ma20": qqq.get("ma20"),
         "ma60": qqq.get("ma60"),
         "ma144": qqq.get("ma144"),
+        "dailyReturnPercent": daily_return,
     })
     return state
 

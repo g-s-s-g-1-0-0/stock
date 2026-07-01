@@ -2404,14 +2404,31 @@ def ma_signal_for_period(rows: list[dict[str, Any]], period: int) -> dict[str, A
     breakout = (previous_close <= previous_ma or open_ < ma) and close > ma * 1.002
     if not support and not breakout:
         return None
+    day_return_percent = (close / previous_close - 1) * 100 if previous_close > 0 else None
+    signal_type = "support" if support else "breakout"
+    if signal_type == "support":
+        if day_return_percent is not None and day_return_percent <= 0:
+            context_label = "하락/보합 중 지지"
+            context_note = "당일 약세에도 저가가 이평선을 지키고 종가가 위에서 마감"
+        else:
+            context_label = "상승 중 이평선 지지"
+            context_note = "상승 중 저가가 이평선 근처를 확인하고 종가가 위에서 마감"
+    else:
+        context_label = "이평선 돌파"
+        context_note = "전일 종가 또는 시초가가 이평선 아래였다가 종가가 위로 회복"
 
     return {
         "period": period,
         "signal": f"{period}일선 지지 반등" if support else f"{period}일선 돌파",
+        "signalType": signal_type,
+        "contextLabel": context_label,
+        "contextNote": context_note,
         "ma": ma,
         "price": close,
+        "previousPrice": previous_close,
         "open": open_,
         "low": low,
+        "dayReturnPercent": day_return_percent,
         "distancePercent": (close / ma - 1) * 100,
     }
 
@@ -2480,6 +2497,17 @@ def ma_support_qqq_status(market_state: dict[str, Any] | None = None) -> str:
     else:
         remaining = f"상단까지 {upper_limit - current_dist:.2f}%p, 하단까지 {current_dist - lower_limit:.2f}%p"
         status = "기준 범위 내"
+    try:
+        qqq_daily_return = float(state.get("dailyReturnPercent"))
+    except (TypeError, ValueError):
+        qqq_daily_return = None
+    qqq_day_html = ""
+    if qqq_daily_return is not None and qqq_daily_return == qqq_daily_return:
+        qqq_day_label = "하락일" if qqq_daily_return < 0 else "상승일" if qqq_daily_return > 0 else "보합일"
+        qqq_day_html = (
+            f"<br>QQQ 전일 대비: {fmt_signed(qqq_daily_return, '%')} "
+            f"({html.escape(qqq_day_label)})"
+        )
 
     return (
         '<div style="margin:0 0 14px 0;padding:12px;border:1px solid #eee;border-radius:8px;background:#fafafa;">'
@@ -2488,6 +2516,7 @@ def ma_support_qqq_status(market_state: dict[str, Any] | None = None) -> str:
         f"허용 범위: {fmt_signed(lower_limit, '%')} ~ {fmt_signed(upper_limit, '%')} "
         f"· {html.escape(regime)}<br>"
         f"여유: {html.escape(remaining)}"
+        f"{qqq_day_html}"
         "</div>"
     )
 
@@ -2500,6 +2529,19 @@ def ma_support_email_body(candidates: list[dict[str, Any]], market_state: dict[s
         market = str(candidate.get("market") or "")
         label = display_stock(candidate, candidate["ticker"])
         signal = candidate["signals"][0]
+        context_label = str(signal.get("contextLabel") or ("이평선 지지형" if "지지" in str(signal.get("signal") or "") else "이평선 돌파형"))
+        context_note = str(signal.get("contextNote") or "")
+        day_return = signal.get("dayReturnPercent")
+        context_note_html = (
+            f'<br><span style="color:#888;font-size:12px;">{html.escape(context_note)}</span>'
+            if context_note
+            else ""
+        )
+        context_html = (
+            f"<strong>{html.escape(context_label)}</strong>"
+            f"<br><span style=\"color:#666;font-size:12px;\">당일 {fmt_signed(day_return, '%')}</span>"
+            f"{context_note_html}"
+        )
         extra_signals = ""
         if len(candidate["signals"]) > 1:
             extra_signals = "<br>" + "<br>".join(
@@ -2510,6 +2552,7 @@ def ma_support_email_body(candidates: list[dict[str, Any]], market_state: dict[s
             "<tr>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;\"><strong>{html.escape(label)}</strong><br><span style=\"color:#888;\">{html.escape(str(candidate['date']))} · {html.escape(market)}</span></td>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;\">{html.escape(str(signal['signal']))}{extra_signals}</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;\">{context_html}</td>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_candidate_price(signal['price'], market))}</td>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_candidate_price(signal['low'], market))}</td>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_candidate_price(signal['ma'], market))}</td>"
@@ -2525,6 +2568,7 @@ def ma_support_email_body(candidates: list[dict[str, Any]], market_state: dict[s
           <tr style="background:#f6f6f6;">
             <th style="padding:8px;text-align:left;">종목</th>
             <th style="padding:8px;text-align:left;">신호</th>
+            <th style="padding:8px;text-align:left;">흐름</th>
             <th style="padding:8px;text-align:right;">현재가</th>
             <th style="padding:8px;text-align:right;">저가</th>
             <th style="padding:8px;text-align:right;">기준 이평선</th>
