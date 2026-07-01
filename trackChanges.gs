@@ -2256,6 +2256,11 @@ const Utils = {
 
   recordBuySignal(stockName, buyDate, buyPrice, strategyLabel) {
     console.log(`[로깅 시도] 매수: ${stockName} / 가격: ${buyPrice} / 전략: ${strategyLabel} / 날짜: ${buyDate}`);
+    const parsedPrice = Utils.parseTradingLogPriceInput(buyPrice);
+    if (!(parsedPrice > 0)) {
+      console.log(`[로깅 실패] ${stockName}: 유효한 매수가 없음 (${buyPrice}) — 불완전 로그 생성을 건너뜀`);
+      return;
+    }
     const logSheet = Utils.getTradingLogSheet();
     if (!logSheet) {
       console.log(`[로깅 실패] ${stockName}: 트레이딩로그 시트 접근 불가 — I1 셀의 스프레드시트 ID를 확인하세요`);
@@ -2263,12 +2268,13 @@ const Utils = {
     }
     try {
       const row = Utils.getNextTradingLogRow(logSheet);
+      const logPrice = Utils.getTradingLogPriceValue(parsedPrice, stockName);
       console.log(`[로깅 대상 행] ${stockName}: ${row}행`);
-      logSheet.getRange(row, 1, 1, 6).setValues([[stockName, buyDate, "", "", "", strategyLabel]]);
-      Utils.setTradingLogPriceCell(logSheet.getRange(row, 3), stockName, buyPrice);
+      logSheet.getRange(row, 1, 1, 6).setValues([[stockName, buyDate, logPrice, "", "", strategyLabel]]);
+      logSheet.getRange(row, 3).setNumberFormat(Utils.getTradingLogPriceFormat(stockName));
       SpreadsheetApp.flush();
       Utils._nextTradingLogRowCache = row + 1;
-      console.log(`[로깅 완료] 매수: ${stockName} ${Utils.fmtPrice(buyPrice, stockName)} (${strategyLabel}) → ${row}행`);
+      console.log(`[로깅 완료] 매수: ${stockName} ${Utils.fmtPrice(parsedPrice, stockName)} (${strategyLabel}) → ${row}행`);
     } catch (e) {
       console.log(`[로깅 실패] ${stockName}: ${e.message || e}`);
     }
