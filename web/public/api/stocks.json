@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-07-03T13:50:55+00:00",
-    "lastSuccessfulRun": "2026-07-03T13:50:55+00:00",
+    "updatedAt": "2026-07-03T14:56:35+00:00",
+    "lastSuccessfulRun": "2026-07-03T14:56:35+00:00",
     "failedReason": null
   },
   "rows": [
@@ -128,6 +128,7 @@
       "currentPrice": "₩392,500",
       "valuation": "고평가",
       "opinion": "관망",
+      "opinionReason": "-",
       "marketEvent": "당분간 없음",
       "strategies": [],
       "category": "성장주",
@@ -271,6 +272,7 @@
       "currentPrice": "$19.95",
       "valuation": "판단 불가",
       "opinion": "관망",
+      "opinionReason": "-",
       "marketEvent": "당분간 없음",
       "strategies": [],
       "category": "성장주",
