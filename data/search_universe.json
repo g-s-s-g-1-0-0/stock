@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15145,
-    "industryEnrichedAt": "2026-06-30T16:31:06+00:00",
+    "industryEnrichedAt": "2026-07-03T15:45:38+00:00",
     "industryEnrichedTickers": 1
   },
   "rows": [
@@ -89572,7 +89572,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "산업재, 장비·제조, 자동화",
-      "rawIndustry": "-",
+      "rawIndustry": "Industrials | Engineering &amp; Construction",
       "products": "-",
       "updatedAt": "2026-06-30T11:05:22+00:00"
     },

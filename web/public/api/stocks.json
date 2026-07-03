@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-07-03T15:00:54+00:00",
-    "lastSuccessfulRun": "2026-07-03T15:00:54+00:00",
+    "updatedAt": "2026-07-03T15:46:41+00:00",
+    "lastSuccessfulRun": "2026-07-03T15:46:41+00:00",
     "failedReason": null
   },
   "rows": [
@@ -614,6 +614,22 @@
       "category": "성장주",
       "industry": "AI 인프라, 데이터센터 전력·냉각, 액침냉각, UPS",
       "updatedAt": "2026-07-03T15:00:50+00:00"
+    },
+    {
+      "ticker": "DY",
+      "name": "Dycom Industries",
+      "market": "US",
+      "fairPrice": "$157.65 ~ $262.75",
+      "fairPriceReason": null,
+      "currentPrice": "-",
+      "valuation": "보통",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "혼합주",
+      "industry": "산업재, 장비·제조, 자동화",
+      "updatedAt": "2026-07-03T15:46:41+00:00"
     },
     {
       "ticker": "MP",
