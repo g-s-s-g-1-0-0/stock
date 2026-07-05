@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15166,
-    "industryEnrichedAt": "2026-07-05T15:01:19+00:00",
-    "industryEnrichedTickers": 20
+    "industryEnrichedAt": "2026-07-05T23:00:52+00:00",
+    "industryEnrichedTickers": 11
   },
   "rows": [
     {
@@ -151792,7 +151792,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체, 메모리, DRAM, NAND, HBM",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Semiconductors",
       "products": "-",
       "updatedAt": "2026-07-05T15:01:09+00:00"
     },
@@ -153952,7 +153952,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, AI 클라우드, GPU 클러스터, 데이터센터",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Software - Infrastructure",
       "products": "-",
       "updatedAt": "2026-07-05T15:01:09+00:00"
     },
@@ -169912,7 +169912,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 위성 지구관측 데이터, 위성 이미지",
-      "rawIndustry": "-",
+      "rawIndustry": "Industrials | Aerospace &amp; Defense",
       "products": "-",
       "updatedAt": "2026-07-05T15:01:09+00:00"
     },
@@ -181627,7 +181627,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 소형 발사체, 위성 배포",
-      "rawIndustry": "-",
+      "rawIndustry": "Industrials | Aerospace &amp; Defense",
       "products": "-",
       "updatedAt": "2026-07-05T15:01:09+00:00"
     },
@@ -189142,7 +189142,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "리튬, 2차전지 원자재, EV 배터리 소재",
-      "rawIndustry": "-",
+      "rawIndustry": "Basic Materials | Other Industrial Metals &amp; Mining",
       "products": "-",
       "updatedAt": "2026-07-05T15:01:09+00:00"
     },
@@ -192937,7 +192937,7 @@
       "strategies": [],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Computer Hardware",
       "products": "-",
       "updatedAt": "2026-07-05T15:01:09+00:00"
     },
@@ -194077,7 +194077,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 레버리지 ETF",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial | Exchange Traded Fund",
       "products": "-",
       "updatedAt": "2026-07-05T15:01:09+00:00"
     },
@@ -198007,7 +198007,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Computer Hardware",
       "products": "-",
       "updatedAt": "2026-07-05T15:01:09+00:00"
     },
@@ -201517,7 +201517,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "에너지, 태양광 모듈·배터리 저장, AI 데이터센터 전력",
-      "rawIndustry": "-",
+      "rawIndustry": "Industrials | Electrical Equipment &amp; Parts",
       "products": "-",
       "updatedAt": "2026-07-05T15:01:09+00:00"
     },
@@ -216412,7 +216412,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 데이터센터 전력·냉각, 액침냉각, UPS",
-      "rawIndustry": "-",
+      "rawIndustry": "Industrials | Electrical Equipment &amp; Parts",
       "products": "-",
       "updatedAt": "2026-07-05T15:01:09+00:00"
     },
@@ -221137,7 +221137,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial | Capital Markets",
       "products": "-",
       "updatedAt": "2026-07-05T15:01:09+00:00"
     },
