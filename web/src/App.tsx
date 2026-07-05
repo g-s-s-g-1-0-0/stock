@@ -5745,7 +5745,11 @@ function App() {
     session = userSession,
     watchlistByTypeOverride?: Record<InvestmentType, string[]>,
   ): Promise<WatchlistPersistResult> {
-    const nextWatchlistByType = watchlistByTypeOverride ?? watchlistByTypeFromCanonical(tickers)
+    const nextWatchlistByType = watchlistByTypeOverride ?? watchlistByTypeWithActive(
+      scope === 'operator' ? operatorWatchlistByType : personalWatchlistByType,
+      displayedInvestmentType,
+      tickers,
+    )
 
     if (scope === 'operator') {
       storePendingOperatorWatchlist(tickers, operatorWatchlistRemoteUpdatedAtRef.current)
@@ -6863,29 +6867,6 @@ function App() {
     })
     // 활성 유형은 아래 동기화 effect가 watchlist 기준으로 곧바로 채운다.
   }, [userSession?.id])
-
-  // 활성 화면 목록(watchlist)이 바뀌면 유형별 보관소의 '활성 유형'만 동기화한다.
-  // 비활성 유형 목록은 그대로 보존해 가치투자/스윙투자가 서로 독립된 관심종목을 유지하게 한다.
-  useEffect(() => {
-    if (userSession && !personalWatchlistByTypeLoadedRef.current) return
-    setPersonalWatchlistByType((prev) => {
-      if (sameWatchlistTickers(prev[displayedInvestmentType], watchlist)) return prev
-      const next = watchlistByTypeWithActive(prev, displayedInvestmentType, watchlist)
-      storePersonalWatchlistByType(userSession, next)
-      return next
-    })
-  }, [watchlist, userSession?.id, displayedInvestmentType])
-
-  // 운영자 관심종목도 현재 보고 있는 투자 유형의 목록만 갱신한다.
-  useEffect(() => {
-    if (!isOperatorDataMode) return
-    setOperatorWatchlistByType((prev) => {
-      if (sameWatchlistTickers(prev[displayedInvestmentType], effectiveOperatorWatchlist)) return prev
-      const next = watchlistByTypeWithActive(prev, displayedInvestmentType, effectiveOperatorWatchlist)
-      storeOperatorWatchlistByType(next)
-      return next
-    })
-  }, [displayedInvestmentType, effectiveOperatorWatchlist, isOperatorDataMode])
 
   // 어드민이 유형별 운영자 관심종목을 변경하면 DB에 반영해 일반 계정이 성향별로 가져올 수 있게 한다.
   // DB에서 한 번 복원(operatorWatchlistByTypeLoadedRef)한 뒤에만 저장해 초기 로드 시 빈 값으로 덮어쓰지 않는다.
