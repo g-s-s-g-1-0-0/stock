@@ -623,6 +623,39 @@ function watchlistByTypeWithActive(
   }
 }
 
+function shouldKeepLocalInactiveWatchlist(
+  remoteByType: Partial<Record<InvestmentType, string[]>> | null | undefined,
+  localTickers: string[] | undefined,
+  remoteFlatTickers: string[] | null,
+) {
+  if (!remoteByType || !localTickers || localTickers.length === 0) return false
+  const flatTickers = remoteFlatTickers ?? []
+  return (
+    sameWatchlistTickers(remoteByType.long_term, flatTickers)
+    && sameWatchlistTickers(remoteByType.swing, flatTickers)
+  )
+}
+
+function resolvedStoredWatchlistForType(
+  remoteByType: Partial<Record<InvestmentType, string[]>> | null | undefined,
+  localByType: Partial<Record<InvestmentType, string[]>> | null | undefined,
+  investmentType: InvestmentType,
+  activeType: InvestmentType,
+  remoteFlatTickers: string[] | null,
+) {
+  const remoteTickers = remoteByType?.[investmentType]
+  const localTickers = localByType?.[investmentType]
+  if (
+    investmentType !== activeType
+    && remoteTickers
+    && !sameWatchlistTickers(remoteTickers, localTickers)
+    && shouldKeepLocalInactiveWatchlist(remoteByType, localTickers, remoteFlatTickers)
+  ) {
+    return localTickers ?? []
+  }
+  return remoteTickers ?? localTickers ?? []
+}
+
 const APP_DATA_CACHE_STORAGE_KEY = 'gssg-app-data-cache-v1'
 const APP_DATA_AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000
 const PENDING_WATCHLIST_MAX_AGE_MS = 24 * 60 * 60 * 1000
@@ -6010,10 +6043,10 @@ function App() {
         const nextPersonalByType: Record<InvestmentType, string[]> = {
           long_term: activeType === 'long_term'
             ? resolvedActivePersonalTickers
-            : (personalByTypeFromDb?.long_term ?? localByType?.long_term ?? []),
+            : resolvedStoredWatchlistForType(personalByTypeFromDb, localByType, 'long_term', activeType, remotePersonalTickers),
           swing: activeType === 'swing'
             ? resolvedActivePersonalTickers
-            : (personalByTypeFromDb?.swing ?? localByType?.swing ?? []),
+            : resolvedStoredWatchlistForType(personalByTypeFromDb, localByType, 'swing', activeType, remotePersonalTickers),
         }
         setPersonalWatchlistByType(nextPersonalByType)
         storePersonalWatchlistByType(session, nextPersonalByType)
