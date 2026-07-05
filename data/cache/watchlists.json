@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-07-05T13:30:46Z",
+    "updatedAt": "2026-07-05T13:50:30Z",
     "rowCount": 2
   },
   "rows": [
@@ -91,51 +91,20 @@
           "079550"
         ],
         "long_term": [
-          "000150",
           "000660",
-          "005380",
-          "005930",
-          "009150",
-          "011070",
-          "039030",
-          "042700",
-          "277810",
-          "278470",
-          "AEHR",
-          "AMD",
-          "ASTS",
-          "ASX",
           "BE",
-          "CIFR",
           "CRDO",
-          "HOOG",
-          "INTC",
-          "IONQ",
-          "IREN",
-          "LITE",
-          "LPTH",
-          "MU",
           "NBIS",
           "PL",
-          "RKLB",
-          "SGML",
           "SNDK",
-          "SOXL",
-          "STX",
-          "TE",
-          "COHR",
-          "GLW",
-          "ALAB",
-          "VRT",
-          "DY",
-          "079550"
+          "ALAB"
         ]
       },
       "watchlistSort": {
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-05T13:30:17.385612+00:00"
+      "remoteUpdatedAt": "2026-07-05T13:36:45.67469+00:00"
     },
     {
       "id": "026d7675-fa4f-44d9-8792-88cb35fe276a",
@@ -150,7 +119,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-05T13:29:08.376678+00:00"
+      "remoteUpdatedAt": "2026-07-05T13:36:45.679809+00:00"
     }
   ]
 }
