@@ -623,36 +623,13 @@ function watchlistByTypeWithActive(
   }
 }
 
-function shouldKeepLocalInactiveWatchlist(
-  remoteByType: Partial<Record<InvestmentType, string[]>> | null | undefined,
-  localTickers: string[] | undefined,
-  remoteFlatTickers: string[] | null,
-) {
-  if (!remoteByType || !localTickers || localTickers.length === 0) return false
-  const flatTickers = remoteFlatTickers ?? []
-  return (
-    sameWatchlistTickers(remoteByType.long_term, flatTickers)
-    && sameWatchlistTickers(remoteByType.swing, flatTickers)
-  )
-}
-
 function resolvedStoredWatchlistForType(
   remoteByType: Partial<Record<InvestmentType, string[]>> | null | undefined,
   localByType: Partial<Record<InvestmentType, string[]>> | null | undefined,
   investmentType: InvestmentType,
-  activeType: InvestmentType,
-  remoteFlatTickers: string[] | null,
 ) {
   const remoteTickers = remoteByType?.[investmentType]
   const localTickers = localByType?.[investmentType]
-  if (
-    investmentType !== activeType
-    && remoteTickers
-    && !sameWatchlistTickers(remoteTickers, localTickers)
-    && shouldKeepLocalInactiveWatchlist(remoteByType, localTickers, remoteFlatTickers)
-  ) {
-    return localTickers ?? []
-  }
   return remoteTickers ?? localTickers ?? []
 }
 
@@ -6010,10 +5987,10 @@ function App() {
         ? {
             long_term: activeType === 'long_term'
               ? resolvedActiveOperatorTickers
-              : resolvedStoredWatchlistForType(operatorByTypeFromDb, localOperatorByType, 'long_term', activeType, remoteOperatorTickers),
+              : resolvedStoredWatchlistForType(operatorByTypeFromDb, localOperatorByType, 'long_term'),
             swing: activeType === 'swing'
               ? resolvedActiveOperatorTickers
-              : resolvedStoredWatchlistForType(operatorByTypeFromDb, localOperatorByType, 'swing', activeType, remoteOperatorTickers),
+              : resolvedStoredWatchlistForType(operatorByTypeFromDb, localOperatorByType, 'swing'),
           }
         : watchlistByTypeFromCanonical(resolvedActiveOperatorTickers)
       setOperatorWatchlist(resolvedActiveOperatorTickers)
@@ -6059,10 +6036,10 @@ function App() {
         const nextPersonalByType: Record<InvestmentType, string[]> = {
           long_term: activeType === 'long_term'
             ? resolvedActivePersonalTickers
-            : resolvedStoredWatchlistForType(personalByTypeFromDb, localByType, 'long_term', activeType, remotePersonalTickers),
+            : resolvedStoredWatchlistForType(personalByTypeFromDb, localByType, 'long_term'),
           swing: activeType === 'swing'
             ? resolvedActivePersonalTickers
-            : resolvedStoredWatchlistForType(personalByTypeFromDb, localByType, 'swing', activeType, remotePersonalTickers),
+            : resolvedStoredWatchlistForType(personalByTypeFromDb, localByType, 'swing'),
         }
         setPersonalWatchlistByType(nextPersonalByType)
         storePersonalWatchlistByType(session, nextPersonalByType)
