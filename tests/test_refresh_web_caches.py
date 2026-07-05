@@ -26,8 +26,53 @@ class RefreshWebCachesTest(unittest.TestCase):
         finally:
             self.refresh.supabase_request = original_supabase_request
 
+    def test_refresh_tickers_writes_watchlist_snapshot(self) -> None:
+        original_supabase_request = self.refresh.supabase_request
+        original_watchlist_cache_path = self.refresh.WATCHLIST_CACHE_PATH
+        original_trade_log_paths = self.refresh.TRADE_LOG_PATHS
+        original_refresh_tickers = os.environ.get("REFRESH_TICKERS")
+
+        try:
+            with TemporaryDirectory() as temp_dir:
+                snapshot_path = Path(temp_dir) / "watchlists.json"
+                self.refresh.WATCHLIST_CACHE_PATH = snapshot_path
+                self.refresh.TRADE_LOG_PATHS = []
+                os.environ["REFRESH_TICKERS"] = ""
+                self.refresh.supabase_request = lambda path: [{
+                    "id": "operator-row",
+                    "scope": "operator",
+                    "owner_id": None,
+                    "tickers": [],
+                    "tickers_by_type": {
+                        "long_term": ["MSFT"],
+                        "swing": ["NVDA"],
+                    },
+                    "watchlist_sort": {"primary": "registered"},
+                    "updated_at": "2026-07-05T13:21:38+00:00",
+                }]
+
+                self.assertEqual(["MSFT", "NVDA"], self.refresh.refresh_tickers())
+
+                payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+                self.assertEqual("watchlists", payload["meta"]["kind"])
+                self.assertEqual(1, payload["meta"]["rowCount"])
+                self.assertEqual({
+                    "long_term": ["MSFT"],
+                    "swing": ["NVDA"],
+                }, payload["rows"][0]["tickersByType"])
+        finally:
+            self.refresh.supabase_request = original_supabase_request
+            self.refresh.WATCHLIST_CACHE_PATH = original_watchlist_cache_path
+            self.refresh.TRADE_LOG_PATHS = original_trade_log_paths
+            if original_refresh_tickers is None:
+                os.environ.pop("REFRESH_TICKERS", None)
+            else:
+                os.environ["REFRESH_TICKERS"] = original_refresh_tickers
+
     def test_refresh_tickers_includes_trade_log_tickers(self) -> None:
         original_load_watchlist_tickers = self.refresh.load_watchlist_tickers
+        original_load_watchlist_rows = self.refresh.load_watchlist_rows
+        original_write_watchlist_snapshot = self.refresh.write_watchlist_snapshot
         original_trade_log_paths = self.refresh.TRADE_LOG_PATHS
         original_refresh_tickers = os.environ.get("REFRESH_TICKERS")
 
@@ -44,12 +89,16 @@ class RefreshWebCachesTest(unittest.TestCase):
                     encoding="utf-8",
                 )
                 self.refresh.load_watchlist_tickers = lambda: ["AAPL"]
+                self.refresh.load_watchlist_rows = lambda: [{"tickers": ["AAPL"]}]
+                self.refresh.write_watchlist_snapshot = lambda rows: None
                 self.refresh.TRADE_LOG_PATHS = [trade_logs]
                 os.environ["REFRESH_TICKERS"] = "LRCX, aapl"
 
                 self.assertEqual(["AAPL", "LRCX", "MP", "079550"], self.refresh.refresh_tickers())
         finally:
             self.refresh.load_watchlist_tickers = original_load_watchlist_tickers
+            self.refresh.load_watchlist_rows = original_load_watchlist_rows
+            self.refresh.write_watchlist_snapshot = original_write_watchlist_snapshot
             self.refresh.TRADE_LOG_PATHS = original_trade_log_paths
             if original_refresh_tickers is None:
                 os.environ.pop("REFRESH_TICKERS", None)

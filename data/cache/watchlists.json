@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "kind": "watchlists",
+    "updatedAt": "2026-07-05T13:23:29Z",
+    "rowCount": 2
+  },
+  "rows": [
+    {
+      "id": "3e1e0a64-c586-44db-b6ba-a18e8563dfb7",
+      "scope": "operator",
+      "ownerId": null,
+      "tickers": [],
+      "tickersByType": {
+        "swing": [],
+        "long_term": []
+      },
+      "watchlistSort": {
+        "primary": "market_kr_first",
+        "secondary": "registered"
+      },
+      "remoteUpdatedAt": "2026-07-05T13:21:38.318626+00:00"
+    },
+    {
+      "id": "026d7675-fa4f-44d9-8792-88cb35fe276a",
+      "scope": "personal",
+      "ownerId": "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c",
+      "tickers": [],
+      "tickersByType": {
+        "swing": [],
+        "long_term": []
+      },
+      "watchlistSort": {
+        "primary": "registered",
+        "secondary": "registered"
+      },
+      "remoteUpdatedAt": "2026-07-05T13:16:40.817767+00:00"
+    }
+  ]
+}
