@@ -2476,6 +2476,40 @@ def ma_candidate_price(value: Any, market: str) -> str:
     return f"${parsed:,.2f}"
 
 
+def ma_support_stop_ratio(period: int) -> float:
+    return 0.03 if period == 20 else 0.05
+
+
+def ma_support_stop_line(signal: dict[str, Any], market: str) -> str:
+    try:
+        period = int(signal.get("period"))
+        ma = float(signal.get("ma"))
+    except (TypeError, ValueError):
+        return "-"
+    if ma <= 0:
+        return "-"
+    ratio = ma_support_stop_ratio(period)
+    stop_price = ma * (1 - ratio)
+    return f"{ma_candidate_price(stop_price, market)} (기준선 -{ratio * 100:.0f}%)"
+
+
+def ma_support_distance_decision(signal: dict[str, Any]) -> str:
+    try:
+        period = int(signal.get("period"))
+        distance = float(signal.get("distancePercent"))
+    except (TypeError, ValueError):
+        return "판단 불가"
+    if distance != distance:
+        return "판단 불가"
+    ok_limit = 3.0 if period == 20 else 5.0
+    warn_limit = 5.0 if period == 20 else 8.0
+    if distance <= ok_limit:
+        return "진입 가능"
+    if distance <= warn_limit:
+        return "주의"
+    return "보류"
+
+
 def ma_support_qqq_status(market_state: dict[str, Any] | None = None) -> str:
     state = market_state or technical_market_state()
     try:
@@ -2545,9 +2579,12 @@ def ma_support_email_body(candidates: list[dict[str, Any]], market_state: dict[s
         extra_signals = ""
         if len(candidate["signals"]) > 1:
             extra_signals = "<br>" + "<br>".join(
-                f"<span style=\"color:#666;font-size:12px;\">+ {html.escape(str(item['signal']))} ({fmt_signed(item['distancePercent'], '%')})</span>"
+                f"<span style=\"color:#666;font-size:12px;\">+ {html.escape(str(item['signal']))} "
+                f"({fmt_signed(item['distancePercent'], '%')} · {html.escape(ma_support_distance_decision(item))} "
+                f"· 손절 {html.escape(ma_support_stop_line(item, market))})</span>"
                 for item in candidate["signals"][1:]
             )
+        distance_decision = ma_support_distance_decision(signal)
         rows_html.append(
             "<tr>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;\"><strong>{html.escape(label)}</strong><br><span style=\"color:#888;\">{html.escape(str(candidate['date']))} · {html.escape(market)}</span></td>"
@@ -2556,7 +2593,8 @@ def ma_support_email_body(candidates: list[dict[str, Any]], market_state: dict[s
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_candidate_price(signal['price'], market))}</td>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_candidate_price(signal['low'], market))}</td>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_candidate_price(signal['ma'], market))}</td>"
-            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{fmt_signed(signal['distancePercent'], '%')}</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{fmt_signed(signal['distancePercent'], '%')}<br><span style=\"color:#666;font-size:12px;\">{html.escape(distance_decision)}</span></td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_support_stop_line(signal, market))}</td>"
             "</tr>"
         )
     return f"""
@@ -2572,7 +2610,8 @@ def ma_support_email_body(candidates: list[dict[str, Any]], market_state: dict[s
             <th style="padding:8px;text-align:right;">현재가</th>
             <th style="padding:8px;text-align:right;">저가</th>
             <th style="padding:8px;text-align:right;">기준 이평선</th>
-            <th style="padding:8px;text-align:right;">이격</th>
+            <th style="padding:8px;text-align:right;">이격/판단</th>
+            <th style="padding:8px;text-align:right;">손절 라인</th>
           </tr>
         </thead>
         <tbody>{''.join(rows_html)}</tbody>

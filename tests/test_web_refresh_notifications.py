@@ -691,8 +691,23 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("하락/보합 중 지지", body)
         self.assertIn("당일 -0.40%", body)
         self.assertIn("저가가 이평선을 지키고", body)
+        self.assertIn("이격/판단", body)
+        self.assertIn("진입 가능", body)
+        self.assertIn("손절 라인", body)
+        self.assertIn("$97.00 (기준선 -3%)", body)
         self.assertNotIn("전략 매수 신호에는 반영하지 않고", body)
         self.assertNotIn("나스닥 필터, RSI, 거래량", body)
+
+    def test_ma_support_distance_decision_and_stop_line_use_signal_ma(self) -> None:
+        signal_20 = {"period": 20, "ma": 100.0, "distancePercent": 4.0}
+        signal_200 = {"period": 200, "ma": 100.0, "distancePercent": 6.0}
+        signal_far = {"period": 20, "ma": 100.0, "distancePercent": 6.0}
+
+        self.assertEqual("주의", self.notifications.ma_support_distance_decision(signal_20))
+        self.assertEqual("$97.00 (기준선 -3%)", self.notifications.ma_support_stop_line(signal_20, "US"))
+        self.assertEqual("주의", self.notifications.ma_support_distance_decision(signal_200))
+        self.assertEqual("$95.00 (기준선 -5%)", self.notifications.ma_support_stop_line(signal_200, "US"))
+        self.assertEqual("보류", self.notifications.ma_support_distance_decision(signal_far))
 
     def test_ma_support_notifications_are_admin_only_and_pref_gated(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
