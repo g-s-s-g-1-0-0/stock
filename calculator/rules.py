@@ -233,6 +233,7 @@ def evaluate_buy_condition(
 
     rsi_ok = _lt(ind.rsi, float(s["RSI_MAX"]))
     cci_ok = _lt(ind.cci, float(s["CCI_MIN"]))
+    nasdaq_downtrend = ixic_dist is not None and ixic_dist < float(s["NASDAQ_DIST_UPPER"])
     b_cond1 = _lt(ind.current_price, ind.ma200)
     b_cond2 = vix is not None and vix >= vix_threshold
     b_cond3 = rsi_ok or cci_ok
@@ -243,7 +244,7 @@ def evaluate_buy_condition(
         and ind.candle_low is not None
         and ind.candle_low <= ind.lr_trendline * float(s["LR_TOUCH_RATIO"])
     )
-    entry_b = b_cond1 and b_cond2 and b_cond3 and b_cond4 and b_cond5 and nasdaq_below_buy_block
+    entry_b = b_cond1 and b_cond2 and b_cond3 and b_cond4 and b_cond5 and nasdaq_downtrend
 
     bb_pair_ok = ind.bb_width is not None and ind.bb_width_avg60 is not None and ind.bb_width_avg60 > 0
     c_cond1 = _gt(ind.current_price, ind.ma200)
@@ -367,7 +368,7 @@ def evaluate_buy_condition(
                 and _gt(ind.macd_hist, 0)
             )
         elif holding_strategy_type == "B":
-            triggered = b_cond1 and b_cond2 and b_cond3 and b_cond4 and nasdaq_below_buy_block
+            triggered = b_cond1 and b_cond2 and b_cond3 and b_cond4 and b_cond5 and nasdaq_downtrend
         elif holding_strategy_type == "C":
             triggered = (
                 c_cond1
@@ -404,7 +405,7 @@ def evaluate_buy_condition(
         "recoveryException": recovery_exception_used,
         "conditions": {
             "A": [a_cond1, a_cond2, a_cond3, a_cond4, nasdaq_acd_gate],
-            "B": [b_cond1, b_cond2, b_cond3, b_cond4, b_cond5, nasdaq_below_buy_block],
+            "B": [b_cond1, b_cond2, b_cond3, b_cond4, b_cond5, nasdaq_downtrend],
             "C": [c_cond1, c_cond2, c_cond3, c_cond4, c_cond5, c_cond6, nasdaq_acd_gate],
             "D": [d_cond1, d_cond2, d_cond3, d_cond4, d_cond5, d_cond6, nasdaq_acd_gate],
             "E": [e_cond1, e_cond2, e_cond3, nasdaq_bottom],
@@ -553,6 +554,17 @@ def evaluate_exit_condition(
             "reason": f"목표 수익 달성 즉시 매도 {return_signed} [{strat_label}]",
         }
 
+    if (
+        strategy_type == "H"
+        and ind.ma20 is not None
+        and ind.ma20 > 0
+        and ind.current_price <= ind.ma20 * 0.95
+    ):
+        ma20_gap = ind.current_price / ind.ma20 - 1
+        return {
+            "shouldExit": True,
+            "reason": f"20일선 지지 실패 손절 {format_return_pct(ma20_gap)} [20일선 대비 -5%]",
+        }
     if return_pct <= -circuit_pct:
         return {"shouldExit": True, "reason": f"손절 기준 도달 {return_signed} [{stop_label}]"}
     stalled_days = strategy_stalled_exit_days(strategy_type)

@@ -641,6 +641,7 @@ def indicator_from_trade(row: dict[str, Any], trade: dict[str, Any], current_pri
         stock_name=str(trade.get("ticker") or row.get("ticker") or ""),
         current_price=price,
         ma200=parse_price(row.get("200일 이동평균선")),
+        ma20=parse_price(row.get("20일 이동평균선")),
         rsi=parse_price(row.get("RSI (D)")),
         cci=parse_price(row.get("CCI (D)")),
         macd_hist=parse_price(row.get("MACD Histogram (D)")),
@@ -900,6 +901,19 @@ def update_trade_logs(
                 upper_exit_wait_days=upper_wait_days,
             )
             exit_price = daily_sell_price
+        elif live_ind is not None and strategy == "H":
+            buy_price = parse_price(trade.get("buyPrice"))
+            live_price = parse_price(sell_price)
+            if buy_price and live_price is not None and live_price >= buy_price * (1 + target_return_pct(strategy) / 100):
+                exit_result = evaluate_exit_condition(
+                    live_ind,
+                    strategy_type=strategy,
+                    nasdaq_peak_alert=False,
+                    trading_days=trading_days_since(trade.get("buyDate"), today_date),
+                    upper_exit_wait_days=upper_wait_days,
+                )
+            else:
+                exit_result = {"shouldExit": False, "reason": None}
         elif live_ind is not None and strategy not in {"E", "F"}:
             exit_result = evaluate_exit_condition(
                 live_ind,
@@ -1163,7 +1177,7 @@ def tech_value(row: dict[str, Any], *candidates: str) -> Any:
 
 TECHNICAL_GROUP_TITLES = {
     "A": "200일선 상방 & 모멘텀 재가속 (나스닥 ≥-3%)",
-    "B": "200일선 하방 & 공황 저점 (나스닥 필터 미적용)",
+    "B": "200일선 하방 & 공황 저점 (QQQ 하락장)",
     "C": "200일선 상방 & 스퀴즈 거래량 돌파 (나스닥 ≥-3%)",
     "D": "200일선 상방 & 상승 흐름 강화 (나스닥 ≥-3%)",
     "E": "200일선 상방 & 스퀴즈 저점 (히스테리시스+찐바닥 허용)",

@@ -4,6 +4,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from calculator.rules import IndicatorRow, enrich_profit_exit_reason, evaluate_buy_condition, evaluate_exit_condition
+from calculator.market_regime import qqq_regime_label
 
 
 def test_strategy_a_matches_sheet_conditions():
@@ -23,7 +24,25 @@ def test_strategy_a_matches_sheet_conditions():
     assert result["strategyType"] == "A"
 
 
-def test_strategy_b_uses_vix_and_oversold_below_ma200():
+def test_strategy_b_uses_vix_and_oversold_below_ma200_in_downtrend():
+    row = IndicatorRow(
+        stock_name="AAPL",
+        current_price=90,
+        ma200=100,
+        rsi=30,
+        cci=-100,
+        lr_slope=1,
+        lr_trendline=88,
+        candle_low=92,
+    )
+
+    result = evaluate_buy_condition(row, vix=31, ixic_dist=-4, ixic_filter_active=False)
+
+    assert result["triggered"] is True
+    assert result["strategyType"] == "B"
+
+
+def test_strategy_b_does_not_trigger_in_normal_market():
     row = IndicatorRow(
         stock_name="AAPL",
         current_price=90,
@@ -37,8 +56,29 @@ def test_strategy_b_uses_vix_and_oversold_below_ma200():
 
     result = evaluate_buy_condition(row, vix=31, ixic_dist=5, ixic_filter_active=False)
 
-    assert result["triggered"] is True
-    assert result["strategyType"] == "B"
+    assert result["triggered"] is False
+    assert result["strategyType"] is None
+
+
+def test_strategy_h_exits_when_close_loses_ma20_support():
+    row = IndicatorRow(
+        stock_name="TE",
+        current_price=94.9,
+        ma20=100,
+        entry_price=120,
+    )
+
+    result = evaluate_exit_condition(row, strategy_type="H", trading_days=5)
+
+    assert result["shouldExit"] is True
+    assert result["reason"] == "20일선 지지 실패 손절 -5.10% [20일선 대비 -5%]"
+
+
+def test_qqq_regime_label_uses_four_simple_market_states():
+    assert qqq_regime_label(-4, False) == "하락장"
+    assert qqq_regime_label(5, False) == "정상장"
+    assert qqq_regime_label(12, False) == "횡보장 고점"
+    assert qqq_regime_label(12, True) == "회복장"
 
 
 def test_exit_condition_for_non_ef_target_is_immediate():
@@ -189,7 +229,10 @@ def test_enrich_exit_reason_adds_strategy_stop_threshold_to_legacy_reason():
 
 if __name__ == "__main__":
     test_strategy_a_matches_sheet_conditions()
-    test_strategy_b_uses_vix_and_oversold_below_ma200()
+    test_strategy_b_uses_vix_and_oversold_below_ma200_in_downtrend()
+    test_strategy_b_does_not_trigger_in_normal_market()
+    test_strategy_h_exits_when_close_loses_ma20_support()
+    test_qqq_regime_label_uses_four_simple_market_states()
     test_exit_condition_for_non_ef_target_is_immediate()
     test_nasdaq_peak_exit_skips_exempt_strategies()
     test_nasdaq_peak_exit_skips_g_recovery_pullback()

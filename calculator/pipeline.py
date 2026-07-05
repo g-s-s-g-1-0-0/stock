@@ -814,10 +814,11 @@ def latest_technical_row(
         strategy = "-"
         entry_signal_codes = []
     buy_block_label = f"나스닥 상단 차단 아님(≤{float(nasdaq_buy_block_max):.0f}%)" if nasdaq_buy_block_max is not None else "나스닥 상단 차단 아님"
+    b_downtrend_label = f"QQQ 하락장(<{float(STRATEGY_RULES['NASDAQ_DIST_UPPER']):.0f}%)"
     acd_filter_label = "나스닥 강세 필터(회복장 모멘텀 예외)" if buy.get("recoveryException") else "나스닥 강세 필터"
     strategy_labels = {
         "A": ["현재가 > MA200", "MACD 골든크로스", "종가%B > 80", "RSI > 70", acd_filter_label],
-        "B": ["현재가 < MA200", "VIX >= 30", "RSI < 35 또는 CCI < -150", "LR 추세선 상승", "저가 추세선 터치", buy_block_label],
+        "B": ["현재가 < MA200", "VIX >= 30", "RSI < 35 또는 CCI < -150", "LR 추세선 상승", "저가 추세선 터치", b_downtrend_label],
         "C": ["현재가 > MA200", "전일 BB 스퀴즈", "당일 BB 확장", "거래량 폭발", "종가%B > 55", "MACD Hist > 0", acd_filter_label],
         "D": ["현재가 > MA200", "+DI > -DI", "ADX > 30", "ADX 상승", "MACD Hist > 0", "종가%B 30~75", acd_filter_label],
         "E": ["현재가 > MA200", "BB폭 압축", "저가%B <= 50", "나스닥 바닥/정상 필터"],

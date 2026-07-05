@@ -1909,7 +1909,7 @@ function strategyCode(strategy: string) {
 function strategyInfo(strategy: string) {
   const descriptions: Record<string, string> = {
     A: '상승 흐름 중 잠깐 쉬었다가 다시 힘이 붙는 구간입니다. 강한 종목이 다시 오르려는 신호를 봅니다.',
-    B: '장기 평균선 아래에서 많이 빠진 구간입니다. 반등 가능성은 보지만, 실패하면 손절 기준이 중요합니다.',
+    B: '시장도 하락장이고 종목도 장기 평균선 아래에서 많이 빠진 구간입니다. 반등 가능성은 보지만, 실패하면 손절 기준이 중요합니다.',
     C: '한동안 조용하던 가격이 거래량과 함께 움직이기 시작한 구간입니다. 돌파 후 계속 이어지는지 봅니다.',
     D: '장기 평균선 위에서 상승 힘이 더 강해지는 구간입니다. 이미 강한 종목을 따라가는 전략입니다.',
     E: '상승 흐름은 유지되지만 가격이 잠시 눌린 구간입니다. 다시 들어갈 만한 저점 후보로 봅니다.',
@@ -1944,7 +1944,7 @@ function tradeCriteriaInfo(strategy: string) {
   }
 
   if (code === 'H') {
-    return 'H 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -20%에 닿으면 손절 실패이고, 매수 후 30거래일 종가 수익률이 +5% 미만이면 반등 미달로 청산합니다. 40거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
+    return 'H 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. 종가가 20일선보다 -5% 이상 아래로 밀리거나 매수가 대비 -20%에 닿으면 손절 실패이고, 매수 후 30거래일 종가 수익률이 +5% 미만이면 반등 미달로 청산합니다. 40거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
   }
 
   if (['E', 'F'].includes(code)) {
@@ -2100,7 +2100,7 @@ function recommendedSellPriceText(trade: TradeLog) {
 function recommendedSellPriceNote(strategy: string) {
   const code = strategyCode(strategy)
   if (['E', 'F'].includes(code)) return 'E/F는 목표가 도달 후 MACD 둔화 확인 또는 5거래일 대기 만료 시 청산합니다.'
-  if (code === 'H') return 'H 전략 목표 익절가입니다. 단, -20% 손절과 30거래일 +5% 미달 정체청산 기준도 함께 봅니다.'
+  if (code === 'H') return 'H 전략 목표 익절가입니다. 단, 20일선 -5% 지지 실패, -20% 손절, 30거래일 +5% 미달 정체청산 기준도 함께 봅니다.'
   if (code) return `${code} 전략 목표 익절가입니다.`
   return undefined
 }
@@ -3062,7 +3062,7 @@ const notificationOptions: Array<{ key: NotificationPreferenceKey; title: string
   { key: 'opinionChangeEmail', title: '투자의견 변경', description: '관심종목의 매수/관망/매도 신호가 바뀔 때' },
   { key: 'nasdaqPeakEmail', title: '나스닥 고점 과열', description: 'QQQ 과열과 RSI 둔화가 동시에 감지될 때' },
   { key: 'nasdaqWarnEmail', title: '나스닥 과열 청산선 근접 경고', description: 'QQQ 이격도가 과열 청산선 직전까지 올라와 곧 하락이 나올 수 있을 때' },
-  { key: 'regimeShiftEmail', title: '시장 국면 전환', description: '회복장↔비회복장이 바뀌어 매수 차단선·예외 전략이 달라질 때' },
+  { key: 'regimeShiftEmail', title: '시장 국면 전환', description: '하락장·회복장·정상장·횡보장 고점이 바뀌어 매수 차단선·예외 전략이 달라질 때' },
   { key: 'weeklyTrendReport', title: '주간 트렌드 리포트', description: '시장 트렌드와 관심종목 흐름을 주 1회 정리' },
   { key: 'earningsDayBefore', title: '실적발표 전날', description: '관심종목 실적발표 전 리스크 점검' },
 ]
@@ -3360,8 +3360,8 @@ const technicalSummaryTooltips: Record<string, string> = {
   'QQQ 일봉 RSI (14, 당일)': '나스닥 단기 과열 여부를 확인합니다. 높으면 신규 진입을 조심합니다.',
   'QQQ 일봉 RSI (14, 전날)': '전날 RSI와 비교해 단기 매수세가 강해졌는지 약해졌는지 봅니다.',
   'QQQ MACD Histogram (D/D-1/D-2)': 'QQQ의 MACD 히스토그램 3일 흐름입니다. D < D-1 < D-2이면 상승 힘이 2일 연속 둔화된 것으로 봅니다.',
-  'QQQ 60거래일 최저 이격도': '최근 60거래일 동안 QQQ가 200일선 대비 가장 낮았던 위치입니다. -5% 이하 이력이 있으면 급락 후 회복장 후보로 봅니다.',
-  'QQQ 매수 차단 기준': '현재 QQQ 이격도와 비교하는 신규·재진입 차단선입니다. 급락 후 회복장은 +18%, 비회복장은 +9%를 씁니다.',
+  'QQQ 60거래일 최저 이격도': '최근 60거래일 동안 QQQ가 200일선 대비 가장 낮았던 위치입니다. -5% 이하 이력이 있으면 회복장 후보로 봅니다.',
+  'QQQ 매수 차단 기준': '현재 QQQ 이격도와 비교하는 신규·재진입 차단선입니다. 회복장은 +18%, 정상장은 +9%를 씁니다. 횡보장 고점에서는 신규 진입을 보수적으로 봅니다.',
   '나스닥 (QQQ, 당일)': '기술주 대표 지수의 현재 위치를 봅니다. 개별 종목 신호의 시장 배경입니다.',
   '나스닥 (QQQ, 20일 이동평균선)': '단기 평균선입니다. QQQ가 이 선 위면 단기 흐름이 비교적 양호합니다.',
   '나스닥 (QQQ, 60일 이동평균선)': '중기 평균선입니다. 시장의 중기 추세가 꺾이는지 확인합니다.',

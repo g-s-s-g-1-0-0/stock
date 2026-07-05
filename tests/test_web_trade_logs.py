@@ -236,6 +236,96 @@ def test_live_h_strategy_target_exit_runs_when_daily_price_date_is_unchanged(mon
     assert technical["TE"]["opinion"] == "매도"
 
 
+def test_live_h_strategy_stop_is_ignored_until_fresh_daily_close(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "slotId": "TE_H_20260624_1",
+                "ticker": "TE",
+                "name": "TE Connectivity",
+                "market": "US",
+                "strategy": "H. 20일선 지지·재돌파",
+                "buyDate": "2026.06.24",
+                "buyPrice": "$100.00",
+                "currentPrice": "$100.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+    stocks = [{"ticker": "TE", "name": "TE Connectivity", "market": "US", "currentPrice": "$79.00", "opinion": "관망", "strategies": []}]
+    technical = {
+        "TE": {
+            "opinion": "관망",
+            "opinionReason": "-",
+            "entrySignalCodes": "",
+            "현재가": "$79.00",
+            "C - Close": "$100.00",
+            "20일 이동평균선": "$100.00",
+            "dailyPriceDate": "2026-06-30",
+        }
+    }
+    previous_technical = {"TE": {"dailyPriceDate": "2026-06-30"}}
+
+    logs.update_trade_logs(stocks, {}, technical, {"peakTriggered": False}, previous_technical)
+
+    updated = logs.load_json(cache_path, {})
+    row = updated["rows"][0]
+    assert row["status"] == "보유 중"
+    assert row["sellPrice"] == "-"
+
+
+def test_fresh_daily_h_strategy_exits_on_ma20_support_failure(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "slotId": "TE_H_20260624_1",
+                "ticker": "TE",
+                "name": "TE Connectivity",
+                "market": "US",
+                "strategy": "H. 20일선 지지·재돌파",
+                "buyDate": "2026.06.24",
+                "buyPrice": "$100.00",
+                "currentPrice": "$100.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+    stocks = [{"ticker": "TE", "name": "TE Connectivity", "market": "US", "currentPrice": "$100.00", "opinion": "관망", "strategies": []}]
+    technical = {
+        "TE": {
+            "opinion": "관망",
+            "opinionReason": "-",
+            "entrySignalCodes": "",
+            "현재가": "$100.00",
+            "C - Close": "$94.90",
+            "20일 이동평균선": "$100.00",
+            "dailyPriceDate": "2026-07-01",
+        }
+    }
+    previous_technical = {"TE": {"dailyPriceDate": "2026-06-30"}}
+
+    changed = logs.update_trade_logs(stocks, {}, technical, {"peakTriggered": False}, previous_technical)
+
+    updated = logs.load_json(cache_path, {})
+    row = updated["rows"][0]
+    assert changed is True
+    assert row["status"] == "손절"
+    assert row["sellPrice"] == "$94.90"
+    assert row["exitReason"] == "20일선 지지 실패 손절 -5.10% [20일선 대비 -5%]"
+
+
 def test_extended_target_touch_arms_ef_exit_without_selling(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     public_path.parent.mkdir(parents=True)

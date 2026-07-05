@@ -15,6 +15,7 @@ QQQ_RECOVERY_PEAK_CONFIRM_DIST = 18.0
 QQQ_PEAK_RSI_THRESHOLD = 65.0
 QQQ_PEAK_WARN_MARGIN = 3.0
 QQQ_PEAK_ALERT_RESET_DIST = 5.0
+QQQ_DOWNTREND_DIST = -3.0
 
 
 def _num(value: Any) -> float | None:
@@ -61,6 +62,19 @@ def qqq_is_recovery_market(current_dist: Any, recent_min_dist: Any) -> bool:
 
 def qqq_buy_block_max(is_recovery_market: bool) -> float:
     return QQQ_RECOVERY_BUY_BLOCK_MAX if is_recovery_market else QQQ_NORMAL_BUY_BLOCK_MAX
+
+
+def qqq_regime_label(current_dist: Any, is_recovery_market: bool) -> str:
+    dist = _num(current_dist)
+    if is_recovery_market:
+        return "회복장"
+    if dist is None:
+        return "판단 불가"
+    if dist < QQQ_DOWNTREND_DIST:
+        return "하락장"
+    if dist <= QQQ_NORMAL_BUY_BLOCK_MAX:
+        return "정상장"
+    return "횡보장 고점"
 
 
 def qqq_peak_distances(is_recovery_market: bool) -> dict[str, float]:
@@ -141,7 +155,7 @@ def build_qqq_market_state(
         "premiumPercent": current_dist,
         "recent60MinPremiumPercent": _num(recent_min_dist),
         "isRecoveryMarket": is_recovery,
-        "regimeLabel": "급락 후 회복장" if is_recovery else "비회복장/고점 횡보장",
+        "regimeLabel": qqq_regime_label(current_dist, is_recovery),
         "buyBlockMax": qqq_buy_block_max(is_recovery),
         "peakDirectDist": peak_dist["direct"],
         "peakConfirmDist": peak_dist["confirm"],
