@@ -32,7 +32,7 @@ def test_personal_type_map_backfills_missing_type_only():
     }
 
 
-def test_operator_type_map_still_follows_flat_watchlist():
+def test_operator_type_map_preserves_existing_investment_types():
     row = {
         "scope": "operator",
         "tickers": ["AAPL"],
@@ -43,6 +43,6 @@ def test_operator_type_map_still_follows_flat_watchlist():
     }
 
     assert sync.desired_type_map(row) == {
-        "long_term": ["AAPL"],
-        "swing": ["AAPL"],
+        "long_term": ["MSFT"],
+        "swing": ["NVDA"],
     }

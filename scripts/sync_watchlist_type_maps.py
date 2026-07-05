@@ -1,8 +1,7 @@
-"""Backfill watchlist type maps without merging personal investment types.
+"""Backfill watchlist type maps without merging investment types.
 
-Operator watchlists still use the flat ticker list as the shared canonical
-list. Personal watchlists do not: each investment type owns its own list, so
-the flat ``tickers`` column only represents the currently active type.
+Each investment type owns its own list, so the flat ``tickers`` column only
+represents the currently active type. Existing type maps must be preserved.
 """
 
 from __future__ import annotations
@@ -68,9 +67,6 @@ def normalize_type_map(value: Any) -> dict[str, list[str]] | None:
 
 def desired_type_map(row: dict[str, Any]) -> dict[str, list[str]]:
     tickers = normalize_tickers(row.get("tickers"))
-    if row.get("scope") == "operator":
-        return canonical_type_map(tickers)
-
     existing = normalize_type_map(row.get("tickers_by_type"))
     if not existing:
         return canonical_type_map(tickers)
