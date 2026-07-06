@@ -2349,19 +2349,43 @@ def latest_ohlcv_date(row: dict[str, Any], market: str) -> str:
     return format_ohlcv_date(raw_date)
 
 
-def is_morning_ma_scan_window(now: datetime | None = None) -> bool:
+def ma_support_send_slot(now: datetime | None = None) -> str | None:
     if os.environ.get("MA_SUPPORT_SCAN_FORCE", "").strip().lower() in {"1", "true", "yes", "on"}:
-        return True
+        return os.environ.get("MA_SUPPORT_SCAN_SLOT", "").strip() or "manual"
     current = now or datetime.now().astimezone()
     kst_now = current.astimezone(KST)
     minutes = kst_now.hour * 60 + kst_now.minute
-    return kst_now.weekday() < 5 and (8 * 60) <= minutes < (9 * 60)
+    if kst_now.weekday() >= 5:
+        return None
+    if (8 * 60) <= minutes < (9 * 60):
+        return "08"
+    if (9 * 60 + 30) <= minutes < (10 * 60):
+        return "0930"
+    return None
 
 
-def ma_support_daily_send_key(recipient: Recipient, now: datetime | None = None) -> str:
+def is_morning_ma_scan_window(now: datetime | None = None) -> bool:
+    return ma_support_send_slot(now) is not None
+
+
+def ma_support_slot_label(slot: str | None) -> str:
+    if slot == "08":
+        return "1차 08:00"
+    if slot == "0930":
+        return "2차 09:30"
+    return "수동 실행"
+
+
+def ma_support_daily_send_key(recipient: Recipient, now: datetime | None = None, slot: str | None = None) -> str:
     current = now or datetime.now().astimezone()
     kst_date = current.astimezone(KST).date().isoformat()
-    return f"{recipient.owner_id}:{kst_date}"
+    return f"{recipient.owner_id}:{kst_date}:{slot or ma_support_send_slot(current) or 'manual'}"
+
+
+def ma_support_has_prior_slot(sent_daily_keys: set[str], recipient: Recipient, now: datetime, slot: str | None) -> bool:
+    kst_date = now.astimezone(KST).date().isoformat()
+    prefix = f"{recipient.owner_id}:{kst_date}:"
+    return any(key.startswith(prefix) and not key.endswith(f":{slot or 'manual'}") for key in sent_daily_keys)
 
 
 def is_latest_row_fresh_for_morning_scan(row: dict[str, Any], market: str, now: datetime | None = None) -> bool:
@@ -2563,6 +2587,8 @@ def ma_support_email_body(candidates: list[dict[str, Any]], market_state: dict[s
         market = str(candidate.get("market") or "")
         label = display_stock(candidate, candidate["ticker"])
         signal = candidate["signals"][0]
+        status_label = str(candidate.get("deliveryStatus") or "")
+        status_html = f' <strong style="color:#555;">({html.escape(status_label)})</strong>' if status_label else ""
         context_label = str(signal.get("contextLabel") or ("이평선 지지형" if "지지" in str(signal.get("signal") or "") else "이평선 돌파형"))
         context_note = str(signal.get("contextNote") or "")
         day_return = signal.get("dayReturnPercent")
@@ -2588,7 +2614,7 @@ def ma_support_email_body(candidates: list[dict[str, Any]], market_state: dict[s
         rows_html.append(
             "<tr>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;\"><strong>{html.escape(label)}</strong><br><span style=\"color:#888;\">{html.escape(str(candidate['date']))} · {html.escape(market)}</span></td>"
-            f"<td style=\"padding:8px;border-bottom:1px solid #eee;\">{html.escape(str(signal['signal']))}{extra_signals}</td>"
+            f"<td style=\"padding:8px;border-bottom:1px solid #eee;\">{html.escape(str(signal['signal']))}{status_html}{extra_signals}</td>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;\">{context_html}</td>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_candidate_price(signal['price'], market))}</td>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;text-align:right;\">{html.escape(ma_candidate_price(signal['low'], market))}</td>"
@@ -2624,8 +2650,29 @@ def ma_support_email_body(candidates: list[dict[str, Any]], market_state: dict[s
     """
 
 
+def ma_support_empty_email_body(market_state: dict[str, Any] | None, slot_label: str, reason: str) -> str:
+    kst_date, et_date = now_labels()
+    qqq_status_html = ma_support_qqq_status(market_state)
+    return f"""
+    <div style="font-family:Arial,sans-serif;max-width:760px;color:#222;line-height:1.55;">
+      <h2 style="margin:0 0 12px 0;">이평선 반등/돌파 후보 없음</h2>
+      {qqq_status_html}
+      <div style="margin:0 0 14px 0;padding:12px;border:1px solid #eee;border-radius:8px;background:#fafafa;">
+        <strong>{html.escape(slot_label)}</strong> 기준으로 새 이평선 지지/돌파 후보가 없습니다.<br>
+        <span style="color:#666;">사유: {html.escape(reason)}</span>
+      </div>
+      <p style="color:#888;font-size:12px;margin-top:14px;">
+        발송 시각 (한국): {html.escape(kst_date)}<br>
+        발송 시각 (미 동부): {html.escape(et_date)}
+      </p>
+    </div>
+    """
+
+
 def send_ma_support_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> int:
-    if not is_morning_ma_scan_window():
+    now = datetime.now().astimezone()
+    slot = ma_support_send_slot(now)
+    if slot is None:
         print("MA support notification skipped outside KST morning scan window.")
         return 0
 
@@ -2653,13 +2700,26 @@ def send_ma_support_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> int
     newly_sent_keys: set[str] = set()
     newly_sent_daily_keys: set[str] = set()
     for recipient in recipients:
-        daily_key = ma_support_daily_send_key(recipient)
+        daily_key = ma_support_daily_send_key(recipient, now, slot)
         if daily_key in sent_daily_keys:
             continue
         tickers = watchlist_tickers_for_recipient(recipient, watchlists, admin_uses_operator=True)
+        slot_label = ma_support_slot_label(slot)
         if not tickers:
+            send_notification(
+                recipient,
+                f"[이평선 반등/돌파 후보 없음] {slot_label}",
+                append_notification_footer(
+                    ma_support_empty_email_body(market_state, slot_label, "관심종목이 비어 있습니다."),
+                    recipient,
+                    "maSupportEmail",
+                ),
+            )
+            sent += 1
+            newly_sent_daily_keys.add(daily_key)
             continue
         candidates: list[dict[str, Any]] = []
+        has_prior_slot = ma_support_has_prior_slot(sent_daily_keys | newly_sent_daily_keys, recipient, now, slot)
         for ticker in sorted(tickers):
             if ticker not in signal_cache:
                 stock = stocks.get(ticker, {"ticker": ticker, "name": ticker, "market": resolve_market_from_ticker(ticker)})
@@ -2673,13 +2733,26 @@ def send_ma_support_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> int
                 continue
             signal_key = "+".join(str(item["period"]) for item in signal["signals"])
             key = f"{recipient.owner_id}:{signal['ticker']}:{signal['date']}:{signal_key}"
-            if key in sent_keys:
-                continue
-            candidates.append(signal)
+            candidate = dict(signal)
+            if has_prior_slot:
+                candidate["deliveryStatus"] = "중복" if key in sent_keys else "추가"
+            candidates.append(candidate)
             newly_sent_keys.add(key)
         if not candidates:
+            send_notification(
+                recipient,
+                f"[이평선 반등/돌파 후보 없음] {slot_label}",
+                append_notification_footer(
+                    ma_support_empty_email_body(market_state, slot_label, "조건을 충족한 종목이 없습니다."),
+                    recipient,
+                    "maSupportEmail",
+                ),
+            )
+            sent += 1
+            newly_sent_daily_keys.add(daily_key)
             continue
-        subject = "[이평선 반등/돌파 후보] " + ", ".join(candidate["ticker"] for candidate in candidates[:8])
+        subject_prefix = f"[이평선 반등/돌파 후보] {slot_label}"
+        subject = subject_prefix + " " + ", ".join(candidate["ticker"] for candidate in candidates[:8])
         send_notification(
             recipient,
             subject,

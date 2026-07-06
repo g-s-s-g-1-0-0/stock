@@ -1,6 +1,10 @@
 name: Web data refresh
 
 on:
+  schedule:
+    # Moving-average support candidate emails: 08:00 and 09:30 KST on weekdays.
+    - cron: "0 23 * * 0-4"
+    - cron: "30 0 * * 1-5"
   workflow_dispatch:
     inputs:
       refresh_scope:
@@ -89,13 +93,20 @@ jobs:
       - name: Resolve refresh tasks
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "${{ github.event.schedule }}" = "0 0 * * 1" ]; then
+            if [ "${{ github.event.schedule }}" = "0 23 * * 0-4" ] || [ "${{ github.event.schedule }}" = "30 0 * * 1-5" ]; then
+              TASKS="technical"
+              PUBLISH_AT=""
+              FORCE_REFRESH="true"
+            elif [ "${{ github.event.schedule }}" = "0 0 * * 1" ]; then
               TASKS="stock-universe market-trends market-events"
+              PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0); publish_at = publish_at + timedelta(hours=1) if publish_at <= now else publish_at; print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z"))')"
+              FORCE_REFRESH="false"
             else
               TASKS="valuation technical"
+              PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0); publish_at = publish_at + timedelta(hours=1) if publish_at <= now else publish_at; print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z"))')"
+              FORCE_REFRESH="false"
             fi
             SEND_NOTIFICATIONS="true"
-            PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0); publish_at = publish_at + timedelta(hours=1) if publish_at <= now else publish_at; print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z"))')"
           else
             case "${{ inputs.refresh_scope }}" in
               all) TASKS="stock-universe valuation technical market-trends market-events" ;;
@@ -116,10 +127,12 @@ jobs:
             else
               PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1); print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z") if now.minute >= 50 else "")')"
             fi
+            FORCE_REFRESH="false"
           fi
           echo "REFRESH_TASKS=$TASKS" >> "$GITHUB_ENV"
           echo "SEND_NOTIFICATIONS=$SEND_NOTIFICATIONS" >> "$GITHUB_ENV"
           echo "WEB_REFRESH_PUBLISH_AT=$PUBLISH_AT" >> "$GITHUB_ENV"
+          echo "FORCE_REFRESH=$FORCE_REFRESH" >> "$GITHUB_ENV"
           echo "REFRESH_TICKERS=${{ inputs.refresh_tickers || '' }}" >> "$GITHUB_ENV"
           echo "Resolved refresh tasks: $TASKS"
           echo "Send notifications: $SEND_NOTIFICATIONS"
@@ -136,6 +149,12 @@ jobs:
           import os
           from datetime import datetime, timezone
           from pathlib import Path
+
+          if os.environ.get("FORCE_REFRESH") == "true":
+              with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+                  env_file.write("SKIP_REFRESH=false\n")
+              print("Scheduled refresh forced for morning MA support notification.")
+              raise SystemExit(0)
 
           # Only skip when every analysis cache scheduled to refresh this run is
           # already fresh. Valuation refreshes daily while technical refreshes
