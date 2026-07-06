@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-07-06T15:00:31Z",
+    "updatedAt": "2026-07-06T15:54:55Z",
     "rowCount": 2
   },
   "rows": [
@@ -47,7 +47,8 @@
         "ALAB",
         "VRT",
         "DY",
-        "079550"
+        "079550",
+        "WULF"
       ],
       "tickersByType": {
         "swing": [
@@ -88,7 +89,8 @@
           "ALAB",
           "VRT",
           "DY",
-          "079550"
+          "079550",
+          "WULF"
         ],
         "long_term": [
           "000660",
@@ -104,7 +106,7 @@
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-06T00:36:36.732491+00:00"
+      "remoteUpdatedAt": "2026-07-06T15:54:42.613242+00:00"
     },
     {
       "id": "026d7675-fa4f-44d9-8792-88cb35fe276a",
@@ -119,7 +121,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-06T00:36:27.725037+00:00"
+      "remoteUpdatedAt": "2026-07-06T15:54:31.878865+00:00"
     }
   ]
 }

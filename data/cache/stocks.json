@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-07-06T15:02:56+00:00",
-    "lastSuccessfulRun": "2026-07-06T15:02:56+00:00",
+    "updatedAt": "2026-07-06T15:56:08+00:00",
+    "lastSuccessfulRun": "2026-07-06T15:56:08+00:00",
     "failedReason": null
   },
   "rows": [
@@ -616,6 +616,22 @@
       "updatedAt": "2026-07-06T14:55:45+00:00"
     },
     {
+      "ticker": "WULF",
+      "name": "TeraWulf",
+      "market": "US",
+      "fairPrice": "적자 상태라 판단 불가",
+      "fairPriceReason": "loss_making",
+      "currentPrice": "$24.08",
+      "valuation": "판단 불가",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "성장주",
+      "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
+      "updatedAt": "2026-07-06T14:55:46+00:00"
+    },
+    {
       "ticker": "MP",
       "name": "MP Materials",
       "market": "US",
@@ -677,22 +693,6 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "AI, 광고, 클라우드, Waymo, TPU",
-      "updatedAt": "2026-07-06T14:55:46+00:00"
-    },
-    {
-      "ticker": "WULF",
-      "name": "TeraWulf",
-      "market": "US",
-      "fairPrice": "적자 상태라 판단 불가",
-      "fairPriceReason": "loss_making",
-      "currentPrice": "$24.08",
-      "valuation": "판단 불가",
-      "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
-      "strategies": [],
-      "category": "성장주",
-      "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
       "updatedAt": "2026-07-06T14:55:46+00:00"
     },
     {
