@@ -47,6 +47,7 @@ HOLD_RESTORE_MIN_TRADING_DAYS = 10
 HOLD_RESTORE_SIGNAL_CONFIRMATIONS = 2
 MAX_OPEN_PER_STRATEGY = 2
 RESTORE_FAMILY_STRATEGIES = {"E", "F"}
+INVESTMENT_TYPES = ("long_term", "swing")
 VALUATION_LOG_FIELDS = [
     ("marketCap", "시가총액"),
     ("sales", "매출"),
@@ -162,28 +163,37 @@ def append_watchlist_values(tickers: list[str], values: Any) -> None:
         append_unique_ticker(tickers, value)
 
 
-def load_watchlist_tickers(stocks: list[dict[str, Any]]) -> list[str]:
+def load_watchlist_tickers_by_type(stocks: list[dict[str, Any]]) -> dict[str, list[str]]:
     rows = supabase_request("/rest/v1/watchlists?select=tickers,tickers_by_type&scope=eq.operator&owner_id=is.null")
-    tickers: list[str] = []
+    tickers_by_type: dict[str, list[str]] = {investment_type: [] for investment_type in INVESTMENT_TYPES}
+    flat_tickers: list[str] = []
     if isinstance(rows, list):
         for row in rows:
             if not isinstance(row, dict):
                 continue
-            append_watchlist_values(tickers, row.get("tickers"))
+            append_watchlist_values(flat_tickers, row.get("tickers"))
             by_type = row.get("tickers_by_type")
             if isinstance(by_type, dict):
-                for values in by_type.values():
-                    append_watchlist_values(tickers, values)
-    if tickers:
-        return tickers[:MAX_LOG_ROWS]
-    if os.environ.get("SUPABASE_URL", "").strip() and os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip():
-        return []
+                for investment_type in INVESTMENT_TYPES:
+                    append_watchlist_values(tickers_by_type[investment_type], by_type.get(investment_type))
 
-    tickers = [
-        str(stock.get("ticker", "")).strip().upper()
-        for stock in stocks
-        if str(stock.get("ticker", "")).strip()
-    ]
+    if any(tickers_by_type.values()):
+        return tickers_by_type
+    if flat_tickers:
+        return {investment_type: flat_tickers[:] for investment_type in INVESTMENT_TYPES}
+    if os.environ.get("SUPABASE_URL", "").strip() and os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip():
+        return tickers_by_type
+
+    fallback: list[str] = []
+    for stock in stocks:
+        append_unique_ticker(fallback, stock.get("ticker"))
+    return {"long_term": [], "swing": fallback}
+
+
+def load_watchlist_tickers(stocks: list[dict[str, Any]]) -> list[str]:
+    tickers: list[str] = []
+    for values in load_watchlist_tickers_by_type(stocks).values():
+        append_watchlist_values(tickers, values)
     return tickers[:MAX_LOG_ROWS]
 
 
@@ -286,24 +296,35 @@ def restore_previous_signal_state(
     return changed
 
 
-def trade_key(trade: dict[str, Any]) -> tuple[str, str, str]:
+def trade_key(trade: dict[str, Any]) -> tuple[str, str, str, str]:
+    investment_type = trade_investment_type(trade)
     slot_id = str(trade.get("slotId") or "").strip()
     if slot_id:
         return (
             str(trade.get("ticker") or "").strip().upper(),
+            investment_type,
             slot_id,
             strategy_code(trade.get("strategy")),
         )
     return (
         str(trade.get("ticker") or "").strip().upper(),
+        investment_type,
         str(trade.get("buyDate") or "").strip(),
         strategy_code(trade.get("strategy")),
     )
 
 
-def open_trade_slots(trades: list[dict[str, Any]]) -> set[tuple[str, str]]:
+def trade_investment_type(trade: dict[str, Any]) -> str:
+    value = str(trade.get("investmentType") or "").strip()
+    if value in INVESTMENT_TYPES:
+        return value
+    return "long_term" if trade.get("manualExit") is True else "swing"
+
+
+def open_trade_slots(trades: list[dict[str, Any]]) -> set[tuple[str, str, str]]:
     return {
         (
+            trade_investment_type(trade),
             str(trade.get("ticker") or "").strip().upper(),
             strategy_code(trade.get("strategy")),
         )
@@ -312,31 +333,33 @@ def open_trade_slots(trades: list[dict[str, Any]]) -> set[tuple[str, str]]:
     }
 
 
-def open_trade_counts(trades: list[dict[str, Any]]) -> dict[tuple[str, str], int]:
-    counts: dict[tuple[str, str], int] = {}
+def open_trade_counts(trades: list[dict[str, Any]]) -> dict[tuple[str, str, str], int]:
+    counts: dict[tuple[str, str, str], int] = {}
     for trade in trades:
         if str(trade.get("status") or "") != "보유 중":
             continue
         key = (
+            trade_investment_type(trade),
             str(trade.get("ticker") or "").strip().upper(),
             strategy_code(trade.get("strategy")),
         )
-        if not key[0] or not key[1]:
+        if not key[1] or not key[2]:
             continue
         counts[key] = counts.get(key, 0) + 1
     return counts
 
 
-def open_trades_by_slot(trades: list[dict[str, Any]]) -> dict[tuple[str, str], list[dict[str, Any]]]:
-    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+def open_trades_by_slot(trades: list[dict[str, Any]]) -> dict[tuple[str, str, str], list[dict[str, Any]]]:
+    grouped: dict[tuple[str, str, str], list[dict[str, Any]]] = {}
     for trade in trades:
         if str(trade.get("status") or "") != "보유 중":
             continue
         key = (
+            trade_investment_type(trade),
             str(trade.get("ticker") or "").strip().upper(),
             strategy_code(trade.get("strategy")),
         )
-        if not key[0] or not key[1]:
+        if not key[1] or not key[2]:
             continue
         grouped.setdefault(key, []).append(trade)
     return grouped
@@ -461,13 +484,19 @@ def trading_days_since(start: Any, end: date) -> int:
     return days
 
 
-def latest_closed_trade(trades: list[dict[str, Any]], ticker: str, strategy: str) -> dict[str, Any] | None:
+def latest_closed_trade(
+    trades: list[dict[str, Any]],
+    ticker: str,
+    strategy: str,
+    investment_type: str | None = None,
+) -> dict[str, Any] | None:
     matches = [
         trade
         for trade in trades
         if str(trade.get("status") or "") != "보유 중"
         and str(trade.get("ticker") or "").strip().upper() == ticker
         and strategy_code(trade.get("strategy")) == strategy
+        and (investment_type is None or trade_investment_type(trade) == investment_type)
         and parse_trade_date(trade.get("sellDate")) is not None
     ]
     if not matches:
@@ -626,8 +655,8 @@ def restore_family_open_trades(
     return trades
 
 
-def next_slot_id(ticker: str, strategy: str, trades: list[dict[str, Any]], today: str) -> str:
-    prefix = f"{ticker}_{strategy}_{today.replace('.', '')}_"
+def next_slot_id(ticker: str, strategy: str, trades: list[dict[str, Any]], today: str, investment_type: str = "swing") -> str:
+    prefix = f"{ticker}_{investment_type}_{strategy}_{today.replace('.', '')}_"
     count = sum(1 for trade in trades if str(trade.get("slotId") or "").startswith(prefix))
     return f"{prefix}{count + 1}"
 
@@ -820,7 +849,8 @@ def update_trade_logs(
     rows = existing.get("rows", []) if isinstance(existing, dict) else []
     trades = [row for row in rows if isinstance(row, dict)]
     stocks_by_symbol = stocks_by_ticker(stocks)
-    entry_tickers = set(load_watchlist_tickers(stocks))
+    entry_tickers_by_type = load_watchlist_tickers_by_type(stocks)
+    entry_tickers = {ticker for values in entry_tickers_by_type.values() for ticker in values}
     today = kst_trade_date()
     today_date = parse_trade_date(today) or datetime.now(timezone.utc).astimezone(KST).date()
     nasdaq_peak_alert = bool((qqq_market_state or {}).get("peakTriggered"))
@@ -866,6 +896,8 @@ def update_trade_logs(
             trade["market"] = stock.get("market") or trade.get("market") or "-"
             trade["currentPrice"] = stock.get("currentPrice") or trade.get("currentPrice") or "-"
         if str(trade.get("status") or "") != "보유 중":
+            continue
+        if trade_investment_type(trade) == "long_term":
             continue
         market = normalize_market(stock.get("market") or trade.get("market"), ticker)
         if should_defer_market_signal(market, now):
@@ -983,68 +1015,71 @@ def update_trade_logs(
                 signal_state_changed = suppress_offlist_buy_signal(stock, row) or signal_state_changed
             continue
         current_price = parse_price(stock.get("currentPrice") or tech_value(row, "현재가"))
-        open_for_ticker = current_open_by_ticker.get(ticker, [])
-        restore_candidates = [
-            trade
-            for trade in open_for_ticker
-            if hold_restore_allowed(trade, current_price, today_date)
-        ]
-        # 보유 중에는 원시 기술 조건이 다시 맞더라도, 가격/대기일 등 추가매수 조건을 통과해야만
-        # 공개 매수 신호로 승격한다. 조건 미충족이면 사용자에게 노출되는 의견은 관망을 유지한다.
-        if open_for_ticker and current_opinion == "매수" and not restore_candidates:
-            signal_state_changed = block_held_public_buy_signal(stock, row) or signal_state_changed
-            continue
+        open_for_ticker_all = current_open_by_ticker.get(ticker, [])
         previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "").strip()
         if current_opinion != "매수" or nasdaq_peak_alert:
             continue
         ticker_appended = False
-        for code in entry_signal_codes(row):
-            slot_key = (ticker, code)
-            open_count = current_open_counts.get(slot_key, 0)
-            restore_source_trades: list[dict[str, Any]] = []
-            if open_count >= MAX_OPEN_PER_STRATEGY:
+        for investment_type in INVESTMENT_TYPES:
+            if ticker not in set(entry_tickers_by_type.get(investment_type, [])):
                 continue
-            if open_for_ticker:
-                restore_source_trades = restore_candidates
-            family_restore_sources = [
+            open_for_ticker = [
                 trade
-                for trade in restore_source_trades
-                if strategy_code(trade.get("strategy")) in RESTORE_FAMILY_STRATEGIES
-                and strategy_code(trade.get("strategy")) != code
+                for trade in open_for_ticker_all
+                if trade_investment_type(trade) == investment_type
             ]
-            if family_restore_sources and not any(confirm_restore_signal(trade, code) for trade in family_restore_sources):
-                continue
-            closed_trade = latest_closed_trade(trades, ticker, code)
-            if not seed_after_reset and open_count == 0 and closed_trade is None and previous_opinion == "매수" and not restore_source_trades:
-                continue
-            if not sell_reentry_allowed(closed_trade, current_price, today_date):
-                continue
-            new_trade = {
-                "slotId": next_slot_id(ticker, code, trades, today),
-                "investmentType": "swing",
-                "ticker": ticker,
-                "name": stock.get("name") or ticker,
-                "market": stock.get("market") or "-",
-                "currentPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
-                "strategy": strategy_display_name(code),
-                "buyDate": today,
-                "buyPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
-                "sellDate": "보유 중",
-                "sellPrice": "-",
-                "returnPct": 0,
-                "holdingDays": "-",
-                "status": "보유 중",
-            }
-            trades.append(new_trade)
-            for trade in restore_source_trades:
-                trade.pop("restoreWatchDate", None)
-                set_restore_signal_count(trade, code, 0)
-            current_open_counts[slot_key] = open_count + 1
-            current_open_trades.setdefault(slot_key, []).append(new_trade)
-            current_open_by_ticker.setdefault(ticker, []).append(new_trade)
-            appended += 1
-            ticker_appended = True
-        if open_for_ticker and not ticker_appended:
+            restore_candidates = [
+                trade
+                for trade in open_for_ticker
+                if hold_restore_allowed(trade, current_price, today_date)
+            ]
+            for code in entry_signal_codes(row):
+                slot_key = (investment_type, ticker, code)
+                open_count = current_open_counts.get(slot_key, 0)
+                restore_source_trades: list[dict[str, Any]] = []
+                if open_count >= MAX_OPEN_PER_STRATEGY:
+                    continue
+                if open_for_ticker:
+                    restore_source_trades = restore_candidates
+                family_restore_sources = [
+                    trade
+                    for trade in restore_source_trades
+                    if strategy_code(trade.get("strategy")) in RESTORE_FAMILY_STRATEGIES
+                    and strategy_code(trade.get("strategy")) != code
+                ]
+                if family_restore_sources and not any(confirm_restore_signal(trade, code) for trade in family_restore_sources):
+                    continue
+                closed_trade = latest_closed_trade(trades, ticker, code, investment_type)
+                if not seed_after_reset and open_count == 0 and closed_trade is None and previous_opinion == "매수" and not restore_source_trades:
+                    continue
+                if investment_type == "swing" and not sell_reentry_allowed(closed_trade, current_price, today_date):
+                    continue
+                new_trade = {
+                    "slotId": next_slot_id(ticker, code, trades, today, investment_type),
+                    "investmentType": investment_type,
+                    "ticker": ticker,
+                    "name": stock.get("name") or ticker,
+                    "market": stock.get("market") or "-",
+                    "currentPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
+                    "strategy": strategy_display_name(code),
+                    "buyDate": today,
+                    "buyPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
+                    "sellDate": "보유 중",
+                    "sellPrice": "-",
+                    "returnPct": 0,
+                    "holdingDays": "-",
+                    "status": "보유 중",
+                }
+                trades.append(new_trade)
+                for trade in restore_source_trades:
+                    trade.pop("restoreWatchDate", None)
+                    set_restore_signal_count(trade, code, 0)
+                current_open_counts[slot_key] = open_count + 1
+                current_open_trades.setdefault(slot_key, []).append(new_trade)
+                current_open_by_ticker.setdefault(ticker, []).append(new_trade)
+                appended += 1
+                ticker_appended = True
+        if open_for_ticker_all and not ticker_appended:
             signal_state_changed = block_held_public_buy_signal(stock, row) or signal_state_changed
 
     deduped = list({trade_key(trade): trade for trade in trades}.values())

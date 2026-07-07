@@ -18,6 +18,64 @@ def test_load_watchlist_tickers_includes_all_investment_types(monkeypatch):
     assert logs.load_watchlist_tickers([]) == ["AAPL", "MSFT", "NVDA"]
 
 
+def test_buy_signals_append_profile_specific_trades(monkeypatch, tmp_path):
+    cache_path, _ = patch_log_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {
+        "long_term": ["MSFT"],
+        "swing": ["MSFT"],
+    })
+
+    logs.update_trade_logs(
+        [{"ticker": "MSFT", "name": "Microsoft", "market": "US", "currentPrice": "$100.00", "opinion": "매수"}],
+        {},
+        {"MSFT": {"entrySignalCodes": "A", "현재가": "$100.00"}},
+        {"peakTriggered": False},
+    )
+
+    updated = logs.load_json(cache_path, {})
+    rows = updated["rows"]
+    assert [row["investmentType"] for row in rows] == ["long_term", "swing"]
+    assert all(row["status"] == "보유 중" for row in rows)
+    assert rows[0]["slotId"].startswith("MSFT_long_term_A_")
+    assert rows[1]["slotId"].startswith("MSFT_swing_A_")
+
+
+def test_long_term_trade_does_not_auto_exit_on_target(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "slotId": "MSFT_long_term_A_20260701_1",
+                "investmentType": "long_term",
+                "ticker": "MSFT",
+                "strategy": "A. 200일선 상방 & 모멘텀 재가속",
+                "buyDate": "2026.07.01",
+                "buyPrice": "$100.00",
+                "currentPrice": "$100.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+
+    logs.update_trade_logs(
+        [{"ticker": "MSFT", "name": "Microsoft", "market": "US", "currentPrice": "$130.00", "opinion": "관망"}],
+        {},
+        {"MSFT": {"현재가": "$130.00"}},
+        {"peakTriggered": False},
+    )
+
+    updated = logs.load_json(cache_path, {})
+    row = updated["rows"][0]
+    assert row["investmentType"] == "long_term"
+    assert row["status"] == "보유 중"
+    assert row["sellPrice"] == "-"
+
+
 def patch_log_paths(monkeypatch, tmp_path):
     cache_path = tmp_path / "data" / "cache" / "trade-logs.json"
     public_path = tmp_path / "web" / "public" / "api" / "trade-logs.json"
@@ -858,7 +916,7 @@ def test_offlist_ticker_does_not_generate_buy_signal(monkeypatch, tmp_path):
     # 관심종목(watchlist)에 없는 종목은 매수 신호가 계산돼도 trade가 추가되지 않고,
     # 의견은 관망으로 강제된다(보유 포지션 청산 추적과 매수 시그널을 분리).
     cache_path, _ = patch_log_paths(monkeypatch, tmp_path)
-    monkeypatch.setattr(logs, "load_watchlist_tickers", lambda stocks: ["MSFT"])
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["MSFT"]})
 
     stock = {"ticker": "ACLS", "name": "Axcelis", "market": "US", "currentPrice": "$154.49", "opinion": "매수"}
     technical = {"ACLS": {"opinion": "매수", "entrySignalCodes": "G", "entryStrategy": "G. 급락 후 회복장 20일선 눌림", "현재가": "$154.49"}}
@@ -878,7 +936,7 @@ def test_offlist_held_trade_keeps_tracking_but_blocks_additional_buy(monkeypatch
     # 관심종목에서 제거됐어도 '보유 중' 기록은 유지되며, 매수/추가매수만 차단된다.
     # (청산되기 전까지는 trade-log에 남아 청산 조건을 계속 추적)
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
-    monkeypatch.setattr(logs, "load_watchlist_tickers", lambda stocks: ["MSFT"])
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["MSFT"]})
     monkeypatch.setattr(logs, "kst_trade_date", lambda: "2026.05.25")
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
@@ -917,7 +975,7 @@ def test_held_trade_buy_signal_without_add_slot_keeps_buy_opinion(monkeypatch, t
     # 보유 중 '매수' 종목은 추가매수 조건(-10%/대기일)을 못 채워도 의견은 '매수'를 유지한다.
     # 추가매수 '신호'(추가 슬롯/진입 코드)만 보류될 뿐, 의견을 관망으로 강제로 내리지 않는다(GAS와 동일).
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
-    monkeypatch.setattr(logs, "load_watchlist_tickers", lambda stocks: ["INTC"])
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["INTC"]})
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
         "rows": [
@@ -959,7 +1017,7 @@ def test_held_trade_buy_signal_without_add_slot_keeps_buy_opinion(monkeypatch, t
 def test_offlist_held_trade_still_liquidates_on_exit(monkeypatch, tmp_path):
     # 관심종목 밖 보유 종목도 청산 조건이 충족되면 정상적으로 매도 처리된다(나스닥 고점 강제 청산).
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
-    monkeypatch.setattr(logs, "load_watchlist_tickers", lambda stocks: ["MSFT"])
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["MSFT"]})
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
         "rows": [
