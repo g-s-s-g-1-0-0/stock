@@ -1021,6 +1021,7 @@ def update_trade_logs(
                 continue
             new_trade = {
                 "slotId": next_slot_id(ticker, code, trades, today),
+                "investmentType": "swing",
                 "ticker": ticker,
                 "name": stock.get("name") or ticker,
                 "market": stock.get("market") or "-",

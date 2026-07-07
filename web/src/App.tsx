@@ -2674,6 +2674,12 @@ function tradeKey(trade: TradeLog) {
   return trade.slotId || `${trade.investmentType ?? 'shared'}-${trade.ticker}-${trade.buyDate}-${strategyCode(trade.strategy)}-${trade.buyPrice}`
 }
 
+function tradeMatchesInvestmentType(trade: TradeLog, targetInvestmentType: InvestmentType) {
+  if (trade.investmentType) return trade.investmentType === targetInvestmentType
+  if (targetInvestmentType === 'long_term') return trade.manualExit === true
+  return trade.manualExit !== true
+}
+
 function tradeDateObject(value: string) {
   return new Date(value.replaceAll('.', '-'))
 }
@@ -6335,9 +6341,9 @@ function App() {
   const isLongTermInvestor = shouldApplyInvestmentTypeView && displayedInvestmentType === 'long_term'
   const rawScopedTrades = isOperatorDataMode
     ? shouldApplyInvestmentTypeView
-      ? systemTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
+      ? systemTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
       : systemTradeLogs
-    : personalTradeLogs.filter((trade) => !trade.investmentType || trade.investmentType === displayedInvestmentType)
+    : personalTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
   const scopedTrades = rawScopedTrades
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const visibleProfileTrades = scopedTrades

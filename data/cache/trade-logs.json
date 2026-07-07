@@ -27,7 +27,8 @@
       "status": "손절",
       "sellTimestamp": "2026-05-14T16:55:47.670831Z",
       "exitReason": "나스닥 고점 청산/강제매도",
-      "manualExit": true
+      "manualExit": true,
+      "investmentType": "long_term"
     },
     {
       "slotId": "NBIS_D_20260513_1",
@@ -44,7 +45,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-05-13T15:02:34.374256Z",
-      "exitReason": "목표 수익 달성 즉시 매도 +16.48% [200일선 상방 & 상승 흐름 강화 기준 +12%]"
+      "exitReason": "목표 수익 달성 즉시 매도 +16.48% [200일선 상방 & 상승 흐름 강화 기준 +12%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "IREN_D_20260515_1",
@@ -61,7 +63,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-05-27T09:00:00Z",
-      "exitReason": "목표 수익 달성 즉시 매도 +14.28% [200일선 상방 & 상승 흐름 강화 기준 +12%]"
+      "exitReason": "목표 수익 달성 즉시 매도 +14.28% [200일선 상방 & 상승 흐름 강화 기준 +12%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "CRDO_E_20260515_1",
@@ -78,7 +81,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-05-26T14:00:00Z",
-      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +31.33% [200일선 상방 & 스퀴즈 저점 기준 +20%]"
+      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +31.33% [200일선 상방 & 스퀴즈 저점 기준 +20%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "ETN_F_20260517_1",
@@ -95,7 +99,8 @@
       "holdingDays": "-",
       "status": "실패 익절",
       "sellTimestamp": "2026-06-04T17:00:00Z",
-      "exitReason": "15거래일 반등 미달 청산 (15일, 4.46% < +8%)"
+      "exitReason": "15거래일 반등 미달 청산 (15일, 4.46% < +8%)",
+      "investmentType": "swing"
     },
     {
       "slotId": "278470_F_20260518_1",
@@ -112,7 +117,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-06-07T17:00:00Z",
-      "exitReason": "15거래일 반등 미달 청산 (15일, -3.11% < +8%)"
+      "exitReason": "15거래일 반등 미달 청산 (15일, -3.11% < +8%)",
+      "investmentType": "swing"
     },
     {
       "slotId": "079550_F_20260518_1",
@@ -129,7 +135,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-06-07T17:00:00Z",
-      "exitReason": "15거래일 반등 미달 청산 (15일, -12.74% < +8%)"
+      "exitReason": "15거래일 반등 미달 청산 (15일, -12.74% < +8%)",
+      "investmentType": "swing"
     },
     {
       "slotId": "376900_F_20260518_1",
@@ -146,7 +153,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-06-07T17:00:00Z",
-      "exitReason": "15거래일 반등 미달 청산 (15일, -14.09% < +8%)"
+      "exitReason": "15거래일 반등 미달 청산 (15일, -14.09% < +8%)",
+      "investmentType": "swing"
     },
     {
       "slotId": "039030_F_20260518_1",
@@ -163,7 +171,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-05-22T05:00:00Z",
-      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +20.21% [200일선 상방 & BB 극단 저점 기준 +20%]"
+      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +20.21% [200일선 상방 & BB 극단 저점 기준 +20%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "AEHR_E_20260518_1",
@@ -180,7 +189,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-05-27T14:00:00Z",
-      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +28.62% [200일선 상방 & 스퀴즈 저점 기준 +20%]"
+      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +28.62% [200일선 상방 & 스퀴즈 저점 기준 +20%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "PL_D_20260518_1",
@@ -197,7 +207,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-05-26T09:00:00Z",
-      "exitReason": "목표 수익 달성 즉시 매도 +17.38% [200일선 상방 & 상승 흐름 강화 기준 +12%]"
+      "exitReason": "목표 수익 달성 즉시 매도 +17.38% [200일선 상방 & 상승 흐름 강화 기준 +12%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "GOOGL_G_20260522_1",
@@ -214,7 +225,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-06-11T14:00:00Z",
-      "exitReason": "손절 기준 도달 -10.09% [급락 후 회복장 20일선 눌림 기준 -10%]"
+      "exitReason": "손절 기준 도달 -10.09% [급락 후 회복장 20일선 눌림 기준 -10%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "WULF_G_20260523_1",
@@ -231,7 +243,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-05-26T15:00:00Z",
-      "exitReason": "목표 수익 달성 즉시 매도 +13.13% [급락 후 회복장 20일선 눌림 기준 +12%]"
+      "exitReason": "목표 수익 달성 즉시 매도 +13.13% [급락 후 회복장 20일선 눌림 기준 +12%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "000150_G_20260606_1",
@@ -248,7 +261,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-06-09T01:00:00Z",
-      "exitReason": "손절 기준 도달"
+      "exitReason": "손절 기준 도달",
+      "investmentType": "swing"
     },
     {
       "slotId": "005380_G_20260606_1",
@@ -265,7 +279,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-06-09T03:00:00Z",
-      "exitReason": "손절 기준 도달 -10.86% [급락 후 회복장 20일선 눌림 기준 -10%]"
+      "exitReason": "손절 기준 도달 -10.86% [급락 후 회복장 20일선 눌림 기준 -10%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "079550_F_20260606_1",
@@ -282,7 +297,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-06-17T01:00:00Z",
-      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +33.33% [200일선 상방 & BB 극단 저점 기준 +20%]"
+      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +33.33% [200일선 상방 & BB 극단 저점 기준 +20%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "BE_E_20260606_1",
@@ -299,7 +315,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-06-22T14:00:00Z",
-      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +31.06% [200일선 상방 & 스퀴즈 저점 기준 +20%]"
+      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +31.06% [200일선 상방 & 스퀴즈 저점 기준 +20%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "CRDO_G_20260606_1",
@@ -316,7 +333,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-06-09T14:00:00Z",
-      "exitReason": "목표 수익 달성 즉시 매도 +15.06% [급락 후 회복장 20일선 눌림 기준 +12%]"
+      "exitReason": "목표 수익 달성 즉시 매도 +15.06% [급락 후 회복장 20일선 눌림 기준 +12%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "INTC_E_20260606_1",
@@ -333,7 +351,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-06-15T15:00:00Z",
-      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +24.04% [200일선 상방 & 스퀴즈 저점 기준 +20%]"
+      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +24.04% [200일선 상방 & 스퀴즈 저점 기준 +20%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "LPTH_D_20260606_1",
@@ -349,7 +368,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.08"
+      "restoreWatchDate": "2026.06.08",
+      "investmentType": "swing"
     },
     {
       "slotId": "PL_F_20260606_1",
@@ -365,7 +385,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.11"
+      "restoreWatchDate": "2026.06.11",
+      "investmentType": "swing"
     },
     {
       "slotId": "CIFR_G_20260606_1",
@@ -382,7 +403,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-06-09T09:00:00Z",
-      "exitReason": "목표 수익 달성 즉시 매도 +13.07% [급락 후 회복장 20일선 눌림 기준 +12%]"
+      "exitReason": "목표 수익 달성 즉시 매도 +13.07% [급락 후 회복장 20일선 눌림 기준 +12%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "277810_F_20260608_1",
@@ -398,7 +420,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.09"
+      "restoreWatchDate": "2026.06.09",
+      "investmentType": "swing"
     },
     {
       "slotId": "039030_F_20260608_1",
@@ -415,7 +438,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-06-12T01:00:00Z",
-      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +29.13% [200일선 상방 & BB 극단 저점 기준 +20%]"
+      "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +29.13% [200일선 상방 & BB 극단 저점 기준 +20%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "IREN_G_20260609_1",
@@ -432,7 +456,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-06-09T17:00:00Z",
-      "exitReason": "손절 기준 도달 -14.64% [급락 후 회복장 20일선 눌림 기준 -10%]"
+      "exitReason": "손절 기준 도달 -14.64% [급락 후 회복장 20일선 눌림 기준 -10%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "WULF_A_20260609_1",
@@ -448,7 +473,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.09"
+      "restoreWatchDate": "2026.06.09",
+      "investmentType": "swing"
     },
     {
       "slotId": "278470_E_20260610_1",
@@ -464,7 +490,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.11"
+      "restoreWatchDate": "2026.06.11",
+      "investmentType": "swing"
     },
     {
       "slotId": "005380_F_20260611_1",
@@ -480,7 +507,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.12"
+      "restoreWatchDate": "2026.06.12",
+      "investmentType": "swing"
     },
     {
       "slotId": "SGML_E_20260612_1",
@@ -496,7 +524,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.15"
+      "restoreWatchDate": "2026.06.15",
+      "investmentType": "swing"
     },
     {
       "slotId": "SNDK_A_20260612_1",
@@ -512,7 +541,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.15"
+      "restoreWatchDate": "2026.06.15",
+      "investmentType": "swing"
     },
     {
       "slotId": "RKLB_F_20260613_1",
@@ -528,7 +558,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.15"
+      "restoreWatchDate": "2026.06.15",
+      "investmentType": "swing"
     },
     {
       "slotId": "039030_G_20260617_1",
@@ -545,7 +576,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-07-01T07:00:00Z",
-      "exitReason": "손절 기준 도달 -12.12% [급락 후 회복장 20일선 눌림 기준 -12%]"
+      "exitReason": "손절 기준 도달 -12.12% [급락 후 회복장 20일선 눌림 기준 -12%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "STX_A_20260617_1",
@@ -561,7 +593,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.18"
+      "restoreWatchDate": "2026.06.18",
+      "investmentType": "swing"
     },
     {
       "slotId": "CRDO_D_20260617_1",
@@ -578,7 +611,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-06-22T14:00:00Z",
-      "exitReason": "목표 수익 달성 즉시 매도 +24.04% [200일선 상방 & 상승 흐름 강화 기준 +12%]"
+      "exitReason": "목표 수익 달성 즉시 매도 +24.04% [200일선 상방 & 상승 흐름 강화 기준 +12%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "012450_D_20260617_1",
@@ -594,7 +628,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.19"
+      "restoreWatchDate": "2026.06.19",
+      "investmentType": "swing"
     },
     {
       "slotId": "GLW_H_20260622_1",
@@ -611,7 +646,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-06-25T14:00:00Z",
-      "exitReason": "목표 수익 달성 즉시 매도 +15.46% [20일선 지지·재돌파 기준 +12%]"
+      "exitReason": "목표 수익 달성 즉시 매도 +15.46% [20일선 지지·재돌파 기준 +12%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "TE_H_20260623_1",
@@ -628,7 +664,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-06-27T07:00:00Z",
-      "exitReason": "손절 기준 도달 -20.91% [20일선 지지·재돌파 기준 -20%]"
+      "exitReason": "손절 기준 도달 -20.91% [20일선 지지·재돌파 기준 -20%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "COHR_H_20260623_1",
@@ -645,7 +682,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-07-06T14:00:00Z",
-      "exitReason": "20일선 지지 실패 손절 -9.32% [20일선 대비 -5%]"
+      "exitReason": "20일선 지지 실패 손절 -9.32% [20일선 대비 -5%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "AMD_E_20260623_1",
@@ -661,7 +699,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.25"
+      "restoreWatchDate": "2026.06.25",
+      "investmentType": "swing"
     },
     {
       "slotId": "SOXL_H_20260623_1",
@@ -678,7 +717,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-06-30T19:00:00Z",
-      "exitReason": "목표 수익 달성 즉시 매도 +12.39% [20일선 지지·재돌파 기준 +12%]"
+      "exitReason": "목표 수익 달성 즉시 매도 +12.39% [20일선 지지·재돌파 기준 +12%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "005930_H_20260624_1",
@@ -695,7 +735,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-07-07T00:02:55.667122Z",
-      "exitReason": "20일선 지지 실패 손절 -6.42% [20일선 대비 -5%]"
+      "exitReason": "20일선 지지 실패 손절 -6.42% [20일선 대비 -5%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "009150_H_20260624_1",
@@ -712,7 +753,8 @@
       "holdingDays": "-",
       "status": "익절",
       "sellTimestamp": "2026-07-01T00:25:43.275683Z",
-      "exitReason": "목표 수익 달성 즉시 매도 +13.70% [20일선 지지·재돌파 기준 +12%]"
+      "exitReason": "목표 수익 달성 즉시 매도 +13.70% [20일선 지지·재돌파 기준 +12%]",
+      "investmentType": "swing"
     },
     {
       "slotId": "IREN_F_20260624_1",
@@ -728,7 +770,8 @@
       "returnPct": 0,
       "holdingDays": "-",
       "status": "보유 중",
-      "restoreWatchDate": "2026.06.25"
+      "restoreWatchDate": "2026.06.25",
+      "investmentType": "swing"
     },
     {
       "slotId": "CIFR_G_20260625_1",
@@ -745,7 +788,8 @@
       "holdingDays": "-",
       "status": "손절",
       "sellTimestamp": "2026-07-01T13:00:00Z",
-      "exitReason": "손절 기준 도달 -13.77% [급락 후 회복장 20일선 눌림 기준 -12%]"
+      "exitReason": "손절 기준 도달 -13.77% [급락 후 회복장 20일선 눌림 기준 -12%]",
+      "investmentType": "swing"
     }
   ]
 }

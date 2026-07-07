@@ -655,6 +655,7 @@ def test_buy_signals_append_one_open_trade_per_strategy(monkeypatch, tmp_path):
         "A. 200일선 상방 & 모멘텀 재가속",
         "D. 200일선 상방 & 상승 흐름 강화",
     ]
+    assert [row["investmentType"] for row in rows] == ["swing", "swing"]
     assert all(row["status"] == "보유 중" for row in rows)
     assert updated["meta"]["appendedOpenTrades"] == 2
 
@@ -725,6 +726,7 @@ def test_same_strategy_adds_slot_after_ten_percent_drop_and_ten_days(monkeypatch
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
     assert len(rows) == 2
     assert rows[1]["strategy"] == "D. 200일선 상방 & 상승 흐름 강화"
+    assert rows[1]["investmentType"] == "swing"
     assert rows[1]["slotId"].startswith("MP_D_")
     assert updated["meta"]["appendedOpenTrades"] == 1
 
@@ -813,6 +815,7 @@ def test_ef_family_adds_cross_strategy_slot_after_ten_percent_drop_ten_days_and_
         "E. 200일선 상방 & 스퀴즈 저점",
         "F. 200일선 상방 & BB 극단 저점",
     ]
+    assert rows[1]["investmentType"] == "swing"
     assert rows[1]["slotId"].startswith("DL_F_")
     assert "restoreSignalCounts" not in rows[0]
     assert updated["meta"]["appendedOpenTrades"] == 1

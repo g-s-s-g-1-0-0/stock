@@ -3,8 +3,10 @@ name: Web data refresh
 on:
   schedule:
     # Moving-average support candidate emails: 08:00 and 09:30 KST on weekdays.
-    - cron: "0 23 * * 0-4"
-    - cron: "30 0 * * 1-5"
+    # GitHub scheduled runs can be delayed, so each slot has retry crons and the
+    # notification script receives the intended slot explicitly.
+    - cron: "0,10,20,30,40,50 23 * * 0-4"
+    - cron: "30,40,50 0 * * 1-5"
   workflow_dispatch:
     inputs:
       refresh_scope:
@@ -93,19 +95,15 @@ jobs:
       - name: Resolve refresh tasks
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "${{ github.event.schedule }}" = "0 23 * * 0-4" ] || [ "${{ github.event.schedule }}" = "30 0 * * 1-5" ]; then
-              TASKS="technical"
-              PUBLISH_AT=""
-              FORCE_REFRESH="true"
-            elif [ "${{ github.event.schedule }}" = "0 0 * * 1" ]; then
-              TASKS="stock-universe market-trends market-events"
-              PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0); publish_at = publish_at + timedelta(hours=1) if publish_at <= now else publish_at; print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z"))')"
-              FORCE_REFRESH="false"
-            else
-              TASKS="valuation technical"
-              PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0); publish_at = publish_at + timedelta(hours=1) if publish_at <= now else publish_at; print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z"))')"
-              FORCE_REFRESH="false"
-            fi
+            TASKS="technical"
+            PUBLISH_AT=""
+            FORCE_REFRESH="true"
+            MA_SUPPORT_SCAN_FORCE="true"
+            case "${{ github.event.schedule }}" in
+              *" 23 "*) MA_SUPPORT_SCAN_SLOT="08" ;;
+              *" 0 "*) MA_SUPPORT_SCAN_SLOT="0930" ;;
+              *) MA_SUPPORT_SCAN_SLOT="manual" ;;
+            esac
             SEND_NOTIFICATIONS="true"
           else
             case "${{ inputs.refresh_scope }}" in
@@ -128,11 +126,15 @@ jobs:
               PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1); print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z") if now.minute >= 50 else "")')"
             fi
             FORCE_REFRESH="false"
+            MA_SUPPORT_SCAN_FORCE="false"
+            MA_SUPPORT_SCAN_SLOT=""
           fi
           echo "REFRESH_TASKS=$TASKS" >> "$GITHUB_ENV"
           echo "SEND_NOTIFICATIONS=$SEND_NOTIFICATIONS" >> "$GITHUB_ENV"
           echo "WEB_REFRESH_PUBLISH_AT=$PUBLISH_AT" >> "$GITHUB_ENV"
           echo "FORCE_REFRESH=$FORCE_REFRESH" >> "$GITHUB_ENV"
+          echo "MA_SUPPORT_SCAN_FORCE=$MA_SUPPORT_SCAN_FORCE" >> "$GITHUB_ENV"
+          echo "MA_SUPPORT_SCAN_SLOT=$MA_SUPPORT_SCAN_SLOT" >> "$GITHUB_ENV"
           echo "REFRESH_TICKERS=${{ inputs.refresh_tickers || '' }}" >> "$GITHUB_ENV"
           echo "Resolved refresh tasks: $TASKS"
           echo "Send notifications: $SEND_NOTIFICATIONS"
