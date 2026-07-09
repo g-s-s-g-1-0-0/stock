@@ -72,6 +72,8 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn('cancel-in-progress: false', workflow)
         self.assertIn("scheduled_publish_at:", workflow)
         self.assertIn("refresh_tickers:", workflow)
+        self.assertIn("ma_support_scan_slot:", workflow)
+        self.assertIn('MA_SUPPORT_SCAN_SLOT="${{ inputs.ma_support_scan_slot || \'\' }}"', workflow)
         self.assertIn('RAW_PUBLISH_AT="${{ inputs.scheduled_publish_at || \'\' }}"', workflow)
         self.assertIn('if [ "$RAW_PUBLISH_AT" = "immediate" ]; then', workflow)
         self.assertIn("if now.minute >= 50 else", workflow)

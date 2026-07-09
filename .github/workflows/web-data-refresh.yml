@@ -38,6 +38,10 @@ on:
         description: "Comma-separated tickers to force into this refresh"
         required: false
         default: ""
+      ma_support_scan_slot:
+        description: "MA support notification slot override (08 or 0930)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -106,7 +110,12 @@ jobs:
             esac
             SEND_NOTIFICATIONS="true"
           else
-            case "${{ inputs.refresh_scope }}" in
+            MA_SUPPORT_SCAN_SLOT="${{ inputs.ma_support_scan_slot || '' }}"
+            if [ "$MA_SUPPORT_SCAN_SLOT" = "08" ] || [ "$MA_SUPPORT_SCAN_SLOT" = "0930" ]; then
+              TASKS="technical"
+            else
+              MA_SUPPORT_SCAN_SLOT=""
+              case "${{ inputs.refresh_scope }}" in
               all) TASKS="stock-universe valuation technical market-trends market-events" ;;
               analysis) TASKS="valuation technical" ;;
               stock-universe) TASKS="stock-universe" ;;
@@ -115,19 +124,26 @@ jobs:
               market-trends) TASKS="stock-universe market-trends" ;;
               market-events) TASKS="market-events" ;;
               *) TASKS="stock-universe valuation technical market-trends market-events" ;;
-            esac
+              esac
+            fi
             SEND_NOTIFICATIONS="${{ inputs.send_notifications || 'true' }}"
             RAW_PUBLISH_AT="${{ inputs.scheduled_publish_at || '' }}"
-            if [ "$RAW_PUBLISH_AT" = "immediate" ]; then
+            if [ -n "$MA_SUPPORT_SCAN_SLOT" ]; then
+              PUBLISH_AT=""
+            elif [ "$RAW_PUBLISH_AT" = "immediate" ]; then
               PUBLISH_AT=""
             elif [ -n "$RAW_PUBLISH_AT" ]; then
               PUBLISH_AT="$RAW_PUBLISH_AT"
             else
               PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1); print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z") if now.minute >= 50 else "")')"
             fi
-            FORCE_REFRESH="false"
-            MA_SUPPORT_SCAN_FORCE="false"
-            MA_SUPPORT_SCAN_SLOT=""
+            if [ -n "$MA_SUPPORT_SCAN_SLOT" ]; then
+              FORCE_REFRESH="true"
+              MA_SUPPORT_SCAN_FORCE="true"
+            else
+              FORCE_REFRESH="false"
+              MA_SUPPORT_SCAN_FORCE="false"
+            fi
           fi
           echo "REFRESH_TASKS=$TASKS" >> "$GITHUB_ENV"
           echo "SEND_NOTIFICATIONS=$SEND_NOTIFICATIONS" >> "$GITHUB_ENV"
