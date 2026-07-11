@@ -60,7 +60,7 @@ const CONSTANTS = {
     TARGET_PCT_G:    0.12,
     CIRCUIT_PCT_G:   0.12,
     G_QQQ_DIST_MIN:  8,
-    G_QQQ_DIST_MAX:  18,
+    G_QQQ_DIST_MAX:  14,
     G_MA20_SLOPE5_MIN: 0.005,
     G_RSI_MIN:       45,
     G_RSI_MAX:       80,
@@ -712,8 +712,8 @@ function clearExitReason(stockName) {
  * C: MA200 위 + BB스퀴즈 돌파 + 거래량 폭발 + %B>55        (강세장 전용, 나스닥 ≥ -3%)
  * D: MA200 위 + ADX>30 + +DI>-DI + ADX상승 + MACD>0 + %B 30~75 (강세장 전용, 나스닥 ≥ -3%)
  * E: MA200 위 + BB스퀴즈 + 저가%B≤50                       (히스테리시스 + 찐바닥 허용)
- * F: MA200 위 + 저가%B≤5                                   (히스테리시스 + 찐바닥 허용)
- * G: 회복장 + QQQ 8~18% + MA20 눌림 후 회복                 (고점 청산 적용)
+ * F: MA200 위 + 저가%B≤5 + 회복장 또는 QQQ≤매수차단선       (횡보장 고점 차단)
+ * G: 회복장 + QQQ 8~14% + MA20 눌림 후 회복                 (고점 청산 적용)
  * H: QQQ 상단 차단 통과 + MA20 지지반등/재돌파               (고점 청산 적용)
  */
 function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding = false, holdingStrategyType = null, allProperties = null, nasdaqBuyBlockMax = null) {
@@ -788,8 +788,10 @@ function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding =
 
   const fCond1 = ind.currentPrice > ind.ma200;
   const fCond2 = ind.pctBLow !== null && ind.pctBLow <= S.BB_PCT_B_LOW_MAX;
+  // 웹 calculator/rules.py 의 f_market_gate 와 동일: 바닥/정상 필터 + (회복장 또는 매수차단선 이하)
+  const fMarketGate = nasdaqAllowsBottomBuy && (isRecoveryMarket || nasdaqBelowBuyBlock);
   const entryGroupF = !entryGroupA && !entryGroupB && !entryGroupC && !entryGroupD && !entryGroupE
-                   && fCond1 && fCond2 && nasdaqAllowsBottomBuy;
+                   && fCond1 && fCond2 && fMarketGate;
 
   const gState = nasdaqAllowsGRecovery && ind.currentPrice > ind.ma200
     ? fetchGMa20PullbackState_(ind.stockName)
@@ -855,8 +857,7 @@ function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding =
       triggered = eCond1 && !ixicFilterActive && nasdaqBelowBuyBlock
                && bbPairOk && ind.pctBLow !== null && eCond2 && eCond3;
     } else if (holdingStrategyType === "F") {
-      triggered = fCond1 && !ixicFilterActive && nasdaqBelowBuyBlock
-               && ind.pctBLow !== null && fCond2;
+      triggered = fCond1 && fCond2 && fMarketGate;
     } else if (holdingStrategyType === "G") {
       triggered = gCond1 && gCond2 && gCond3 && gCond5 && gCond6 && gCond7 && gCond8 && gCond9 && gCond10;
     } else if (holdingStrategyType === "H") {
@@ -875,11 +876,11 @@ function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding =
     cCond1, cCond2, cCond3, cCond4, cCond5, cCond6, bbPairOk,
     dCond1, dCond2, dCond3, dCond4, dCond5, dCond6,
     eCond1, eCond2, eCond3,
-    fCond1, fCond2,
+    fCond1, fCond2, fMarketGate,
     gCond1, gCond2, gCond3, gCond4, gCond5, gCond6, gCond7, gCond8, gCond9, gCond10,
     gState, gMa20, gClose, gLow, nasdaqAllowsGRecovery,
     hCond1: hSupport || hReclaim, hCond2: nasdaqAllowsBottomBuy, hState, hMa20, hClose, hLow,
-    nasdaqAllowsStrictMomentum, nasdaqAllowsBottomBuy, nasdaqBelowBuyBlock, ixicDist, ixicFilterActive,
+    nasdaqAllowsStrictMomentum, nasdaqAllowsBottomBuy, nasdaqBelowBuyBlock, ixicDist, ixicFilterActive, isRecoveryMarket,
     entryTriggered,
     cond2: bCond2, cond3: bCond3, cond3Hold: bCond3Hold,
     cond3Released: bCond3Released, cond4: bCond4, cond5: bCond5
@@ -1456,11 +1457,14 @@ function _buildReleaseReason(stratType, ind, buy, vixD, ixicDist, S) {
       return `저가 %B 상승 (${fn(ind.pctBLow, 2)} > ${S.SQUEEZE_PCT_B_MAX})`;
     }
     case "F": {
-      if (!buy.nasdaqAllowsBottomBuy) {
-        const inDeath = ixicDist > S.NASDAQ_DIST_LOWER && ixicDist < S.NASDAQ_DIST_UPPER;
-        return inDeath
-          ? `나스닥 하락장 필터 진입 (QQQ 이격도 ${ixicDist.toFixed(1)}% → 데스존 ${S.NASDAQ_DIST_UPPER}% ~ ${S.NASDAQ_DIST_LOWER}%)`
-          : `나스닥 F 차단 유지 (히스테리시스 이격도 ${ixicDist.toFixed(1)}%, 해제 ≥ ${S.NASDAQ_DIST_RELEASE}%)`;
+      if (!buy.fMarketGate) {
+        if (!buy.nasdaqAllowsBottomBuy) {
+          const inDeath = ixicDist > S.NASDAQ_DIST_LOWER && ixicDist < S.NASDAQ_DIST_UPPER;
+          return inDeath
+            ? `나스닥 하락장 필터 진입 (QQQ 이격도 ${ixicDist.toFixed(1)}% → 데스존 ${S.NASDAQ_DIST_UPPER}% ~ ${S.NASDAQ_DIST_LOWER}%)`
+            : `나스닥 F 차단 유지 (히스테리시스 이격도 ${ixicDist.toFixed(1)}%, 해제 ≥ ${S.NASDAQ_DIST_RELEASE}%)`;
+        }
+        return `F 시장 게이트 차단 (회복장 또는 QQQ ≤ 매수 차단선 필요, 현재 이격도 ${ixicDist.toFixed(1)}%)`;
       }
       if (!buy.fCond1) return `200일선 하방 이탈 (현재가 ${fP(ind.currentPrice)} / MA200 ${fP(ind.ma200)})`;
       if (ind.pctBLow === null) return "저가 %B 일시 결측 (눌림 해소로 단정하지 않음)";
@@ -1637,8 +1641,8 @@ function logStockAnalysis(ind, vixD, ixicDist, event, buy, exit, now, isHolding,
     `\n  ③ BB폭(${fn(ind.bbWidth, 2)}) / 60일평균(${fn(ind.bbWidthAvg60, 2)}) | 조건: 비율 < ${S.SQUEEZE_RATIO * 100}%: ${buy.eCond2 ? "✅" : "❌"}` +
     `\n  ④ 저가%B(${fn(ind.pctBLow, 2)}) ≤ ${S.SQUEEZE_PCT_B_MAX}: ${buy.eCond3 ? "✅" : "❌"}` +
 
-    `\n[F그룹: 200일선 상방 & BB 극단 저점 (히스테리시스+찐바닥 허용)]` +
-    `\n  ① 나스닥 필터(E/F): ${buy.nasdaqAllowsBottomBuy ? "✅" : "❌ 차단"} (이격도 ${ixicDist.toFixed(1)}%)` +
+    `\n[F그룹: 200일선 상방 & BB 극단 저점 (회복장 또는 QQQ ≤ 매수 차단선)]` +
+    `\n  ① 나스닥 필터(F): ${buy.fMarketGate ? "✅" : "❌ 차단"} (이격도 ${ixicDist.toFixed(1)}%, 회복장 ${isRecoveryMarket ? "✅" : "❌"})` +
     `\n  ② 현재가(${fmtP(ind.currentPrice)}) > MA200(${fmtP(ind.ma200)}): ${buy.fCond1 ? "✅" : "❌"}` +
     `\n  ③ 저가%B(${fn(ind.pctBLow, 2)}) ≤ ${S.BB_PCT_B_LOW_MAX}: ${buy.fCond2 ? "✅" : "❌"}` +
 

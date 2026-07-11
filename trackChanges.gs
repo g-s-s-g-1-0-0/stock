@@ -711,7 +711,7 @@ const Utils = {
     TARGET_PCT_G:    0.12,
     CIRCUIT_PCT_G:   0.12,
     G_QQQ_DIST_MIN:  8,
-    G_QQQ_DIST_MAX:  18,
+    G_QQQ_DIST_MAX:  14,
     G_MA20_SLOPE5_MIN: 0.005,
     G_RSI_MIN:       45,
     G_RSI_MAX:       80,
@@ -1283,8 +1283,9 @@ const Utils = {
 
     const fCond1 = currentPrice !== null && ma200 !== null && currentPrice > ma200;
     const fCond2 = pctBLow !== null && pctBLow <= S.BB_PCT_B_LOW_MAX;
+    const fMarketGate = nasdaqAllowsBottomBuy && (!!globalData.isRecoveryMarket || nasdaqBelowBuyBlock);
     const entryGroupF = !entryGroupA && !entryGroupB && !entryGroupC && !entryGroupD && !entryGroupE
-                     && fCond1 && fCond2 && nasdaqAllowsBottomBuy;
+                     && fCond1 && fCond2 && fMarketGate;
 
     const gState = nasdaqAllowsGRecovery && currentPrice !== null && ma200 !== null && currentPrice > ma200
       ? fetchGMa20PullbackState_(stockName)
@@ -1325,7 +1326,7 @@ const Utils = {
       } else if (savedStrategy === "E") {
         buyTriggered = eCond1 && !ixicFilterActive && nasdaqBelowBuyBlock && bbPairOk && pctBLow !== null && eCond2 && eCond3;
       } else if (savedStrategy === "F") {
-        buyTriggered = fCond1 && !ixicFilterActive && nasdaqBelowBuyBlock && pctBLow !== null && fCond2;
+        buyTriggered = fCond1 && fCond2 && fMarketGate;
       } else if (savedStrategy === "G") {
         buyTriggered = gCond1 && gCond2 && gCond3 && gCond5 && gCond6 && gCond7 && gCond8 && gCond9 && gCond10;
       }
@@ -1554,7 +1555,8 @@ const Utils = {
 
     const fCond1   = currentPrice !== null && ma200 !== null && currentPrice > ma200;
     const fCond2   = pctBLow !== null && pctBLow <= S.BB_PCT_B_LOW_MAX;
-    const groupF   = !groupA && !groupB && !groupC && !groupD && !groupE && fCond1 && fCond2 && nasdaqAllowsBottomBuy;
+    const fMarketGate = nasdaqAllowsBottomBuy && (!!currentGlobalData.isRecoveryMarket || nasdaqBelowBuyBlock);
+    const groupF   = !groupA && !groupB && !groupC && !groupD && !groupE && fCond1 && fCond2 && fMarketGate;
 
     const gState = ((nasdaqAllowsGRecovery && currentPrice !== null && ma200 !== null && currentPrice > ma200) || hintStrategyType === "G" || hintStrategyType === "H")
       ? fetchGMa20PullbackState_(stockName)
@@ -2077,9 +2079,10 @@ const Utils = {
         && nasdaqAllowsBottomBuy;
     }
     if (strategy === "F") {
+      const fMarketGate = nasdaqAllowsBottomBuy && (!!globalData.isRecoveryMarket || nasdaqBelowBuyBlock);
       return currentPrice > ma200
         && pctBLow !== null && pctBLow <= S.BB_PCT_B_LOW_MAX
-        && nasdaqAllowsBottomBuy;
+        && fMarketGate;
     }
     if (strategy === "G") {
       const gState = nasdaqAllowsGRecovery ? fetchGMa20PullbackState_(stockName) : null;
