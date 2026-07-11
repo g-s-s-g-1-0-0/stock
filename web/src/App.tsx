@@ -111,7 +111,6 @@ type TradeLog = {
 
 type TooltipState = {
   text: string
-  content?: ReactNode
   x: number
   y: number
   className?: string
@@ -1949,27 +1948,6 @@ const strategyCriteriaRows: Record<string, Array<{ label: string; value: string 
   ],
 }
 
-function StrategyCriteriaTooltip({ strategy }: { strategy: string }) {
-  const code = strategyCode(strategy)
-  const rows = strategyCriteriaRows[code] ?? []
-  return (
-    <div className="strategy-criteria-tooltip">
-      <strong className="strategy-criteria-title">{strategy}</strong>
-      <p>{strategyInfo(strategy)}</p>
-      <table>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.label}>
-              <th>{row.label}</th>
-              <td>{row.value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
 function tradeResultLabel(trade: TradeLog) {
   if (trade.manualExit && trade.status !== '보유 중') return `청산(${trade.status})`
   if (trade.status === '익절') return '성공(익절)'
@@ -2155,6 +2133,53 @@ function recommendedSellPriceNote(strategy: string) {
   return undefined
 }
 
+function StrategyCriteriaModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, onClose)}>
+      <section className="confirm-modal strategy-criteria-modal" role="dialog" aria-modal="true" aria-labelledby="strategy-criteria-title" onMouseDown={(event) => event.stopPropagation()}>
+        <button aria-label="전략 기준 닫기" className="modal-close-button" type="button" onClick={onClose}>
+          ×
+        </button>
+        <h3 id="strategy-criteria-title">전략별 매수·청산 기준</h3>
+        <p>실제 시스템 신호에 적용되는 A~H 전략 기준입니다. 기준이 바뀌면 이 표도 함께 업데이트됩니다.</p>
+        <div className="strategy-criteria-modal-table-wrap">
+          <table className="strategy-criteria-modal-table">
+            <thead>
+              <tr>
+                <th>전략</th>
+                <th>성격</th>
+                <th>주요 기준</th>
+              </tr>
+            </thead>
+            <tbody>
+              {strategyFilters.map((code) => (
+                <tr key={code}>
+                  <th>
+                    <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{code}</span>
+                  </th>
+                  <td>{strategyInfo(code)}</td>
+                  <td>
+                    <table className="strategy-criteria-nested-table">
+                      <tbody>
+                        {(strategyCriteriaRows[code] ?? []).map((row) => (
+                          <tr key={`${code}-${row.label}`}>
+                            <th>{row.label}</th>
+                            <td>{row.value}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 function marketFlag(market: Market) {
   return market === 'KR' ? '🇰🇷' : '🇺🇸'
 }
@@ -2296,10 +2321,8 @@ function StrategyTag({
 
     onTooltipOpen({
       text: strategyInfo(strategy),
-      content: <StrategyCriteriaTooltip strategy={strategy} />,
       x: Math.min(Math.max(centeredX, minX), maxX),
       y: rect.top - 8,
-      className: 'strategy-criteria-floating-tooltip',
     })
   }
 
@@ -5133,6 +5156,7 @@ function App() {
   const [viewMode, setViewMode] = useState<'personal' | 'operator'>(() => readStoredViewMode())
   const [showViewModeHint, setShowViewModeHint] = useState(() => localStorage.getItem(VIEW_MODE_HINT_STORAGE_KEY) !== 'true')
   const [selectedStrategy, setSelectedStrategy] = useState('전체')
+  const [isStrategyCriteriaOpen, setIsStrategyCriteriaOpen] = useState(false)
   const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc')
   const [activeTooltip, setActiveTooltip] = useState<TooltipState | null>(null)
   const [selectedTickers, setSelectedTickers] = useState<string[]>([])
@@ -8335,6 +8359,13 @@ function App() {
               <h2>트레이딩 로그</h2>
               <div className="strategy-filter" aria-label="전략 필터">
                 <span className="strategy-filter-label">전략</span>
+                <button
+                  className="strategy-criteria-open-button"
+                  type="button"
+                  onClick={() => setIsStrategyCriteriaOpen(true)}
+                >
+                  기준
+                </button>
                 {['전체', ...strategyFilters].map((code) => (
                   <button
                     className={selectedStrategy === code ? 'active' : ''}
@@ -9058,8 +9089,11 @@ function App() {
           }}
           onClick={(event) => event.stopPropagation()}
         >
-          {activeTooltip.content ?? activeTooltip.text}
+          {activeTooltip.text}
         </div>
+      )}
+      {isStrategyCriteriaOpen && (
+        <StrategyCriteriaModal onClose={() => setIsStrategyCriteriaOpen(false)} />
       )}
       {shouldShowInvestmentProfileOnboarding && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, closeInvestmentProfileOnboarding)}>
