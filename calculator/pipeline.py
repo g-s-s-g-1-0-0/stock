@@ -822,9 +822,9 @@ def latest_technical_row(
         "C": ["현재가 > MA200", "전일 BB 스퀴즈", "당일 BB 확장", "거래량 폭발", "종가%B > 55", "MACD Hist > 0", acd_filter_label],
         "D": ["현재가 > MA200", "+DI > -DI", "ADX > 30", "ADX 상승", "MACD Hist > 0", "종가%B 30~75", acd_filter_label],
         "E": ["현재가 > MA200", "BB폭 압축", "저가%B <= 50", "나스닥 바닥/정상 필터"],
-        "F": ["현재가 > MA200", f"저가%B <= {float(STRATEGY_RULES['BB_PCT_B_LOW_MAX']):.0f}", "나스닥 바닥/정상 필터"],
+        "F": ["현재가 > MA200", f"저가%B <= {float(STRATEGY_RULES['BB_PCT_B_LOW_MAX']):.0f}", "회복장 또는 QQQ ≤ 매수 차단선"],
         "G": [
-            "회복장 & QQQ 이격도 8~18",
+            f"회복장 & QQQ 이격도 {float(STRATEGY_RULES['G_QQQ_DIST_MIN']):.0f}~{float(STRATEGY_RULES['G_QQQ_DIST_MAX']):.0f}",
             "현재가 > MA200",
             "MA20 > MA200",
             "저가 MA20 터치",

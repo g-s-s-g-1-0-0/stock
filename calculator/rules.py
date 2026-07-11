@@ -44,7 +44,7 @@ STRATEGY_RULES: dict[str, float | int] = {
     "TARGET_PCT_G": 0.12,
     "CIRCUIT_PCT_G": 0.12,
     "G_QQQ_DIST_MIN": 8,
-    "G_QQQ_DIST_MAX": 18,
+    "G_QQQ_DIST_MAX": 14,
     "G_MA20_SLOPE5_MIN": 0.005,
     "G_RSI_MIN": 45,
     "G_RSI_MAX": 80,
@@ -224,6 +224,7 @@ def evaluate_buy_condition(
         and nasdaq_strong_relaxed
     )
     nasdaq_acd_gate = nasdaq_strict or recovery_exception_open
+    f_market_gate = nasdaq_bottom and (is_recovery_market or nasdaq_below_buy_block)
 
     a_cond1 = _gt(ind.current_price, ind.ma200)
     a_cond2 = ind.macd_hist_d1 is not None and ind.macd_hist_d1 <= 0 and _gt(ind.macd_hist, 0)
@@ -270,7 +271,7 @@ def evaluate_buy_condition(
 
     f_cond1 = _gt(ind.current_price, ind.ma200)
     f_cond2 = ind.pct_b_low is not None and ind.pct_b_low <= float(s["BB_PCT_B_LOW_MAX"])
-    entry_f = not entry_a and not entry_b and not entry_c and not entry_d and not entry_e and f_cond1 and f_cond2 and nasdaq_bottom
+    entry_f = not entry_a and not entry_b and not entry_c and not entry_d and not entry_e and f_cond1 and f_cond2 and f_market_gate
 
     g_cond1 = (
         is_recovery_market
@@ -391,7 +392,7 @@ def evaluate_buy_condition(
         elif holding_strategy_type == "E":
             triggered = e_cond1 and not ixic_filter_active and nasdaq_below_buy_block and bb_pair_ok and e_cond2 and e_cond3
         elif holding_strategy_type == "F":
-            triggered = f_cond1 and not ixic_filter_active and nasdaq_below_buy_block and f_cond2
+            triggered = f_cond1 and f_cond2 and f_market_gate
         elif holding_strategy_type == "G":
             triggered = g_cond1 and g_cond2 and g_cond3 and g_cond5 and g_cond6 and g_cond7 and g_cond8 and g_cond9 and g_cond10
         elif holding_strategy_type == "H":
@@ -409,7 +410,7 @@ def evaluate_buy_condition(
             "C": [c_cond1, c_cond2, c_cond3, c_cond4, c_cond5, c_cond6, nasdaq_acd_gate],
             "D": [d_cond1, d_cond2, d_cond3, d_cond4, d_cond5, d_cond6, nasdaq_acd_gate],
             "E": [e_cond1, e_cond2, e_cond3, nasdaq_bottom],
-            "F": [f_cond1, f_cond2, nasdaq_bottom],
+            "F": [f_cond1, f_cond2, f_market_gate],
             "G": [g_cond1, g_cond2, g_cond3, g_cond4, g_cond5, g_cond6, g_cond7, g_cond8, g_cond9, g_cond10],
             "H": [h_support or h_reclaim, nasdaq_bottom],
         },

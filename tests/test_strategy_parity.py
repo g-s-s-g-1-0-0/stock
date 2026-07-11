@@ -158,6 +158,64 @@ def test_strategy_g_recovery_ma20_pullback_signal():
     assert result["strategyType"] == "G"
 
 
+def test_strategy_g_blocks_late_recovery_over_fourteen_percent():
+    row = IndicatorRow(
+        stock_name="MSFT",
+        current_price=122,
+        ma200=100,
+        ma20=115,
+        ma20_d1=114,
+        ma20_prev5=114.2,
+        close_d1=116,
+        candle_low=114.8,
+        rsi=58,
+        vol_ratio20=1.2,
+    )
+
+    result = evaluate_buy_condition(
+        row,
+        vix=20,
+        ixic_dist=15,
+        ixic_filter_active=False,
+        nasdaq_buy_block_max=18,
+        is_recovery_market=True,
+    )
+
+    assert result["triggered"] is False
+    assert result["strategyType"] is None
+
+
+def test_strategy_f_blocks_non_recovery_sideways_high():
+    row = IndicatorRow(
+        stock_name="PL",
+        current_price=110,
+        ma200=100,
+        pct_b_low=3,
+    )
+
+    blocked = evaluate_buy_condition(
+        row,
+        vix=20,
+        ixic_dist=12,
+        ixic_filter_active=False,
+        nasdaq_buy_block_max=9,
+        is_recovery_market=False,
+    )
+    recovery = evaluate_buy_condition(
+        row,
+        vix=20,
+        ixic_dist=12,
+        ixic_filter_active=False,
+        nasdaq_buy_block_max=18,
+        is_recovery_market=True,
+    )
+
+    assert blocked["triggered"] is False
+    assert blocked["strategyType"] is None
+    assert recovery["triggered"] is True
+    assert recovery["strategyType"] == "F"
+
+
 def test_strategy_g_uses_twelve_percent_target_and_twelve_percent_stop():
     target_row = IndicatorRow(stock_name="MSFT", current_price=112, entry_price=100)
     stop_row = IndicatorRow(stock_name="MSFT", current_price=88, entry_price=100)
@@ -238,6 +296,8 @@ if __name__ == "__main__":
     test_nasdaq_peak_exit_skips_g_recovery_pullback()
     test_nasdaq_peak_exit_still_applies_to_b_and_d()
     test_strategy_g_recovery_ma20_pullback_signal()
+    test_strategy_g_blocks_late_recovery_over_fourteen_percent()
+    test_strategy_f_blocks_non_recovery_sideways_high()
     test_strategy_g_uses_twelve_percent_target_and_twelve_percent_stop()
     test_all_strategies_exit_when_twenty_five_day_rebound_stalls()
     test_stalled_rebound_exit_waits_until_day_twenty_five_and_below_three_percent()
