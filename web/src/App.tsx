@@ -111,7 +111,6 @@ type TradeLog = {
 
 type TooltipState = {
   text: string
-  content?: ReactNode
   x: number
   y: number
   className?: string
@@ -2196,50 +2195,19 @@ function StrategyCriteriaContent() {
 }
 
 function StrategyFilterLabel({
-  onTooltipOpen,
-  onTooltipClose,
   onOpenModal,
 }: {
-  onTooltipOpen: (tooltip: TooltipState) => void
-  onTooltipClose: () => void
   onOpenModal: () => void
 }) {
-  const openTooltip = (element: HTMLElement) => {
-    if (window.innerWidth <= 760) {
-      onOpenModal()
-      return
-    }
-    const rect = element.getBoundingClientRect()
-    const tooltipWidth = Math.min(760, window.innerWidth - 32)
-    const minX = tooltipWidth / 2 + 16
-    const maxX = window.innerWidth - tooltipWidth / 2 - 16
-    const centeredX = rect.left + rect.width / 2
-    onTooltipOpen({
-      text: '',
-      content: <StrategyCriteriaContent />,
-      x: Math.min(Math.max(centeredX, minX), maxX),
-      y: rect.top - 8,
-      className: 'strategy-criteria-floating-tooltip',
-    })
-  }
-
   return (
     <button
       aria-label="전략별 기준 보기"
       className="strategy-filter-label strategy-filter-label-button"
       type="button"
-      onBlur={onTooltipClose}
       onClick={(event) => {
         event.stopPropagation()
-        if (window.innerWidth <= 760) {
-          onOpenModal()
-        } else {
-          openTooltip(event.currentTarget)
-        }
+        onOpenModal()
       }}
-      onFocus={(event) => openTooltip(event.currentTarget)}
-      onMouseEnter={(event) => openTooltip(event.currentTarget)}
-      onMouseLeave={onTooltipClose}
     >
       전략
     </button>
@@ -8426,8 +8394,6 @@ function App() {
               <div className="strategy-filter" aria-label="전략 필터">
                 <StrategyFilterLabel
                   onOpenModal={() => setIsStrategyCriteriaOpen(true)}
-                  onTooltipClose={() => setActiveTooltip(null)}
-                  onTooltipOpen={setActiveTooltip}
                 />
                 {['전체', ...strategyFilters].map((code) => (
                   <button
@@ -9152,7 +9118,7 @@ function App() {
           }}
           onClick={(event) => event.stopPropagation()}
         >
-          {activeTooltip.content ?? activeTooltip.text}
+          {activeTooltip.text}
         </div>
       )}
       {isStrategyCriteriaOpen && (

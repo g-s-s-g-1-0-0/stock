@@ -699,7 +699,7 @@
 .strategy-filter-label-button {
   border: 0;
   background: transparent;
-  cursor: help;
+  cursor: pointer;
   font: inherit;
 }
 
@@ -1081,23 +1081,6 @@
   overflow: hidden;
 }
 
-.strategy-criteria-floating-tooltip {
-  width: min(760px, calc(100vw - 32px));
-  white-space: normal;
-}
-
-.strategy-criteria-floating-tooltip h3 {
-  margin: 0 0 6px;
-  color: var(--text-h);
-  font-size: 14px;
-}
-
-.strategy-criteria-floating-tooltip p {
-  margin: 0 0 10px;
-  color: var(--muted);
-  line-height: 1.45;
-}
-
 .strategy-criteria-modal > p {
   margin-bottom: 14px;
 }
@@ -1111,6 +1094,7 @@
 
 .strategy-criteria-modal-table {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
   font-size: 12px;
 }
