@@ -111,6 +111,7 @@ type TradeLog = {
 
 type TooltipState = {
   text: string
+  content?: ReactNode
   x: number
   y: number
   className?: string
@@ -1897,6 +1898,78 @@ function strategyInfo(strategy: string) {
   return descriptions[strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
 }
 
+const strategyCriteriaRows: Record<string, Array<{ label: string; value: string }>> = {
+  A: [
+    { label: '진입', value: 'MA200 위, MACD 골든크로스, 종가 %B > 80, RSI > 70, QQQ 강세 필터 통과' },
+    { label: '익절', value: '+20% 도달 즉시' },
+    { label: '손절', value: '-30%' },
+    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 60거래일 수익 중 청산, 최대 120거래일' },
+  ],
+  B: [
+    { label: '진입', value: 'QQQ 하락장(< -3%), 종목 MA200 아래, VIX ≥ 30, RSI/CCI 과매도, LR 추세선 방어' },
+    { label: '익절', value: '+20% 도달 즉시' },
+    { label: '손절', value: '-30%' },
+    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 60거래일 수익 중 청산, 최대 120거래일' },
+  ],
+  C: [
+    { label: '진입', value: 'MA200 위, 전일 BB 스퀴즈, 당일 BB 확장, 거래량 1.5배 이상, 종가 %B > 55, MACD Hist > 0' },
+    { label: '익절', value: '+20% 도달 즉시' },
+    { label: '손절', value: '-30%' },
+    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 60거래일 수익 중 청산, 최대 120거래일' },
+  ],
+  D: [
+    { label: '진입', value: 'MA200 위, +DI > -DI, ADX > 30, ADX 상승, MACD Hist > 0, 종가 %B 30~75' },
+    { label: '익절', value: '+12% 도달 즉시' },
+    { label: '손절', value: '-25%' },
+    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 최대 30거래일' },
+  ],
+  E: [
+    { label: '진입', value: 'MA200 위, BB폭/60일평균 < 0.5, 저가 %B ≤ 50, QQQ 바닥/정상 필터 통과' },
+    { label: '익절', value: '+20% 구간 진입 후 MACD 둔화 또는 5거래일 대기 만료' },
+    { label: '손절', value: '-30%' },
+    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 60거래일 수익 중 청산, 최대 120거래일' },
+  ],
+  F: [
+    { label: '진입', value: 'MA200 위, 저가 %B ≤ 5, 회복장 또는 QQQ ≤ 매수 차단선. 횡보장 고점에서는 차단' },
+    { label: '익절', value: '+20% 구간 진입 후 MACD 둔화 또는 5거래일 대기 만료' },
+    { label: '손절', value: '-30%' },
+    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 60거래일 수익 중 청산, 최대 120거래일' },
+  ],
+  G: [
+    { label: '진입', value: '회복장 전용, QQQ 이격 +8~+14%, MA20 > MA200, 저가 MA20 터치 후 종가 MA20 회복' },
+    { label: '추가 조건', value: '전일 종가 > 전일 MA20, MA20 5일 기울기 ≥ +0.5%, RSI 45~80, 20일 거래량 ≤ 2.0배, 종목 MA200 이격 ≤ +80%' },
+    { label: '익절', value: '+12% 도달 즉시' },
+    { label: '손절/시간', value: '-12%, 25거래일 +3% 미달 청산, 최대 40거래일' },
+  ],
+  H: [
+    { label: '진입', value: '20일선 지지반등 또는 20일선 재돌파, QQQ 바닥/정상 필터 통과' },
+    { label: '익절', value: '+12% 도달 즉시' },
+    { label: '손절', value: '종가가 MA20 대비 -5% 이탈 또는 매수가 대비 -20%' },
+    { label: '정체/시간', value: '30거래일 +5% 미달 청산, 최대 40거래일' },
+  ],
+}
+
+function StrategyCriteriaTooltip({ strategy }: { strategy: string }) {
+  const code = strategyCode(strategy)
+  const rows = strategyCriteriaRows[code] ?? []
+  return (
+    <div className="strategy-criteria-tooltip">
+      <strong className="strategy-criteria-title">{strategy}</strong>
+      <p>{strategyInfo(strategy)}</p>
+      <table>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.label}>
+              <th>{row.label}</th>
+              <td>{row.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function tradeResultLabel(trade: TradeLog) {
   if (trade.manualExit && trade.status !== '보유 중') return `청산(${trade.status})`
   if (trade.status === '익절') return '성공(익절)'
@@ -2223,8 +2296,10 @@ function StrategyTag({
 
     onTooltipOpen({
       text: strategyInfo(strategy),
+      content: <StrategyCriteriaTooltip strategy={strategy} />,
       x: Math.min(Math.max(centeredX, minX), maxX),
       y: rect.top - 8,
+      className: 'strategy-criteria-floating-tooltip',
     })
   }
 
@@ -8983,7 +9058,7 @@ function App() {
           }}
           onClick={(event) => event.stopPropagation()}
         >
-          {activeTooltip.text}
+          {activeTooltip.content ?? activeTooltip.text}
         </div>
       )}
       {shouldShowInvestmentProfileOnboarding && (
