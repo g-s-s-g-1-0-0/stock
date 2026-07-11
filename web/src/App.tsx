@@ -2188,7 +2188,6 @@ function StrategyCriteriaContent() {
   return (
     <>
       <h3 id="strategy-criteria-title">전략별 매수·청산 기준</h3>
-      <p>실제 시스템 신호에 적용되는 A~H 전략 기준입니다. 기준이 바뀌면 이 표도 함께 업데이트됩니다.</p>
       <StrategyCriteriaTable />
     </>
   )
