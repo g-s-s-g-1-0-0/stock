@@ -2146,6 +2146,13 @@ function StrategyCriteriaModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+function strategyCriteriaLabelTone(label: string) {
+  if (label.startsWith('익절')) return 'take-profit'
+  if (label.startsWith('손절')) return 'stop-loss'
+  if (label.startsWith('진입') || label.startsWith('추가')) return 'entry'
+  return 'time'
+}
+
 function StrategyCriteriaTable() {
   return (
     <div className="strategy-criteria-modal-table-wrap">
@@ -2160,21 +2167,23 @@ function StrategyCriteriaTable() {
         <tbody>
           {strategyFilters.map((code) => (
             <tr key={code}>
-              <th>
+              <th scope="row">
                 <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{code}</span>
               </th>
-              <td>{strategyInfo(code)}</td>
               <td>
-                <table className="strategy-criteria-nested-table">
-                  <tbody>
-                    {(strategyCriteriaRows[code] ?? []).map((row) => (
-                      <tr key={`${code}-${row.label}`}>
-                        <th>{row.label}</th>
-                        <td>{row.value}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <p className="strategy-criteria-summary">{strategyInfo(code)}</p>
+              </td>
+              <td>
+                <dl className="strategy-criteria-list">
+                  {(strategyCriteriaRows[code] ?? []).map((row) => (
+                    <div className="strategy-criteria-item" key={`${code}-${row.label}`}>
+                      <dt className={`strategy-criteria-label strategy-criteria-label-${strategyCriteriaLabelTone(row.label)}`}>
+                        {row.label}
+                      </dt>
+                      <dd className="strategy-criteria-value">{row.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               </td>
             </tr>
           ))}
