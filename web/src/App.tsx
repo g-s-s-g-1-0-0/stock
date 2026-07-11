@@ -111,6 +111,7 @@ type TradeLog = {
 
 type TooltipState = {
   text: string
+  content?: ReactNode
   x: number
   y: number
   className?: string
@@ -2140,43 +2141,108 @@ function StrategyCriteriaModal({ onClose }: { onClose: () => void }) {
         <button aria-label="전략 기준 닫기" className="modal-close-button" type="button" onClick={onClose}>
           ×
         </button>
-        <h3 id="strategy-criteria-title">전략별 매수·청산 기준</h3>
-        <p>실제 시스템 신호에 적용되는 A~H 전략 기준입니다. 기준이 바뀌면 이 표도 함께 업데이트됩니다.</p>
-        <div className="strategy-criteria-modal-table-wrap">
-          <table className="strategy-criteria-modal-table">
-            <thead>
-              <tr>
-                <th>전략</th>
-                <th>성격</th>
-                <th>주요 기준</th>
-              </tr>
-            </thead>
-            <tbody>
-              {strategyFilters.map((code) => (
-                <tr key={code}>
-                  <th>
-                    <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{code}</span>
-                  </th>
-                  <td>{strategyInfo(code)}</td>
-                  <td>
-                    <table className="strategy-criteria-nested-table">
-                      <tbody>
-                        {(strategyCriteriaRows[code] ?? []).map((row) => (
-                          <tr key={`${code}-${row.label}`}>
-                            <th>{row.label}</th>
-                            <td>{row.value}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <StrategyCriteriaContent />
       </section>
     </div>
+  )
+}
+
+function StrategyCriteriaTable() {
+  return (
+    <div className="strategy-criteria-modal-table-wrap">
+      <table className="strategy-criteria-modal-table">
+        <thead>
+          <tr>
+            <th>전략</th>
+            <th>성격</th>
+            <th>주요 기준</th>
+          </tr>
+        </thead>
+        <tbody>
+          {strategyFilters.map((code) => (
+            <tr key={code}>
+              <th>
+                <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{code}</span>
+              </th>
+              <td>{strategyInfo(code)}</td>
+              <td>
+                <table className="strategy-criteria-nested-table">
+                  <tbody>
+                    {(strategyCriteriaRows[code] ?? []).map((row) => (
+                      <tr key={`${code}-${row.label}`}>
+                        <th>{row.label}</th>
+                        <td>{row.value}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function StrategyCriteriaContent() {
+  return (
+    <>
+      <h3 id="strategy-criteria-title">전략별 매수·청산 기준</h3>
+      <p>실제 시스템 신호에 적용되는 A~H 전략 기준입니다. 기준이 바뀌면 이 표도 함께 업데이트됩니다.</p>
+      <StrategyCriteriaTable />
+    </>
+  )
+}
+
+function StrategyFilterLabel({
+  onTooltipOpen,
+  onTooltipClose,
+  onOpenModal,
+}: {
+  onTooltipOpen: (tooltip: TooltipState) => void
+  onTooltipClose: () => void
+  onOpenModal: () => void
+}) {
+  const openTooltip = (element: HTMLElement) => {
+    if (window.innerWidth <= 760) {
+      onOpenModal()
+      return
+    }
+    const rect = element.getBoundingClientRect()
+    const tooltipWidth = Math.min(760, window.innerWidth - 32)
+    const minX = tooltipWidth / 2 + 16
+    const maxX = window.innerWidth - tooltipWidth / 2 - 16
+    const centeredX = rect.left + rect.width / 2
+    onTooltipOpen({
+      text: '',
+      content: <StrategyCriteriaContent />,
+      x: Math.min(Math.max(centeredX, minX), maxX),
+      y: rect.top - 8,
+      className: 'strategy-criteria-floating-tooltip',
+    })
+  }
+
+  return (
+    <button
+      aria-label="전략별 기준 보기"
+      className="strategy-filter-label strategy-filter-label-button"
+      type="button"
+      onBlur={onTooltipClose}
+      onClick={(event) => {
+        event.stopPropagation()
+        if (window.innerWidth <= 760) {
+          onOpenModal()
+        } else {
+          openTooltip(event.currentTarget)
+        }
+      }}
+      onFocus={(event) => openTooltip(event.currentTarget)}
+      onMouseEnter={(event) => openTooltip(event.currentTarget)}
+      onMouseLeave={onTooltipClose}
+    >
+      전략
+    </button>
   )
 }
 
@@ -8358,14 +8424,11 @@ function App() {
             <div className="log-title-row">
               <h2>트레이딩 로그</h2>
               <div className="strategy-filter" aria-label="전략 필터">
-                <span className="strategy-filter-label">전략</span>
-                <button
-                  className="strategy-criteria-open-button"
-                  type="button"
-                  onClick={() => setIsStrategyCriteriaOpen(true)}
-                >
-                  기준
-                </button>
+                <StrategyFilterLabel
+                  onOpenModal={() => setIsStrategyCriteriaOpen(true)}
+                  onTooltipClose={() => setActiveTooltip(null)}
+                  onTooltipOpen={setActiveTooltip}
+                />
                 {['전체', ...strategyFilters].map((code) => (
                   <button
                     className={selectedStrategy === code ? 'active' : ''}
@@ -9089,7 +9152,7 @@ function App() {
           }}
           onClick={(event) => event.stopPropagation()}
         >
-          {activeTooltip.text}
+          {activeTooltip.content ?? activeTooltip.text}
         </div>
       )}
       {isStrategyCriteriaOpen && (

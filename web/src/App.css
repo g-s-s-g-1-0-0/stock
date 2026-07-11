@@ -696,6 +696,21 @@
   white-space: nowrap;
 }
 
+.strategy-filter-label-button {
+  border: 0;
+  background: transparent;
+  cursor: help;
+  font: inherit;
+}
+
+.strategy-filter-label-button:hover,
+.strategy-filter-label-button:focus-visible {
+  color: var(--accent-strong);
+  outline: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .segmented-tabs button,
 .strategy-filter button,
 .add-stock-button,
@@ -1060,17 +1075,27 @@
   background: #ffffff;
 }
 
-.strategy-filter .strategy-criteria-open-button {
-  border-color: rgba(34, 136, 238, 0.18);
-  background: rgba(34, 136, 238, 0.08);
-  color: var(--accent-strong);
-  font-weight: 900;
-}
-
 .strategy-criteria-modal {
   width: min(980px, 100%);
   max-height: calc(100dvh - 48px);
   overflow: hidden;
+}
+
+.strategy-criteria-floating-tooltip {
+  width: min(760px, calc(100vw - 32px));
+  white-space: normal;
+}
+
+.strategy-criteria-floating-tooltip h3 {
+  margin: 0 0 6px;
+  color: var(--text-h);
+  font-size: 14px;
+}
+
+.strategy-criteria-floating-tooltip p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .strategy-criteria-modal > p {
