@@ -91,15 +91,28 @@ function normalizeMaSupportSlot(value) {
   return ''
 }
 
-function inferMaSupportSlot() {
+function seoulDateParts() {
   const seoulParts = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Seoul',
+    weekday: 'short',
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
   }).formatToParts(new Date())
-  const hour = Number(seoulParts.find((part) => part.type === 'hour')?.value)
-  const minute = Number(seoulParts.find((part) => part.type === 'minute')?.value)
+  return {
+    weekday: seoulParts.find((part) => part.type === 'weekday')?.value,
+    hour: Number(seoulParts.find((part) => part.type === 'hour')?.value),
+    minute: Number(seoulParts.find((part) => part.type === 'minute')?.value),
+  }
+}
+
+function isSeoulWeekday() {
+  const { weekday } = seoulDateParts()
+  return weekday !== 'Sat' && weekday !== 'Sun'
+}
+
+function inferMaSupportSlot() {
+  const { hour, minute } = seoulDateParts()
   if (!Number.isFinite(hour) || !Number.isFinite(minute)) return ''
   const minutes = hour * 60 + minute
   if (minutes >= 8 * 60 && minutes < 9 * 60) return '08'
@@ -108,6 +121,7 @@ function inferMaSupportSlot() {
 }
 
 function readMaSupportScanSlot(req, scope, isCronRequest) {
+  if (isCronRequest && !isSeoulWeekday()) return ''
   const explicitSlot = normalizeMaSupportSlot(
     req.query?.ma_support_scan_slot ||
     req.query?.ma_support_slot ||

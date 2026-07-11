@@ -2350,13 +2350,13 @@ def latest_ohlcv_date(row: dict[str, Any], market: str) -> str:
 
 
 def ma_support_send_slot(now: datetime | None = None) -> str | None:
-    if os.environ.get("MA_SUPPORT_SCAN_FORCE", "").strip().lower() in {"1", "true", "yes", "on"}:
-        return os.environ.get("MA_SUPPORT_SCAN_SLOT", "").strip() or "manual"
     current = now or datetime.now().astimezone()
     kst_now = current.astimezone(KST)
-    minutes = kst_now.hour * 60 + kst_now.minute
     if kst_now.weekday() >= 5:
         return None
+    if os.environ.get("MA_SUPPORT_SCAN_FORCE", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return os.environ.get("MA_SUPPORT_SCAN_SLOT", "").strip() or "manual"
+    minutes = kst_now.hour * 60 + kst_now.minute
     if (8 * 60) <= minutes < (9 * 60):
         return "08"
     if (9 * 60 + 30) <= minutes < (10 * 60):
@@ -2517,7 +2517,7 @@ def ma_support_stop_line(signal: dict[str, Any], market: str) -> str:
     return f"{ma_candidate_price(stop_price, market)} (기준선 -{ratio * 100:.0f}%)"
 
 
-def ma_support_distance_decision(signal: dict[str, Any]) -> str:
+def ma_support_distance_decision(signal: dict[str, Any], market_state: dict[str, Any] | None = None) -> str:
     try:
         period = int(signal.get("period"))
         distance = float(signal.get("distancePercent"))
@@ -2525,6 +2525,19 @@ def ma_support_distance_decision(signal: dict[str, Any]) -> str:
         return "판단 불가"
     if distance != distance:
         return "판단 불가"
+
+    state = market_state or {}
+    try:
+        qqq_premium = float(state.get("premiumPercent"))
+    except (TypeError, ValueError):
+        qqq_premium = None
+    is_recovery_market = state.get("isRecoveryMarket") is True or "회복" in str(state.get("regimeLabel") or "")
+    if qqq_premium is not None and qqq_premium == qqq_premium:
+        if qqq_premium > 14:
+            return "금지: 과열장" if not is_recovery_market else "금지: 회복장 후반 과열"
+        if qqq_premium > 9:
+            return "주의: 회복장 후반" if is_recovery_market else "금지: 횡보장 고점"
+
     ok_limit = 3.0 if period == 20 else 5.0
     warn_limit = 5.0 if period == 20 else 8.0
     if distance <= ok_limit:
@@ -2606,11 +2619,11 @@ def ma_support_email_body(candidates: list[dict[str, Any]], market_state: dict[s
         if len(candidate["signals"]) > 1:
             extra_signals = "<br>" + "<br>".join(
                 f"<span style=\"color:#666;font-size:12px;\">+ {html.escape(str(item['signal']))} "
-                f"({fmt_signed(item['distancePercent'], '%')} · {html.escape(ma_support_distance_decision(item))} "
+                f"({fmt_signed(item['distancePercent'], '%')} · {html.escape(ma_support_distance_decision(item, market_state))} "
                 f"· 손절 {html.escape(ma_support_stop_line(item, market))})</span>"
                 for item in candidate["signals"][1:]
             )
-        distance_decision = ma_support_distance_decision(signal)
+        distance_decision = ma_support_distance_decision(signal, market_state)
         rows_html.append(
             "<tr>"
             f"<td style=\"padding:8px;border-bottom:1px solid #eee;\"><strong>{html.escape(label)}</strong><br><span style=\"color:#888;\">{html.escape(str(candidate['date']))} · {html.escape(market)}</span></td>"

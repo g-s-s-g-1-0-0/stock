@@ -717,6 +717,18 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("주의", self.notifications.ma_support_distance_decision(signal_200))
         self.assertEqual("$95.00 (기준선 -5%)", self.notifications.ma_support_stop_line(signal_200, "US"))
         self.assertEqual("보류", self.notifications.ma_support_distance_decision(signal_far))
+        self.assertEqual(
+            "금지: 횡보장 고점",
+            self.notifications.ma_support_distance_decision(signal_20, {"premiumPercent": 11.0, "isRecoveryMarket": False}),
+        )
+        self.assertEqual(
+            "주의: 회복장 후반",
+            self.notifications.ma_support_distance_decision(signal_20, {"premiumPercent": 11.0, "isRecoveryMarket": True}),
+        )
+        self.assertEqual(
+            "금지: 과열장",
+            self.notifications.ma_support_distance_decision(signal_20, {"premiumPercent": 15.0, "isRecoveryMarket": False}),
+        )
 
     def test_ma_support_notifications_are_admin_only_and_pref_gated(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
