@@ -19,7 +19,23 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import backtest_qqq_block_v2 as bt
 from calculator.indicators import add_indicators
 from calculator.sheet_sources import calc_rsi, calc_cci
-from scripts.web_refresh_notifications import has_lower_wick_rebound
+
+
+def has_lower_wick_rebound(row: dict[str, float]) -> tuple[bool, float, float]:
+    open_ = float(row["open"])
+    high = float(row["high"])
+    low = float(row["low"])
+    close = float(row["close"])
+    candle_range = high - low
+    if candle_range <= 0:
+        return False, 0.0, 0.0
+    body = abs(close - open_)
+    lower_wick = min(open_, close) - low
+    lower_wick_ratio = lower_wick / candle_range
+    close_position = (close - low) / candle_range
+    triggered = lower_wick >= max(body, candle_range * 0.20) and close_position >= 0.50
+    return triggered, lower_wick_ratio, close_position
+
 
 EVAL_START = bt.EVAL_START
 

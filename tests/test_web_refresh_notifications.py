@@ -43,7 +43,6 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         wait_index = workflow.index("- name: Wait until scheduled publish time")
         send_opinion_index = workflow.index("- name: Send opinion change emails")
         send_peak_index = workflow.index("- name: Send Nasdaq peak emails")
-        send_bb_pullback_index = workflow.index("- name: Send BB pullback candidate emails")
         send_ma_support_index = workflow.index("- name: Send moving average support candidate emails")
         send_weekly_trend_index = workflow.index("- name: Send weekly trend report emails")
         send_stock_universe_index = workflow.index("- name: Send stock universe update email")
@@ -56,7 +55,6 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertLess(wait_index, send_opinion_index)
         self.assertLess(send_opinion_index, commit_state_index)
         self.assertLess(send_peak_index, commit_state_index)
-        self.assertLess(send_bb_pullback_index, commit_state_index)
         self.assertLess(send_ma_support_index, commit_state_index)
         self.assertLess(wait_index, send_weekly_trend_index)
         self.assertLess(send_weekly_trend_index, commit_state_index)
@@ -87,7 +85,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn("python scripts/record_web_api_logs.py --trade-logs-only $REFRESH_TASKS", workflow)
         self.assertIn("python scripts/web_refresh_notifications.py weekly-trend", workflow)
         self.assertIn('python scripts/web_refresh_notifications.py stock-universe-report --previous "$RUNNER_TEMP/search-universe.before-refresh.json"', workflow)
-        self.assertIn("python scripts/web_refresh_notifications.py bb-pullback", workflow)
+        self.assertNotIn("python scripts/web_refresh_notifications.py bb-pullback", workflow)
         self.assertIn("python scripts/web_refresh_notifications.py ma-support", workflow)
         self.assertIn("python scripts/record_web_api_logs.py --skip-trade-log-update $REFRESH_TASKS", workflow)
         self.assertIn("git diff --quiet -- data/cache data/history data/search_universe.json web/public/api", workflow)
@@ -517,91 +515,6 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
         self.assertEqual("email", channel)
         self.assertEqual([("user@example.com", "테스트", "<p>본문</p>")], sent_email)
-
-    def test_bb_pullback_signal_detects_candidate_without_strategy_change(self) -> None:
-        original_fetch_ohlcv = self.notifications.fetch_ohlcv
-        original_pct_b_value = self.notifications.pct_b_value
-        original_calc_rsi = self.notifications.calc_rsi
-        original_calc_cci = self.notifications.calc_cci
-
-        rows = [
-            {"date": f"202605{i:02d}", "open": 100.0, "high": 102.0, "low": 99.0, "close": 101.0, "volume": 1000.0}
-            for i in range(1, 24)
-        ]
-        rows.extend([
-            {"date": "20260524", "open": 110.0, "high": 130.0, "low": 109.0, "close": 120.0, "volume": 1000.0},
-            {"date": "20260525", "open": 119.0, "high": 122.0, "low": 112.0, "close": 117.0, "volume": 1500.0},
-        ])
-        pct_b_values = [110.0, 130.0]
-
-        try:
-            self.notifications.fetch_ohlcv = lambda ticker: rows
-            self.notifications.pct_b_value = lambda price, closes: pct_b_values.pop(0)
-            self.notifications.calc_rsi = lambda closes: [70.0]
-            self.notifications.calc_cci = lambda ohlcv_rows, period=14: [150.0]
-
-            signal = self.notifications.bb_pullback_signal("TEST", {"ticker": "TEST", "name": "Test Corp", "market": "US"})
-        finally:
-            self.notifications.fetch_ohlcv = original_fetch_ohlcv
-            self.notifications.pct_b_value = original_pct_b_value
-            self.notifications.calc_rsi = original_calc_rsi
-            self.notifications.calc_cci = original_calc_cci
-
-        self.assertIsNotNone(signal)
-        assert signal is not None
-        self.assertEqual("TEST", signal["ticker"])
-        self.assertEqual("Test Corp", signal["name"])
-        self.assertEqual("2026-05-25", signal["date"])
-
-    def test_bb_pullback_notifications_are_scoped_to_recipient_watchlist(self) -> None:
-        sent_messages: list[tuple[str, str, str]] = []
-        original_load_recipients = self.notifications.load_recipients
-        original_load_watchlists = self.notifications.load_watchlists
-        original_stock_rows_by_ticker = self.notifications.stock_rows_by_ticker
-        original_bb_pullback_signal = self.notifications.bb_pullback_signal
-        original_send_notification = self.notifications.send_notification
-        original_state_path = self.notifications.NOTIFICATION_STATE
-
-        with TemporaryDirectory() as temp_dir:
-            current = Path(temp_dir) / "stocks.json"
-            current.write_text(json.dumps({"rows": []}), encoding="utf-8")
-            self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
-            self.notifications.load_recipients = lambda: [
-                self.notifications.Recipient(
-                    owner_id="user-1",
-                    email="user@example.com",
-                    is_admin=True,
-                    preferences={"bbPullbackEmail": True},
-                )
-            ]
-            self.notifications.load_watchlists = lambda: {"": {"HIT", "MISS"}, "user-1": {"PERSONAL"}}
-            self.notifications.stock_rows_by_ticker = lambda path: {
-                "HIT": {"ticker": "HIT", "name": "Hit Corp", "market": "US"},
-                "MISS": {"ticker": "MISS", "name": "Miss Corp", "market": "US"},
-            }
-            self.notifications.bb_pullback_signal = lambda ticker, stock=None: (
-                {"ticker": "HIT", "name": "Hit Corp", "date": "2026-05-25", "price": 10.0,
-                 "previousHighPctB": 130.0, "pullbackPercent": -1.0, "volumeRatio5": 1.2,
-                 "rsi": 70.0, "cci": 150.0}
-                if ticker == "HIT"
-                else None
-            )
-            self.notifications.send_notification = lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
-
-            try:
-                sent_count = self.notifications.send_bb_pullback_notifications(current)
-            finally:
-                self.notifications.load_recipients = original_load_recipients
-                self.notifications.load_watchlists = original_load_watchlists
-                self.notifications.stock_rows_by_ticker = original_stock_rows_by_ticker
-                self.notifications.bb_pullback_signal = original_bb_pullback_signal
-                self.notifications.send_notification = original_send_notification
-                self.notifications.NOTIFICATION_STATE = original_state_path
-
-        self.assertEqual(1, sent_count)
-        self.assertEqual(1, len(sent_messages))
-        self.assertIn("HIT", sent_messages[0][1])
-        self.assertIn("Hit Corp", sent_messages[0][2])
 
     def test_ma_support_signal_detects_kr_morning_candidate(self) -> None:
         original_fetch_ohlcv = self.notifications.fetch_ohlcv

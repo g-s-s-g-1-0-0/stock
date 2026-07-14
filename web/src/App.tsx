@@ -22,7 +22,6 @@ type NotificationPreferences = {
   nasdaqPeakEmail: boolean
   nasdaqWarnEmail: boolean
   regimeShiftEmail: boolean
-  bbPullbackEmail: boolean
   maSupportEmail: boolean
   weeklyTrendReport: boolean
   earningsDayBefore: boolean
@@ -72,7 +71,7 @@ type WatchlistPersistResult =
   | { ok: true }
   | { ok: false; reason?: 'auth'; error?: unknown }
 
-type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'nasdaqWarnEmail' | 'regimeShiftEmail' | 'bbPullbackEmail' | 'maSupportEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
+type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'nasdaqWarnEmail' | 'regimeShiftEmail' | 'maSupportEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
 
 type Stock = {
   ticker: string
@@ -316,7 +315,6 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   nasdaqPeakEmail: true,
   nasdaqWarnEmail: true,
   regimeShiftEmail: true,
-  bbPullbackEmail: true,
   maSupportEmail: true,
   weeklyTrendReport: true,
   earningsDayBefore: true,
@@ -911,7 +909,6 @@ function normalizeNotificationPreferences(value: unknown): NotificationPreferenc
     nasdaqPeakEmail: typeof candidate?.nasdaqPeakEmail === 'boolean' ? candidate.nasdaqPeakEmail : DEFAULT_NOTIFICATION_PREFERENCES.nasdaqPeakEmail,
     nasdaqWarnEmail: typeof candidate?.nasdaqWarnEmail === 'boolean' ? candidate.nasdaqWarnEmail : DEFAULT_NOTIFICATION_PREFERENCES.nasdaqWarnEmail,
     regimeShiftEmail: typeof candidate?.regimeShiftEmail === 'boolean' ? candidate.regimeShiftEmail : DEFAULT_NOTIFICATION_PREFERENCES.regimeShiftEmail,
-    bbPullbackEmail: typeof candidate?.bbPullbackEmail === 'boolean' ? candidate.bbPullbackEmail : DEFAULT_NOTIFICATION_PREFERENCES.bbPullbackEmail,
     maSupportEmail: typeof candidate?.maSupportEmail === 'boolean' ? candidate.maSupportEmail : DEFAULT_NOTIFICATION_PREFERENCES.maSupportEmail,
     weeklyTrendReport: typeof candidate?.weeklyTrendReport === 'boolean' ? candidate.weeklyTrendReport : DEFAULT_NOTIFICATION_PREFERENCES.weeklyTrendReport,
     earningsDayBefore: typeof candidate?.earningsDayBefore === 'boolean' ? candidate.earningsDayBefore : DEFAULT_NOTIFICATION_PREFERENCES.earningsDayBefore,
@@ -3135,7 +3132,6 @@ const notificationOptions: Array<{ key: NotificationPreferenceKey; title: string
   { key: 'earningsDayBefore', title: '실적발표 전날', description: '관심종목 실적발표 전 리스크 점검' },
 ]
 const adminNotificationOptions: Array<{ key: NotificationPreferenceKey; title: string; description: string }> = [
-  { key: 'bbPullbackEmail', title: 'BB 눌림 반등 후보', description: '관리자 전용: 관심종목이 BB 상단 돌파 후 얕은 눌림 반등 후보로 잡힐 때' },
   { key: 'maSupportEmail', title: '이평선 반등/돌파 후보', description: '관리자 전용: 장 시작 후 관심종목이 20/200일선 지지 반등 또는 돌파 후보로 잡힐 때' },
   { key: 'adminAutoUpdateFailureEmail', title: '자동 업데이트 실패', description: '관리자 전용: 같은 작업이 연속 3회 이상 실패할 때' },
 ]
