@@ -10,7 +10,8 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-09:0930",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-10:08",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-10:0930",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-11:0930"
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-11:0930",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-15:08"
     ],
     "sentKeys": [
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:012450:2026-07-01:20",
@@ -31,8 +32,11 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:CRDO:2026-07-06:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:CRDO:2026-07-08:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:LPTH:2026-06-30:20",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:LPTH:2026-07-14:200",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:PL:2026-06-30:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:PL:2026-07-02:20",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:PL:2026-07-14:200",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:RKLB:2026-07-14:200",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:SGML:2026-06-30:200",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:SOXL:2026-06-30:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:STX:2026-06-30:20",
@@ -42,7 +46,7 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VRT:2026-07-08:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VRT:2026-07-10:20"
     ],
-    "updatedAt": "2026-07-11T00:56:23.304735+00:00"
+    "updatedAt": "2026-07-14T23:00:15.899851+00:00"
   },
   "nasdaqPeak": {
     "resetAt": "2026-05-14T20:55:50.998617+00:00",
@@ -84,7 +88,7 @@
   },
   "regimeShift": {
     "isRecoveryMarket": false,
-    "updatedAt": "2026-07-14T21:00:01.346868+00:00"
+    "updatedAt": "2026-07-14T23:00:00.359113+00:00"
   },
   "strategySeason": {
     "nonRecoveryStreak": 0,
