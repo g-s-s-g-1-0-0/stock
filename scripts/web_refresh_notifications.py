@@ -894,19 +894,14 @@ def tech_text(row: dict[str, Any], *keys: str) -> str:
 
 
 def strategy_code(value: Any) -> str:
-    text = str(value or "").strip()
-    return text[:1] if text[:1] in {"A", "B", "C", "D", "E", "F", "G", "H"} else ""
+    from calculator.rules import normalize_strategy_code
+
+    return normalize_strategy_code(value) or ""
 
 
 STRATEGY_LABELS = {
-    "A": "A. 200일선 상방 & 모멘텀 재가속",
-    "B": "B. 200일선 하방 & 공황 저점",
-    "C": "C. 200일선 상방 & 스퀴즈 거래량 돌파",
-    "D": "D. 200일선 상방 & 상승 흐름 강화",
-    "E": "E. 200일선 상방 & 스퀴즈 저점",
-    "F": "F. 200일선 상방 & BB 극단 저점",
-    "G": "G. 급락 후 회복장 20일선 눌림",
-    "H": "H. 20일선 지지·재돌파",
+    "1": "1. 공황 저점",
+    "2": "2. 이평선 눌림",
 }
 
 
@@ -952,7 +947,7 @@ def recommended_sell_price_for_trade(
         technical_row.get("현재가"),
     )
     entry_price = parse_metric_number(entry_price_text)
-    if target_pct is None or entry_price is None:
+    if target_pct is None or target_pct <= 0 or entry_price is None:
         return "-"
     return format_target_price(entry_price_text, entry_price * (1 + target_pct))
 
@@ -2019,20 +2014,20 @@ def regime_shift_email_body(*, became_recovery: bool, snapshot: dict[str, Any]) 
     if became_recovery:
         headline = "QQQ가 급락 후 회복장으로 전환됐습니다."
         detail = (
-            f"이제 상단 매수 차단선이 +{block_max:.0f}%로 완화되고, 회복장 모멘텀 예외와 "
-            "G그룹(20일선 눌림) 전략이 활성화됩니다."
+            f"이제 상단 매수 차단선이 +{block_max:.0f}%로 완화되고, "
+            "매수 시즌이 열려 있으면 전략 2(이평선 눌림) 매수가 가능해집니다."
         )
-        next_step = "상단 차단이 넓어진 만큼 개별 종목 과열(이격·RSI)을 더 보수적으로 확인하세요."
+        next_step = "차단선·경고선 아래에서만 전략 2 추가매수를 검토하세요. 회복장 종료 시 전량매도됩니다."
         accent = "#1b5e20"
         border = "#c8e6c9"
         bg = "#f1f8e9"
     else:
         headline = "QQQ가 회복장에서 비회복장/고점 횡보장으로 전환됐습니다."
         detail = (
-            f"상단 매수 차단선이 +{block_max:.0f}%로 다시 조여지고, 회복장 모멘텀 예외와 "
-            "G그룹(20일선 눌림) 전략이 비활성화됩니다."
+            f"상단 매수 차단선이 +{block_max:.0f}%로 다시 조여지고, "
+            "2거래일 확정 시 전략 1/2 보유분이 전량매도·시즌 종료될 수 있습니다."
         )
-        next_step = "신규·추가 매수 폭이 좁아집니다. 보유 종목은 기존 청산 기준으로 계속 점검하세요."
+        next_step = "신규·추가 매수가 막힙니다. 보유 종목은 회복장 종료 청산과 -30% 손절을 확인하세요."
         accent = "#b45309"
         border = "#fde68a"
         bg = "#fffbeb"

@@ -25,7 +25,14 @@ from zoneinfo import ZoneInfo
 
 from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
-from .rules import STRATEGY_RULES, IndicatorRow, compute_nasdaq_filter_active, evaluate_buy_condition, strategy_display_name
+from .rules import (
+    STRATEGY_RULES,
+    IndicatorRow,
+    compute_nasdaq_filter_active,
+    evaluate_buy_condition,
+    normalize_strategy_code,
+    strategy_display_name,
+)
 from .sheet_sources import USER_AGENT, calc_rsi, calc_technical_row, fetch_ohlcv, fetch_text, fetch_us_extended_price, fetch_us_ohlcv, fetch_valuation
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -688,8 +695,48 @@ def valuation_from_price_range(current_price: str, fair_price: str) -> str:
 
 
 def parse_holding_strategy_code(value: Any) -> str | None:
-    match = re.match(r"\s*([A-H])\b", str(value or "").strip().upper())
-    return match.group(1) if match else None
+    return normalize_strategy_code(value)
+
+
+def load_strategy_season_state() -> dict[str, Any]:
+    path = CACHE_DIR / "web-notification-state.json"
+    if not path.exists():
+        return {"open": False, "sawRecovery": False, "nonRecoveryStreak": 0}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"open": False, "sawRecovery": False, "nonRecoveryStreak": 0}
+    season = payload.get("strategySeason") if isinstance(payload, dict) else None
+    if not isinstance(season, dict):
+        return {"open": False, "sawRecovery": False, "nonRecoveryStreak": 0}
+    return {
+        "open": bool(season.get("open")),
+        "sawRecovery": bool(season.get("sawRecovery")),
+        "nonRecoveryStreak": int(season.get("nonRecoveryStreak") or 0),
+        "openedAt": season.get("openedAt"),
+        "openedByTicker": season.get("openedByTicker"),
+        "updatedAt": season.get("updatedAt"),
+    }
+
+
+def save_strategy_season_state(season: dict[str, Any]) -> None:
+    path = CACHE_DIR / "web-notification-state.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    except (OSError, json.JSONDecodeError):
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    payload["strategySeason"] = {
+        "open": bool(season.get("open")),
+        "sawRecovery": bool(season.get("sawRecovery")),
+        "nonRecoveryStreak": int(season.get("nonRecoveryStreak") or 0),
+        "openedAt": season.get("openedAt"),
+        "openedByTicker": season.get("openedByTicker"),
+        "updatedAt": season.get("updatedAt") or now_iso(),
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def daily_price_date_label(raw_date: Any, market: str) -> str:
@@ -708,11 +755,7 @@ def daily_price_date_label(raw_date: Any, market: str) -> str:
 
 
 def open_holding_strategies() -> dict[str, str]:
-    """현재 '보유 중'인 종목의 PRIMARY 전략 코드 맵 (ticker → A-G).
-
-    매매로그에 같은 종목의 보유 슬롯이 여러 개면 가장 먼저 보이는(PRIMARY) 전략을
-    사용한다. GAS의 saved.strategyType(ENTRY_ 키)에 대응한다.
-    """
+    """현재 '보유 중'인 종목의 PRIMARY 전략 코드 맵 (ticker → 1|2)."""
 
     rows = read_cache("trade-logs").get("rows", [])
     holdings: dict[str, str] = {}
@@ -738,6 +781,7 @@ def latest_technical_row(
     vix: float | None = None,
     market_event: str = "당분간 없음",
     holding_strategy_type: str | None = None,
+    season_open: bool = False,
 ) -> dict[str, str] | None:
     row = calc_technical_row(stock["ticker"])
     price = float(row["close"])
@@ -761,6 +805,8 @@ def latest_technical_row(
         ma20=row["ma20"],
         ma20_d1=row["ma20D1"],
         ma20_prev5=row["ma20Prev5"],
+        ma60=row.get("ma60"),
+        ma144=row.get("ma144"),
         close_d1=row["closeD1"],
         bb_width=row["bbWidth"],
         bb_width_d1=row["bbWidthD1"],
@@ -780,6 +826,7 @@ def latest_technical_row(
     nasdaq_buy_block_max = qqq_market_state.get("buyBlockMax") if qqq_market_state else None
     ixic_filter_active = compute_nasdaq_filter_active(ixic_dist)
     is_holding = holding_strategy_type is not None
+    warn_triggered = bool(qqq_market_state.get("warnTriggered")) if qqq_market_state else False
     buy = evaluate_buy_condition(
         ind,
         vix=vix,
@@ -789,12 +836,10 @@ def latest_technical_row(
         holding_strategy_type=holding_strategy_type,
         nasdaq_buy_block_max=nasdaq_buy_block_max,
         is_recovery_market=bool(qqq_market_state.get("isRecoveryMarket")) if qqq_market_state else False,
-        recovery_momentum_exception=bool(STRATEGY_RULES.get("RECOVERY_MOMENTUM_EXCEPTION")),
+        season_open=season_open,
+        warn_triggered=warn_triggered,
     )
     event_watch_active = market_event != "당분간 없음"
-    # 보유 종목은 보유용(hold) 조건(buy["triggered"])이 유지되는 한 '매수'를 유지한다.
-    # 신규 진입 신호 재발화 여부가 아니라 hold 조건 이탈 시에만 '관망'으로 내린다(GAS와 동일).
-    # 미보유 종목은 기존대로 신규 진입 신호(entryTriggered)로 판단한다.
     if event_watch_active:
         opinion = "관망"
         opinion_reason = f"이벤트 기간 관망 ({market_event})"
@@ -809,52 +854,39 @@ def latest_technical_row(
         entry_signal_codes = [buy["strategyType"]] if buy["strategyType"] else []
     elif is_holding and opinion == "매수":
         strategy = strategy_display_name(holding_strategy_type)
-        entry_signal_codes = [holding_strategy_type]
+        entry_signal_codes = [holding_strategy_type] if holding_strategy_type else []
     else:
         strategy = "-"
         entry_signal_codes = []
-    buy_block_label = f"나스닥 상단 차단 아님(≤{float(nasdaq_buy_block_max):.0f}%)" if nasdaq_buy_block_max is not None else "나스닥 상단 차단 아님"
-    b_downtrend_label = f"QQQ 하락장(<{float(STRATEGY_RULES['NASDAQ_DIST_UPPER']):.0f}%)"
-    acd_filter_label = "나스닥 강세 필터(회복장 모멘텀 예외)" if buy.get("recoveryException") else "나스닥 강세 필터"
+    downtrend_label = f"QQQ 하락장(<{float(STRATEGY_RULES['NASDAQ_DIST_UPPER']):.0f}%)"
+    buy_block_label = (
+        f"QQQ ≤ 매수 차단선(≤{float(nasdaq_buy_block_max):.0f}%)"
+        if nasdaq_buy_block_max is not None
+        else "QQQ ≤ 매수 차단선"
+    )
     strategy_labels = {
-        "A": ["현재가 > MA200", "MACD 골든크로스", "종가%B > 80", "RSI > 70", acd_filter_label],
-        "B": ["현재가 < MA200", "VIX >= 30", "RSI < 35 또는 CCI < -150", "LR 추세선 상승", "저가 추세선 터치", b_downtrend_label],
-        "C": ["현재가 > MA200", "전일 BB 스퀴즈", "당일 BB 확장", "거래량 폭발", "종가%B > 55", "MACD Hist > 0", acd_filter_label],
-        "D": ["현재가 > MA200", "+DI > -DI", "ADX > 30", "ADX 상승", "MACD Hist > 0", "종가%B 30~75", acd_filter_label],
-        "E": ["현재가 > MA200", "BB폭 압축", "저가%B <= 50", "나스닥 바닥/정상 필터"],
-        "F": ["현재가 > MA200", f"저가%B <= {float(STRATEGY_RULES['BB_PCT_B_LOW_MAX']):.0f}", "회복장 또는 QQQ ≤ 매수 차단선"],
-        "G": [
-            f"회복장 & QQQ 이격도 {float(STRATEGY_RULES['G_QQQ_DIST_MIN']):.0f}~{float(STRATEGY_RULES['G_QQQ_DIST_MAX']):.0f}",
-            "현재가 > MA200",
-            "MA20 > MA200",
-            "저가 MA20 터치",
-            "종가 MA20 회복",
-            "전일 종가 > 전일 MA20",
-            "MA20 5일 기울기 >= 0.5%",
-            "RSI 45~80",
-            "거래량 <= 20일평균 2.0x",
-            f"MA200 이격 <= {float(STRATEGY_RULES['G_MA200_OVERHEAT_MAX']) * 100:.0f}%",
-        ],
-        "H": ["20일선 지지반등 또는 재돌파", "나스닥 바닥/정상 필터"],
+        "1": ["현재가 < MA200", "VIX >= 30", "RSI < 35 또는 CCI < -150", "LR 추세선 상승", "저가 추세선 터치", downtrend_label],
+        "2": ["시즌 열림", "회복장", buy_block_label, "QQQ 경고선 미도달", "MA20/60/144/200 터치"],
     }
     condition_summaries = []
     for group, labels in strategy_labels.items():
         values = buy["conditions"].get(group, [])
         passed = sum(1 for value in values if value)
         details = " / ".join(f"{label}:{'통과' if value else '실패'}" for label, value in zip(labels, values))
-        condition_summaries.append(f"{group}그룹 {passed}/{len(values)} - {details}")
+        condition_summaries.append(f"전략{group} {passed}/{len(values)} - {details}")
+    season_label = "열림" if season_open else "닫힘"
     market_line = (
         f"시장 국면: {qqq_market_state.get('regimeLabel')} / "
         f"QQQ 이격도 {fmt_signed_percent(qqq_market_state.get('premiumPercent'))} / "
         f"최근 60거래일 최저 {fmt_signed_percent(qqq_market_state.get('recent60MinPremiumPercent'))} / "
         f"매수 차단선 > {fmt_signed_percent(qqq_market_state.get('buyBlockMax'))} / "
+        f"매수 시즌: {season_label} / "
         f"이벤트: {market_event}"
-    ) if qqq_market_state else "시장 국면: 데이터 없음"
+    ) if qqq_market_state else f"시장 국면: 데이터 없음 / 매수 시즌: {season_label}"
     decision_log = "\n".join([
         f"{stock['ticker']} 최종 판단: {opinion}",
         f"진입 전략: {strategy}",
         market_line,
-        *(["회복장 모멘텀 예외 적용: QQQ 상단 차단 초과지만 종목 비과열(이격 ≤60% · RSI ≤82)로 A/C/D 신규 진입 허용"] if buy.get("recoveryException") else []),
         *condition_summaries,
     ])
     return {
@@ -868,8 +900,8 @@ def latest_technical_row(
         "opinionReason": opinion_reason,
         "marketEvent": market_event,
         "entryStrategy": strategy,
-        "entrySignalCodes": ",".join(entry_signal_codes),
-        "entrySignals": ", ".join(strategy_display_name(code) for code in entry_signal_codes),
+        "entrySignalCodes": ",".join(str(code) for code in entry_signal_codes if code),
+        "entrySignals": ", ".join(strategy_display_name(code) for code in entry_signal_codes if code),
         "decisionLog": decision_log,
         "conditionSummary": " | ".join(condition_summaries),
         "RSI (D)": fmt_number(row["rsi"]),
@@ -958,6 +990,10 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
         errors.append({"ticker": "CNN_FEAR_GREED", "error": str(exc)})
     market_event = market_snapshot[0][1] if market_snapshot and len(market_snapshot[0]) > 1 else "당분간 없음"
     holdings = open_holding_strategies()
+    season = load_strategy_season_state()
+    season_open = bool(season.get("open")) or any(code in {"1", "2"} for code in holdings.values())
+    season_opened_by: str | None = str(season.get("openedByTicker") or "") or None
+    season_opened_at = season.get("openedAt")
 
     for stock in source_universe:
         try:
@@ -970,6 +1006,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 vix=vix_today,
                 market_event=market_event,
                 holding_strategy_type=holdings.get(str(stock["ticker"]).strip().upper()),
+                season_open=season_open,
             )
             if row:
                 existing_row = existing_rows.get(stock["ticker"], {})
@@ -982,12 +1019,46 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                             "opinionReason": existing_row.get("opinionReason") or exit_reason,
                             "exitReason": exit_reason,
                         }
+                entry_codes = {
+                    code.strip()
+                    for code in str(row.get("entrySignalCodes") or "").split(",")
+                    if code.strip()
+                }
+                if "1" in entry_codes and not season_open:
+                    season_open = True
+                    season_opened_by = str(stock["ticker"]).strip().upper()
+                    season_opened_at = refreshed_at
                 rows[stock["ticker"]] = row
                 successful_rows += 1
         except Exception as exc:  # noqa: BLE001 - batch should preserve partial success
             if stock["ticker"] in existing_rows:
                 rows[stock["ticker"]] = existing_rows[stock["ticker"]]
             errors.append({"ticker": stock["ticker"], "error": str(exc)})
+
+    if season_open and not season.get("open"):
+        save_strategy_season_state(
+            {
+                "open": True,
+                "sawRecovery": bool(season.get("sawRecovery")),
+                "nonRecoveryStreak": int(season.get("nonRecoveryStreak") or 0),
+                "openedAt": season_opened_at or refreshed_at,
+                "openedByTicker": season_opened_by,
+                "updatedAt": refreshed_at,
+            }
+        )
+    elif season_open != bool(season.get("open")) or bool(season.get("open")):
+        # Keep season open flag aligned when holdings imply an active season.
+        save_strategy_season_state(
+            {
+                "open": season_open,
+                "sawRecovery": bool(season.get("sawRecovery")),
+                "nonRecoveryStreak": int(season.get("nonRecoveryStreak") or 0),
+                "openedAt": season_opened_at or season.get("openedAt"),
+                "openedByTicker": season_opened_by or season.get("openedByTicker"),
+                "updatedAt": refreshed_at,
+            }
+        )
+
     return {
         "meta": {
             "kind": "technical",
@@ -996,6 +1067,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
             "lastSuccessfulRun": refreshed_at if successful_rows else existing_meta.get("lastSuccessfulRun"),
             "failedReason": "; ".join(f"{e['ticker']}: {e['error']}" for e in errors) if errors else None,
             "successfulRows": successful_rows,
+            "strategySeasonOpen": season_open,
         },
         "marketSnapshot": market_snapshot,
         "qqqMarketState": qqq_market_state,

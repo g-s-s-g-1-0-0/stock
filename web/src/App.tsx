@@ -1227,7 +1227,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '₩84,200',
     valuation: '보통',
     opinion: '관망',
-    strategies: ['D. 200일선 상방 & 상승 흐름 강화'],
+    strategies: ['1. 공황 저점'],
     updatedAt: '2시간 전',
   },
   {
@@ -1238,7 +1238,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$109.88',
     valuation: '고평가',
     opinion: '관망',
-    strategies: ['A. 200일선 상방 & 모멘텀 재가속'],
+    strategies: ['1. 공황 저점'],
     updatedAt: '2시간 전',
   },
   {
@@ -1249,7 +1249,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$195.42',
     valuation: '보통',
     opinion: '매수',
-    strategies: ['C. 200일선 상방 & 스퀴즈 거래량 돌파', 'D. 200일선 상방 & 상승 흐름 강화'],
+    strategies: ['1. 공황 저점', '2. 이평선 눌림'],
     updatedAt: '2시간 전',
   },
   {
@@ -1260,7 +1260,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$265.30',
     valuation: '고평가',
     opinion: '매도',
-    strategies: ['F. 200일선 상방 & BB 극단 저점'],
+    strategies: ['2. 이평선 눌림'],
     updatedAt: '2시간 전',
   },
   {
@@ -1271,7 +1271,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '₩209,500',
     valuation: '저평가',
     opinion: '매수',
-    strategies: ['E. 200일선 상방 & 스퀴즈 저점'],
+    strategies: ['2. 이평선 눌림'],
     updatedAt: '2시간 전',
   },
   {
@@ -1282,7 +1282,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '₩169,400',
     valuation: '보통',
     opinion: '관망',
-    strategies: ['D. 200일선 상방 & 상승 흐름 강화'],
+    strategies: ['1. 공황 저점'],
     updatedAt: '2시간 전',
   },
   {
@@ -1293,7 +1293,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '₩151,800',
     valuation: '고평가',
     opinion: '매도',
-    strategies: ['E. 200일선 상방 & 스퀴즈 저점'],
+    strategies: ['2. 이평선 눌림'],
     updatedAt: '2시간 전',
   },
   {
@@ -1304,7 +1304,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$38.30',
     valuation: '보통',
     opinion: '매수',
-    strategies: ['B. 200일선 하방 & 공황 저점'],
+    strategies: ['1. 공황 저점'],
     updatedAt: '2시간 전',
   },
   {
@@ -1315,7 +1315,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$20.70',
     valuation: '저평가',
     opinion: '관망',
-    strategies: ['F. 200일선 상방 & BB 극단 저점'],
+    strategies: ['2. 이평선 눌림'],
     updatedAt: '2시간 전',
   },
   {
@@ -1326,7 +1326,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$95.20',
     valuation: '보통',
     opinion: '매수',
-    strategies: ['D. 200일선 상방 & 상승 흐름 강화'],
+    strategies: ['1. 공황 저점'],
     updatedAt: '2시간 전',
   },
   {
@@ -1337,7 +1337,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$57.40',
     valuation: '저평가',
     opinion: '관망',
-    strategies: ['A. 200일선 상방 & 모멘텀 재가속'],
+    strategies: ['1. 공황 저점'],
     updatedAt: '2시간 전',
   },
   {
@@ -1348,7 +1348,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$485.90',
     valuation: '보통',
     opinion: '매수',
-    strategies: ['C. 200일선 상방 & 스퀴즈 거래량 돌파'],
+    strategies: ['2. 이평선 눌림'],
     updatedAt: '2시간 전',
   },
 ]
@@ -1402,7 +1402,7 @@ function resolveStockForTicker(ticker: string, primaryStocks: Stock[], fallbackS
 const initialWatchlist: string[] = []
 
 const operatorTickers: string[] = []
-const strategyFilters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+const strategyFilters = ['1', '2']
 const personalTrades: TradeLog[] = []
 const localTestWatchlist = ['AVGO', 'NVDA', 'MSFT', '005930']
 const localTestPersonalTrades: TradeLog[] = [
@@ -1412,7 +1412,7 @@ const localTestPersonalTrades: TradeLog[] = [
     name: 'Broadcom',
     market: 'US',
     currentPrice: '$425.19',
-    strategy: 'E. 200일선 상방 & 스퀴즈 저점',
+    strategy: '1. 공황 저점',
     buyDate: '2026.04.18',
     buyPrice: '$389.40',
     sellDate: '-',
@@ -1427,7 +1427,7 @@ const localTestPersonalTrades: TradeLog[] = [
     name: 'Microsoft',
     market: 'US',
     currentPrice: '$485.90',
-    strategy: 'C. 200일선 상방 & 스퀴즈 거래량 돌파',
+    strategy: '2. 이평선 눌림',
     buyDate: '2026.04.22',
     buyPrice: '$461.30',
     sellDate: '-',
@@ -1442,7 +1442,7 @@ const localTestPersonalTrades: TradeLog[] = [
     name: 'Broadcom',
     market: 'US',
     currentPrice: '$425.19',
-    strategy: 'E. 200일선 상방 & 스퀴즈 저점',
+    strategy: '1. 공황 저점',
     buyDate: '2026.04.18',
     buyPrice: '$389.40',
     sellDate: '2026.05.15',
@@ -1457,7 +1457,7 @@ const localTestPersonalTrades: TradeLog[] = [
     name: 'NVIDIA',
     market: 'US',
     currentPrice: '$118.40',
-    strategy: 'D. 200일선 상방 & 상승 흐름 강화',
+    strategy: '1. 공황 저점',
     buyDate: '2026.04.15',
     buyPrice: '$104.20',
     sellDate: '2026.05.08',
@@ -1472,7 +1472,7 @@ const localTestPersonalTrades: TradeLog[] = [
     name: '삼성전자',
     market: 'KR',
     currentPrice: '₩78,300',
-    strategy: 'A. 200일선 상방 & 모멘텀 재가속',
+    strategy: '2. 이평선 눌림',
     buyDate: '2026.05.02',
     buyPrice: '₩75,100',
     sellDate: '-',
@@ -1880,71 +1880,35 @@ function tradeReturnClass(value: number) {
 }
 
 function strategyCode(strategy: string) {
-  return strategy.slice(0, 1)
+  const match = String(strategy || '').trim().match(/^([12])\b/)
+  if (match) return match[1]
+  const legacy = String(strategy || '').trim().match(/^([A-H])\b/i)
+  if (legacy && legacy[1].toUpperCase() === 'B') return '1'
+  return String(strategy || '').slice(0, 1)
 }
 
 function strategyInfo(strategy: string) {
   const descriptions: Record<string, string> = {
-    A: '상승 흐름 중 잠깐 쉬었다가 다시 힘이 붙는 구간입니다. 강한 종목이 다시 오르려는 신호를 봅니다.',
-    B: '시장도 하락장이고 종목도 장기 평균선 아래에서 많이 빠진 구간입니다. 반등 가능성은 보지만, 실패하면 손절 기준이 중요합니다.',
-    C: '한동안 조용하던 가격이 거래량과 함께 움직이기 시작한 구간입니다. 돌파 후 계속 이어지는지 봅니다.',
-    D: '장기 평균선 위에서 상승 힘이 더 강해지는 구간입니다. 이미 강한 종목을 따라가는 전략입니다.',
-    E: '상승 흐름은 유지되지만 가격이 잠시 눌린 구간입니다. 다시 들어갈 만한 저점 후보로 봅니다.',
-    F: '상승 흐름 안에서 가격이 아래쪽까지 과하게 밀린 구간입니다. 횡보장 고점은 피하고 반등을 노립니다.',
-    G: '급락 후 회복장 초중반에 20일선까지 눌렸다가 다시 회복하는 구간입니다. 회복장 눌림목만 선별합니다.',
-    H: '시장 과열을 피하면서 개별 종목이 20일선을 지지하거나 다시 회복하는 구간입니다.',
+    '1': '공포·하락장에서 장기 평균선 아래 과매도 저점을 노립니다. 시즌을 여는 진입 전략입니다.',
+    '2': '전략 1로 시즌이 열린 뒤 회복장에서 20/60/144/200일선 눌림을 매수합니다. 회복장 종료 시 함께 청산됩니다.',
   }
   return descriptions[strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
 }
 
 const strategyCriteriaRows: Record<string, Array<{ label: string; value: string }>> = {
-  A: [
-    { label: '진입', value: 'MA200 위, MACD 골든크로스, 종가 %B > 80, RSI > 70, QQQ 강세 필터 통과' },
-    { label: '익절', value: '+20% 도달 즉시' },
-    { label: '손절', value: '-30%' },
-    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 60거래일 수익 중 청산, 최대 120거래일' },
-  ],
-  B: [
+  '1': [
     { label: '진입', value: 'QQQ 하락장(< -3%), 종목 MA200 아래, VIX ≥ 30, RSI/CCI 과매도, LR 추세선 방어' },
-    { label: '익절', value: '+20% 도달 즉시' },
+    { label: '시즌', value: '이 시그널이 나오면 매수 시즌이 열리고, 이후 전략 2 매수가 가능해집니다' },
+    { label: '청산', value: '회복장 종료(2거래일 확정) 전량매도 — +면 성공 / −면 실패' },
     { label: '손절', value: '-30%' },
-    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 60거래일 수익 중 청산, 최대 120거래일' },
+    { label: '재진입', value: '매도 후 -3% 재진입, 관망 복원 시 -10% 유지' },
   ],
-  C: [
-    { label: '진입', value: 'MA200 위, 전일 BB 스퀴즈, 당일 BB 확장, 거래량 1.5배 이상, 종가 %B > 55, MACD Hist > 0' },
-    { label: '익절', value: '+20% 도달 즉시' },
+  '2': [
+    { label: '진입', value: '시즌 열림 + 회복장 + QQQ ≤ 매수 차단선 + 경고선 미도달 + MA20/60/144/200 터치' },
+    { label: '대상', value: '계정별 관심종목 (조건 충족 시 시그널 종목)' },
+    { label: '청산', value: '회복장 종료(2거래일 확정) 전량매도 — +면 성공 / −면 실패' },
     { label: '손절', value: '-30%' },
-    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 60거래일 수익 중 청산, 최대 120거래일' },
-  ],
-  D: [
-    { label: '진입', value: 'MA200 위, +DI > -DI, ADX > 30, ADX 상승, MACD Hist > 0, 종가 %B 30~75' },
-    { label: '익절', value: '+12% 도달 즉시' },
-    { label: '손절', value: '-25%' },
-    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 최대 30거래일' },
-  ],
-  E: [
-    { label: '진입', value: 'MA200 위, BB폭/60일평균 < 0.5, 저가 %B ≤ 50, QQQ 바닥/정상 필터 통과' },
-    { label: '익절', value: '+20% 구간 진입 후 MACD 둔화 또는 5거래일 대기 만료' },
-    { label: '손절', value: '-30%' },
-    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 60거래일 수익 중 청산, 최대 120거래일' },
-  ],
-  F: [
-    { label: '진입', value: 'MA200 위, 저가 %B ≤ 5, 회복장 또는 QQQ ≤ 매수 차단선. 횡보장 고점에서는 차단' },
-    { label: '익절', value: '+20% 구간 진입 후 MACD 둔화 또는 5거래일 대기 만료' },
-    { label: '손절', value: '-30%' },
-    { label: '정체/시간', value: '25거래일 +3% 미달 청산, 60거래일 수익 중 청산, 최대 120거래일' },
-  ],
-  G: [
-    { label: '진입', value: '회복장 전용, QQQ 이격 +8~+14%, MA20 > MA200, 저가 MA20 터치 후 종가 MA20 회복' },
-    { label: '추가 조건', value: '전일 종가 > 전일 MA20, MA20 5일 기울기 ≥ +0.5%, RSI 45~80, 20일 거래량 ≤ 2.0배, 종목 MA200 이격 ≤ +80%' },
-    { label: '익절', value: '+12% 도달 즉시' },
-    { label: '손절/시간', value: '-12%, 25거래일 +3% 미달 청산, 최대 40거래일' },
-  ],
-  H: [
-    { label: '진입', value: '20일선 지지반등 또는 20일선 재돌파, QQQ 바닥/정상 필터 통과' },
-    { label: '익절', value: '+12% 도달 즉시' },
-    { label: '손절', value: '종가가 MA20 대비 -5% 이탈 또는 매수가 대비 -20%' },
-    { label: '정체/시간', value: '30거래일 +5% 미달 청산, 최대 40거래일' },
+    { label: '재진입', value: '매도 후 -3% 재진입, 관망 복원 시 -10% 유지' },
   ],
 }
 
@@ -1958,27 +1922,9 @@ function tradeResultLabel(trade: TradeLog) {
 
 function tradeCriteriaInfo(strategy: string) {
   const code = strategyCode(strategy)
-
-  if (['A', 'B', 'C'].includes(code)) {
-    return `${code} 전략 기준: 성공은 매수가 대비 +20% 도달 시 즉시 익절입니다. -30%에 닿으면 손절 실패이고, 매수 후 25거래일 종가 수익률이 +3% 미만이면 반등 미달로 청산합니다. 60거래일 경과 후 수익 중이거나 120거래일 최대 보유 기간에 걸려 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.`
+  if (code === '1' || code === '2') {
+    return `전략 ${code} 기준: 회복장 종료(2거래일 확정) 시 전량매도하며, 그때 수익률이 +면 성공(익절), −면 실패(손절)입니다. -30% 하드 손절도 유지합니다. 목표가·시간 청산은 없습니다.`
   }
-
-  if (code === 'D') {
-    return 'D 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -25%에 닿으면 손절 실패이고, 매수 후 25거래일 종가 수익률이 +3% 미만이면 반등 미달로 청산합니다. 30거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
-  }
-
-  if (code === 'G') {
-    return 'G 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. -12%에 닿으면 손절 실패이고, 매수 후 25거래일 종가 수익률이 +3% 미만이면 반등 미달로 청산합니다. 40거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
-  }
-
-  if (code === 'H') {
-    return 'H 전략 기준: 성공은 매수가 대비 +12% 도달 시 즉시 익절입니다. 종가가 20일선보다 -5% 이상 아래로 밀리거나 매수가 대비 -20%에 닿으면 손절 실패이고, 매수 후 30거래일 종가 수익률이 +5% 미만이면 반등 미달로 청산합니다. 40거래일 최대 보유 기간 안에 목표를 채우지 못해 청산되면 수익이어도 목표 미달 실패(익절)로 볼 수 있습니다.'
-  }
-
-  if (['E', 'F'].includes(code)) {
-    return `${code} 전략 기준: 성공은 +20% 도달 후 MACD 둔화 신호가 나오거나 목표 도달 후 5거래일 대기 만료 시 청산입니다. -30%에 닿으면 손절 실패이고, 매수 후 25거래일 종가 수익률이 +3% 미만이면 반등 미달로 청산합니다. 60거래일 수익 중 청산이나 120거래일 최대 보유 기간 청산은 조건 충족 여부에 따라 수익이어도 실패(익절)로 볼 수 있습니다.`
-  }
-
   return '전략별 성공/실패 기준 정보가 준비 중입니다.'
 }
 
@@ -2112,25 +2058,24 @@ function formatTradePrice(trade: TradeLog, value: number | null, fallback: strin
 }
 
 function strategyTargetReturnPct(strategy: string) {
-  const code = strategyCode(strategy)
-  if (['A', 'B', 'C', 'E', 'F'].includes(code)) return 0.2
-  if (['D', 'G', 'H'].includes(code)) return 0.12
-  return null
+  // Strategy 1/2 have no profit target; recovery-end exit decides success/fail.
+  void strategy
+  return 0
 }
 
 function recommendedSellPriceText(trade: TradeLog) {
   const buyPrice = parsePriceValue(trade.buyPrice)
   const targetReturnPct = strategyTargetReturnPct(trade.strategy)
-  if (buyPrice === null || targetReturnPct === null) return '-'
+  if (buyPrice === null || !targetReturnPct) return '-'
   return formatTradePrice(trade, buyPrice * (1 + targetReturnPct), '-')
 }
 
 function recommendedSellPriceNote(strategy: string) {
   const code = strategyCode(strategy)
-  if (['E', 'F'].includes(code)) return 'E/F는 목표가 도달 후 MACD 둔화 확인 또는 5거래일 대기 만료 시 청산합니다.'
-  if (code === 'H') return 'H 전략 목표 익절가입니다. 단, 20일선 -5% 지지 실패, -20% 손절, 30거래일 +5% 미달 정체청산 기준도 함께 봅니다.'
-  if (code) return `${code} 전략 목표 익절가입니다.`
-  return undefined
+  if (code === '1' || code === '2') {
+    return '목표가 익절 없음. 회복장 종료 전량매도 또는 -30% 손절.'
+  }
+  return '권장 매도가 참고 정보가 준비 중입니다.'
 }
 
 function StrategyCriteriaModal({ onClose }: { onClose: () => void }) {
@@ -2147,9 +2092,9 @@ function StrategyCriteriaModal({ onClose }: { onClose: () => void }) {
 }
 
 function strategyCriteriaLabelTone(label: string) {
-  if (label.startsWith('익절')) return 'take-profit'
+  if (label.startsWith('익절') || label.startsWith('청산')) return 'take-profit'
   if (label.startsWith('손절')) return 'stop-loss'
-  if (label.startsWith('진입') || label.startsWith('추가')) return 'entry'
+  if (label.startsWith('진입') || label.startsWith('추가') || label.startsWith('시즌') || label.startsWith('대상')) return 'entry'
   return 'time'
 }
 
@@ -3185,7 +3130,7 @@ const notificationOptions: Array<{ key: NotificationPreferenceKey; title: string
   { key: 'opinionChangeEmail', title: '투자의견 변경', description: '관심종목의 매수/관망/매도 신호가 바뀔 때' },
   { key: 'nasdaqPeakEmail', title: '나스닥 고점 과열', description: 'QQQ 과열과 RSI 둔화가 동시에 감지될 때' },
   { key: 'nasdaqWarnEmail', title: '나스닥 과열 청산선 근접 경고', description: 'QQQ 이격도가 과열 청산선 직전까지 올라와 곧 하락이 나올 수 있을 때' },
-  { key: 'regimeShiftEmail', title: '시장 국면 전환', description: '하락장·회복장·정상장·횡보장 고점이 바뀌어 매수 차단선·예외 전략이 달라질 때' },
+  { key: 'regimeShiftEmail', title: '시장 국면 전환', description: '하락장·회복장·정상장·횡보장 고점이 바뀌어 매수 차단선·전략 1/2 시즌 동작이 달라질 때' },
   { key: 'weeklyTrendReport', title: '주간 트렌드 리포트', description: '시장 트렌드와 관심종목 흐름을 주 1회 정리' },
   { key: 'earningsDayBefore', title: '실적발표 전날', description: '관심종목 실적발표 전 리스크 점검' },
 ]
@@ -6507,7 +6452,7 @@ function App() {
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
     ? '장기형은 청산된 거래가 슬롯을 비우고, 현재 보유 중인 거래만 투자금 슬롯을 차지합니다.'
-    : '청산 기준: A-C +20/-30 · D +12/-25/30일 · E/F +20 후 MACD·5일/-30 · G +12/-12/40일 · H +12/-20/30일+5%/40일'
+    : '청산 기준: 전략 1/2 회복장 종료 전량매도(+성공/−실패) · 하드손절 -30% · 목표가·시간청산 없음'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,

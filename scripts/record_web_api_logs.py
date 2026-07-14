@@ -17,7 +17,14 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from calculator.rules import IndicatorRow, evaluate_exit_condition, strategy_display_name
+from calculator.pipeline import load_strategy_season_state, save_strategy_season_state
+from calculator.rules import (
+    STRATEGY_RULES,
+    IndicatorRow,
+    evaluate_exit_condition,
+    normalize_strategy_code,
+    strategy_display_name,
+)
 
 
 API_DIR = ROOT_DIR / "web" / "public" / "api"
@@ -46,7 +53,9 @@ HOLD_RESTORE_DROP = 0.10
 HOLD_RESTORE_MIN_TRADING_DAYS = 10
 HOLD_RESTORE_SIGNAL_CONFIRMATIONS = 2
 MAX_OPEN_PER_STRATEGY = 2
-RESTORE_FAMILY_STRATEGIES = {"E", "F"}
+RESTORE_FAMILY_STRATEGIES: set[str] = set()
+ACTIVE_STRATEGIES = {"1", "2"}
+REMOVED_STRATEGIES = {"A", "C", "D", "E", "F", "G", "H"}
 INVESTMENT_TYPES = ("long_term", "swing")
 VALUATION_LOG_FIELDS = [
     ("marketCap", "시가총액"),
@@ -395,17 +404,20 @@ def return_pct(buy_price: Any, sell_price: Any) -> float:
 
 def target_return_pct(strategy: str) -> float:
     code = strategy_code(strategy)
-    if code in {"D", "G", "H"}:
-        return 12.0
-    if code in {"A", "B", "C", "E", "F"}:
-        return 20.0
-    return 20.0
+    raw = STRATEGY_RULES.get(f"TARGET_PCT_{code}")
+    if raw is None:
+        return 0.0
+    return float(raw) * 100
 
 
 def trade_status_for_exit(trade: dict[str, Any], result: float) -> str:
+    # Strategy 1/2: + = 성공(익절), - = 실패(손절). No mid profit-target band.
     if result <= 0:
         return "손절"
-    return "익절" if result >= target_return_pct(str(trade.get("strategy") or "")) else "실패 익절"
+    target = target_return_pct(str(trade.get("strategy") or ""))
+    if target <= 0:
+        return "익절"
+    return "익절" if result >= target else "실패 익절"
 
 
 def normalize_closed_trade_status(trade: dict[str, Any]) -> bool:
@@ -423,14 +435,7 @@ def normalize_closed_trade_status(trade: dict[str, Any]) -> bool:
 
 
 def strategy_code(value: Any) -> str:
-    text = str(value or "").strip()
-    if not text:
-        return ""
-    first = text.split(".", 1)[0].strip().upper()
-    if first in {"A", "B", "C", "D", "E", "F", "G", "H"}:
-        return first
-    upper = text.upper()
-    return upper[0] if upper[:1] in {"A", "B", "C", "D", "E", "F", "G", "H"} else ""
+    return normalize_strategy_code(value) or ""
 
 
 def entry_signal_codes(row: dict[str, Any]) -> list[str]:
@@ -854,6 +859,22 @@ def update_trade_logs(
     today = kst_trade_date()
     today_date = parse_trade_date(today) or datetime.now(timezone.utc).astimezone(KST).date()
     nasdaq_peak_alert = bool((qqq_market_state or {}).get("peakTriggered"))
+    is_recovery_market = bool((qqq_market_state or {}).get("isRecoveryMarket"))
+    season = load_strategy_season_state()
+    confirm_days = int(STRATEGY_RULES.get("RECOVERY_EXIT_CONFIRM_DAYS", 2))
+    if is_recovery_market:
+        if season.get("open"):
+            season["sawRecovery"] = True
+        season["nonRecoveryStreak"] = 0
+    elif season.get("sawRecovery"):
+        season["nonRecoveryStreak"] = int(season.get("nonRecoveryStreak") or 0) + 1
+    else:
+        season["nonRecoveryStreak"] = 0
+    recovery_ended = (
+        bool(season.get("open"))
+        and bool(season.get("sawRecovery"))
+        and int(season.get("nonRecoveryStreak") or 0) >= confirm_days
+    )
     seed_after_reset = runtime_reset_requested()
     now = datetime.now(timezone.utc)
     appended = 0
@@ -861,6 +882,29 @@ def update_trade_logs(
     corrected_closed_statuses = 0
     signal_state_changed = False
     deferred_tickers: set[str] = set()
+
+    # Migrate legacy B holdings → strategy 1; close holdings from removed strategies.
+    for trade in trades:
+        if str(trade.get("status") or "") != "보유 중":
+            continue
+        raw_strategy = str(trade.get("strategy") or "")
+        first = raw_strategy.split(".", 1)[0].strip().upper()
+        if first == "B" or first == "1":
+            trade["strategy"] = strategy_display_name("1")
+            season["open"] = True
+            continue
+        if first == "2":
+            season["open"] = True
+            continue
+        if first in REMOVED_STRATEGIES:
+            sell_price = trade.get("currentPrice") or trade.get("buyPrice") or "-"
+            close_trade(
+                trade,
+                sell_price=sell_price,
+                today=today,
+                reason="폐기 전략 초기화 청산",
+            )
+            closed += 1
 
     for trade in trades:
         if normalize_closed_trade_status(trade):
@@ -909,50 +953,43 @@ def update_trade_logs(
         daily_sell_price = row.get("C - Close") or row.get("현재가") if isinstance(row, dict) else "-"
         daily_ind = indicator_from_trade(row, trade, daily_sell_price) if isinstance(row, dict) else None
         live_ind = indicator_from_trade(row if isinstance(row, dict) else {}, trade, sell_price)
-        strategy = strategy_code(trade.get("strategy")) or "A"
-        if daily_ind is None and live_ind is None and not nasdaq_peak_alert:
+        strategy = strategy_code(trade.get("strategy")) or "1"
+        if daily_ind is None and live_ind is None and not nasdaq_peak_alert and not recovery_ended:
             continue
         entry_codes = set(entry_signal_codes(row)) if isinstance(row, dict) else set()
-        armed_date = parse_trade_date(trade.get("upperExitArmedDate"))
-        upper_wait_days = trading_days_since(armed_date.strftime("%Y.%m.%d"), today_date) if armed_date else None
         exit_price = sell_price
-        if nasdaq_peak_alert:
+        if recovery_ended:
             exit_result = evaluate_exit_condition(
-                IndicatorRow(stock_name=ticker, current_price=parse_price(sell_price) or 0, entry_price=parse_price(trade.get("buyPrice"))),
+                IndicatorRow(
+                    stock_name=ticker,
+                    current_price=parse_price(sell_price) or 0,
+                    entry_price=parse_price(trade.get("buyPrice")),
+                ),
+                strategy_type=strategy,
+                recovery_ended=True,
+            )
+        elif nasdaq_peak_alert:
+            exit_result = evaluate_exit_condition(
+                IndicatorRow(
+                    stock_name=ticker,
+                    current_price=parse_price(sell_price) or 0,
+                    entry_price=parse_price(trade.get("buyPrice")),
+                ),
                 strategy_type=strategy,
                 nasdaq_peak_alert=True,
-                trading_days=trading_days_since(trade.get("buyDate"), today_date),
-                upper_exit_wait_days=upper_wait_days,
             )
         elif daily_ind is not None and isinstance(row, dict) and has_new_daily_price(row, previous_row if isinstance(previous_row, dict) else None):
             exit_result = evaluate_exit_condition(
                 daily_ind,
                 strategy_type=strategy,
                 nasdaq_peak_alert=False,
-                trading_days=trading_days_since(trade.get("buyDate"), today_date),
-                upper_exit_wait_days=upper_wait_days,
             )
             exit_price = daily_sell_price
-        elif live_ind is not None and strategy == "H":
-            buy_price = parse_price(trade.get("buyPrice"))
-            live_price = parse_price(sell_price)
-            if buy_price and live_price is not None and live_price >= buy_price * (1 + target_return_pct(strategy) / 100):
-                exit_result = evaluate_exit_condition(
-                    live_ind,
-                    strategy_type=strategy,
-                    nasdaq_peak_alert=False,
-                    trading_days=trading_days_since(trade.get("buyDate"), today_date),
-                    upper_exit_wait_days=upper_wait_days,
-                )
-            else:
-                exit_result = {"shouldExit": False, "reason": None}
-        elif live_ind is not None and strategy not in {"E", "F"}:
+        elif live_ind is not None:
             exit_result = evaluate_exit_condition(
                 live_ind,
                 strategy_type=strategy,
                 nasdaq_peak_alert=False,
-                trading_days=trading_days_since(trade.get("buyDate"), today_date),
-                upper_exit_wait_days=upper_wait_days,
             )
         else:
             exit_result = {"shouldExit": False, "reason": None}
@@ -964,12 +1001,19 @@ def update_trade_logs(
             closed += 1
             continue
         clear_stale_restore_signal_counts(trade, entry_codes)
-        buy_price = parse_price(trade.get("buyPrice"))
-        current_price = parse_price(sell_price)
-        if strategy in {"E", "F"} and buy_price and current_price and current_price >= buy_price * 1.20:
-            trade.setdefault("upperExitArmedDate", today)
         if strategy and strategy not in entry_codes:
             mark_restore_watch(trade, today)
+
+    if recovery_ended:
+        season = {
+            "open": False,
+            "sawRecovery": False,
+            "nonRecoveryStreak": 0,
+            "openedAt": None,
+            "openedByTicker": None,
+            "updatedAt": publish_iso(),
+        }
+    save_strategy_season_state(season)
 
     current_open_counts = open_trade_counts(trades)
     current_open_trades = open_trades_by_slot(trades)
@@ -1034,6 +1078,8 @@ def update_trade_logs(
                 if hold_restore_allowed(trade, current_price, today_date)
             ]
             for code in entry_signal_codes(row):
+                if code not in ACTIVE_STRATEGIES:
+                    continue
                 slot_key = (investment_type, ticker, code)
                 open_count = current_open_counts.get(slot_key, 0)
                 restore_source_trades: list[dict[str, Any]] = []
@@ -1070,6 +1116,11 @@ def update_trade_logs(
                     "holdingDays": "-",
                     "status": "보유 중",
                 }
+                if code == "1":
+                    season["open"] = True
+                    season["openedAt"] = season.get("openedAt") or publish_iso()
+                    season["openedByTicker"] = season.get("openedByTicker") or ticker
+                    season["updatedAt"] = publish_iso()
                 trades.append(new_trade)
                 for trade in restore_source_trades:
                     trade.pop("restoreWatchDate", None)
@@ -1082,8 +1133,25 @@ def update_trade_logs(
         if open_for_ticker_all and not ticker_appended:
             signal_state_changed = block_held_public_buy_signal(stock, row) or signal_state_changed
 
+    # Drop retired A/C/D/E/F/G/H rows from the live log; keep 1/2 (+ migrated B).
+    cleaned: list[dict[str, Any]] = []
+    for trade in trades:
+        raw = str(trade.get("strategy") or "")
+        first = raw.split(".", 1)[0].strip().upper()
+        if first in REMOVED_STRATEGIES:
+            continue
+        code = strategy_code(raw)
+        if first == "B" or code == "1":
+            trade["strategy"] = strategy_display_name("1")
+        elif code == "2":
+            trade["strategy"] = strategy_display_name("2")
+        cleaned.append(trade)
+    trades = cleaned
+
     deduped = list({trade_key(trade): trade for trade in trades}.values())
     refreshed_at = publish_iso()
+    if season.get("open") and not recovery_ended:
+        save_strategy_season_state(season)
     payload = {
         "meta": {
             "kind": "trade-logs",
@@ -1095,6 +1163,8 @@ def update_trade_logs(
             "closedTrades": closed,
             "correctedClosedStatuses": corrected_closed_statuses,
             "nasdaqPeakLiquidation": nasdaq_peak_alert,
+            "recoveryEndedLiquidation": recovery_ended,
+            "strategySeasonOpen": bool(season.get("open")),
         },
         "rows": deduped,
     }

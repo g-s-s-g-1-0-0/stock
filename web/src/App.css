@@ -3188,36 +3188,23 @@
   white-space: nowrap;
 }
 
-.strategy-a {
-  background: #bfdbfe;
-}
-
-.strategy-b {
+.strategy-1 {
   background: #fecaca;
 }
 
-.strategy-c {
-  background: #ddd6fe;
+.strategy-2 {
+  background: #bfdbfe;
 }
 
-.strategy-d {
-  background: #fde68a;
-}
-
-.strategy-e {
-  background: #c7d2fe;
-}
-
-.strategy-f {
-  background: #fbcfe8;
-}
-
-.strategy-g {
-  background: #bbf7d0;
-}
-
+.strategy-a,
+.strategy-b,
+.strategy-c,
+.strategy-d,
+.strategy-e,
+.strategy-f,
+.strategy-g,
 .strategy-h {
-  background: #bae6fd;
+  background: #e5e7eb;
 }
 
 .tooltip-content {

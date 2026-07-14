@@ -10,22 +10,16 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-09:0930",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-10:08",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-10:0930",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-11:0930",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-13:08",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-13:0930",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-14:08",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-14:0930"
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-11:0930"
     ],
     "sentKeys": [
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:012450:2026-07-01:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:039030:2026-07-01:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:278470:2026-07-01:20",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:278470:2026-07-13:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:ALAB:2026-07-09:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:ALAB:2026-07-10:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:AMD:2026-07-02:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:AMD:2026-07-09:20",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:AMD:2026-07-13:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:ASTS:2026-06-30:20+200",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:ASTS:2026-07-01:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:ASTS:2026-07-02:20+200",
@@ -48,7 +42,7 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VRT:2026-07-08:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VRT:2026-07-10:20"
     ],
-    "updatedAt": "2026-07-14T00:31:49.213528+00:00"
+    "updatedAt": "2026-07-11T00:56:23.304735+00:00"
   },
   "nasdaqPeak": {
     "resetAt": "2026-05-14T20:55:50.998617+00:00",
@@ -90,6 +84,14 @@
   },
   "regimeShift": {
     "isRecoveryMarket": false,
-    "updatedAt": "2026-07-14T07:00:00.086227+00:00"
+    "updatedAt": "2026-07-11T07:00:00.682127+00:00"
+  },
+  "strategySeason": {
+    "open": false,
+    "sawRecovery": false,
+    "nonRecoveryStreak": 0,
+    "openedAt": null,
+    "openedByTicker": null,
+    "updatedAt": "2026-07-14T07:40:00.492847Z"
   }
 }

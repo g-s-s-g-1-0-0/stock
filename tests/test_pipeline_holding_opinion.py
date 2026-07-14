@@ -61,7 +61,7 @@ def test_held_e_stock_keeps_buy_when_hold_condition_met(monkeypatch):
     patch_sources(monkeypatch, row)
 
     result = pipeline.latest_technical_row(
-        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type="E"
+        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type="2"
     )
 
     assert result["opinion"] == "매수"
@@ -76,7 +76,7 @@ def test_held_e_stock_turns_watch_when_hold_condition_lost(monkeypatch):
     patch_sources(monkeypatch, row)
 
     result = pipeline.latest_technical_row(
-        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type="E"
+        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type="2"
     )
 
     assert result["opinion"] == "관망"
@@ -101,7 +101,7 @@ def test_held_a_stock_keeps_buy_without_fresh_golden_cross(monkeypatch):
     patch_sources(monkeypatch, row)
 
     result = pipeline.latest_technical_row(
-        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type="A"
+        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type="1"
     )
 
     assert result["opinion"] == "매수"
@@ -143,7 +143,7 @@ def test_non_holding_h_stock_uses_20ma_support_signal(monkeypatch):
 
     assert result["opinion"] == "매수"
     assert result["entrySignalCodes"] == "H"
-    assert result["entryStrategy"] == "H. 20일선 지지·재돌파"
+    assert result["entryStrategy"] == "2. 이평선 눌림"
 
 
 def test_open_holding_strategies_reads_primary_code(monkeypatch):
@@ -152,8 +152,8 @@ def test_open_holding_strategies_reads_primary_code(monkeypatch):
         "read_cache",
         lambda name: {
             "rows": [
-                {"ticker": "278470", "strategy": "E. 200일선 상방 & 스퀴즈 저점", "status": "보유 중"},
-                {"ticker": "AAPL", "strategy": "A. 200일선 상방 & 모멘텀 재가속", "status": "손절"},
+                {"ticker": "278470", "strategy": "2. 이평선 눌림", "status": "보유 중"},
+                {"ticker": "AAPL", "strategy": "1. 공황 저점", "status": "손절"},
             ]
         }
         if name == "trade-logs"

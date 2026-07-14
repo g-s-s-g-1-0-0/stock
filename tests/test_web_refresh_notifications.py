@@ -137,7 +137,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                             "name": "한화에어로스페이스",
                             "opinion": "매수",
                             "currentPrice": "₩1,307,000",
-                            "strategies": ["F. 200일선 상방 & BB 극단 저점"],
+                            "strategies": ["2. 이평선 눌림"],
                         },
                         {"ticker": "WATCH", "name": "New Watch", "opinion": "관망"},
                     ]
@@ -165,7 +165,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 "from": "매수",
                 "to": "매수",
                 "price": "₩92,300",
-                "reason": "F. 200일선 상방 & BB 극단 저점",
+                "reason": "2. 이평선 눌림",
                 "recommendedSellPrice": "₩110,760",
                 "entryNote": "재진입 1회차 — 최초 진입가 ₩95,400",
             }
@@ -187,7 +187,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 "from": "관망",
                 "to": "매수",
                 "price": "₩92,300",
-                "reason": "F. 200일선 상방 & BB 극단 저점",
+                "reason": "2. 이평선 눌림",
                 "recommendedSellPrice": "₩110,760",
                 "entryNote": "신규 진입",
             }
@@ -199,14 +199,14 @@ class WebRefreshNotificationsTest(unittest.TestCase):
     def test_h_strategy_buy_reason_and_target_price_use_existing_email_format(self) -> None:
         trade = {
             "ticker": "SOXL",
-            "strategy": "H. 20일선 지지·재돌파",
+            "strategy": "2. 이평선 눌림",
             "buyPrice": "$100.00",
         }
         stock = {
             "ticker": "SOXL",
             "name": "Direxion Daily Semiconductor Bull 3X ETF",
             "currentPrice": "$100.00",
-            "strategies": ["H. 20일선 지지·재돌파"],
+            "strategies": ["2. 이평선 눌림"],
         }
         technical = {
             "entrySignalCodes": "H",
@@ -219,7 +219,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("$112.00", self.notifications.recommended_sell_price_for_trade(trade, stock, technical))
         reason = self.notifications.buy_reason_for_trade(trade, stock, technical)
 
-        self.assertIn("H. 20일선 지지·재돌파", reason)
+        self.assertIn("2. 이평선 눌림", reason)
         self.assertIn("MA20", reason)
         self.assertIn("20일 거래량비", reason)
 
@@ -413,14 +413,14 @@ class WebRefreshNotificationsTest(unittest.TestCase):
             )
             previous_trades.write_text(
                 json.dumps({"rows": [
-                    {"slotId": "MP_D_20260501_1", "ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"}
+                    {"slotId": "MP_D_20260501_1", "ticker": "MP", "strategy": "1. 공황 저점", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"}
                 ]}),
                 encoding="utf-8",
             )
             current_trades.write_text(
                 json.dumps({"rows": [
-                    {"slotId": "MP_D_20260501_1", "ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"},
-                    {"slotId": "MP_D_20260519_1", "ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.19", "buyPrice": "$90.00", "status": "보유 중"},
+                    {"slotId": "MP_D_20260501_1", "ticker": "MP", "strategy": "1. 공황 저점", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"},
+                    {"slotId": "MP_D_20260519_1", "ticker": "MP", "strategy": "1. 공황 저점", "buyDate": "2026.05.19", "buyPrice": "$90.00", "status": "보유 중"},
                 ]}),
                 encoding="utf-8",
             )
@@ -456,7 +456,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
             open_trade = {
                 "slotId": "278470_F_20260501_1",
                 "ticker": "278470",
-                "strategy": "F. 200일선 상방 & BB 극단 저점",
+                "strategy": "2. 이평선 눌림",
                 "buyDate": "2026.05.01",
                 "buyPrice": "₩410,000",
                 "status": "보유 중",
@@ -976,13 +976,13 @@ class WebRefreshNotificationsTest(unittest.TestCase):
             )
             technical.write_text(json.dumps({"rows": {"MP": {"entrySignalCodes": "D", "현재가": "$60.00"}}}), encoding="utf-8")
             previous_trades.write_text(
-                json.dumps({"rows": [{"ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.01", "buyPrice": "$67.43", "sellDate": "2026.05.05", "sellPrice": "$70.00", "status": "익절"}]}),
+                json.dumps({"rows": [{"ticker": "MP", "strategy": "1. 공황 저점", "buyDate": "2026.05.01", "buyPrice": "$67.43", "sellDate": "2026.05.05", "sellPrice": "$70.00", "status": "익절"}]}),
                 encoding="utf-8",
             )
             current_trades.write_text(
                 json.dumps({"rows": [
-                    {"ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.01", "buyPrice": "$67.43", "sellDate": "2026.05.05", "sellPrice": "$70.00", "status": "익절"},
-                    {"slotId": "MP_D_20260510_1", "ticker": "MP", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.10", "buyPrice": "$60.00", "status": "보유 중"},
+                    {"ticker": "MP", "strategy": "1. 공황 저점", "buyDate": "2026.05.01", "buyPrice": "$67.43", "sellDate": "2026.05.05", "sellPrice": "$70.00", "status": "익절"},
+                    {"slotId": "MP_D_20260510_1", "ticker": "MP", "strategy": "1. 공황 저점", "buyDate": "2026.05.10", "buyPrice": "$60.00", "status": "보유 중"},
                 ]}),
                 encoding="utf-8",
             )
@@ -1008,13 +1008,13 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 encoding="utf-8",
             )
             previous_trades.write_text(
-                json.dumps({"rows": [{"slotId": "DL_E_20260501_1", "ticker": "DL", "strategy": "E. 200일선 상방 & 스퀴즈 저점", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"}]}),
+                json.dumps({"rows": [{"slotId": "DL_E_20260501_1", "ticker": "DL", "strategy": "2. 이평선 눌림", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"}]}),
                 encoding="utf-8",
             )
             current_trades.write_text(
                 json.dumps({"rows": [
-                    {"slotId": "DL_E_20260501_1", "ticker": "DL", "strategy": "E. 200일선 상방 & 스퀴즈 저점", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"},
-                    {"slotId": "DL_F_20260510_1", "ticker": "DL", "strategy": "F. 200일선 상방 & BB 극단 저점", "buyDate": "2026.05.10", "buyPrice": "$97.00", "status": "보유 중"},
+                    {"slotId": "DL_E_20260501_1", "ticker": "DL", "strategy": "2. 이평선 눌림", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"},
+                    {"slotId": "DL_F_20260510_1", "ticker": "DL", "strategy": "2. 이평선 눌림", "buyDate": "2026.05.10", "buyPrice": "$97.00", "status": "보유 중"},
                 ]}),
                 encoding="utf-8",
             )
@@ -1025,7 +1025,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("매수(보유중)", changes[0]["fromLabel"])
         self.assertEqual("추가 매수", changes[0]["toLabel"])
         self.assertEqual("재진입 1회차 — 최초 진입가 $100.00", changes[0]["entryNote"])
-        self.assertIn("F. 200일선 상방 & BB 극단 저점", changes[0]["reason"])
+        self.assertIn("2. 이평선 눌림", changes[0]["reason"])
 
     def test_opinion_changes_no_email_when_held_buy_signal_persists(self) -> None:
         # 보유 중인 종목이 매수 신호를 계속 유지하면(추가매수 조건만 미충족) 의견은 '매수'로 남는다.
@@ -1051,11 +1051,11 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 encoding="utf-8",
             )
             technical.write_text(
-                json.dumps({"rows": {"GOOGL": {"entrySignalCodes": "G", "진입 전략": "G. 급락 후 회복장 20일선 눌림", "현재가": "$389.26"}}}),
+                json.dumps({"rows": {"GOOGL": {"entrySignalCodes": "G", "진입 전략": "2. 이평선 눌림", "현재가": "$389.26"}}}),
                 encoding="utf-8",
             )
             held_trade = [
-                {"slotId": "GOOGL_G_20260522_1", "ticker": "GOOGL", "strategy": "G. 급락 후 회복장 20일선 눌림", "buyDate": "2026.05.22", "buyPrice": "$388.55", "status": "보유 중"}
+                {"slotId": "GOOGL_G_20260522_1", "ticker": "GOOGL", "strategy": "2. 이평선 눌림", "buyDate": "2026.05.22", "buyPrice": "$388.55", "status": "보유 중"}
             ]
             previous_trades.write_text(json.dumps({"rows": held_trade}), encoding="utf-8")
             current_trades.write_text(json.dumps({"rows": held_trade}), encoding="utf-8")
@@ -1158,7 +1158,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                             "ticker": "MP",
                             "name": "MP Materials",
                             "opinion": "매수",
-                            "strategies": ["F. 200일선 상방 & BB 극단 저점"],
+                            "strategies": ["2. 이평선 눌림"],
                         }
                     ]
                 }),
@@ -1185,7 +1185,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
         self.assertEqual(1, len(changes))
         self.assertIn("매수 조건 해제", changes[0]["reason"])
-        self.assertIn("F. 200일선 상방 & BB 극단 저점", changes[0]["reason"])
+        self.assertIn("2. 이평선 눌림", changes[0]["reason"])
         self.assertIn("BB 하단 눌림 해소", changes[0]["reason"])
         self.assertIn("저가 %B 8.40", changes[0]["reason"])
         self.assertNotIn("시장 국면:", changes[0]["reason"])
@@ -1311,11 +1311,11 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                     encoding="utf-8",
                 )
                 previous_trades.write_text(
-                    json.dumps({"rows": [{"ticker": "039030", "name": "이오테크닉스", "strategy": "F. 200일선 상방 & BB 극단 저점", "buyDate": "2026.05.18", "buyPrice": "₩482,500", "status": "보유 중"}]}),
+                    json.dumps({"rows": [{"ticker": "039030", "name": "이오테크닉스", "strategy": "2. 이평선 눌림", "buyDate": "2026.05.18", "buyPrice": "₩482,500", "status": "보유 중"}]}),
                     encoding="utf-8",
                 )
                 current_trades.write_text(
-                    json.dumps({"rows": [{"ticker": "039030", "name": "이오테크닉스", "strategy": "F. 200일선 상방 & BB 극단 저점", "buyDate": "2026.05.18", "buyPrice": "₩482,500", "sellPrice": "₩580,000", "returnPct": 20.21, "status": "익절", "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도"}]}),
+                    json.dumps({"rows": [{"ticker": "039030", "name": "이오테크닉스", "strategy": "2. 이평선 눌림", "buyDate": "2026.05.18", "buyPrice": "₩482,500", "sellPrice": "₩580,000", "returnPct": 20.21, "status": "익절", "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도"}]}),
                     encoding="utf-8",
                 )
 
@@ -1385,11 +1385,11 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                     encoding="utf-8",
                 )
                 previous_trades.write_text(
-                    json.dumps({"rows": [{"ticker": "039030", "name": "이오테크닉스", "strategy": "F. 200일선 상방 & BB 극단 저점", "buyDate": "2026.05.18", "buyPrice": "₩482,500", "status": "보유 중"}]}),
+                    json.dumps({"rows": [{"ticker": "039030", "name": "이오테크닉스", "strategy": "2. 이평선 눌림", "buyDate": "2026.05.18", "buyPrice": "₩482,500", "status": "보유 중"}]}),
                     encoding="utf-8",
                 )
                 current_trades.write_text(
-                    json.dumps({"rows": [{"ticker": "039030", "name": "이오테크닉스", "strategy": "F. 200일선 상방 & BB 극단 저점", "buyDate": "2026.05.18", "buyPrice": "₩482,500", "sellPrice": "₩580,000", "returnPct": 20.21, "status": "익절", "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도"}]}),
+                    json.dumps({"rows": [{"ticker": "039030", "name": "이오테크닉스", "strategy": "2. 이평선 눌림", "buyDate": "2026.05.18", "buyPrice": "₩482,500", "sellPrice": "₩580,000", "returnPct": 20.21, "status": "익절", "exitReason": "목표 수익 구간 + MACD 히스토그램 둔화전환 매도"}]}),
                     encoding="utf-8",
                 )
 
@@ -1440,11 +1440,11 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 current = Path(temp_dir) / "trade-logs.json"
 
                 previous.write_text(
-                    json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.09", "buyPrice": "$67.43", "status": "보유 중"}]}),
+                    json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "strategy": "1. 공황 저점", "buyDate": "2026.05.09", "buyPrice": "$67.43", "status": "보유 중"}]}),
                     encoding="utf-8",
                 )
                 current.write_text(
-                    json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "strategy": "D. 200일선 상방 & 상승 흐름 강화", "buyDate": "2026.05.09", "buyPrice": "$67.43", "sellPrice": "$75.00", "returnPct": 11.23, "status": "익절", "exitReason": "목표 수익 달성 즉시 매도"}]}),
+                    json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "strategy": "1. 공황 저점", "buyDate": "2026.05.09", "buyPrice": "$67.43", "sellPrice": "$75.00", "returnPct": 11.23, "status": "익절", "exitReason": "목표 수익 달성 즉시 매도"}]}),
                     encoding="utf-8",
                 )
 
