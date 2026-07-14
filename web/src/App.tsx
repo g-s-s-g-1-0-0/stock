@@ -1884,29 +1884,59 @@ function strategyCode(strategy: string) {
   return String(strategy || '').slice(0, 1)
 }
 
-function strategyInfo(strategy: string) {
-  const descriptions: Record<string, string> = {
-    '1': '공포·하락장에서 장기 평균선 아래 과매도 저점을 노립니다. 시즌을 여는 진입 전략입니다.',
-    '2': '전략 1로 시즌이 열린 뒤 회복장에서 20/60/144/200일선 눌림을 매수합니다. 회복장 종료 시 함께 청산됩니다.',
-  }
-  return descriptions[strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
+function investmentProfileLabel(investmentType: InvestmentType) {
+  return investmentType === 'swing' ? '스윙투자' : '가치투자'
 }
 
-const strategyCriteriaRows: Record<string, Array<{ label: string; value: string }>> = {
-  '1': [
-    { label: '진입', value: 'QQQ 하락장(< -3%), 종목 MA200 아래, VIX ≥ 30, RSI/CCI 과매도, LR 추세선 방어' },
-    { label: '시즌', value: '이 시그널이 나오면 매수 시즌이 열리고, 이후 전략 2 매수가 가능해집니다' },
-    { label: '청산', value: '회복장 종료(2거래일 확정) 전량매도 — +면 성공 / −면 실패' },
-    { label: '손절', value: '-30%' },
-    { label: '재진입', value: '매도 후 -3% 재진입, 관망 복원 시 -10% 유지' },
-  ],
-  '2': [
-    { label: '진입', value: '시즌 열림 + 회복장 + QQQ ≤ 매수 차단선 + 경고선 미도달 + MA20/60/144/200 터치' },
-    { label: '대상', value: '계정별 관심종목 (조건 충족 시 시그널 종목)' },
-    { label: '청산', value: '회복장 종료(2거래일 확정) 전량매도 — +면 성공 / −면 실패' },
-    { label: '손절', value: '-30%' },
-    { label: '재진입', value: '매도 후 -3% 재진입, 관망 복원 시 -10% 유지' },
-  ],
+function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing') {
+  const descriptions: Record<InvestmentType, Record<string, string>> = {
+    swing: {
+      '1': '공포·하락장에서 장기 평균선 아래 과매도 저점을 노립니다. 시즌을 여는 진입 전략입니다.',
+      '2': '전략 1로 시즌이 열린 뒤 회복장에서 20/60/144/200일선 눌림을 매수합니다. 회복장 종료 시 함께 청산됩니다.',
+    },
+    long_term: {
+      '1': '공포·하락장에서 장기 평균선 아래 과매도 저점을 장기 보유 후보로 편입합니다. 손절 없이 보유 판단을 이어갑니다.',
+      '2': '전략 1로 시즌이 열린 뒤 회복장 이평선 눌림을 장기 보유 추가 진입 신호로 봅니다. 자동 청산보다 보유 점검을 우선합니다.',
+    },
+  }
+  return descriptions[investmentType][strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
+}
+
+type StrategyCriteriaRow = { label: string; value: string }
+
+const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string, StrategyCriteriaRow[]>> = {
+  swing: {
+    '1': [
+      { label: '진입', value: 'QQQ 하락장(< -3%), 종목 MA200 아래, VIX ≥ 30, RSI/CCI 과매도, LR 추세선 방어' },
+      { label: '시즌', value: '이 시그널이 나오면 매수 시즌이 열리고, 이후 전략 2 매수가 가능해집니다' },
+      { label: '청산', value: '회복장 종료(2거래일 확정) 전량매도 — +면 성공 / −면 실패' },
+      { label: '손절', value: '-30%' },
+      { label: '재진입', value: '매도 후 -3% 재진입, 관망 복원 시 -10% 유지' },
+    ],
+    '2': [
+      { label: '진입', value: '시즌 열림 + 회복장 + QQQ ≤ 매수 차단선 + 경고선 미도달 + MA20/60/144/200 터치' },
+      { label: '대상', value: '계정별 관심종목 (조건 충족 시 시그널 종목)' },
+      { label: '청산', value: '회복장 종료(2거래일 확정) 전량매도 — +면 성공 / −면 실패' },
+      { label: '손절', value: '-30%' },
+      { label: '재진입', value: '매도 후 -3% 재진입, 관망 복원 시 -10% 유지' },
+    ],
+  },
+  long_term: {
+    '1': [
+      { label: '진입', value: 'QQQ 하락장(< -3%), 종목 MA200 아래, VIX ≥ 30, RSI/CCI 과매도, LR 추세선 방어' },
+      { label: '시즌', value: '이 시그널이 나오면 매수 시즌이 열리고, 이후 전략 2 편입 신호를 함께 봅니다' },
+      { label: '보유', value: '자동 손절 없이 장기 보유하며, 매수→관망 전환은 신규 매수 중지와 보유 점검으로 봅니다' },
+      { label: '청산', value: '목표가·시간·하드손절 청산 없음. 직접 청산한 거래만 청산 기록으로 반영됩니다' },
+      { label: '추가', value: '빈 슬롯이 있을 때 새 매수 신호 기준으로 추가 편입합니다' },
+    ],
+    '2': [
+      { label: '진입', value: '시즌 열림 + 회복장 + QQQ ≤ 매수 차단선 + 경고선 미도달 + MA20/60/144/200 터치' },
+      { label: '대상', value: '가치투자 관심종목 (조건 충족 시 장기 보유 후보)' },
+      { label: '보유', value: '자동 손절 없이 장기 보유하며, 매수→관망 전환은 신규 매수 중지와 보유 점검으로 봅니다' },
+      { label: '청산', value: '목표가·시간·하드손절 청산 없음. 직접 청산한 거래만 청산 기록으로 반영됩니다' },
+      { label: '추가', value: '빈 슬롯이 있을 때 새 매수 신호 기준으로 추가 편입합니다' },
+    ],
+  },
 }
 
 function tradeResultLabel(trade: TradeLog) {
@@ -2075,14 +2105,20 @@ function recommendedSellPriceNote(strategy: string) {
   return '권장 매도가 참고 정보가 준비 중입니다.'
 }
 
-function StrategyCriteriaModal({ onClose }: { onClose: () => void }) {
+function StrategyCriteriaModal({
+  investmentType,
+  onClose,
+}: {
+  investmentType: InvestmentType
+  onClose: () => void
+}) {
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, onClose)}>
       <section className="confirm-modal strategy-criteria-modal" role="dialog" aria-modal="true" aria-labelledby="strategy-criteria-title" onMouseDown={(event) => event.stopPropagation()}>
         <button aria-label="전략 기준 닫기" className="modal-close-button" type="button" onClick={onClose}>
           ×
         </button>
-        <StrategyCriteriaContent />
+        <StrategyCriteriaContent investmentType={investmentType} />
       </section>
     </div>
   )
@@ -2095,7 +2131,9 @@ function strategyCriteriaLabelTone(label: string) {
   return 'time'
 }
 
-function StrategyCriteriaTable() {
+function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentType }) {
+  const strategyCriteriaRows = strategyCriteriaRowsByInvestmentType[investmentType]
+
   return (
     <div className="strategy-criteria-modal-table-wrap">
       <table className="strategy-criteria-modal-table">
@@ -2113,7 +2151,7 @@ function StrategyCriteriaTable() {
                 <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{code}</span>
               </th>
               <td>
-                <p className="strategy-criteria-summary">{strategyInfo(code)}</p>
+                <p className="strategy-criteria-summary">{strategyInfo(code, investmentType)}</p>
               </td>
               <td>
                 <dl className="strategy-criteria-list">
@@ -2135,11 +2173,11 @@ function StrategyCriteriaTable() {
   )
 }
 
-function StrategyCriteriaContent() {
+function StrategyCriteriaContent({ investmentType }: { investmentType: InvestmentType }) {
   return (
     <>
-      <h3 id="strategy-criteria-title">전략별 매수·청산 기준</h3>
-      <StrategyCriteriaTable />
+      <h3 id="strategy-criteria-title">{investmentProfileLabel(investmentType)} 전략별 매수·청산 기준</h3>
+      <StrategyCriteriaTable investmentType={investmentType} />
     </>
   )
 }
@@ -2289,10 +2327,12 @@ function AnalysisStockName({
 }
 
 function StrategyTag({
+  investmentType = 'swing',
   strategy,
   onTooltipOpen,
   onTooltipClose,
 }: {
+  investmentType?: InvestmentType
   strategy: string
   onTooltipOpen: (tooltip: TooltipState) => void
   onTooltipClose: () => void
@@ -2304,7 +2344,7 @@ function StrategyTag({
     const centeredX = rect.left + rect.width / 2
 
     onTooltipOpen({
-      text: strategyInfo(strategy),
+      text: strategyInfo(strategy, investmentType),
       x: Math.min(Math.max(centeredX, minX), maxX),
       y: rect.top - 8,
     })
@@ -8539,6 +8579,7 @@ function App() {
                       )}
                       <td className="strategy-data-cell">
                         <StrategyTag
+                          investmentType={displayedInvestmentType}
                           onTooltipClose={() => setActiveTooltip(null)}
                           onTooltipOpen={setActiveTooltip}
                           strategy={trade.strategy}
@@ -8778,6 +8819,7 @@ function App() {
                         <td className={isHolding ? 'strategy-data-cell' : 'strategy-data-cell dash-cell'}>
                           {isHolding && buyStrategies.length > 0 ? buyStrategies.map((strategy) => (
                             <StrategyTag
+                              investmentType={displayedInvestmentType}
                               key={strategy}
                               onTooltipClose={() => setActiveTooltip(null)}
                               onTooltipOpen={setActiveTooltip}
@@ -8941,6 +8983,7 @@ function App() {
                         )}
                         <td className="strategy-data-cell">
                           <StrategyTag
+                            investmentType={displayedInvestmentType}
                             onTooltipClose={() => setActiveTooltip(null)}
                             onTooltipOpen={setActiveTooltip}
                             strategy={trade.strategy}
@@ -9071,7 +9114,7 @@ function App() {
         </div>
       )}
       {isStrategyCriteriaOpen && (
-        <StrategyCriteriaModal onClose={() => setIsStrategyCriteriaOpen(false)} />
+        <StrategyCriteriaModal investmentType={displayedInvestmentType} onClose={() => setIsStrategyCriteriaOpen(false)} />
       )}
       {shouldShowInvestmentProfileOnboarding && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, closeInvestmentProfileOnboarding)}>
