@@ -943,6 +943,7 @@ const Utils = {
       nasdaqBuyBlockMax,
       nasdaqPeakReason: peakState.peakReason,
       isRecoveryMarket: !!peakState.isRecoveryMarket,
+      warnTriggered: !!peakState.warnTriggered,
       qqqRegimeLabel: peakState.regimeLabel,
       us10y, dxy, macroRisk
     };
