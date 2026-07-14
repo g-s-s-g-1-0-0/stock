@@ -2,13 +2,14 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-07-14T07:40:00.492847Z",
-    "lastSuccessfulRun": "2026-07-14T07:40:00.492847Z",
+    "updatedAt": "2026-07-14T09:00:00Z",
+    "lastSuccessfulRun": "2026-07-14T09:00:00Z",
     "failedReason": null,
-    "strategyReset": {
-      "reason": "A-H retired; keep strategy 1/2 only",
-      "at": "2026-07-14T07:40:00.492847Z"
-    },
+    "appendedOpenTrades": 0,
+    "closedTrades": 0,
+    "correctedClosedStatuses": 0,
+    "nasdaqPeakLiquidation": false,
+    "recoveryEndedLiquidation": false,
     "strategySeasonOpen": false
   },
   "rows": []
