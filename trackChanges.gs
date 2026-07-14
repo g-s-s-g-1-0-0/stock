@@ -244,9 +244,11 @@ function handleOpinionChange(stockName, fromOpinion, toOpinion, row, currentGlob
   const isCooldownMsg = r => typeof r === "string" && r.indexOf("매도 유지") !== -1 && (r.indexOf("48시간") !== -1 || r.indexOf("재진입 필터") !== -1 || r.indexOf("쿨다운") !== -1);
   const isReentryMsg  = r => typeof r === "string" && r.indexOf("재진입 조건 충족") !== -1;
   const C             = Utils.COL_INDICES;
-  const entryStrategyCode = String(row[C.entryStrategy] || "").trim().charAt(0).toUpperCase();
+  const entryStrategyCode = (typeof normalizeStrategyCode_ === "function")
+    ? normalizeStrategyCode_(row[C.entryStrategy])
+    : String(row[C.entryStrategy] || "").trim().charAt(0);
   const buyStrategyHint = toOpinion === "매수"
-    ? (evaluatedStrategyType || (/^[A-H]$/.test(entryStrategyCode) ? entryStrategyCode : null))
+    ? (evaluatedStrategyType || ((entryStrategyCode === "1" || entryStrategyCode === "2") ? entryStrategyCode : null))
     : null;
 
   let reason;
@@ -568,6 +570,7 @@ function getNasdaqPeakSignalState_(targetSheet, allProperties) {
       isVixConditionMet: false,
       isRsiConditionMet: false,
       isRecoveryMarket: false,
+      warnTriggered: false,
       buyBlockMax: cfg.normalBuyBlockMax,
       peakDirectDist: cfg.normalPeakDirectDist,
       peakConfirmDist: cfg.normalPeakConfirmDist,
@@ -611,8 +614,15 @@ function getNasdaqPeakSignalState_(targetSheet, allProperties) {
     props.setProperty(cfg.stateKey, "FALSE");
   }
 
+  const peakAlert = props.getProperty(cfg.stateKey) === "TRUE";
+  const peakWarnDist = marketState.peakDirectDist - 3;
+  const warnTriggered = Number.isFinite(premiumPercent)
+    && premiumPercent >= peakWarnDist
+    && !peakAlert
+    && !isPeakTriggered;
+
   return {
-    nasdaqPeakAlert: props.getProperty(cfg.stateKey) === "TRUE",
+    nasdaqPeakAlert: peakAlert,
     currentPrice,
     nasdaqMA200,
     thresholdPrice: nasdaqMA200 * (1 + marketState.peakConfirmDist / 100),
@@ -637,6 +647,8 @@ function getNasdaqPeakSignalState_(targetSheet, allProperties) {
     peakDirectDist: marketState.peakDirectDist,
     peakConfirmDist: marketState.peakConfirmDist,
     peakAlertResetDist: marketState.peakAlertResetDist,
+    warnTriggered,
+    peakWarnDist,
     peakReason: marketState.isRecoveryMarket
       ? `회복장: >${marketState.peakDirectDist}%`
       : `비회복장: >${marketState.peakDirectDist}%+RSI하락 또는 >${marketState.peakConfirmDist}%+RSI하락+MACD둔화`
@@ -663,6 +675,8 @@ const Utils = {
     pctBLow:      38,
     candleLow:    27,
     ma20:         46,
+    ma60:         47,
+    ma144:        48,
     bbWidth:      41,
     bbWidthD1:    42,
     bbWidthAvg60: 43,
@@ -684,50 +698,13 @@ const Utils = {
     RSI_MAX:         35,
     CCI_MIN:        -150,
     LR_TOUCH_RATIO:  1.05,
-    TARGET_PCT_A:           0.20,
-    CIRCUIT_PCT_A:          0.30,
-    GOLDEN_CROSS_PCTB_MIN:  80,
-    GOLDEN_CROSS_RSI_MIN:   70,
-    TARGET_PCT_B:    0.20,
-    CIRCUIT_PCT_B:   0.30,
-    TARGET_PCT_C:              0.20,
-    CIRCUIT_PCT_C:             0.30,
-    C_SQUEEZE_RATIO:           0.45,
-    BB_EXPAND_RATIO:           1.00,
-    SQUEEZE_BREAKOUT_VOL_RATIO: 1.5,
-    SQUEEZE_BREAKOUT_PCTB_MIN:  55,
-    TARGET_PCT_D:    0.12,
-    CIRCUIT_PCT_D:   0.25,
-    ADX_MIN:         30,
-    ADX_PCTB_MIN:    30,
-    ADX_PCTB_MAX:    75,
-    TARGET_PCT_E:    0.20,
-    CIRCUIT_PCT_E:   0.30,
-    SQUEEZE_RATIO:   0.5,
-    SQUEEZE_PCT_B_MAX: 50,
-    TARGET_PCT_F:    0.20,
-    CIRCUIT_PCT_F:   0.30,
-    BB_PCT_B_LOW_MAX: 5,
-    TARGET_PCT_G:    0.12,
-    CIRCUIT_PCT_G:   0.12,
-    G_QQQ_DIST_MIN:  8,
-    G_QQQ_DIST_MAX:  14,
-    G_MA20_SLOPE5_MIN: 0.005,
-    G_RSI_MIN:       45,
-    G_RSI_MAX:       80,
-    G_VOL_RATIO20_MAX: 2.0,
-    G_MA200_OVERHEAT_MAX: 0.80,
-    TARGET_PCT_H:    0.12,
-    CIRCUIT_PCT_H:   0.20,
-    STALLED_EXIT_DAYS_H: 30,
-    STALLED_EXIT_MIN_RETURN_H: 0.05,
-    MAX_HOLD_DAYS_H: 40,
-    STALLED_EXIT_DAYS: 25,
-    STALLED_EXIT_MIN_RETURN: 0.03,
-    HALF_EXIT_DAYS:    60,
-    MAX_HOLD_DAYS:     120,
-    MAX_HOLD_DAYS_D:   30,
-    MAX_HOLD_DAYS_G:   40,
+    TARGET_PCT_1:    0.0,
+    CIRCUIT_PCT_1:   0.30,
+    TARGET_PCT_2:    0.0,
+    CIRCUIT_PCT_2:   0.30,
+    MA_TOUCH_RATIO:  1.003,
+    MA_RECLAIM_RATIO: 0.995,
+    RECOVERY_EXIT_CONFIRM_DAYS: 2,
     SELL_HOLD_HOURS:   48,
     REENTRY_DAYS:      10,
     REENTRY_DROP:      0.03,
@@ -743,7 +720,6 @@ const Utils = {
     QQQ_RECOVERY_PEAK_CONFIRM_DIST: 18,
     QQQ_PEAK_RSI_THRESHOLD: 65,
     QQQ_PEAK_ALERT_RESET_DIST: 5,
-    UPPER_EXIT_MAX_WAIT_DAYS:       5,
     HOLD_RESTORE_DROP:              0.10,
     HOLD_RESTORE_MIN_TRADING_DAYS:  10,
     MAX_OPEN_PER_STRATEGY:          2
@@ -1150,16 +1126,12 @@ const Utils = {
 
   loadEntryInfoFrom(stockName, allProperties) {
     const val = allProperties[`ENTRY_${stockName}`];
-    if (!val) return { price: 0, date: null, strategyType: "A" };
+    if (!val) return { price: 0, date: null, strategyType: "1" };
     const parts = val.split("|");
-    const rawType = parts[2] || "A";
-    // 레거시 문자열 키만 재매핑, A-F letter는 현재 체계를 그대로 사용
-    const legacyMap = {
-      "squeeze": "E", "ma200u": "F", "ma200d": "B"
-    };
-    const strategyType = /^[A-H]$/.test(rawType)
-      ? rawType
-      : (legacyMap[rawType] !== undefined ? legacyMap[rawType] : rawType);
+    const rawType = parts[2] || "1";
+    const legacyMap = { "squeeze": "2", "ma200u": "2", "ma200d": "1", "B": "1" };
+    const mapped = legacyMap[rawType] !== undefined ? legacyMap[rawType] : rawType;
+    const strategyType = (typeof normalizeStrategyCode_ === "function" ? normalizeStrategyCode_(mapped) : mapped) || "1";
     return { price: Number(parts[0]) || 0, date: parts[1] ? Utils.parseDateKST(parts[1]) : null, strategyType };
   },
 
@@ -1176,267 +1148,100 @@ const Utils = {
   },
 
   calcSqueeze(row) {
-    const C            = Utils.COL_INDICES;
-    const bbWidth      = Utils.toNum(row[C.bbWidth]);
-    const bbWidthAvg60 = Utils.toNum(row[C.bbWidthAvg60]);
-    if (bbWidth === null || bbWidthAvg60 === null || bbWidthAvg60 <= 0) return false;
-    return (bbWidth / bbWidthAvg60) < Utils.STRATEGY.SQUEEZE_RATIO;
+    // Legacy helper; Strategy 1/2 no longer uses BB squeeze entries.
+    return false;
   },
 
   evaluateOpinion(row, globalData, now, allProperties = {}) {
-    const C            = Utils.COL_INDICES;
-    const S            = Utils.STRATEGY;
-    const stockName    = String(row[C.stockName]).trim();
+    const C = Utils.COL_INDICES;
+    const S = Utils.STRATEGY;
+    const stockName = String(row[C.stockName]).trim();
     const currentPrice = Utils.toNum(row[C.currentPrice]);
-    const ma200        = Utils.toNum(row[C.ma200]);
-    const ma20         = C.ma20 >= 0 ? Utils.toNum(row[C.ma20]) : null;
-    const rsi          = Utils.toNum(row[C.rsi]);
-    const cci          = Utils.toNum(row[C.cci]);
-    const macdHist     = Utils.toNum(row[C.macdHist]);
-    const macdHistD1   = Utils.toNum(row[C.macdHistD1]);
-    const macdHistD2   = Utils.toNum(row[C.macdHistD2]);
-    const pctB         = Utils.toNum(row[C.pctB]);
-    const pctBLow      = Utils.toNum(row[C.pctBLow]);
-    const bbWidth      = Utils.toNum(row[C.bbWidth]);
-    const bbWidthD1    = Utils.toNum(row[C.bbWidthD1]);
-    const bbWidthAvg60 = Utils.toNum(row[C.bbWidthAvg60]);
-    const candleLow    = Utils.toNum(row[C.candleLow]);
-    const lrTrendline  = Utils.toNum(row[C.lrTrendline]);
-    const volRatio     = C.volRatio  >= 0 ? Utils.toNum(row[C.volRatio])  : null;
-    const plusDI       = C.plusDI    >= 0 ? Utils.toNum(row[C.plusDI])    : null;
-    const minusDI      = C.minusDI   >= 0 ? Utils.toNum(row[C.minusDI])   : null;
-    const adx          = C.adx       >= 0 ? Utils.toNum(row[C.adx])       : null;
-    const adxD1        = C.adxD1     >= 0 ? Utils.toNum(row[C.adxD1])     : null;
-    const vixToday     = globalData.vixToday;
-    const ixicDist     = globalData.ixicDist !== undefined ? globalData.ixicDist : 100;
+    const ma200 = Utils.toNum(row[C.ma200]);
+    const currentOpinion = String(row[C.opinion]).trim();
+    const isEventWatch = globalData.event !== "당분간 없음";
+    const nasdaqPeakAlert = globalData.nasdaqPeakAlert;
+    const vixToday = globalData.vixToday;
+    const ixicDist = globalData.ixicDist !== undefined ? globalData.ixicDist : 100;
     const ixicFilterActive = globalData.ixicFilterActive !== undefined
       ? globalData.ixicFilterActive
-      : (typeof computeNasdaqABFilterActive === "function" ? computeNasdaqABFilterActive(ixicDist) : ixicDist < S.NASDAQ_DIST_UPPER && ixicDist > S.NASDAQ_DIST_LOWER);
-    const currentOpinion  = String(row[C.opinion]).trim();
-    const isEventWatch    = globalData.event !== "당분간 없음";
-    const nasdaqPeakAlert = globalData.nasdaqPeakAlert;
+      : (typeof computeNasdaqABFilterActive === "function" ? computeNasdaqABFilterActive(ixicDist) : false);
     const buyBlockMax = globalData.nasdaqBuyBlockMax || (typeof getNasdaqBuyBlockMax_ === "function" ? getNasdaqBuyBlockMax_(ixicDist, allProperties) : S.NASDAQ_BUY_BLOCK_MAX);
-    const nasdaqBelowBuyBlock = Number.isFinite(ixicDist) && ixicDist <= buyBlockMax;
 
-    const saved         = Utils.loadEntryInfoFrom(stockName, allProperties);
-    const entryPrice    = saved.price > 0 ? saved.price : (Utils.toNum(row[C.entryPrice]) || 0);
-    const entryDate     = saved.date || (row[C.entryDate] instanceof Date ? row[C.entryDate] : null);
-    const isHolding     = entryPrice > 0;
-    const savedStrategy = isHolding ? (saved.strategyType || "A") : null;
-    const vixThreshold  = isHolding ? S.VIX_RELEASE : S.VIX_MIN;
+    const saved = Utils.loadEntryInfoFrom(stockName, allProperties);
+    const entryPrice = saved.price > 0 ? saved.price : (Utils.toNum(row[C.entryPrice]) || 0);
+    const entryDate = saved.date || (row[C.entryDate] instanceof Date ? row[C.entryDate] : null);
+    const isHolding = entryPrice > 0;
+    let savedStrategy = isHolding ? (normalizeStrategyCode_(saved.strategyType) || "1") : null;
 
-    const nasdaqAllowsStrictMomentum = nasdaqBelowBuyBlock && !ixicFilterActive && ixicDist >= S.NASDAQ_DIST_UPPER;
-    const nasdaqAllowsBottomBuy = nasdaqBelowBuyBlock && !ixicFilterActive;
-    const nasdaqAllowsGRecovery = !!globalData.isRecoveryMarket
-      && nasdaqBelowBuyBlock
-      && !ixicFilterActive
-      && Number.isFinite(ixicDist)
-      && ixicDist >= S.G_QQQ_DIST_MIN
-      && ixicDist <= S.G_QQQ_DIST_MAX;
+    if (typeof evaluateBuyCondition !== "function" || typeof evaluateExitCondition !== "function") {
+      return { opinion: currentOpinion || "관망", reason: "전략 평가 함수 없음", strategyType: savedStrategy };
+    }
 
-    const hasRsi = rsi !== null;
-    const hasCci = cci !== null;
-    const rsiOk  = hasRsi && rsi < S.RSI_MAX;
-    const cciOk  = hasCci && cci < S.CCI_MIN;
-    const bCond3     = rsiOk || cciOk;
-    const bCond3Hold = (hasRsi || hasCci) && bCond3;
-    const bbPairOk   = bbWidth !== null && bbWidthAvg60 !== null && bbWidthAvg60 > 0;
+    const season = typeof loadStrategySeasonState_ === "function" ? loadStrategySeasonState_(allProperties) : { open: false };
+    const propsBag = Object.assign({}, allProperties, {
+      __IS_RECOVERY_MARKET__: globalData.isRecoveryMarket ? "TRUE" : "",
+      __STRATEGY_SEASON_OPEN__: season.open ? "TRUE" : "",
+      __QQQ_WARN_TRIGGERED__: globalData.warnTriggered ? "TRUE" : ""
+    });
 
-    const aCond1 = currentPrice !== null && ma200 !== null && currentPrice > ma200;
-    const aCond2 = macdHistD1 !== null && macdHist !== null && macdHistD1 <= 0 && macdHist > 0;
-    const aCond3 = pctB !== null && pctB > S.GOLDEN_CROSS_PCTB_MIN;
-    const aCond4 = rsi !== null && rsi > S.GOLDEN_CROSS_RSI_MIN;
-    const entryGroupA = aCond1 && aCond2 && aCond3 && aCond4 && nasdaqAllowsStrictMomentum;
+    const ind = {
+      stockName,
+      displayName: stockName,
+      currentPrice,
+      ma200,
+      ma20: C.ma20 >= 0 ? Utils.toNum(row[C.ma20]) : null,
+      ma60: C.ma60 >= 0 ? Utils.toNum(row[C.ma60]) : null,
+      ma144: C.ma144 >= 0 ? Utils.toNum(row[C.ma144]) : null,
+      rsi: Utils.toNum(row[C.rsi]),
+      cci: Utils.toNum(row[C.cci]),
+      candleLow: Utils.toNum(row[C.candleLow]),
+      lrTrendline: Utils.toNum(row[C.lrTrendline]),
+      entryPrice,
+      entryDate
+    };
 
-    const bCond1 = currentPrice !== null && ma200 !== null && currentPrice < ma200;
-    const bCond2 = vixToday >= vixThreshold;
-    const lrSlope = (typeof getLRSlope === "function") ? getLRSlope(stockName) : 0;
-    const bCond4 = lrSlope > 0;
-    const bCond5 = lrTrendline !== null && lrTrendline > 0 && candleLow !== null && candleLow <= lrTrendline * S.LR_TOUCH_RATIO;
-    const entryGroupB = bCond1 && bCond2 && bCond3 && bCond4 && bCond5 && nasdaqBelowBuyBlock;
-
-    const cCond1 = currentPrice !== null && ma200 !== null && currentPrice > ma200;
-    const cCond2 = bbPairOk && bbWidthD1 !== null && (bbWidthD1 / bbWidthAvg60) < S.C_SQUEEZE_RATIO;
-    const cCond3 = bbPairOk && bbWidthD1 !== null && bbWidth > bbWidthD1 * S.BB_EXPAND_RATIO;
-    const cCond4 = volRatio !== null && volRatio >= S.SQUEEZE_BREAKOUT_VOL_RATIO;
-    const cCond5 = pctB !== null && pctB > S.SQUEEZE_BREAKOUT_PCTB_MIN;
-    const cCond6 = macdHist !== null && macdHist > 0;
-    const entryGroupC = !entryGroupA && !entryGroupB
-                     && cCond1 && cCond2 && cCond3 && cCond4 && cCond5 && cCond6
-                     && nasdaqAllowsStrictMomentum;
-
-    const dCond1 = currentPrice !== null && ma200 !== null && currentPrice > ma200;
-    const dCond2 = plusDI !== null && minusDI !== null && plusDI > minusDI;
-    const dCond3 = adx !== null && adx > S.ADX_MIN;
-    const dCond4 = adx !== null && adxD1 !== null && adx > adxD1;
-    const dCond5 = macdHist !== null && macdHist > 0;
-    const dCond6 = pctB !== null && pctB >= S.ADX_PCTB_MIN && pctB <= S.ADX_PCTB_MAX;
-    const entryGroupD = !entryGroupA && !entryGroupB && !entryGroupC
-                     && dCond1 && dCond2 && dCond3 && dCond4 && dCond5 && dCond6
-                     && nasdaqAllowsStrictMomentum;
-
-    const eCond1 = currentPrice !== null && ma200 !== null && currentPrice > ma200;
-    const eCond2 = bbPairOk && (bbWidth / bbWidthAvg60) < S.SQUEEZE_RATIO;
-    const eCond3 = pctBLow !== null && pctBLow <= S.SQUEEZE_PCT_B_MAX;
-    const entryGroupE = !entryGroupA && !entryGroupB && !entryGroupC && !entryGroupD
-                     && eCond1 && eCond2 && eCond3 && nasdaqAllowsBottomBuy;
-
-    const fCond1 = currentPrice !== null && ma200 !== null && currentPrice > ma200;
-    const fCond2 = pctBLow !== null && pctBLow <= S.BB_PCT_B_LOW_MAX;
-    const fMarketGate = nasdaqAllowsBottomBuy && (!!globalData.isRecoveryMarket || nasdaqBelowBuyBlock);
-    const entryGroupF = !entryGroupA && !entryGroupB && !entryGroupC && !entryGroupD && !entryGroupE
-                     && fCond1 && fCond2 && fMarketGate;
-
-    const gState = nasdaqAllowsGRecovery && currentPrice !== null && ma200 !== null && currentPrice > ma200
-      ? fetchGMa20PullbackState_(stockName)
-      : null;
-    const gMa20 = gState && Number.isFinite(Number(gState.ma20)) ? Number(gState.ma20) : ma20;
-    const gClose = gState && Number.isFinite(Number(gState.close)) ? Number(gState.close) : currentPrice;
-    const gLow = gState && Number.isFinite(Number(gState.low)) ? Number(gState.low) : candleLow;
-    const gCond1 = nasdaqAllowsGRecovery;
-    const gCond2 = currentPrice !== null && ma200 !== null && currentPrice > ma200;
-    const gCond3 = gMa20 !== null && ma200 !== null && gMa20 > ma200;
-    const gCond4 = gLow !== null && gMa20 !== null && gLow <= gMa20;
-    const gCond5 = gClose !== null && gMa20 !== null && gClose > gMa20;
-    const gCond6 = !!(gState && Number.isFinite(Number(gState.closeD1)) && Number.isFinite(Number(gState.ma20D1)) && Number(gState.closeD1) > Number(gState.ma20D1));
-    const gCond7 = !!(gState && Number.isFinite(Number(gState.ma20Slope5)) && Number(gState.ma20Slope5) >= S.G_MA20_SLOPE5_MIN);
-    const gCond8 = rsi !== null && rsi >= S.G_RSI_MIN && rsi <= S.G_RSI_MAX;
-    const gCond9 = !!(gState && Number.isFinite(Number(gState.volRatio20)) && Number(gState.volRatio20) <= S.G_VOL_RATIO20_MAX);
-    const gCond10 = currentPrice !== null && ma200 !== null && ma200 > 0 && (currentPrice / ma200 - 1) <= S.G_MA200_OVERHEAT_MAX;
-    const entryGroupG = !entryGroupA && !entryGroupB && !entryGroupC && !entryGroupD && !entryGroupE && !entryGroupF
-                     && gCond1 && gCond2 && gCond3 && gCond4 && gCond5 && gCond6 && gCond7 && gCond8 && gCond9 && gCond10;
-
-    let buyTriggered = entryGroupA || entryGroupB || entryGroupC || entryGroupD || entryGroupE || entryGroupF || entryGroupG;
-    const newStrategy = entryGroupA ? "A" : entryGroupB ? "B" : entryGroupC ? "C"
-                      : entryGroupD ? "D" : entryGroupE ? "E" : entryGroupF ? "F" : entryGroupG ? "G" : null;
+    const buy = evaluateBuyCondition(
+      ind, vixToday, ixicDist, ixicFilterActive, isHolding, savedStrategy, propsBag, buyBlockMax
+    );
+    const buyTriggered = !!buy.entryTriggered;
+    const newStrategy = buy.strategyType;
 
     if (isHolding && entryPrice > 0 && entryDate) {
-      if (savedStrategy === "A") {
-        const macdOk = macdHist !== null && macdHist > 0;
-        buyTriggered = aCond1 && !ixicFilterActive && nasdaqBelowBuyBlock && ixicDist >= S.NASDAQ_DIST_UPPER && macdOk;
-      } else if (savedStrategy === "B") {
-        buyTriggered = bCond1 && bCond2 && bCond3Hold && bCond4 && nasdaqBelowBuyBlock;
-      } else if (savedStrategy === "C") {
-        const macdOkC = macdHist !== null && macdHist > 0;
-        buyTriggered = cCond1 && !ixicFilterActive && nasdaqBelowBuyBlock && ixicDist >= S.NASDAQ_DIST_UPPER && macdOkC;
-      } else if (savedStrategy === "D") {
-        const diOk    = plusDI !== null && minusDI !== null && plusDI > minusDI;
-        const macdOkD = macdHist !== null && macdHist > 0;
-        buyTriggered = dCond1 && !ixicFilterActive && nasdaqBelowBuyBlock && ixicDist >= S.NASDAQ_DIST_UPPER && diOk && macdOkD;
-      } else if (savedStrategy === "E") {
-        buyTriggered = eCond1 && !ixicFilterActive && nasdaqBelowBuyBlock && bbPairOk && pctBLow !== null && eCond2 && eCond3;
-      } else if (savedStrategy === "F") {
-        buyTriggered = fCond1 && fCond2 && fMarketGate;
-      } else if (savedStrategy === "G") {
-        buyTriggered = gCond1 && gCond2 && gCond3 && gCond5 && gCond6 && gCond7 && gCond8 && gCond9 && gCond10;
+      const recoveryEnded = !!(
+        season.open
+        && season.sawRecovery
+        && (Number(season.nonRecoveryStreak) || 0) >= (S.RECOVERY_EXIT_CONFIRM_DAYS || 2)
+      );
+      const exit = evaluateExitCondition(
+        { ...ind, currentPrice: currentPrice || 0, entryPrice, entryDate },
+        now,
+        nasdaqPeakAlert,
+        savedStrategy,
+        propsBag,
+        recoveryEnded
+      );
+      if (exit.shouldExit) {
+        return { opinion: "매도", reason: exit.reason, strategyType: savedStrategy };
       }
-
-      if (nasdaqPeakAlert && typeof nasdaqPeakExitApplies === "function" && nasdaqPeakExitApplies(savedStrategy)) return { opinion: "매도", reason: `나스닥 고점 청산/강제매도 — ${globalData.nasdaqPeakReason || "국면별 QQQ 과열 기준 충족"}`, strategyType: savedStrategy };
-
-      const cp          = currentPrice !== null ? currentPrice : 0;
-      const returnPct   = (cp - entryPrice) / entryPrice;
-      const tradingDays = Utils.calcTradingDays(entryDate, now);
-
-      const targetPct = savedStrategy === "A" ? S.TARGET_PCT_A
-                      : savedStrategy === "B" ? S.TARGET_PCT_B
-                      : savedStrategy === "C" ? S.TARGET_PCT_C
-                      : savedStrategy === "D" ? S.TARGET_PCT_D
-                      : savedStrategy === "E" ? S.TARGET_PCT_E
-                      : savedStrategy === "F" ? S.TARGET_PCT_F
-                      : savedStrategy === "H" ? S.TARGET_PCT_H
-                      : S.TARGET_PCT_G;
-      const circuitPct = savedStrategy === "A" ? S.CIRCUIT_PCT_A
-                       : savedStrategy === "B" ? S.CIRCUIT_PCT_B
-                       : savedStrategy === "C" ? S.CIRCUIT_PCT_C
-                       : savedStrategy === "D" ? S.CIRCUIT_PCT_D
-                       : savedStrategy === "E" ? S.CIRCUIT_PCT_E
-                       : savedStrategy === "F" ? S.CIRCUIT_PCT_F
-                       : savedStrategy === "H" ? S.CIRCUIT_PCT_H
-                       : S.CIRCUIT_PCT_G;
-      const label = savedStrategy === "A" ? "200일선 상방 & 모멘텀 재가속"
-                  : savedStrategy === "B" ? "200일선 하방 & 공황 저점"
-                  : savedStrategy === "C" ? "200일선 상방 & 스퀴즈 거래량 돌파"
-                  : savedStrategy === "D" ? "200일선 상방 & 상승 흐름 강화"
-                  : savedStrategy === "E" ? "200일선 상방 & 스퀴즈 저점"
-                  : savedStrategy === "F" ? "200일선 상방 & BB 극단 저점"
-                  : savedStrategy === "H" ? "20일선 지지·재돌파"
-                  : "급락 후 회복장 20일선 눌림";
-      const maxHoldDays = savedStrategy === "D" ? S.MAX_HOLD_DAYS_D : savedStrategy === "G" ? S.MAX_HOLD_DAYS_G : savedStrategy === "H" ? S.MAX_HOLD_DAYS_H : S.MAX_HOLD_DAYS;
-
-      const isEfStrategy = savedStrategy === "E" || savedStrategy === "F";
-      let upperExitArmDate = isEfStrategy ? Utils.loadUpperExitArmFrom(stockName, allProperties) : null;
-
-      if (isEfStrategy && returnPct >= targetPct && !upperExitArmDate) {
-        Utils.saveUpperExitArm(stockName, now);
-        upperExitArmDate = now;
-      }
-
-      if (isEfStrategy && upperExitArmDate) {
-        const histTurnSignal =
-          macdHist !== null && macdHistD1 !== null && macdHistD2 !== null &&
-          (macdHist - macdHistD1) < (macdHistD1 - macdHistD2);
-        const waitDays = Utils.calcTradingDays(upperExitArmDate, now);
-        if (returnPct >= targetPct && histTurnSignal) {
-          return { opinion: "매도", reason: `목표 수익 구간 + MACD 히스토그램 둔화전환 매도 +${(returnPct * 100).toFixed(2)}% [${label}]`, strategyType: savedStrategy };
-        }
-        if (waitDays >= S.UPPER_EXIT_MAX_WAIT_DAYS) {
-          return { opinion: "매도", reason: `목표 수익 도달 후 ${S.UPPER_EXIT_MAX_WAIT_DAYS}거래일 대기 만료 매도 ${(returnPct * 100).toFixed(2)}% [${label}]`, strategyType: savedStrategy };
-        }
-      }
-
-      if (!isEfStrategy && returnPct >= targetPct) {
-        return { opinion: "매도", reason: `목표 수익 달성 즉시 매도 +${(returnPct * 100).toFixed(2)}% [${label}]`, strategyType: savedStrategy };
-      }
-
-      if (returnPct <= -circuitPct)                           return { opinion: "매도", reason: `손절 기준 도달 -${Math.abs(returnPct * 100).toFixed(2)}% [${label}]`, strategyType: savedStrategy };
-      // 반등 미달 청산은 기간 내 터치 여부가 아니라 판단 시점의 현재 수익률로 판정한다.
-      const stalledExitDays = savedStrategy === "H" ? S.STALLED_EXIT_DAYS_H : S.STALLED_EXIT_DAYS;
-      const stalledExitMinReturn = savedStrategy === "H" ? S.STALLED_EXIT_MIN_RETURN_H : S.STALLED_EXIT_MIN_RETURN;
-      if (tradingDays >= stalledExitDays && returnPct < stalledExitMinReturn) {
-        return {
-          opinion: "매도",
-          reason: `${stalledExitDays}거래일 반등 미달 청산 (${tradingDays}일, ${(returnPct * 100).toFixed(2)}% < +${(stalledExitMinReturn * 100).toFixed(0)}%)`,
-          strategyType: savedStrategy
-        };
-      }
-      if (savedStrategy !== "G" && tradingDays >= S.HALF_EXIT_DAYS && returnPct > 0)  return { opinion: "매도", reason: "60거래일 경과 + 수익 중", strategyType: savedStrategy };
-      if (tradingDays >= maxHoldDays)                        return { opinion: "매도", reason: `최대 보유 기간 초과 (${maxHoldDays}일)`, strategyType: savedStrategy };
-
-      if (buyTriggered) {
+      if (buy.triggered) {
         if (isEventWatch) {
-          if (currentOpinion === "매수") {
-            return { opinion: "매수", reason: "보유 유지 (이벤트 기간, 기존 매수 유지)", strategyType: savedStrategy };
-          }
+          if (currentOpinion === "매수") return { opinion: "매수", reason: "보유 유지 (이벤트 기간, 기존 매수 유지)", strategyType: savedStrategy };
           return { opinion: "관망", reason: "보유 유지 (매수 조건 재충족, 이벤트 기간 — 추가 매수 보류)", strategyType: savedStrategy };
-        }
-        if (
-          currentOpinion === "관망" &&
-          typeof aHoldRestoreAllowed === "function" &&
-          !aHoldRestoreAllowed(stockName, savedStrategy, currentPrice, now, allProperties)
-        ) {
-          return {
-            opinion: "관망",
-            reason: typeof buildHoldRestorePendingReason === "function"
-              ? buildHoldRestorePendingReason(stockName, savedStrategy, currentPrice, now, allProperties)
-              : `보유 유지 (${savedStrategy}그룹 추가 매수 대기: 전 진입가 대비 -${(S.HOLD_RESTORE_DROP * 100).toFixed(0)}% 및 관망 ${S.HOLD_RESTORE_MIN_TRADING_DAYS}거래일 경과 시 허용)`,
-            strategyType: savedStrategy
-          };
         }
         return { opinion: "매수", reason: "보유 유지 (매수 조건 충족 중)", strategyType: savedStrategy };
       }
       return { opinion: "관망", reason: "보유 유지 (매수 조건 이탈, 매도 조건 미충족)", strategyType: savedStrategy };
     }
 
-    const sellTime     = Utils.loadSellTimeFrom(stockName, allProperties);
-    const sellPrice    = Utils.loadSellPriceFrom(stockName, allProperties);
+    const sellTime = Utils.loadSellTimeFrom(stockName, allProperties);
+    const sellPrice = Utils.loadSellPriceFrom(stockName, allProperties);
     const elapsedHours = sellTime ? (now - sellTime) / (1000 * 60 * 60) : S.SELL_HOLD_HOURS + 1;
-
     let isReentryAllowed = true;
     if (sellTime) {
       const daysSinceSell = Utils.calcTradingDays(sellTime, now);
-      if (elapsedHours < S.SELL_HOLD_HOURS) {
-        isReentryAllowed = false;
-      } else if (daysSinceSell <= S.REENTRY_DAYS && !(sellPrice > 0 && currentPrice !== null && currentPrice <= sellPrice * (1 - S.REENTRY_DROP))) {
+      if (elapsedHours < S.SELL_HOLD_HOURS) isReentryAllowed = false;
+      else if (daysSinceSell <= S.REENTRY_DAYS && !(sellPrice > 0 && currentPrice !== null && currentPrice <= sellPrice * (1 - S.REENTRY_DROP))) {
         isReentryAllowed = false;
       }
     }
@@ -1451,9 +1256,7 @@ const Utils = {
           strategyType: null
         };
       }
-      if (nasdaqPeakAlert) {
-        return { opinion: "관망", reason: "고점 청산/강제매도 상태 유지 — 48시간 경과 후에도 신규/재진입 차단", strategyType: null };
-      }
+      if (nasdaqPeakAlert) return { opinion: "관망", reason: "고점 청산/강제매도 상태 유지 — 48시간 경과 후에도 신규/재진입 차단", strategyType: null };
       if (buyTriggered && !isEventWatch) {
         if (isReentryAllowed) return { opinion: "매수", reason: "매도 후 재진입 조건 충족", strategyType: newStrategy };
         return { opinion: "관망", reason: "매수 조건 충족되나 재진입 쿨다운 중", strategyType: null };
@@ -1467,8 +1270,10 @@ const Utils = {
       return { opinion: "관망", reason: "매수 조건 충족되나 재진입 쿨다운 중", strategyType: null };
     }
     if (nasdaqPeakAlert) return { opinion: "관망", reason: "고점 청산/강제매도 상태 유지 — 신규/재진입 차단", strategyType: null };
-    return { opinion: "관망", reason: isEventWatch ? `이벤트 기간 관망 (${globalData.event})` : "매수 조건 미충족", strategyType: null };
+    if (isEventWatch) return { opinion: "관망", reason: `이벤트 기간 관망 (${globalData.event})`, strategyType: null };
+    return { opinion: "관망", reason: "매수 조건 미충족", strategyType: null };
   },
+
 
   summarizeChangeReason(fromOpinion, toOpinion, currentGlobalData, lastEvent, row, now, lastReason, allProperties = {}, hintStrategyType = null) {
     const C            = Utils.COL_INDICES;
