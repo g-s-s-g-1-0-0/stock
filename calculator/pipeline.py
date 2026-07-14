@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
 from .rules import (
+    ACTIVE_STRATEGY_CODES,
     STRATEGY_RULES,
     IndicatorRow,
     compute_nasdaq_filter_active,
@@ -1010,7 +1011,10 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
             )
             if row:
                 existing_row = existing_rows.get(stock["ticker"], {})
-                if isinstance(existing_row, dict):
+                ticker_key = str(stock["ticker"]).strip().upper()
+                # Only keep 매도/exitReason while that ticker still has an open holding.
+                # After trade-log reset (or full exit), stale exitReason must not pin opinion to 매도.
+                if isinstance(existing_row, dict) and ticker_key in holdings:
                     exit_reason = str(existing_row.get("exitReason") or "").strip()
                     if exit_reason:
                         row = {
@@ -1160,8 +1164,8 @@ def strategy_codes_from_technical(technical: dict[str, Any]) -> list[str]:
 
     codes: list[str] = []
     for value in values:
-        code = str(value or "").split(".", 1)[0].strip().upper()
-        if code in {"A", "B", "C", "D", "E", "F", "G", "H"} and code not in codes:
+        code = normalize_strategy_code(str(value or "").strip())
+        if code in ACTIVE_STRATEGY_CODES and code not in codes:
             codes.append(code)
     return codes
 

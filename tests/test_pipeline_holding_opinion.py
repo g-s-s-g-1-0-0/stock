@@ -1,8 +1,8 @@
-"""보유 종목 의견 산정 회귀 테스트.
+"""보유 종목 의견 산정 회귀 테스트 (전략 1/2).
 
-핵심: 보유 중('보유 중' 매매로그가 있는) 종목은, 신규 진입 신호가 그 턴에 다시
+보유 중('보유 중' 매매로그가 있는) 종목은, 신규 진입 신호가 그 턴에 다시
 발화하지 않더라도 보유용(hold) 조건이 유지되는 한 의견이 '매수'로 유지돼야 한다.
-hold 조건을 실제로 이탈했을 때만 '관망'으로 내려간다(GAS updateInvestmentOpinion.gs와 동일).
+hold 조건을 실제로 이탈했을 때만 '관망'으로 내려간다.
 """
 
 from pathlib import Path
@@ -35,8 +35,13 @@ def make_technical_row(**overrides):
 
 
 STOCK = {"ticker": "TEST", "name": "테스트", "market": "US"}
-# QQQ 바닥/정상 필터 통과를 위한 시장 상태 (E/F는 nasdaq_bottom 필요).
-MARKET_STATE = {"premiumPercent": 5.0, "buyBlockMax": 18, "regimeLabel": "정상", "isRecoveryMarket": False}
+RECOVERY_MARKET = {
+    "premiumPercent": -1.0,
+    "buyBlockMax": 18,
+    "regimeLabel": "회복장",
+    "isRecoveryMarket": True,
+    "warnTriggered": False,
+}
 
 
 def patch_sources(monkeypatch, row):
@@ -44,105 +49,91 @@ def patch_sources(monkeypatch, row):
     monkeypatch.setattr(pipeline, "fetch_us_extended_price", lambda ticker: None)
 
 
-def e_strategy_hold_row():
-    # E 보유 조건: 현재가>MA200, BB폭/60평균 < 0.5(스퀴즈), 저가%B <= 50.
-    # 단, 신규 E '진입'은 A~D 우선순위 배제까지 충족해야 하므로 hold만 통과하도록 구성.
+def strategy1_hold_row():
+    # 전략1 hold: 현재가 < MA200, VIX 완화 임계, RSI/CCI 과매도, LR 상승+터치, QQQ 하락장.
     return make_technical_row(
-        close=110.0, ma200=95.0,
-        bbWidth=10.0, bbWidthAvg60=30.0,  # 10/30 = 0.33 < 0.5 → 스퀴즈
-        pctBLow=30.0,                      # <= 50
-        macdHist=-0.1, macdHistD1=-0.2,    # 신규 A/C/D 진입 방지(MACD<=0 등)
-        pctB=40.0,
+        close=90.0,
+        ma200=100.0,
+        rsi=30.0,
+        cci=-160.0,
+        lrSlope=0.1,
+        lrTrendline=91.0,
+        low=90.5,
     )
 
 
-def test_held_e_stock_keeps_buy_when_hold_condition_met(monkeypatch):
-    row = e_strategy_hold_row()
+def test_held_strategy1_keeps_buy_when_hold_condition_met(monkeypatch):
+    row = strategy1_hold_row()
     patch_sources(monkeypatch, row)
+    market = {**RECOVERY_MARKET, "premiumPercent": -4.0, "isRecoveryMarket": False, "regimeLabel": "하락장"}
 
     result = pipeline.latest_technical_row(
-        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type="2"
+        STOCK, qqq_market_state=market, vix=28.0, holding_strategy_type="1", season_open=True
     )
 
     assert result["opinion"] == "매수"
-    # 보유 매수의 경우 진입 전략 표시는 보유 전략 코드를 사용한다.
-    assert result["entrySignalCodes"] == "E"
+    assert result["entrySignalCodes"] == "1"
 
 
-def test_held_e_stock_turns_watch_when_hold_condition_lost(monkeypatch):
-    # 스퀴즈 해소(BB폭/60평균 >= 0.5) → E hold 조건 이탈 → 관망.
-    row = e_strategy_hold_row()
-    row["bbWidth"] = 20.0  # 20/30 = 0.66 >= 0.5
+def test_held_strategy1_turns_watch_when_hold_condition_lost(monkeypatch):
+    row = strategy1_hold_row()
+    row["close"] = 110.0  # MA200 위로 회복 → 전략1 hold 이탈
     patch_sources(monkeypatch, row)
+    market = {**RECOVERY_MARKET, "premiumPercent": -4.0, "isRecoveryMarket": False, "regimeLabel": "하락장"}
 
     result = pipeline.latest_technical_row(
-        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type="2"
+        STOCK, qqq_market_state=market, vix=28.0, holding_strategy_type="1", season_open=True
     )
 
     assert result["opinion"] == "관망"
 
 
-def a_strategy_hold_not_entry_row():
-    # A 보유(hold) 조건: 현재가>MA200 + 필터 + MACD Hist>0.
-    # A '신규 진입'은 추가로 MACD 골든크로스(전일<=0 & 당일>0), 종가%B>80, RSI>70 필요.
-    # 전일 MACD가 이미 양수면 골든크로스가 아니므로 신규 진입은 실패, hold만 통과한다.
-    return make_technical_row(
-        close=110.0, ma200=95.0,
-        macdHist=0.5, macdHistD1=0.4,  # 이미 양수 → 신규 골든크로스 아님(hold는 MACD>0만 필요)
-        pctB=85.0, rsi=72.0,           # 진입용 보조 조건은 충족시키되 골든크로스만 불성립
-        bbWidth=20.0, bbWidthAvg60=30.0,  # E 스퀴즈 회피
-        pctBLow=60.0,                      # E/F 저가%B 회피
-    )
-
-
-def test_held_a_stock_keeps_buy_without_fresh_golden_cross(monkeypatch):
-    # 보유 A 종목: 신규 골든크로스가 다시 안 떠도 hold 조건 유지 시 '매수' 유지.
-    row = a_strategy_hold_not_entry_row()
+def test_held_strategy2_keeps_buy_when_season_and_recovery(monkeypatch):
+    # 전략2 hold: 시즌 열림 + 회복장 + QQQ ≤ 차단선 + 경고선 미도달 (MA 터치는 hold에 불필요).
+    row = make_technical_row(close=110.0, ma200=95.0, ma20=105.0)
     patch_sources(monkeypatch, row)
 
     result = pipeline.latest_technical_row(
-        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type="1"
+        STOCK, qqq_market_state=RECOVERY_MARKET, vix=15.0, holding_strategy_type="2", season_open=True
     )
 
     assert result["opinion"] == "매수"
-    assert result["entrySignalCodes"] == "A"
+    assert result["entrySignalCodes"] == "2"
+
+
+def test_held_strategy2_turns_watch_when_season_closed(monkeypatch):
+    row = make_technical_row(close=110.0, ma200=95.0, ma20=105.0)
+    patch_sources(monkeypatch, row)
+
+    result = pipeline.latest_technical_row(
+        STOCK, qqq_market_state=RECOVERY_MARKET, vix=15.0, holding_strategy_type="2", season_open=False
+    )
+
+    assert result["opinion"] == "관망"
 
 
 def test_non_holding_stock_uses_entry_signal_only(monkeypatch):
-    # 동일 행이라도 미보유 종목은 신규 진입(골든크로스) 미발화 시 관망(기존 동작 유지).
-    row = a_strategy_hold_not_entry_row()
+    # 미보유: 전략2 진입 조건 일부만 충족(시즌 닫힘) → 관망.
+    row = make_technical_row(close=105.0, low=104.0, ma20=105.0, ma200=90.0)
     patch_sources(monkeypatch, row)
 
     result = pipeline.latest_technical_row(
-        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type=None
+        STOCK, qqq_market_state=RECOVERY_MARKET, vix=15.0, holding_strategy_type=None, season_open=False
     )
 
     assert result["opinion"] == "관망"
 
 
-def test_non_holding_h_stock_uses_20ma_support_signal(monkeypatch):
-    row = make_technical_row(
-        close=103.0,
-        open=102.0,
-        low=99.8,
-        ma20=100.0,
-        ma20Prev5=99.5,
-        ma200=90.0,
-        macdHist=-0.1,
-        macdHistD1=-0.2,
-        pctB=45.0,
-        pctBLow=30.0,
-        bbWidth=20.0,
-        bbWidthAvg60=30.0,
-    )
+def test_non_holding_strategy2_entry_when_season_open(monkeypatch):
+    row = make_technical_row(close=105.0, low=104.0, ma20=105.0, ma60=100.0, ma144=98.0, ma200=90.0)
     patch_sources(monkeypatch, row)
 
     result = pipeline.latest_technical_row(
-        STOCK, qqq_market_state=MARKET_STATE, vix=15.0, holding_strategy_type=None
+        STOCK, qqq_market_state=RECOVERY_MARKET, vix=15.0, holding_strategy_type=None, season_open=True
     )
 
     assert result["opinion"] == "매수"
-    assert result["entrySignalCodes"] == "H"
+    assert result["entrySignalCodes"] == "2"
     assert result["entryStrategy"] == "2. 이평선 눌림"
 
 
@@ -162,4 +153,4 @@ def test_open_holding_strategies_reads_primary_code(monkeypatch):
 
     holdings = pipeline.open_holding_strategies()
 
-    assert holdings == {"278470": "E"}
+    assert holdings == {"278470": "2"}

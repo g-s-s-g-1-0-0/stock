@@ -1282,12 +1282,8 @@ def tech_value(row: dict[str, Any], *candidates: str) -> Any:
 
 
 TECHNICAL_GROUP_TITLES = {
-    "A": "200일선 상방 & 모멘텀 재가속 (나스닥 ≥-3%)",
-    "B": "200일선 하방 & 공황 저점 (QQQ 하락장)",
-    "C": "200일선 상방 & 스퀴즈 거래량 돌파 (나스닥 ≥-3%)",
-    "D": "200일선 상방 & 상승 흐름 강화 (나스닥 ≥-3%)",
-    "E": "200일선 상방 & 스퀴즈 저점 (히스테리시스+찐바닥 허용)",
-    "F": "200일선 상방 & BB 극단 저점 (횡보장 고점 차단)",
+    "1": "공황 저점 (시즌 오픈)",
+    "2": "이평선 눌림 (시즌 중)",
 }
 CIRCLED_NUMBERS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨"]
 
@@ -1311,11 +1307,11 @@ def formatted_technical_decision(decision: str, signal_codes: list[str]) -> list
             lines.extend(["[시장]", f"  {line.removeprefix('시장 국면:').strip()}"])
             continue
 
-        group_match = re.match(r"^([A-H])그룹\s+([0-9]+/[0-9]+)\s+-\s+(.+)$", line)
+        group_match = re.match(r"^전략([12])\s+([0-9]+/[0-9]+)\s+-\s+(.+)$", line)
         if group_match:
             group, _score, details = group_match.groups()
             title = TECHNICAL_GROUP_TITLES.get(group, "전략 조건")
-            lines.append(f"[{group}그룹: {title}]")
+            lines.append(f"[전략{group}: {title}]")
             for index, detail in enumerate(details.split(" / "), start=1):
                 lines.append(numbered_condition(index, detail))
             continue

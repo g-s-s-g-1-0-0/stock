@@ -1003,39 +1003,17 @@ def strategy_label(code: str, stock: dict[str, Any], technical_row: dict[str, An
 def buy_reason_detail(code: str, stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
     price = first_text(stock.get("currentPrice"), technical_row.get("현재가"))
     ma200 = tech_text(technical_row, "200일 이동평균선", "MA200", "ma200")
-    pct_b = tech_text(technical_row, "볼린저밴드 %B (종가)", "%B", "pctB")
-    pct_b_low = tech_text(technical_row, "볼린저밴드 %B (저가)", "저가%B", "pctBLow")
     rsi = tech_text(technical_row, "RSI (D)", "RSI")
-    macd_hist = tech_text(technical_row, "MACD Histogram (D)", "MACD Hist", "macdHist")
-    plus_di = tech_text(technical_row, "+DI (DMI, 14)", "+DI")
-    minus_di = tech_text(technical_row, "-DI (DMI, 14)", "-DI")
-    adx = tech_text(technical_row, "ADX (14, D)", "ADX")
-    bb_width = tech_text(technical_row, "볼린저밴드 폭 (D)", "BB폭")
-    bb_width_avg = tech_text(technical_row, "지난 60일 볼린저밴드 폭 평균", "60일 BB폭")
-    vol_ratio = tech_text(technical_row, "거래량비", "Volume Ratio")
+    cci = tech_text(technical_row, "CCI (D)", "CCI")
     ma20 = tech_text(technical_row, "20일 이동평균선", "MA20", "ma20")
-    ma20_slope = tech_text(technical_row, "MA20 5일 기울기", "ma20Slope5")
-    vol_ratio20 = tech_text(technical_row, "20일 평균 대비 거래량 (D)", "volRatio20")
+    ma60 = tech_text(technical_row, "60일 이동평균선", "MA60", "ma60")
+    lr_trendline = tech_text(technical_row, "120일 저가 회귀 추세선", "LR추세선", "lrTrendline")
 
-    if code == "A":
-        detail = f"현재가 {price} / MA200 {ma200} | 종가 %B {pct_b} | RSI {rsi} | MACD Hist {macd_hist}"
-    elif code == "B":
-        detail = f"현재가 {price} / MA200 {ma200} | RSI {rsi}"
-    elif code == "C":
-        detail = f"현재가 {price} / MA200 {ma200} | BB폭 {bb_width} / 60일 {bb_width_avg} | 거래량비 {vol_ratio} | 종가 %B {pct_b} | MACD Hist {macd_hist}"
-    elif code == "D":
-        detail = f"현재가 {price} / MA200 {ma200} | +DI {plus_di} / -DI {minus_di} | ADX {adx} | 종가 %B {pct_b} | MACD Hist {macd_hist}"
-    elif code == "E":
-        detail = f"현재가 {price} / MA200 {ma200} | BB폭 {bb_width} / 60일평균 {bb_width_avg} | 저가 %B {pct_b_low}"
-    elif code == "F":
-        detail = f"현재가 {price} / MA200 {ma200} | 저가 %B {pct_b_low}"
-    elif code == "G":
-        detail = f"현재가 {price} / MA20 {ma20} / MA200 {ma200} | RSI {rsi} | MA20 5일 기울기 {ma20_slope} | 20일 거래량비 {vol_ratio20}"
-    elif code == "H":
-        detail = f"현재가 {price} / 저가 {tech_text(technical_row, 'C - Low', '저가')} / MA20 {ma20} | MA20 5일 기울기 {ma20_slope} | 20일 거래량비 {vol_ratio20}"
-    else:
-        detail = f"현재가 {price} / MA200 {ma200}"
-    return detail
+    if code == "1":
+        return f"현재가 {price} / MA200 {ma200} | RSI {rsi} / CCI {cci} | LR추세선 {lr_trendline}"
+    if code == "2":
+        return f"현재가 {price} / MA20 {ma20} / MA60 {ma60} / MA200 {ma200} | RSI {rsi}"
+    return f"현재가 {price} / MA200 {ma200}"
 
 
 def buy_reason(stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
@@ -1065,7 +1043,7 @@ def change_strategy_code(previous_stock: dict[str, Any], current_stock: dict[str
         code = strategy_code(value)
         if code:
             return code
-    return "A"
+    return "1"
 
 
 def metric_context(current_stock: dict[str, Any], technical_row: dict[str, Any]) -> dict[str, Any]:
@@ -1123,78 +1101,25 @@ def watch_release_detail(strategy: str, current_stock: dict[str, Any], technical
     c = metric_context(current_stock, technical_row)
     price_num = c["price_num"]
     ma200_num = c["ma200_num"]
-    macd_num = c["macd_num"]
-    pct_b_num = c["pct_b_num"]
-    pct_b_low_num = c["pct_b_low_num"]
+    ma20_num = c["ma20_num"]
     rsi_num = c["rsi_num"]
     cci_num = c["cci_num"]
-    plus_di_num = c["plus_di_num"]
-    minus_di_num = c["minus_di_num"]
-    bb_width_num = c["bb_width_num"]
-    bb_width_avg_num = c["bb_width_avg_num"]
-    ma20_num = c["ma20_num"]
-    ma20_slope_num = c["ma20_slope_num"]
 
-    if price_num is not None and ma200_num is not None and price_num <= ma200_num:
-        return f"200일선 하방 이탈 (현재가 {c['price']} / MA200 {c['ma200']})"
+    code = strategy_code(strategy) or strategy
 
-    if strategy == "A":
-        if macd_num is not None and macd_num <= 0:
-            return f"MACD 골든크로스 소멸 (Hist {c['macd']} ≤ 0)"
-        return (
-            "모멘텀 재가속 조건 이탈 "
-            f"(종가 %B {c['pct_b']} / 기준 >{s['GOLDEN_CROSS_PCTB_MIN']}, "
-            f"RSI {c['rsi']} / 기준 >{s['GOLDEN_CROSS_RSI_MIN']}, MACD Hist {c['macd']})"
-        )
-
-    if strategy == "B":
+    if code == "1":
         if price_num is not None and ma200_num is not None and price_num >= ma200_num:
             return f"주가가 200일선 위로 회복 (현재가 {c['price']} / MA200 {c['ma200']})"
-        oversold_released = (
-            (rsi_num is not None or cci_num is not None)
-            and not (rsi_num is not None and rsi_num < float(s["RSI_MAX"]))
-            and not (cci_num is not None and cci_num < float(s["CCI_MIN"]))
-        )
-        if oversold_released:
-            return f"과매도 해소 (RSI {c['rsi']} / CCI {c['cci']})"
-        return f"공황 저점 조건 이탈 (저가 {c['low']} / LR추세선 {c['lr_trendline']} / RSI {c['rsi']} / CCI {c['cci']})"
+        if rsi_num is not None and cci_num is not None and rsi_num >= float(s["RSI_MAX"]) and cci_num >= float(s["CCI_MIN"]):
+            return f"과매도 해제 (RSI {c['rsi']} / CCI {c['cci']})"
+        return f"전략 1 조건 이탈 (현재가 {c['price']} / MA200 {c['ma200']} / RSI {c['rsi']} / CCI {c['cci']})"
 
-    if strategy == "C":
-        if macd_num is not None and macd_num <= 0:
-            return f"MACD 소멸 (Hist {c['macd']} ≤ 0)"
-        return f"스퀴즈 거래량 돌파 조건 이탈 (거래량비 {c['vol_ratio']} / 종가 %B {c['pct_b']} / MACD Hist {c['macd']})"
+    if code == "2":
+        if ma20_num is not None and price_num is not None and price_num < ma20_num * float(s.get("MA_RECLAIM_RATIO", 0.995)):
+            return f"이평선 회복 실패 (현재가 {c['price']} / MA20 {c['ma20']})"
+        return f"전략 2 조건 이탈 (현재가 {c['price']} / MA20 {c['ma20']} / MA200 {c['ma200']})"
 
-    if strategy == "D":
-        if plus_di_num is not None and minus_di_num is not None and plus_di_num <= minus_di_num:
-            return f"DMI 방향 전환 (+DI {c['plus_di']} ≤ -DI {c['minus_di']})"
-        if macd_num is not None and macd_num <= 0:
-            return f"MACD 소멸 (Hist {c['macd']} ≤ 0)"
-        return f"상승 흐름 조건 이탈 (+DI {c['plus_di']} / -DI {c['minus_di']} / ADX {c['adx']} / MACD Hist {c['macd']})"
-
-    if strategy == "E":
-        if bb_width_num is not None and bb_width_avg_num is not None and bb_width_avg_num > 0:
-            squeeze_ratio = bb_width_num / bb_width_avg_num
-            if squeeze_ratio >= float(s["SQUEEZE_RATIO"]):
-                return f"BB 스퀴즈 해소 (BB폭 {c['bb_width']} / 60일평균 {c['bb_width_avg']})"
-        if pct_b_low_num is not None and pct_b_low_num > float(s["SQUEEZE_PCT_B_MAX"]):
-            return f"저가 %B 상승 ({c['pct_b_low']} > {s['SQUEEZE_PCT_B_MAX']})"
-        return f"E그룹 저점 조건 이탈 (BB폭 {c['bb_width']} / 60일평균 {c['bb_width_avg']} / 저가 %B {c['pct_b_low']})"
-
-    if strategy == "G":
-        if ma20_num is not None and price_num is not None and price_num <= ma20_num:
-            return f"20일선 회복 실패 (현재가 {c['price']} / MA20 {c['ma20']})"
-        if ma20_slope_num is not None and ma20_slope_num < 0.5:
-            return f"MA20 기울기 둔화 ({c['ma20_slope']} < +0.5%)"
-        return f"G그룹 눌림 조건 이탈 (현재가 {c['price']} / MA20 {c['ma20']} / MA200 {c['ma200']})"
-
-    if strategy == "H":
-        if ma20_num is not None and price_num is not None and price_num <= ma20_num:
-            return f"20일선 지지 이탈 (현재가 {c['price']} / MA20 {c['ma20']})"
-        return f"H그룹 20일선 조건 이탈 (현재가 {c['price']} / MA20 {c['ma20']} / MA20 기울기 {c['ma20_slope']})"
-
-    if pct_b_low_num is not None and pct_b_low_num > float(s["BB_PCT_B_LOW_MAX"]):
-        return f"BB 하단 눌림 해소 (저가 %B {c['pct_b_low']} > {s['BB_PCT_B_LOW_MAX']})"
-    return f"F그룹 눌림 조건 이탈 (현재가 {c['price']} / MA200 {c['ma200']} / 저가 %B {c['pct_b_low']})"
+    return f"매수 조건 이탈 (현재가 {c['price']} / MA200 {c['ma200']})"
 
 
 def watch_reason(
