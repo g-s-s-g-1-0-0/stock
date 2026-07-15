@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-07-15T00:31:23+00:00",
-    "lastSuccessfulRun": "2026-07-15T00:31:23+00:00",
+    "updatedAt": "2026-07-15T00:38:13+00:00",
+    "lastSuccessfulRun": "2026-07-15T00:38:13+00:00",
     "failedReason": null
   },
   "rows": [
@@ -630,6 +630,22 @@
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
       "updatedAt": "2026-07-15T00:31:23+00:00"
+    },
+    {
+      "ticker": "SKHYV",
+      "name": "SK hynix Inc. - American Depository Shares",
+      "market": "US",
+      "fairPrice": "$109.95 ~ $183.25",
+      "fairPriceReason": null,
+      "currentPrice": "-",
+      "valuation": "보통",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "혼합주",
+      "industry": "Technology | Semiconductors",
+      "updatedAt": "2026-07-15T00:38:13+00:00"
     }
   ]
 }
