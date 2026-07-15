@@ -1229,32 +1229,6 @@
   white-space: nowrap;
 }
 
-.strategy-criteria-value-detail {
-  margin-bottom: 8px;
-}
-
-.strategy-criteria-value-detail:last-child {
-  margin-bottom: 0;
-}
-
-.strategy-criteria-value-detail strong,
-.strategy-criteria-value-detail small {
-  display: block;
-  white-space: nowrap;
-}
-
-.strategy-criteria-value-detail strong {
-  color: var(--text-h);
-  font-size: inherit;
-  line-height: 1.45;
-}
-
-.strategy-criteria-value-detail small {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.55;
-}
-
 @media (max-width: 760px) {
   .confirm-modal.strategy-criteria-modal {
     width: calc(100vw - 20px);

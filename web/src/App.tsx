@@ -1910,19 +1910,23 @@ function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing'
   return descriptions[investmentType][strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
 }
 
-type StrategyCriteriaDetail = { criterion: string; description: string }
-type StrategyCriteriaRow = { label: string; value: string | Array<string | StrategyCriteriaDetail> }
+type StrategyCriteriaRow = { label: string; value: string | string[] }
 
 const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string, StrategyCriteriaRow[]>> = {
   swing: {
     '1': [
       {
         label: '진입',
+        value: 'QQQ 이격도 < -3% + 종목 현재가 < MA200 + VIX >= 30 + RSI < 35 또는 CCI < -150 + LR 추세선 방어',
+      },
+      {
+        label: '설명',
         value: [
-          {
-            criterion: 'QQQ 이격도 < -3% + 종목 현재가 < MA200 + VIX >= 30 + RSI < 35 또는 CCI < -150 + LR 추세선 방어',
-            description: 'QQQ는 나스닥100 대표 ETF라 시장 전체 하락 여부를 보는 기준이고, MA200은 최근 약 1년 평균 가격입니다. VIX는 공포지수라 30 이상이면 급락장에 가깝고, RSI/CCI는 단기 과매도 여부를 봅니다. LR 추세선은 최근 하락 흐름의 지지선으로, 저가가 이 선 근처에서 버티면 무너지는 중이 아니라 지지받는 중으로 봅니다.',
-          },
+          'QQQ는 나스닥100 대표 ETF라 시장 전체 하락 여부를 보는 기준입니다.',
+          'MA200은 최근 약 1년 평균 가격입니다. 현재가가 그 아래에 있어야 장기 평균보다 싸진 종목으로 봅니다.',
+          'VIX는 공포지수입니다. 30 이상이면 투자자들이 겁을 많이 내는 급락장에 가깝습니다.',
+          'RSI와 CCI는 주가가 단기간에 너무 많이 팔렸는지 보는 지표입니다. 둘 중 하나라도 과매도이면 반등 후보로 봅니다.',
+          'LR 추세선은 최근 하락 흐름의 지지선입니다. 저가가 이 선 근처에서 버티면 무너지는 중이 아니라 지지받는 중으로 봅니다.',
         ],
       },
       {
@@ -1954,11 +1958,16 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
     '2': [
       {
         label: '진입',
+        value: '전략 1 시즌 열림 + 회복장 + QQQ 이격도 <= 매수 차단선 + QQQ 경고선 미도달 + 종목 저가가 MA20/60/144/200 중 하나를 터치',
+      },
+      {
+        label: '설명',
         value: [
-          {
-            criterion: '전략 1 시즌 열림 + 회복장 + QQQ 이격도 <= 매수 차단선 + QQQ 경고선 미도달 + 종목 저가가 MA20/60/144/200 중 하나를 터치',
-            description: '전략 1이 먼저 나와 매수 시즌이 열린 뒤에만 추가 매수를 봅니다. 회복장은 급락 후 지수가 다시 올라오는 흐름이고, QQQ 이격도는 나스닥이 장기 평균보다 얼마나 위에 있는지 보는 값입니다. 차단선보다 높거나 경고선에 닿으면 이미 많이 오른 위험 구간이라 매수를 막고, 종목이 평균 가격선 근처까지 쉬어 갈 때만 눌림으로 봅니다.',
-          },
+          '전략 1이 먼저 나와 매수 시즌이 열린 뒤에만 추가 매수를 봅니다.',
+          '회복장은 급락 후 지수가 다시 올라오는 흐름입니다. 하락이 계속되는 중이면 눌림 매수로 보지 않습니다.',
+          'QQQ 이격도는 나스닥이 장기 평균보다 얼마나 위에 있는지 보는 값입니다.',
+          '차단선보다 높거나 경고선에 닿으면 이미 많이 오른 위험 구간이라 신규·추가 매수를 막습니다.',
+          'MA20/60/144/200은 단기·중기·장기 평균 가격선입니다. 종목이 이 선 근처까지 쉬어 갈 때 눌림으로 봅니다.',
         ],
       },
       {
@@ -1989,11 +1998,17 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
     '1': [
       {
         label: '진입',
+        value: 'QQQ 이격도 < -3% + 종목 현재가 < MA200 + VIX >= 30 + RSI < 35 또는 CCI < -150 + LR 추세선 방어',
+      },
+      {
+        label: '설명',
         value: [
-          {
-            criterion: 'QQQ 이격도 < -3% + 종목 현재가 < MA200 + VIX >= 30 + RSI < 35 또는 CCI < -150 + LR 추세선 방어',
-            description: 'QQQ는 나스닥100 대표 ETF라 시장 전체 하락 여부를 보는 기준이고, MA200은 최근 약 1년 평균 가격입니다. VIX는 공포지수라 30 이상이면 급락장에 가깝고, RSI/CCI는 단기 과매도 여부를 봅니다. LR 추세선은 최근 하락 흐름의 지지선으로, 저가가 이 선 근처에서 버티면 무너지는 중이 아니라 지지받는 중으로 봅니다. 가치투자에서는 이 조건을 장기 보유 후보를 싸게 담는 신호로 사용합니다.',
-          },
+          'QQQ는 나스닥100 대표 ETF라 시장 전체 하락 여부를 보는 기준입니다.',
+          'MA200은 최근 약 1년 평균 가격입니다. 현재가가 그 아래에 있어야 장기 평균보다 싸진 종목으로 봅니다.',
+          'VIX는 공포지수입니다. 30 이상이면 투자자들이 겁을 많이 내는 급락장에 가깝습니다.',
+          'RSI와 CCI는 주가가 단기간에 너무 많이 팔렸는지 보는 지표입니다. 둘 중 하나라도 과매도이면 반등 후보로 봅니다.',
+          'LR 추세선은 최근 하락 흐름의 지지선입니다. 저가가 이 선 근처에서 버티면 무너지는 중이 아니라 지지받는 중으로 봅니다.',
+          '가치투자에서는 이 조건을 장기 보유 후보를 싸게 담는 신호로 사용합니다.',
         ],
       },
       {
@@ -2025,11 +2040,17 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
     '2': [
       {
         label: '진입',
+        value: '전략 1 시즌 열림 + 회복장 + QQQ 이격도 <= 매수 차단선 + QQQ 경고선 미도달 + 종목 저가가 MA20/60/144/200 중 하나를 터치',
+      },
+      {
+        label: '설명',
         value: [
-          {
-            criterion: '전략 1 시즌 열림 + 회복장 + QQQ 이격도 <= 매수 차단선 + QQQ 경고선 미도달 + 종목 저가가 MA20/60/144/200 중 하나를 터치',
-            description: '전략 1이 먼저 나와 매수 시즌이 열린 뒤에만 추가 편입을 봅니다. 회복장은 급락 후 지수가 다시 올라오는 흐름이고, QQQ 이격도는 나스닥이 장기 평균보다 얼마나 위에 있는지 보는 값입니다. 차단선보다 높거나 경고선에 닿으면 이미 많이 오른 위험 구간이라 매수를 막고, 종목이 평균 가격선 근처까지 쉬어 갈 때만 눌림으로 봅니다. 가치투자에서는 이 눌림을 장기 보유 후보를 추가로 담는 신호로 사용합니다.',
-          },
+          '전략 1이 먼저 나와 매수 시즌이 열린 뒤에만 추가 편입을 봅니다.',
+          '회복장은 급락 후 지수가 다시 올라오는 흐름입니다. 하락이 계속되는 중이면 눌림 매수로 보지 않습니다.',
+          'QQQ 이격도는 나스닥이 장기 평균보다 얼마나 위에 있는지 보는 값입니다.',
+          '차단선보다 높거나 경고선에 닿으면 이미 많이 오른 위험 구간이라 신규·추가 매수를 막습니다.',
+          'MA20/60/144/200은 단기·중기·장기 평균 가격선입니다. 종목이 이 선 근처까지 쉬어 갈 때 눌림으로 봅니다.',
+          '가치투자에서는 이 눌림을 장기 보유 후보를 추가로 담는 신호로 사용합니다.',
         ],
       },
       {
@@ -2281,14 +2302,7 @@ function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentT
                       </dt>
                       <dd className="strategy-criteria-value">
                         {Array.isArray(row.value) ? row.value.map((line) => (
-                          typeof line === 'string'
-                            ? <span className="strategy-criteria-value-line" key={line}>{line}</span>
-                            : (
-                              <span className="strategy-criteria-value-line strategy-criteria-value-detail" key={line.criterion}>
-                                <strong>기준: {line.criterion}</strong>
-                                <small>설명: {line.description}</small>
-                              </span>
-                              )
+                          <span className="strategy-criteria-value-line" key={line}>{line}</span>
                         )) : row.value}
                       </dd>
                     </div>
