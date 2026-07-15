@@ -1917,7 +1917,13 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
     '1': [
       {
         label: '진입',
-        value: 'QQQ 이격도 < -3% + 종목 현재가 < MA200 + VIX >= 30 + RSI < 35 또는 CCI < -150 + LR 추세선 방어',
+        value: [
+          'QQQ 이격도 < -3%',
+          '종목 현재가 < MA200',
+          'VIX >= 30',
+          'RSI < 35 또는 CCI < -150',
+          'LR 추세선 방어',
+        ],
       },
       {
         label: '설명',
@@ -1958,7 +1964,13 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
     '2': [
       {
         label: '진입',
-        value: '전략 1 시즌 열림 + 회복장 + QQQ 이격도 <= 매수 차단선 + QQQ 경고선 미도달 + 종목 저가가 MA20/60/144/200 중 하나를 터치',
+        value: [
+          '전략 1 시즌 열림',
+          '회복장',
+          'QQQ 이격도 <= 매수 차단선',
+          'QQQ 경고선 미도달',
+          '종목 저가가 MA20/60/144/200 중 하나를 터치',
+        ],
       },
       {
         label: '설명',
@@ -1998,7 +2010,13 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
     '1': [
       {
         label: '진입',
-        value: 'QQQ 이격도 < -3% + 종목 현재가 < MA200 + VIX >= 30 + RSI < 35 또는 CCI < -150 + LR 추세선 방어',
+        value: [
+          'QQQ 이격도 < -3%',
+          '종목 현재가 < MA200',
+          'VIX >= 30',
+          'RSI < 35 또는 CCI < -150',
+          'LR 추세선 방어',
+        ],
       },
       {
         label: '설명',
@@ -2040,7 +2058,13 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
     '2': [
       {
         label: '진입',
-        value: '전략 1 시즌 열림 + 회복장 + QQQ 이격도 <= 매수 차단선 + QQQ 경고선 미도달 + 종목 저가가 MA20/60/144/200 중 하나를 터치',
+        value: [
+          '전략 1 시즌 열림',
+          '회복장',
+          'QQQ 이격도 <= 매수 차단선',
+          'QQQ 경고선 미도달',
+          '종목 저가가 MA20/60/144/200 중 하나를 터치',
+        ],
       },
       {
         label: '설명',
