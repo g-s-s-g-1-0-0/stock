@@ -1873,12 +1873,23 @@ function tradeReturnClass(value: number) {
   return returnClass(value)
 }
 
+const STRATEGY_LABELS: Record<string, string> = {
+  '1': '공황 저점',
+  '2': '이평선 눌림',
+}
+
 function strategyCode(strategy: string) {
   const match = String(strategy || '').trim().match(/^([12])\b/)
   if (match) return match[1]
   const legacy = String(strategy || '').trim().match(/^([A-H])\b/i)
   if (legacy && legacy[1].toUpperCase() === 'B') return '1'
   return String(strategy || '').slice(0, 1)
+}
+
+function strategyDisplayName(strategy: string) {
+  const code = strategyCode(strategy)
+  if (code && STRATEGY_LABELS[code]) return `${code}. ${STRATEGY_LABELS[code]}`
+  return String(strategy || '').trim() || '-'
 }
 
 function investmentProfileLabel(investmentType: InvestmentType) {
@@ -1888,50 +1899,156 @@ function investmentProfileLabel(investmentType: InvestmentType) {
 function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing') {
   const descriptions: Record<InvestmentType, Record<string, string>> = {
     swing: {
-      '1': '공포·하락장에서 장기 평균선 아래 과매도 저점을 노립니다. 시즌을 여는 진입 전략입니다.',
-      '2': '전략 1로 시즌이 열린 뒤 회복장에서 20/60/144/200일선 눌림을 매수합니다. 회복장 종료 시 함께 청산됩니다.',
+      '1': '공황 저점은 시장이 크게 겁먹은 하락장에서 첫 매수 기회를 찾는 전략입니다. 너무 빨리 들어가지 않도록 시장 공포와 종목 과매도를 함께 확인합니다.',
+      '2': '이평선 눌림은 전략 1로 매수 시즌이 열린 뒤, 회복장에서 좋은 종목이 이동평균선까지 내려왔을 때 추가 매수하는 전략입니다. 회복장 종료 시 함께 청산합니다.',
     },
     long_term: {
-      '1': '공포·하락장에서 장기 평균선 아래 과매도 저점을 장기 보유 후보로 편입합니다. 손절 없이 보유 판단을 이어갑니다.',
-      '2': '전략 1로 시즌이 열린 뒤 회복장 이평선 눌림을 장기 보유 추가 진입 신호로 봅니다. 자동 청산보다 보유 점검을 우선합니다.',
+      '1': '공황 저점은 시장이 크게 겁먹은 하락장에서 장기 보유 후보를 처음 편입하는 전략입니다. 단기 수익보다 좋은 종목을 싸게 담는 데 초점을 둡니다.',
+      '2': '이평선 눌림은 전략 1로 매수 시즌이 열린 뒤, 회복장에서 관심 종목이 이동평균선까지 내려왔을 때 장기 보유 후보를 추가 편입하는 전략입니다.',
     },
   }
   return descriptions[investmentType][strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
 }
 
-type StrategyCriteriaRow = { label: string; value: string }
+type StrategyCriteriaRow = { label: string; value: string | string[] }
 
 const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string, StrategyCriteriaRow[]>> = {
   swing: {
     '1': [
-      { label: '진입', value: 'QQQ 하락장(< -3%), 종목 MA200 아래, VIX ≥ 30, RSI/CCI 과매도, LR 추세선 방어' },
-      { label: '시즌', value: '이 시그널이 나오면 매수 시즌이 열리고, 이후 전략 2 매수가 가능해집니다' },
-      { label: '청산', value: '회복장 종료(2거래일 확정) 전량매도 — +면 성공 / −면 실패' },
-      { label: '손절', value: '-30%' },
-      { label: '재진입', value: '매도 후 -3% 재진입, 관망 복원 시 -10% 유지' },
+      {
+        label: '진입',
+        value: [
+          'QQQ(나스닥 대표 ETF)가 -3% 이상 빠진 하락장일 때만 봅니다.',
+          '종목은 200일선 아래에 있고, VIX 30 이상·RSI/CCI 과매도로 공포가 큰 구간이어야 합니다.',
+          'LR 추세선은 주가가 마지막 지지선을 지키는지 확인하는 장치입니다.',
+        ],
+      },
+      {
+        label: '시즌',
+        value: [
+          '전략 1이 나오면 “공포 구간에서 첫 매수 기회가 생겼다”는 뜻입니다.',
+          '이 신호가 시즌을 열어야 이후 전략 2 추가 매수가 가능해집니다.',
+        ],
+      },
+      {
+        label: '청산',
+        value: [
+          '회복장이 끝났다고 2거래일 연속 확인되면 전략 1/2 보유분을 모두 팝니다.',
+          '청산 시점 수익률이 플러스면 성공, 마이너스면 실패로 기록합니다.',
+        ],
+      },
+      {
+        label: '손절',
+        value: '매수가 대비 -30%까지 떨어지면 회복장 여부와 관계없이 손절합니다.',
+      },
+      {
+        label: '재진입',
+        value: [
+          '매도 후 가격이 다시 -3% 눌리면 재진입 후보로 봅니다.',
+          '관망으로 복원된 뒤에는 -10% 재진입 기준을 유지합니다.',
+        ],
+      },
     ],
     '2': [
-      { label: '진입', value: '시즌 열림 + 회복장 + QQQ ≤ 매수 차단선 + 경고선 미도달 + MA20/60/144/200 터치' },
-      { label: '대상', value: '계정별 관심종목 (조건 충족 시 시그널 종목)' },
-      { label: '청산', value: '회복장 종료(2거래일 확정) 전량매도 — +면 성공 / −면 실패' },
-      { label: '손절', value: '-30%' },
-      { label: '재진입', value: '매도 후 -3% 재진입, 관망 복원 시 -10% 유지' },
+      {
+        label: '진입',
+        value: [
+          '전략 1로 매수 시즌이 열린 뒤에만 작동합니다.',
+          '시장은 회복장이어야 하고, QQQ는 과열 차단선 아래이며 경고선에 닿지 않아야 합니다.',
+          '종목이 20/60/144/200일선 근처로 눌릴 때 추가 매수 후보로 봅니다.',
+        ],
+      },
+      {
+        label: '대상',
+        value: '계정별 관심종목 중 조건을 충족한 종목만 시그널 종목으로 기록합니다.',
+      },
+      {
+        label: '청산',
+        value: [
+          '회복장이 끝났다고 2거래일 연속 확인되면 전략 1/2 보유분을 모두 팝니다.',
+          '청산 시점 수익률이 플러스면 성공, 마이너스면 실패로 기록합니다.',
+        ],
+      },
+      {
+        label: '손절',
+        value: '매수가 대비 -30%까지 떨어지면 회복장 여부와 관계없이 손절합니다.',
+      },
+      {
+        label: '재진입',
+        value: [
+          '매도 후 가격이 다시 -3% 눌리면 재진입 후보로 봅니다.',
+          '관망으로 복원된 뒤에는 -10% 재진입 기준을 유지합니다.',
+        ],
+      },
     ],
   },
   long_term: {
     '1': [
-      { label: '진입', value: 'QQQ 하락장(< -3%), 종목 MA200 아래, VIX ≥ 30, RSI/CCI 과매도, LR 추세선 방어' },
-      { label: '시즌', value: '이 시그널이 나오면 매수 시즌이 열리고, 이후 전략 2 편입 신호를 함께 봅니다' },
-      { label: '보유', value: '자동 손절 없이 장기 보유하며, 매수→관망 전환은 신규 매수 중지와 보유 점검으로 봅니다' },
-      { label: '청산', value: '목표가·시간·하드손절 청산 없음. 직접 청산한 거래만 청산 기록으로 반영됩니다' },
-      { label: '추가', value: '빈 슬롯이 있을 때 새 매수 신호 기준으로 추가 편입합니다' },
+      {
+        label: '진입',
+        value: [
+          'QQQ(나스닥 대표 ETF)가 -3% 이상 빠진 하락장일 때만 봅니다.',
+          '종목은 200일선 아래에 있고, VIX 30 이상·RSI/CCI 과매도로 공포가 큰 구간이어야 합니다.',
+          '스윙처럼 바로 팔기 위한 매수가 아니라 장기 보유 후보를 싸게 담는 신호입니다.',
+        ],
+      },
+      {
+        label: '시즌',
+        value: [
+          '전략 1이 나오면 “장기 보유 후보를 담기 좋은 구간이 열렸다”는 뜻입니다.',
+          '이후 회복장에서 전략 2 편입 신호도 함께 볼 수 있습니다.',
+        ],
+      },
+      {
+        label: '보유',
+        value: [
+          '자동 손절가가 없습니다. 가격 변동을 견디고 오래 보유하는 성향을 기준으로 봅니다.',
+          '매수에서 관망으로 바뀌면 새 매수는 멈추고, 기존 보유 종목을 점검하는 신호로 봅니다.',
+        ],
+      },
+      {
+        label: '청산',
+        value: [
+          '목표가·시간·하드손절로 자동 청산하지 않습니다.',
+          '사용자가 직접 청산한 거래만 청산 기록으로 반영됩니다.',
+        ],
+      },
+      {
+        label: '추가',
+        value: '빈 슬롯이 있을 때 새 매수 신호 기준으로 추가 편입합니다.',
+      },
     ],
     '2': [
-      { label: '진입', value: '시즌 열림 + 회복장 + QQQ ≤ 매수 차단선 + 경고선 미도달 + MA20/60/144/200 터치' },
-      { label: '대상', value: '가치투자 관심종목 (조건 충족 시 장기 보유 후보)' },
-      { label: '보유', value: '자동 손절 없이 장기 보유하며, 매수→관망 전환은 신규 매수 중지와 보유 점검으로 봅니다' },
-      { label: '청산', value: '목표가·시간·하드손절 청산 없음. 직접 청산한 거래만 청산 기록으로 반영됩니다' },
-      { label: '추가', value: '빈 슬롯이 있을 때 새 매수 신호 기준으로 추가 편입합니다' },
+      {
+        label: '진입',
+        value: [
+          '전략 1로 매수 시즌이 열린 뒤에만 작동합니다.',
+          '시장은 회복장이어야 하고, QQQ는 과열 차단선 아래이며 경고선에 닿지 않아야 합니다.',
+          '종목이 20/60/144/200일선 근처로 눌리면 장기 보유 후보를 추가로 담는 신호입니다.',
+        ],
+      },
+      {
+        label: '대상',
+        value: '가치투자 관심종목 중 조건을 충족한 종목만 장기 보유 후보로 기록합니다.',
+      },
+      {
+        label: '보유',
+        value: [
+          '자동 손절가가 없습니다. 가격 변동을 견디고 오래 보유하는 성향을 기준으로 봅니다.',
+          '매수에서 관망으로 바뀌면 새 매수는 멈추고, 기존 보유 종목을 점검하는 신호로 봅니다.',
+        ],
+      },
+      {
+        label: '청산',
+        value: [
+          '목표가·시간·하드손절로 자동 청산하지 않습니다.',
+          '사용자가 직접 청산한 거래만 청산 기록으로 반영됩니다.',
+        ],
+      },
+      {
+        label: '추가',
+        value: '빈 슬롯이 있을 때 새 매수 신호 기준으로 추가 편입합니다.',
+      },
     ],
   },
 }
@@ -2145,7 +2262,7 @@ function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentT
           {strategyFilters.map((code) => (
             <tr key={code}>
               <th scope="row">
-                <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{code}</span>
+                <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{strategyDisplayName(code)}</span>
               </th>
               <td>
                 <p className="strategy-criteria-summary">{strategyInfo(code, investmentType)}</p>
@@ -2157,7 +2274,11 @@ function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentT
                       <dt className={`strategy-criteria-label strategy-criteria-label-${strategyCriteriaLabelTone(row.label)}`}>
                         {row.label}
                       </dt>
-                      <dd className="strategy-criteria-value">{row.value}</dd>
+                      <dd className="strategy-criteria-value">
+                        {Array.isArray(row.value) ? row.value.map((line) => (
+                          <span className="strategy-criteria-value-line" key={line}>{line}</span>
+                        )) : row.value}
+                      </dd>
                     </div>
                   ))}
                 </dl>
@@ -2334,6 +2455,8 @@ function StrategyTag({
   onTooltipOpen: (tooltip: TooltipState) => void
   onTooltipClose: () => void
 }) {
+  const displayStrategy = strategyDisplayName(strategy)
+
   const openTooltip = (element: HTMLElement) => {
     const rect = element.getBoundingClientRect()
     const minX = 280
@@ -2361,7 +2484,7 @@ function StrategyTag({
       tabIndex={0}
     >
       <span className={`strategy-pill strategy-${strategyCode(strategy).toLowerCase()}`}>
-        {strategy}
+        {displayStrategy}
       </span>
     </span>
   )
@@ -3570,18 +3693,18 @@ function openTradesForStock(stock: Stock, targetTrades: TradeLog[]) {
 }
 
 function openTradeStrategiesForStock(stock: Stock, targetTrades: TradeLog[]) {
-  const strategies = openTradesForStock(stock, targetTrades).map((trade) => trade.strategy).filter(Boolean)
+  const strategies = openTradesForStock(stock, targetTrades).map((trade) => strategyDisplayName(trade.strategy)).filter((strategy) => strategy !== '-')
   return Array.from(new Set(strategies))
 }
 
 function displayStrategiesForStock(stock: Stock, targetTrades: TradeLog[] = []) {
   const openTradeStrategies = openTradeStrategiesForStock(stock, targetTrades)
-  return openTradeStrategies.length > 0 ? openTradeStrategies : stock.strategies ?? []
+  return openTradeStrategies.length > 0 ? openTradeStrategies : (stock.strategies ?? []).map(strategyDisplayName).filter((strategy) => strategy !== '-')
 }
 
 function technicalEntryStrategiesForStock(stock: Stock, targetTrades: TradeLog[] = []) {
-  const strategies = openTradesForStock(stock, targetTrades).map((trade) => trade.strategy).filter(Boolean)
-  return strategies.length > 0 ? strategies : stock.strategies ?? []
+  const strategies = openTradesForStock(stock, targetTrades).map((trade) => strategyDisplayName(trade.strategy)).filter((strategy) => strategy !== '-')
+  return strategies.length > 0 ? strategies : (stock.strategies ?? []).map(strategyDisplayName).filter((strategy) => strategy !== '-')
 }
 
 function joinTradeValues(targetTrades: TradeLog[], value: (trade: TradeLog) => string) {
@@ -6484,7 +6607,7 @@ function App() {
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
     ? '장기형은 청산된 거래가 슬롯을 비우고, 현재 보유 중인 거래만 투자금 슬롯을 차지합니다.'
-    : '청산 기준: 전략 1/2 회복장 종료 전량매도(+성공/−실패) · 하드손절 -30% · 목표가·시간청산 없음'
+    : '청산 기준: 전략 1/2 회복장 종료 전량매도(+성공/−실패) · 하드손절 -30%'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,
