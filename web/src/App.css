@@ -1099,7 +1099,7 @@
 
 .strategy-criteria-modal-table {
   width: 100%;
-  min-width: 1080px;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
@@ -1111,6 +1111,8 @@
   padding: 16px 14px;
   text-align: left;
   vertical-align: top;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .strategy-criteria-modal-table > thead th {
@@ -1149,13 +1151,14 @@
   padding-top: 18px;
 }
 
+.strategy-criteria-modal-table > thead th:nth-child(2),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
-  width: 248px;
+  width: 28%;
 }
 
 .strategy-criteria-modal-table > thead th:nth-child(3),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
-  min-width: 680px;
+  width: auto;
 }
 
 .strategy-criteria-summary {
@@ -1218,15 +1221,24 @@
 
 .strategy-criteria-value {
   margin: 0;
+  min-width: 0;
   color: var(--text);
   font-size: 12.5px;
-  line-height: 24px;
-  white-space: nowrap;
+  line-height: 1.55;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .strategy-criteria-value-line {
   display: block;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+}
+
+.strategy-criteria-value-line + .strategy-criteria-value-line {
+  margin-top: 4px;
 }
 
 @media (max-width: 760px) {
@@ -1249,8 +1261,17 @@
   }
 
   .strategy-criteria-modal-table {
-    min-width: 1020px;
     font-size: 12px;
+  }
+
+  .strategy-criteria-modal-table > thead th:first-child,
+  .strategy-criteria-modal-table > tbody > tr > th:first-child {
+    width: 96px;
+  }
+
+  .strategy-criteria-modal-table > thead th:nth-child(2),
+  .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
+    width: 34%;
   }
 
   .strategy-criteria-modal-table th,
@@ -1259,7 +1280,7 @@
   }
 
   .strategy-criteria-item {
-    grid-template-columns: 80px minmax(0, 1fr);
+    grid-template-columns: 72px minmax(0, 1fr);
     column-gap: 10px;
   }
 }
