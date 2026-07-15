@@ -1920,24 +1920,8 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         label: '진입',
         value: [
           {
-            criterion: 'QQQ 이격도 < -3%',
-            description: 'QQQ는 나스닥100을 따라가는 대표 ETF입니다. 이 값이 장기 평균 가격보다 3% 이상 아래로 밀리면 기술주 시장 전체가 싸진 하락장으로 봅니다.',
-          },
-          {
-            criterion: '종목 현재가 < 200일 평균선',
-            description: '200일 평균선은 최근 약 1년간의 평균 가격입니다. 현재가가 그 아래에 있어야 장기 평균보다 싸진 종목으로 봅니다.',
-          },
-          {
-            criterion: 'VIX >= 30',
-            description: 'VIX는 시장 공포지수입니다. 30 이상이면 투자자들이 겁을 많이 내는 급락장에 가깝다고 보고, 공황 저점 후보만 찾습니다.',
-          },
-          {
-            criterion: 'RSI < 35 또는 CCI < -150',
-            description: 'RSI와 CCI는 주가가 단기간에 너무 많이 팔렸는지 보는 지표입니다. 둘 중 하나라도 과매도이면 반등 후보로 봅니다.',
-          },
-          {
-            criterion: 'LR 추세선 상승 + 저가가 추세선 근처',
-            description: 'LR 추세선은 최근 하락 흐름에서 만든 지지선입니다. 기울기가 살아 있고 저가가 이 선 근처에서 버티면 무너지는 중이 아니라 지지받는 중으로 봅니다.',
+            criterion: 'QQQ 이격도 < -3% + 종목 현재가 < MA200 + VIX >= 30 + RSI < 35 또는 CCI < -150 + LR 추세선 방어',
+            description: 'QQQ는 나스닥100 대표 ETF라 시장 전체 하락 여부를 보는 기준이고, MA200은 최근 약 1년 평균 가격입니다. VIX는 공포지수라 30 이상이면 급락장에 가깝고, RSI/CCI는 단기 과매도 여부를 봅니다. LR 추세선은 최근 하락 흐름의 지지선으로, 저가가 이 선 근처에서 버티면 무너지는 중이 아니라 지지받는 중으로 봅니다.',
           },
         ],
       },
@@ -1972,24 +1956,8 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         label: '진입',
         value: [
           {
-            criterion: '전략 1 시즌 열림',
-            description: '공황 저점 신호가 먼저 나와야 합니다. 시장이 충분히 눌린 뒤 열린 매수 시즌에서만 추가 매수를 봅니다.',
-          },
-          {
-            criterion: '회복장',
-            description: '급락이 끝나고 QQQ가 다시 회복 흐름으로 들어왔는지 확인합니다. 하락이 계속되는 중이면 눌림 매수로 보지 않습니다.',
-          },
-          {
-            criterion: 'QQQ 이격도 <= 매수 차단선',
-            description: 'QQQ 이격도는 나스닥이 장기 평균 가격보다 얼마나 위에 있는지 보는 값입니다. 차단선보다 높으면 시장이 이미 많이 올라 신규·추가 매수를 막습니다.',
-          },
-          {
-            criterion: 'QQQ 경고선 미도달',
-            description: '경고선은 회복장이 끝나거나 과열 청산이 가까워지는 위험 구간입니다. 이 선에 닿기 전까지만 매수합니다.',
-          },
-          {
-            criterion: '종목 저가가 20/60/144/200일선 중 하나를 터치',
-            description: '이 선들은 각각 단기·중기·장기 평균 가격선입니다. 상승 흐름 안에서 가격이 평균선 근처까지 쉬어 갈 때 눌림으로 봅니다.',
+            criterion: '전략 1 시즌 열림 + 회복장 + QQQ 이격도 <= 매수 차단선 + QQQ 경고선 미도달 + 종목 저가가 MA20/60/144/200 중 하나를 터치',
+            description: '전략 1이 먼저 나와 매수 시즌이 열린 뒤에만 추가 매수를 봅니다. 회복장은 급락 후 지수가 다시 올라오는 흐름이고, QQQ 이격도는 나스닥이 장기 평균보다 얼마나 위에 있는지 보는 값입니다. 차단선보다 높거나 경고선에 닿으면 이미 많이 오른 위험 구간이라 매수를 막고, 종목이 평균 가격선 근처까지 쉬어 갈 때만 눌림으로 봅니다.',
           },
         ],
       },
@@ -2023,28 +1991,8 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         label: '진입',
         value: [
           {
-            criterion: 'QQQ 이격도 < -3%',
-            description: 'QQQ는 나스닥100을 따라가는 대표 ETF입니다. 이 값이 장기 평균 가격보다 3% 이상 아래로 밀리면 기술주 시장 전체가 싸진 하락장으로 봅니다.',
-          },
-          {
-            criterion: '종목 현재가 < 200일 평균선',
-            description: '200일 평균선은 최근 약 1년간의 평균 가격입니다. 현재가가 그 아래에 있어야 장기 평균보다 싸진 종목으로 봅니다.',
-          },
-          {
-            criterion: 'VIX >= 30',
-            description: 'VIX는 시장 공포지수입니다. 30 이상이면 투자자들이 겁을 많이 내는 급락장에 가깝다고 보고, 공황 저점 후보만 찾습니다.',
-          },
-          {
-            criterion: 'RSI < 35 또는 CCI < -150',
-            description: 'RSI와 CCI는 주가가 단기간에 너무 많이 팔렸는지 보는 지표입니다. 둘 중 하나라도 과매도이면 반등 후보로 봅니다.',
-          },
-          {
-            criterion: 'LR 추세선 상승 + 저가가 추세선 근처',
-            description: 'LR 추세선은 최근 하락 흐름에서 만든 지지선입니다. 기울기가 살아 있고 저가가 이 선 근처에서 버티면 무너지는 중이 아니라 지지받는 중으로 봅니다.',
-          },
-          {
-            criterion: '가치투자 적용',
-            description: '이 조건은 바로 사고팔기보다 장기 보유 후보를 싸게 담는 신호로 사용합니다.',
+            criterion: 'QQQ 이격도 < -3% + 종목 현재가 < MA200 + VIX >= 30 + RSI < 35 또는 CCI < -150 + LR 추세선 방어',
+            description: 'QQQ는 나스닥100 대표 ETF라 시장 전체 하락 여부를 보는 기준이고, MA200은 최근 약 1년 평균 가격입니다. VIX는 공포지수라 30 이상이면 급락장에 가깝고, RSI/CCI는 단기 과매도 여부를 봅니다. LR 추세선은 최근 하락 흐름의 지지선으로, 저가가 이 선 근처에서 버티면 무너지는 중이 아니라 지지받는 중으로 봅니다. 가치투자에서는 이 조건을 장기 보유 후보를 싸게 담는 신호로 사용합니다.',
           },
         ],
       },
@@ -2079,28 +2027,8 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         label: '진입',
         value: [
           {
-            criterion: '전략 1 시즌 열림',
-            description: '공황 저점 신호가 먼저 나와야 합니다. 시장이 충분히 눌린 뒤 열린 매수 시즌에서만 추가 편입을 봅니다.',
-          },
-          {
-            criterion: '회복장',
-            description: '급락이 끝나고 QQQ가 다시 회복 흐름으로 들어왔는지 확인합니다. 하락이 계속되는 중이면 눌림 매수로 보지 않습니다.',
-          },
-          {
-            criterion: 'QQQ 이격도 <= 매수 차단선',
-            description: 'QQQ 이격도는 나스닥이 장기 평균 가격보다 얼마나 위에 있는지 보는 값입니다. 차단선보다 높으면 시장이 이미 많이 올라 신규·추가 매수를 막습니다.',
-          },
-          {
-            criterion: 'QQQ 경고선 미도달',
-            description: '경고선은 회복장이 끝나거나 과열 청산이 가까워지는 위험 구간입니다. 이 선에 닿기 전까지만 매수합니다.',
-          },
-          {
-            criterion: '종목 저가가 20/60/144/200일선 중 하나를 터치',
-            description: '이 선들은 각각 단기·중기·장기 평균 가격선입니다. 상승 흐름 안에서 가격이 평균선 근처까지 쉬어 갈 때 눌림으로 봅니다.',
-          },
-          {
-            criterion: '가치투자 적용',
-            description: '이 눌림은 장기 보유 후보를 추가로 담는 신호로 사용합니다.',
+            criterion: '전략 1 시즌 열림 + 회복장 + QQQ 이격도 <= 매수 차단선 + QQQ 경고선 미도달 + 종목 저가가 MA20/60/144/200 중 하나를 터치',
+            description: '전략 1이 먼저 나와 매수 시즌이 열린 뒤에만 추가 편입을 봅니다. 회복장은 급락 후 지수가 다시 올라오는 흐름이고, QQQ 이격도는 나스닥이 장기 평균보다 얼마나 위에 있는지 보는 값입니다. 차단선보다 높거나 경고선에 닿으면 이미 많이 오른 위험 구간이라 매수를 막고, 종목이 평균 가격선 근처까지 쉬어 갈 때만 눌림으로 봅니다. 가치투자에서는 이 눌림을 장기 보유 후보를 추가로 담는 신호로 사용합니다.',
           },
         ],
       },
@@ -2357,8 +2285,8 @@ function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentT
                             ? <span className="strategy-criteria-value-line" key={line}>{line}</span>
                             : (
                               <span className="strategy-criteria-value-line strategy-criteria-value-detail" key={line.criterion}>
-                                <strong>{line.criterion}</strong>
-                                <small>{line.description}</small>
+                                <strong>기준: {line.criterion}</strong>
+                                <small>설명: {line.description}</small>
                               </span>
                               )
                         )) : row.value}
