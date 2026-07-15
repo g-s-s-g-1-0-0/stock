@@ -1127,6 +1127,7 @@
   border-bottom: 1px solid var(--border);
   padding-top: 12px;
   padding-bottom: 12px;
+  text-align: center;
 }
 
 .strategy-criteria-modal-table > tbody > tr:nth-child(even) > th,
