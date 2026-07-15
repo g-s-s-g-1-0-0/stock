@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15232,
-    "industryEnrichedAt": "2026-07-12T15:01:52+00:00",
-    "industryEnrichedTickers": 31
+    "industryEnrichedAt": "2026-07-15T00:55:33+00:00",
+    "industryEnrichedTickers": 1
   },
   "rows": [
     {
@@ -191555,9 +191555,9 @@
       "valuation": "보통",
       "opinion": "관망",
       "strategies": [],
-      "category": "혼합주",
-      "industry": "-",
-      "rawIndustry": "-",
+      "category": "성장주",
+      "industry": "반도체, 광전자·포토닉스, 데이터센터",
+      "rawIndustry": "Technology | Semiconductors",
       "products": "-",
       "updatedAt": "2026-07-12T15:01:37+00:00"
     },
