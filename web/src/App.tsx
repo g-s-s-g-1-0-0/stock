@@ -333,8 +333,8 @@ const DEFAULT_INVESTMENT_TYPE: InvestmentType = 'long_term'
 const DEFAULT_PORTFOLIO_CASH = 10_000_000
 const MEGA_TREND_INVESTMENT_RANK_LIMIT = 5
 const DEFAULT_ALLOCATION_SETTINGS: Record<InvestmentType, AllocationSettings> = {
-  swing: { slotCount: 3, slotPercents: [50, 25, 25], megaTrendOnly: true },
-  long_term: { slotCount: 10, slotPercents: Array.from({ length: 10 }, () => 10), megaTrendOnly: true },
+  swing: { slotCount: 3, slotPercents: [50, 25, 25], megaTrendOnly: false },
+  long_term: { slotCount: 10, slotPercents: Array.from({ length: 10 }, () => 10), megaTrendOnly: false },
 }
 const DEFAULT_CONTRIBUTION_SETTINGS: ContributionSettings = {
   initialCapital: DEFAULT_PORTFOLIO_CASH,
