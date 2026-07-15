@@ -1939,7 +1939,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
       {
         label: '청산',
         value: [
-          '회복장이 끝났다고 2거래일 연속 확인되면 전략 1/2 보유분을 모두 팝니다.',
+          '회복장이 끝났다고 2거래일 연속 확인되면 전략 1&2 보유분을 모두 팝니다.',
           '청산 시점 수익률이 플러스면 성공, 마이너스면 실패로 기록합니다.',
         ],
       },
@@ -1977,7 +1977,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
       {
         label: '청산',
         value: [
-          '회복장이 끝났다고 2거래일 연속 확인되면 전략 1/2 보유분을 모두 팝니다.',
+          '회복장이 끝났다고 2거래일 연속 확인되면 전략 1&2 보유분을 모두 팝니다.',
           '청산 시점 수익률이 플러스면 성공, 마이너스면 실패로 기록합니다.',
         ],
       },
@@ -6633,7 +6633,7 @@ function App() {
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
     ? '장기형은 청산된 거래가 슬롯을 비우고, 현재 보유 중인 거래만 투자금 슬롯을 차지합니다.'
-    : '청산 기준: 전략 1/2 회복장 종료 전량매도(+성공/−실패) · 하드손절 -30%'
+    : '청산 기준: 전략 1&2 회복장 종료 전량매도(+성공/−실패) · 하드손절 -30%'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,
