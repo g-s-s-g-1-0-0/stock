@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-07-15T15:00:41+00:00",
-    "lastSuccessfulRun": "2026-07-15T15:00:41+00:00",
+    "updatedAt": "2026-07-15T16:49:16+00:00",
+    "lastSuccessfulRun": "2026-07-15T16:49:16+00:00",
     "failedReason": null
   },
   "rows": [
@@ -633,7 +633,7 @@
     },
     {
       "ticker": "SKHY",
-      "name": "SK hynix Inc.",
+      "name": "SK hynix",
       "market": "US",
       "fairPrice": "$366.50 ~ $513.10",
       "fairPriceReason": null,
@@ -645,7 +645,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 메모리, HBM, AI 메모리, DRAM",
-      "updatedAt": "2026-07-15T15:00:41+00:00"
+      "updatedAt": "2026-07-15T16:49:16+00:00"
     },
     {
       "ticker": "AAPL",
