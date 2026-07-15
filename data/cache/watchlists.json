@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-07-15T15:00:19Z",
+    "updatedAt": "2026-07-15T16:45:29Z",
     "rowCount": 2
   },
   "rows": [
@@ -49,7 +49,7 @@
         "DY",
         "079550",
         "WULF",
-        "SKHY"
+        "SKHYV"
       ],
       "tickersByType": {
         "swing": [
@@ -92,7 +92,7 @@
           "DY",
           "079550",
           "WULF",
-          "SKHY"
+          "SKHYV"
         ],
         "long_term": [
           "000660",
@@ -109,7 +109,7 @@
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-15T14:26:48.882002+00:00"
+      "remoteUpdatedAt": "2026-07-15T16:44:33.530458+00:00"
     },
     {
       "id": "026d7675-fa4f-44d9-8792-88cb35fe276a",
@@ -124,7 +124,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-15T14:26:48.892725+00:00"
+      "remoteUpdatedAt": "2026-07-15T16:44:33.530297+00:00"
     }
   ]
 }
