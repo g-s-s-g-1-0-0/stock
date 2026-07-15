@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15232,
-    "industryEnrichedAt": "2026-07-15T00:55:33+00:00",
+    "industryEnrichedAt": "2026-07-15T01:01:38+00:00",
     "industryEnrichedTickers": 1
   },
   "rows": [
@@ -191556,7 +191556,7 @@
       "opinion": "관망",
       "strategies": [],
       "category": "성장주",
-      "industry": "반도체, 광전자·포토닉스, 데이터센터",
+      "industry": "AI 인프라, 데이터센터 전력·냉각, 광통신",
       "rawIndustry": "Technology | Semiconductors",
       "products": "-",
       "updatedAt": "2026-07-12T15:01:37+00:00"
