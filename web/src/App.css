@@ -1076,8 +1076,8 @@
 }
 
 .confirm-modal.strategy-criteria-modal {
-  width: min(1280px, calc(100vw - 48px));
-  max-width: 1280px;
+  width: min(1230px, calc(100vw - 48px));
+  max-width: 1230px;
   max-height: calc(100dvh - 48px);
   overflow: hidden;
   padding: 24px 24px 22px;
@@ -1154,7 +1154,7 @@
 
 .strategy-criteria-modal-table > thead th:nth-child(2),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
-  width: 18%;
+  width: 23%;
 }
 
 .strategy-criteria-modal-table > thead th:nth-child(3),
@@ -1272,7 +1272,7 @@
 
   .strategy-criteria-modal-table > thead th:nth-child(2),
   .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
-    width: 22%;
+    width: 28%;
   }
 
   .strategy-criteria-modal-table th,
