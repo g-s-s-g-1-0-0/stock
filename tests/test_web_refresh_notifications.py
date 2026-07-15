@@ -43,7 +43,6 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         wait_index = workflow.index("- name: Wait until scheduled publish time")
         send_opinion_index = workflow.index("- name: Send opinion change emails")
         send_peak_index = workflow.index("- name: Send Nasdaq peak emails")
-        send_ma_support_index = workflow.index("- name: Send moving average support candidate emails")
         send_weekly_trend_index = workflow.index("- name: Send weekly trend report emails")
         send_stock_universe_index = workflow.index("- name: Send stock universe update email")
         commit_state_index = workflow.index("- name: Commit refreshed caches and notification state")
@@ -55,7 +54,6 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertLess(wait_index, send_opinion_index)
         self.assertLess(send_opinion_index, commit_state_index)
         self.assertLess(send_peak_index, commit_state_index)
-        self.assertLess(send_ma_support_index, commit_state_index)
         self.assertLess(wait_index, send_weekly_trend_index)
         self.assertLess(send_weekly_trend_index, commit_state_index)
         self.assertLess(wait_index, send_stock_universe_index)
@@ -64,29 +62,25 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertLess(record_logs_index, deploy_index)
         self.assertLess(commit_state_index, failure_index)
         self.assertIn('workflow_dispatch:', workflow)
-        self.assertIn('  schedule:', workflow)
-        self.assertIn('- cron: "0,10,20,30,40,50 23 * * 0-4"', workflow)
-        self.assertIn('- cron: "30,40,50 0 * * 1-5"', workflow)
+        self.assertNotIn('  schedule:', workflow)
         self.assertIn('cancel-in-progress: false', workflow)
         self.assertIn("scheduled_publish_at:", workflow)
         self.assertIn("refresh_tickers:", workflow)
-        self.assertIn("ma_support_scan_slot:", workflow)
-        self.assertIn('MA_SUPPORT_SCAN_SLOT="${{ inputs.ma_support_scan_slot || \'\' }}"', workflow)
+        self.assertIn("ma_support_scan_slot:", workflow)  # deprecated noop for older cron payloads
+        self.assertNotIn("MA_SUPPORT_SCAN_SLOT=", workflow)
+        self.assertNotIn("python scripts/web_refresh_notifications.py ma-support", workflow)
         self.assertIn('RAW_PUBLISH_AT="${{ inputs.scheduled_publish_at || \'\' }}"', workflow)
         self.assertIn('if [ "$RAW_PUBLISH_AT" = "immediate" ]; then', workflow)
         self.assertIn("if now.minute >= 50 else", workflow)
         self.assertIn("WEB_REFRESH_PUBLISH_AT=$PUBLISH_AT", workflow)
-        self.assertIn("FORCE_REFRESH=$FORCE_REFRESH", workflow)
-        self.assertIn("MA_SUPPORT_SCAN_FORCE=$MA_SUPPORT_SCAN_FORCE", workflow)
-        self.assertIn("MA_SUPPORT_SCAN_SLOT=$MA_SUPPORT_SCAN_SLOT", workflow)
-        self.assertIn("Scheduled refresh forced for morning MA support notification.", workflow)
+        self.assertIn("FORCE_REFRESH=false", workflow)
         self.assertIn("REFRESH_TICKERS=${{ inputs.refresh_tickers || '' }}", workflow)
         self.assertIn('market-trends) TASKS="stock-universe market-trends" ;;', workflow)
         self.assertIn("python scripts/record_web_api_logs.py --trade-logs-only $REFRESH_TASKS", workflow)
         self.assertIn("python scripts/web_refresh_notifications.py weekly-trend", workflow)
         self.assertIn('python scripts/web_refresh_notifications.py stock-universe-report --previous "$RUNNER_TEMP/search-universe.before-refresh.json"', workflow)
         self.assertNotIn("python scripts/web_refresh_notifications.py bb-pullback", workflow)
-        self.assertIn("python scripts/web_refresh_notifications.py ma-support", workflow)
+        self.assertNotIn("python scripts/web_refresh_notifications.py ma-support", workflow)
         self.assertIn("python scripts/record_web_api_logs.py --skip-trade-log-update $REFRESH_TASKS", workflow)
         self.assertIn("git diff --quiet -- data/cache data/history data/search_universe.json web/public/api", workflow)
         self.assertIn("git add data/cache data/history data/search_universe.json web/public/api", workflow)
@@ -515,361 +509,6 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
         self.assertEqual("email", channel)
         self.assertEqual([("user@example.com", "테스트", "<p>본문</p>")], sent_email)
-
-    def test_ma_support_signal_detects_kr_morning_candidate(self) -> None:
-        original_fetch_ohlcv = self.notifications.fetch_ohlcv
-        kst = ZoneInfo("Asia/Seoul")
-        now = datetime(2026, 6, 30, 9, 35, tzinfo=kst)
-        rows = [
-            {"date": "20260629", "open": 100.0, "high": 101.0, "low": 99.5, "close": 100.0, "volume": 1000.0}
-            for _ in range(200)
-        ]
-        rows.append({"date": "20260630", "open": 100.5, "high": 102.0, "low": 99.7, "close": 101.2, "volume": 1200.0})
-
-        try:
-            self.notifications.fetch_ohlcv = lambda ticker: rows
-            signal = self.notifications.ma_support_signal("005930", {"ticker": "005930", "name": "삼성전자", "market": "KR"}, now)
-        finally:
-            self.notifications.fetch_ohlcv = original_fetch_ohlcv
-
-        self.assertIsNotNone(signal)
-        assert signal is not None
-        self.assertEqual("005930", signal["ticker"])
-        self.assertEqual("2026-06-30", signal["date"])
-        self.assertTrue(any(item["period"] == 20 for item in signal["signals"]))
-        self.assertEqual("support", signal["signals"][0]["signalType"])
-        self.assertEqual("상승 중 이평선 지지", signal["signals"][0]["contextLabel"])
-
-    def test_ma_support_signal_skips_stale_us_holiday_data(self) -> None:
-        original_fetch_ohlcv = self.notifications.fetch_ohlcv
-        et = ZoneInfo("America/New_York")
-        kst = ZoneInfo("Asia/Seoul")
-        stale_timestamp = int(datetime(2026, 7, 3, 16, 0, tzinfo=et).timestamp())
-        now = datetime(2026, 7, 7, 9, 35, tzinfo=kst)
-        rows = [
-            {"date": str(stale_timestamp), "open": 100.0, "high": 101.0, "low": 99.5, "close": 100.0, "volume": 1000.0}
-            for _ in range(200)
-        ]
-        rows.append({"date": str(stale_timestamp), "open": 100.5, "high": 102.0, "low": 99.7, "close": 101.2, "volume": 1200.0})
-
-        try:
-            self.notifications.fetch_ohlcv = lambda ticker: rows
-            signal = self.notifications.ma_support_signal("NVDA", {"ticker": "NVDA", "name": "NVIDIA", "market": "US"}, now)
-        finally:
-            self.notifications.fetch_ohlcv = original_fetch_ohlcv
-
-        self.assertIsNone(signal)
-
-    def test_ma_support_notifications_only_run_in_8am_kst_window(self) -> None:
-        kst = ZoneInfo("Asia/Seoul")
-
-        self.assertTrue(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 8, 0, tzinfo=kst)))
-        self.assertTrue(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 8, 59, tzinfo=kst)))
-        self.assertFalse(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 9, 0, tzinfo=kst)))
-        self.assertFalse(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 9, 29, tzinfo=kst)))
-        self.assertTrue(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 9, 30, tzinfo=kst)))
-        self.assertTrue(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 9, 59, tzinfo=kst)))
-        self.assertFalse(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 10, 0, tzinfo=kst)))
-
-    def test_ma_support_email_body_includes_qqq_distance_status_without_explainer(self) -> None:
-        body = self.notifications.ma_support_email_body(
-            [
-                {
-                    "ticker": "HIT",
-                    "name": "Hit Corp",
-                    "market": "US",
-                    "date": "2026-06-29",
-                    "signals": [{
-                        "period": 20,
-                        "signal": "20일선 지지 반등",
-                        "signalType": "support",
-                        "contextLabel": "하락/보합 중 지지",
-                        "contextNote": "당일 약세에도 저가가 이평선을 지키고 종가가 위에서 마감",
-                        "ma": 100.0,
-                        "price": 101.0,
-                        "open": 100.5,
-                        "low": 99.8,
-                        "dayReturnPercent": -0.4,
-                        "distancePercent": 1.0,
-                    }],
-                },
-            ],
-            {
-                "premiumPercent": 7.5,
-                "buyBlockMax": 9.0,
-                "regimeLabel": "비회복장/고점 횡보장",
-                "dailyReturnPercent": -0.8,
-            },
-        )
-
-        self.assertIn("QQQ 이격도", body)
-        self.assertIn("+7.50%", body)
-        self.assertIn("-3.00% ~ +9.00%", body)
-        self.assertIn("상단까지 1.50%p", body)
-        self.assertIn("QQQ 전일 대비", body)
-        self.assertIn("-0.80%", body)
-        self.assertIn("하락일", body)
-        self.assertIn("흐름", body)
-        self.assertIn("하락/보합 중 지지", body)
-        self.assertIn("당일 -0.40%", body)
-        self.assertIn("저가가 이평선을 지키고", body)
-        self.assertIn("이격/판단", body)
-        self.assertIn("진입 가능", body)
-        self.assertIn("손절 라인", body)
-        self.assertIn("$97.00 (기준선 -3%)", body)
-        self.assertNotIn("전략 매수 신호에는 반영하지 않고", body)
-        self.assertNotIn("나스닥 필터, RSI, 거래량", body)
-
-    def test_ma_support_distance_decision_and_stop_line_use_signal_ma(self) -> None:
-        signal_20 = {"period": 20, "ma": 100.0, "distancePercent": 4.0}
-        signal_200 = {"period": 200, "ma": 100.0, "distancePercent": 6.0}
-        signal_far = {"period": 20, "ma": 100.0, "distancePercent": 6.0}
-
-        self.assertEqual("주의", self.notifications.ma_support_distance_decision(signal_20))
-        self.assertEqual("$97.00 (기준선 -3%)", self.notifications.ma_support_stop_line(signal_20, "US"))
-        self.assertEqual("주의", self.notifications.ma_support_distance_decision(signal_200))
-        self.assertEqual("$95.00 (기준선 -5%)", self.notifications.ma_support_stop_line(signal_200, "US"))
-        self.assertEqual("보류", self.notifications.ma_support_distance_decision(signal_far))
-        self.assertEqual(
-            "금지: 횡보장 고점",
-            self.notifications.ma_support_distance_decision(signal_20, {"premiumPercent": 11.0, "isRecoveryMarket": False}),
-        )
-        self.assertEqual(
-            "주의: 회복장 후반",
-            self.notifications.ma_support_distance_decision(signal_20, {"premiumPercent": 11.0, "isRecoveryMarket": True}),
-        )
-        self.assertEqual(
-            "금지: 과열장",
-            self.notifications.ma_support_distance_decision(signal_20, {"premiumPercent": 15.0, "isRecoveryMarket": False}),
-        )
-
-    def test_ma_support_notifications_are_admin_only_and_pref_gated(self) -> None:
-        sent_messages: list[tuple[str, str, str]] = []
-        original_load_recipients = self.notifications.load_recipients
-        original_load_watchlists = self.notifications.load_watchlists
-        original_stock_rows_by_ticker = self.notifications.stock_rows_by_ticker
-        original_ma_support_signal = self.notifications.ma_support_signal
-        original_send_notification = self.notifications.send_notification
-        original_state_path = self.notifications.NOTIFICATION_STATE
-        original_slot = self.notifications.ma_support_send_slot
-
-        with TemporaryDirectory() as temp_dir:
-            current = Path(temp_dir) / "stocks.json"
-            current.write_text(json.dumps({"rows": []}), encoding="utf-8")
-            self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
-            self.notifications.load_recipients = lambda: [
-                self.notifications.Recipient(
-                    owner_id="admin-1",
-                    email="admin@example.com",
-                    is_admin=True,
-                    preferences={"maSupportEmail": True},
-                ),
-                self.notifications.Recipient(
-                    owner_id="user-1",
-                    email="user@example.com",
-                    is_admin=False,
-                    preferences={"maSupportEmail": True},
-                ),
-            ]
-            self.notifications.load_watchlists = lambda: {"": {"HIT"}, "admin-1": {"PERSONAL"}, "user-1": {"HIT"}}
-            self.notifications.stock_rows_by_ticker = lambda path: {
-                "HIT": {"ticker": "HIT", "name": "Hit Corp", "market": "US"},
-            }
-            self.notifications.ma_support_signal = lambda ticker, stock=None: {
-                "ticker": "HIT",
-                "name": "Hit Corp",
-                "market": "US",
-                "date": "2026-06-29",
-                "signals": [{"period": 20, "signal": "20일선 지지 반등", "ma": 100.0, "price": 101.0, "open": 100.5, "low": 99.8, "distancePercent": 1.0}],
-            }
-            self.notifications.ma_support_send_slot = lambda now=None: "08"
-            self.notifications.send_notification = lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
-
-            try:
-                sent_count = self.notifications.send_ma_support_notifications(current)
-            finally:
-                self.notifications.load_recipients = original_load_recipients
-                self.notifications.load_watchlists = original_load_watchlists
-                self.notifications.stock_rows_by_ticker = original_stock_rows_by_ticker
-                self.notifications.ma_support_signal = original_ma_support_signal
-                self.notifications.send_notification = original_send_notification
-                self.notifications.NOTIFICATION_STATE = original_state_path
-                self.notifications.ma_support_send_slot = original_slot
-
-        self.assertEqual(1, sent_count)
-        self.assertEqual(1, len(sent_messages))
-        self.assertEqual("admin@example.com", sent_messages[0][0])
-        self.assertIn("HIT", sent_messages[0][1])
-        self.assertIn("이평선 반등/돌파 후보", sent_messages[0][2])
-
-    def test_ma_support_notifications_send_once_per_recipient_per_kst_day(self) -> None:
-        sent_messages: list[tuple[str, str, str]] = []
-        original_load_recipients = self.notifications.load_recipients
-        original_load_watchlists = self.notifications.load_watchlists
-        original_stock_rows_by_ticker = self.notifications.stock_rows_by_ticker
-        original_ma_support_signal = self.notifications.ma_support_signal
-        original_send_notification = self.notifications.send_notification
-        original_state_path = self.notifications.NOTIFICATION_STATE
-        original_slot = self.notifications.ma_support_send_slot
-
-        with TemporaryDirectory() as temp_dir:
-            current = Path(temp_dir) / "stocks.json"
-            current.write_text(json.dumps({"rows": []}), encoding="utf-8")
-            self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
-            self.notifications.load_recipients = lambda: [
-                self.notifications.Recipient(
-                    owner_id="admin-1",
-                    email="admin@example.com",
-                    is_admin=True,
-                    preferences={"maSupportEmail": True},
-                ),
-            ]
-            self.notifications.load_watchlists = lambda: {"": {"HIT"}, "admin-1": {"PERSONAL"}}
-            self.notifications.stock_rows_by_ticker = lambda path: {
-                "HIT": {"ticker": "HIT", "name": "Hit Corp", "market": "US"},
-                "PERSONAL": {"ticker": "PERSONAL", "name": "Personal Corp", "market": "US"},
-            }
-            self.notifications.ma_support_signal = lambda ticker, stock=None: {
-                "ticker": str(ticker).upper(),
-                "name": str((stock or {}).get("name") or ticker),
-                "market": "US",
-                "date": "2026-06-29",
-                "signals": [{"period": 20, "signal": "20일선 지지 반등", "ma": 100.0, "price": 101.0, "open": 100.5, "low": 99.8, "distancePercent": 1.0}],
-            }
-            self.notifications.ma_support_send_slot = lambda now=None: "08"
-            self.notifications.send_notification = lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
-
-            try:
-                first_sent_count = self.notifications.send_ma_support_notifications(current)
-                second_sent_count = self.notifications.send_ma_support_notifications(current)
-            finally:
-                self.notifications.load_recipients = original_load_recipients
-                self.notifications.load_watchlists = original_load_watchlists
-                self.notifications.stock_rows_by_ticker = original_stock_rows_by_ticker
-                self.notifications.ma_support_signal = original_ma_support_signal
-                self.notifications.send_notification = original_send_notification
-                self.notifications.NOTIFICATION_STATE = original_state_path
-                self.notifications.ma_support_send_slot = original_slot
-
-        self.assertEqual(1, first_sent_count)
-        self.assertEqual(0, second_sent_count)
-        self.assertEqual(1, len(sent_messages))
-
-    def test_ma_support_notifications_send_empty_result_email(self) -> None:
-        sent_messages: list[tuple[str, str, str]] = []
-        original_load_recipients = self.notifications.load_recipients
-        original_load_watchlists = self.notifications.load_watchlists
-        original_stock_rows_by_ticker = self.notifications.stock_rows_by_ticker
-        original_ma_support_signal = self.notifications.ma_support_signal
-        original_send_notification = self.notifications.send_notification
-        original_state_path = self.notifications.NOTIFICATION_STATE
-        original_slot = self.notifications.ma_support_send_slot
-
-        with TemporaryDirectory() as temp_dir:
-            current = Path(temp_dir) / "stocks.json"
-            current.write_text(json.dumps({"rows": []}), encoding="utf-8")
-            self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
-            self.notifications.load_recipients = lambda: [
-                self.notifications.Recipient(
-                    owner_id="admin-1",
-                    email="admin@example.com",
-                    is_admin=True,
-                    preferences={"maSupportEmail": True},
-                ),
-            ]
-            self.notifications.load_watchlists = lambda: {"": {"HIT"}, "admin-1": {"PERSONAL"}}
-            self.notifications.stock_rows_by_ticker = lambda path: {
-                "HIT": {"ticker": "HIT", "name": "Hit Corp", "market": "US"},
-            }
-            self.notifications.ma_support_signal = lambda ticker, stock=None: None
-            self.notifications.ma_support_send_slot = lambda now=None: "08"
-            self.notifications.send_notification = lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
-
-            try:
-                sent_count = self.notifications.send_ma_support_notifications(current)
-            finally:
-                self.notifications.load_recipients = original_load_recipients
-                self.notifications.load_watchlists = original_load_watchlists
-                self.notifications.stock_rows_by_ticker = original_stock_rows_by_ticker
-                self.notifications.ma_support_signal = original_ma_support_signal
-                self.notifications.send_notification = original_send_notification
-                self.notifications.NOTIFICATION_STATE = original_state_path
-                self.notifications.ma_support_send_slot = original_slot
-
-        self.assertEqual(1, sent_count)
-        self.assertEqual(1, len(sent_messages))
-        self.assertIn("후보 없음", sent_messages[0][1])
-        self.assertIn("조건을 충족한 종목이 없습니다", sent_messages[0][2])
-
-    def test_second_ma_support_email_marks_duplicate_and_added_candidates(self) -> None:
-        sent_messages: list[tuple[str, str, str]] = []
-        original_load_recipients = self.notifications.load_recipients
-        original_load_watchlists = self.notifications.load_watchlists
-        original_stock_rows_by_ticker = self.notifications.stock_rows_by_ticker
-        original_ma_support_signal = self.notifications.ma_support_signal
-        original_send_notification = self.notifications.send_notification
-        original_state_path = self.notifications.NOTIFICATION_STATE
-        original_slot = self.notifications.ma_support_send_slot
-
-        slot_values = ["08", "0930"]
-        call_index = {"value": 0}
-        active_tickers = {"HIT"}
-
-        def next_slot(now=None):
-            return slot_values[min(call_index["value"], len(slot_values) - 1)]
-
-        def signal_for(ticker, stock=None):
-            if ticker not in active_tickers:
-                return None
-            return {
-                "ticker": str(ticker).upper(),
-                "name": str((stock or {}).get("name") or ticker),
-                "market": "US",
-                "date": "2026-06-29",
-                "signals": [{"period": 20, "signal": "20일선 지지 반등", "ma": 100.0, "price": 101.0, "open": 100.5, "low": 99.8, "distancePercent": 1.0}],
-            }
-
-        with TemporaryDirectory() as temp_dir:
-            current = Path(temp_dir) / "stocks.json"
-            current.write_text(json.dumps({"rows": []}), encoding="utf-8")
-            self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
-            self.notifications.load_recipients = lambda: [
-                self.notifications.Recipient(
-                    owner_id="admin-1",
-                    email="admin@example.com",
-                    is_admin=True,
-                    preferences={"maSupportEmail": True},
-                ),
-            ]
-            self.notifications.load_watchlists = lambda: {"": {"HIT", "NEW"}, "admin-1": set()}
-            self.notifications.stock_rows_by_ticker = lambda path: {
-                "HIT": {"ticker": "HIT", "name": "Hit Corp", "market": "US"},
-                "NEW": {"ticker": "NEW", "name": "New Corp", "market": "US"},
-            }
-            self.notifications.ma_support_signal = signal_for
-            self.notifications.ma_support_send_slot = next_slot
-            self.notifications.send_notification = lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
-
-            try:
-                first_sent_count = self.notifications.send_ma_support_notifications(current)
-                call_index["value"] = 1
-                active_tickers.add("NEW")
-                second_sent_count = self.notifications.send_ma_support_notifications(current)
-            finally:
-                self.notifications.load_recipients = original_load_recipients
-                self.notifications.load_watchlists = original_load_watchlists
-                self.notifications.stock_rows_by_ticker = original_stock_rows_by_ticker
-                self.notifications.ma_support_signal = original_ma_support_signal
-                self.notifications.send_notification = original_send_notification
-                self.notifications.NOTIFICATION_STATE = original_state_path
-                self.notifications.ma_support_send_slot = original_slot
-
-        self.assertEqual(1, first_sent_count)
-        self.assertEqual(1, second_sent_count)
-        self.assertEqual(2, len(sent_messages))
-        self.assertNotIn("(중복)", sent_messages[0][2])
-        self.assertIn("(중복)", sent_messages[1][2])
-        self.assertIn("(추가)", sent_messages[1][2])
 
     def test_opinion_changes_marks_sell_to_buy_without_open_slot_as_new_entry(self) -> None:
         with TemporaryDirectory() as temp_dir:

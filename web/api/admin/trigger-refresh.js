@@ -84,57 +84,6 @@ function readCronScheduledPublishAt(req) {
   return raw === 'immediate' ? 'immediate' : raw
 }
 
-function normalizeMaSupportSlot(value) {
-  const slot = String(value || '').trim()
-  if (slot === '08' || slot === '8' || slot === '0800' || slot === '08:00') return '08'
-  if (slot === '0930' || slot === '930' || slot === '09:30' || slot === '9:30') return '0930'
-  return ''
-}
-
-function seoulDateParts() {
-  const seoulParts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Seoul',
-    weekday: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).formatToParts(new Date())
-  return {
-    weekday: seoulParts.find((part) => part.type === 'weekday')?.value,
-    hour: Number(seoulParts.find((part) => part.type === 'hour')?.value),
-    minute: Number(seoulParts.find((part) => part.type === 'minute')?.value),
-  }
-}
-
-function isSeoulWeekday() {
-  const { weekday } = seoulDateParts()
-  return weekday !== 'Sat' && weekday !== 'Sun'
-}
-
-function inferMaSupportSlot() {
-  const { hour, minute } = seoulDateParts()
-  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return ''
-  const minutes = hour * 60 + minute
-  if (minutes >= 8 * 60 && minutes < 9 * 60) return '08'
-  if (minutes >= 9 * 60 + 30 && minutes < 10 * 60) return '0930'
-  return ''
-}
-
-function readMaSupportScanSlot(req, scope, isCronRequest) {
-  if (isCronRequest && !isSeoulWeekday()) return ''
-  const explicitSlot = normalizeMaSupportSlot(
-    req.query?.ma_support_scan_slot ||
-    req.query?.ma_support_slot ||
-    req.query?.slot ||
-    req.body?.ma_support_scan_slot ||
-    req.body?.ma_support_slot ||
-    req.body?.slot
-  )
-  if (explicitSlot) return explicitSlot
-  if (isCronRequest && scope === 'technical') return inferMaSupportSlot()
-  return ''
-}
-
 async function readSupabaseUser(accessToken) {
   const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '').replace(/\/$/, '')
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
@@ -157,7 +106,7 @@ async function readSupabaseUser(accessToken) {
   return response.json()
 }
 
-async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = '', tickers = [], maSupportScanSlot = '') {
+async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = '', tickers = []) {
   const token = process.env.GITHUB_ACTIONS_TOKEN
   const repo = process.env.GITHUB_REPO || DEFAULT_REPO
   const workflowId = process.env.GITHUB_REFRESH_WORKFLOW_ID || DEFAULT_WORKFLOW_ID
@@ -183,7 +132,6 @@ async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = ''
         send_notifications: sendNotifications ? 'true' : 'false',
         scheduled_publish_at: scheduledPublishAt,
         refresh_tickers: tickers.join(','),
-        ma_support_scan_slot: maSupportScanSlot,
       },
     }),
   })
@@ -219,10 +167,6 @@ export default async function handler(req, res) {
     if (!scope) {
       return json(res, 400, { error: '지원하지 않는 갱신 범위입니다.' })
     }
-    const maSupportScanSlot = readMaSupportScanSlot(req, scope, isCronRequest)
-    if (isCronRequest && maSupportScanSlot) {
-      scope = 'technical'
-    }
 
     if (!isCronRequest) {
       const accessToken = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim()
@@ -240,13 +184,11 @@ export default async function handler(req, res) {
     }
 
     const scheduledPublishAt = isCronRequest
-      ? maSupportScanSlot
-        ? ''
-        : (readCronScheduledPublishAt(req) ?? scheduledPublishAtForCron(scope))
+      ? (readCronScheduledPublishAt(req) ?? scheduledPublishAtForCron(scope))
       : ''
     const workflowScheduledPublishAt = scheduledPublishAt || 'immediate'
     const tickers = isCronRequest ? [] : readRequestTickers(req)
-    const workflow = await triggerWorkflow(scope, true, workflowScheduledPublishAt, tickers, maSupportScanSlot)
+    const workflow = await triggerWorkflow(scope, true, workflowScheduledPublishAt, tickers)
     return json(res, 202, {
       ok: true,
       mode: 'workflow_dispatch',
@@ -254,7 +196,6 @@ export default async function handler(req, res) {
         ? 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다. 지정 시각까지 대기 후 메일 발송과 배포를 진행합니다.'
         : 'GitHub Actions 데이터 갱신 워크플로를 실행했습니다.',
       scheduledPublishAt,
-      maSupportScanSlot,
       ...workflow,
     })
   } catch (error) {

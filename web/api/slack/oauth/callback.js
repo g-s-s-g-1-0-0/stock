@@ -3,7 +3,6 @@ import crypto from 'node:crypto'
 const DEFAULT_NOTIFICATION_PREFERENCES = {
   opinionChangeEmail: true,
   nasdaqPeakEmail: true,
-  maSupportEmail: true,
   weeklyTrendReport: true,
   earningsDayBefore: true,
   adminAutoUpdateFailureEmail: true,
