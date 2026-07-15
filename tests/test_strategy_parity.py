@@ -78,7 +78,7 @@ def test_strategy_2_requires_season_and_recovery_ma_touch():
     assert opened["strategyType"] == "2"
 
 
-def test_strategy_2_blocked_by_warn_line():
+def test_strategy_2_warn_line_no_longer_blocks_entry():
     row = IndicatorRow(
         stock_name="MSFT",
         current_price=101,
@@ -96,8 +96,29 @@ def test_strategy_2_blocked_by_warn_line():
         nasdaq_buy_block_max=18,
         warn_triggered=True,
     )
-    assert result["strategyType"] is None
+    assert result["strategyType"] == "2"
 
+
+def test_strategy_2_blocked_by_buy_block():
+    row = IndicatorRow(
+        stock_name="MSFT",
+        current_price=101,
+        ma200=100,
+        ma20=100,
+        candle_low=99.5,
+    )
+    result = evaluate_buy_condition(
+        row,
+        vix=15,
+        ixic_dist=19,
+        ixic_filter_active=False,
+        is_recovery_market=True,
+        season_open=True,
+        nasdaq_buy_block_max=18,
+        warn_triggered=False,
+    )
+    assert result["strategyType"] is None
+    assert result["conditions"]["2"] == [True, True, False, True]
 
 def test_exit_recovery_end_marks_success_when_positive():
     row = IndicatorRow(stock_name="AAPL", current_price=120, entry_price=100)

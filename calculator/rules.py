@@ -168,11 +168,12 @@ def evaluate_buy_condition(
 ) -> dict[str, Any]:
     """Evaluate Strategy 1/2 entry and hold conditions.
 
-    recovery_momentum_exception and ixic_filter_active are unused by 1/2 but kept
-    so existing call sites do not break.
+    recovery_momentum_exception, ixic_filter_active, and warn_triggered are unused by
+    1/2 entry but kept so existing call sites do not break. Warn-line gating was
+    removed because the QQQ buy-block already covers the same overheat zone.
     """
 
-    del recovery_momentum_exception, ixic_filter_active
+    del recovery_momentum_exception, ixic_filter_active, warn_triggered
 
     s = STRATEGY_RULES
     vix_threshold = float(s["VIX_RELEASE"] if is_holding else s["VIX_MIN"])
@@ -202,9 +203,8 @@ def evaluate_buy_condition(
     s2_cond1 = season_open
     s2_cond2 = is_recovery_market
     s2_cond3 = nasdaq_below_buy_block
-    s2_cond4 = not warn_triggered
-    s2_cond5 = touch_20 or touch_60 or touch_144 or touch_200
-    entry_2 = s2_cond1 and s2_cond2 and s2_cond3 and s2_cond4 and s2_cond5 and not entry_1
+    s2_cond4 = touch_20 or touch_60 or touch_144 or touch_200
+    entry_2 = s2_cond1 and s2_cond2 and s2_cond3 and s2_cond4 and not entry_1
 
     entry_strategy = "1" if entry_1 else "2" if entry_2 else None
     triggered = entry_strategy is not None
@@ -214,7 +214,7 @@ def evaluate_buy_condition(
         if holding_code == "1":
             triggered = s1_cond1 and s1_cond2 and s1_cond3 and s1_cond4 and s1_cond5 and s1_cond6
         elif holding_code == "2":
-            triggered = s2_cond1 and s2_cond2 and s2_cond3 and s2_cond4
+            triggered = s2_cond1 and s2_cond2 and s2_cond3
 
     return {
         "triggered": triggered,
@@ -224,7 +224,7 @@ def evaluate_buy_condition(
         "recoveryException": False,
         "conditions": {
             "1": [s1_cond1, s1_cond2, s1_cond3, s1_cond4, s1_cond5, s1_cond6],
-            "2": [s2_cond1, s2_cond2, s2_cond3, s2_cond4, s2_cond5],
+            "2": [s2_cond1, s2_cond2, s2_cond3, s2_cond4],
         },
         "maTouches": {
             "20": touch_20,

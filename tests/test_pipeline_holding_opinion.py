@@ -89,7 +89,7 @@ def test_held_strategy1_turns_watch_when_hold_condition_lost(monkeypatch):
 
 
 def test_held_strategy2_keeps_buy_when_season_and_recovery(monkeypatch):
-    # 전략2 hold: 시즌 열림 + 회복장 + QQQ ≤ 차단선 + 경고선 미도달 (MA 터치는 hold에 불필요).
+    # 전략2 hold: 시즌 열림 + 회복장 + QQQ ≤ 차단선 (MA 터치는 hold에 불필요).
     row = make_technical_row(close=110.0, ma200=95.0, ma20=105.0)
     patch_sources(monkeypatch, row)
 
