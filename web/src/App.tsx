@@ -21,7 +21,7 @@ type NotificationPreferences = {
   opinionChangeEmail: boolean
   nasdaqPeakEmail: boolean
   nasdaqWarnEmail: boolean
-  regimeShiftEmail: boolean
+  maSupportEmail: boolean
   weeklyTrendReport: boolean
   earningsDayBefore: boolean
   adminAutoUpdateFailureEmail: boolean
@@ -70,7 +70,7 @@ type WatchlistPersistResult =
   | { ok: true }
   | { ok: false; reason?: 'auth'; error?: unknown }
 
-type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'nasdaqWarnEmail' | 'regimeShiftEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
+type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'nasdaqWarnEmail' | 'maSupportEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
 
 type Stock = {
   ticker: string
@@ -313,7 +313,7 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   opinionChangeEmail: true,
   nasdaqPeakEmail: true,
   nasdaqWarnEmail: true,
-  regimeShiftEmail: true,
+  maSupportEmail: true,
   weeklyTrendReport: true,
   earningsDayBefore: true,
   adminAutoUpdateFailureEmail: true,
@@ -906,7 +906,7 @@ function normalizeNotificationPreferences(value: unknown): NotificationPreferenc
     opinionChangeEmail: typeof candidate?.opinionChangeEmail === 'boolean' ? candidate.opinionChangeEmail : DEFAULT_NOTIFICATION_PREFERENCES.opinionChangeEmail,
     nasdaqPeakEmail: typeof candidate?.nasdaqPeakEmail === 'boolean' ? candidate.nasdaqPeakEmail : DEFAULT_NOTIFICATION_PREFERENCES.nasdaqPeakEmail,
     nasdaqWarnEmail: typeof candidate?.nasdaqWarnEmail === 'boolean' ? candidate.nasdaqWarnEmail : DEFAULT_NOTIFICATION_PREFERENCES.nasdaqWarnEmail,
-    regimeShiftEmail: typeof candidate?.regimeShiftEmail === 'boolean' ? candidate.regimeShiftEmail : DEFAULT_NOTIFICATION_PREFERENCES.regimeShiftEmail,
+    maSupportEmail: typeof candidate?.maSupportEmail === 'boolean' ? candidate.maSupportEmail : DEFAULT_NOTIFICATION_PREFERENCES.maSupportEmail,
     weeklyTrendReport: typeof candidate?.weeklyTrendReport === 'boolean' ? candidate.weeklyTrendReport : DEFAULT_NOTIFICATION_PREFERENCES.weeklyTrendReport,
     earningsDayBefore: typeof candidate?.earningsDayBefore === 'boolean' ? candidate.earningsDayBefore : DEFAULT_NOTIFICATION_PREFERENCES.earningsDayBefore,
     adminAutoUpdateFailureEmail: typeof candidate?.adminAutoUpdateFailureEmail === 'boolean' ? candidate.adminAutoUpdateFailureEmail : DEFAULT_NOTIFICATION_PREFERENCES.adminAutoUpdateFailureEmail,
@@ -3164,11 +3164,11 @@ const notificationOptions: Array<{ key: NotificationPreferenceKey; title: string
   { key: 'opinionChangeEmail', title: '투자의견 변경', description: '관심종목의 매수/관망/매도 신호가 바뀔 때' },
   { key: 'nasdaqPeakEmail', title: '나스닥 고점 과열', description: 'QQQ 과열과 RSI 둔화가 동시에 감지될 때' },
   { key: 'nasdaqWarnEmail', title: '나스닥 과열 청산선 근접 경고', description: 'QQQ 이격도가 과열 청산선 직전까지 올라와 곧 하락이 나올 수 있을 때' },
-  { key: 'regimeShiftEmail', title: '시장 국면 전환', description: '하락장·회복장·정상장·횡보장 고점이 바뀌어 매수 차단선·전략 1/2 시즌 동작이 달라질 때' },
   { key: 'weeklyTrendReport', title: '주간 트렌드 리포트', description: '시장 트렌드와 관심종목 흐름을 주 1회 정리' },
   { key: 'earningsDayBefore', title: '실적발표 전날', description: '관심종목 실적발표 전 리스크 점검' },
 ]
 const adminNotificationOptions: Array<{ key: NotificationPreferenceKey; title: string; description: string }> = [
+  { key: 'maSupportEmail', title: '이평선 반등/돌파 후보', description: '관리자 전용: 장 시작 후 관심종목이 20/200일선 지지 반등 또는 돌파 후보로 잡힐 때' },
   { key: 'adminAutoUpdateFailureEmail', title: '자동 업데이트 실패', description: '관리자 전용: 같은 작업이 연속 3회 이상 실패할 때' },
 ]
 const apiLogTabs: Array<{ key: ApiLogTrigger; label: string; description: string }> = [
