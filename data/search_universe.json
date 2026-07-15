@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15232,
-    "industryEnrichedAt": "2026-07-15T01:01:38+00:00",
+    "industryEnrichedAt": "2026-07-15T14:09:42+00:00",
     "industryEnrichedTickers": 1
   },
   "rows": [
@@ -41977,7 +41977,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "스마트폰, 소비자 전자, 서비스, 자체 반도체",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Consumer Electronics",
       "products": "-",
       "updatedAt": "2026-07-12T15:01:37+00:00"
     },
