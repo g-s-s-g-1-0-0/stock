@@ -6,6 +6,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts import record_web_api_logs as logs
 
 
+def test_parse_log_tasks_ignores_stock_universe_and_keeps_market_trends():
+    assert logs.parse_log_tasks(["stock-universe", "market-trends"]) == {"market-trends"}
+    assert logs.parse_log_tasks([
+        "stock-universe",
+        "valuation",
+        "technical",
+        "market-trends",
+        "market-events",
+    ]) == {"value-analysis", "technical-analysis", "market-trends"}
+
+
 def test_load_watchlist_tickers_includes_all_investment_types(monkeypatch):
     monkeypatch.setattr(logs, "supabase_request", lambda path: [{
         "tickers": ["AAPL"],

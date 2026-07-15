@@ -1181,6 +1181,8 @@ def parse_log_tasks(argv: list[str]) -> set[str]:
         "technical-analysis": {"technical-analysis"},
         "market-trends": {"market-trends"},
     }
+    # Refresh scopes that do not have their own 운영 로그 tab.
+    ignored_tasks = {"stocks", "stock-universe", "market-events"}
     raw_values = argv or [os.environ.get("REFRESH_TASKS", "all")]
     tasks: set[str] = set()
     for raw in raw_values:
@@ -1189,8 +1191,7 @@ def parse_log_tasks(argv: list[str]) -> set[str]:
                 continue
             matched = aliases.get(value)
             if matched is None:
-                # stocks and market-events do not have separate operation-log tabs.
-                if value in {"stocks", "market-events"}:
+                if value in ignored_tasks:
                     continue
                 raise SystemExit(f"unknown log task: {value}")
             tasks.update(matched)
