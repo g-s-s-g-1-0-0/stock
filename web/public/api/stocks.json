@@ -632,8 +632,8 @@
       "updatedAt": "2026-07-15T15:00:40+00:00"
     },
     {
-      "ticker": "SKHYV",
-      "name": "SK hynix Inc. - American Depository Shares",
+      "ticker": "SKHY",
+      "name": "SK hynix Inc.",
       "market": "US",
       "fairPrice": "$366.50 ~ $513.10",
       "fairPriceReason": null,
@@ -644,7 +644,7 @@
       "marketEvent": "당분간 없음",
       "strategies": [],
       "category": "성장주",
-      "industry": "AI 인프라, 데이터센터 전력·냉각, 광통신",
+      "industry": "반도체, 메모리, HBM, AI 메모리, DRAM",
       "updatedAt": "2026-07-15T15:00:41+00:00"
     },
     {

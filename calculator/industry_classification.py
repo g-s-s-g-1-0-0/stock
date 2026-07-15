@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from .ticker_aliases import canonical_ticker
+
 CATEGORY_VALUES = ("가치주", "혼합주", "성장주", "스윙주")
 MAX_INDUSTRY_ITEMS = 5
 UNKNOWN_INDUSTRY_LABELS = {
@@ -14,6 +16,8 @@ UNKNOWN_INDUSTRY_LABELS = {
 CURATED_BY_TICKER: dict[str, tuple[str, str]] = {
     "000150": ("성장주", "AI 인프라, 전자소재 CCL, 데이터센터 전력, 피지컬 AI·로보틱스, 연료전지"),
     "000660": ("성장주", "반도체, 메모리, HBM, AI 메모리, DRAM"),
+    "SKHY": ("성장주", "반도체, 메모리, HBM, AI 메모리, DRAM"),
+    "SKHYV": ("성장주", "반도체, 메모리, HBM, AI 메모리, DRAM"),
     "005930": ("혼합주", "반도체, 메모리·파운드리, 스마트폰, 소비자 가전"),
     "277810": ("성장주", "협동로봇, 자동화, AI 로보틱스"),
     "034020": ("성장주", "원전, 에너지, SMR, 가스터빈"),
@@ -100,6 +104,7 @@ CURATED_BY_TICKER: dict[str, tuple[str, str]] = {
 CURATED_BY_NAME: tuple[tuple[str, tuple[str, str]], ...] = (
     ("삼성전자", ("혼합주", "반도체, 메모리·파운드리, 스마트폰, 소비자 가전")),
     ("SK하이닉스", ("성장주", "반도체, 메모리, HBM, AI 메모리, DRAM")),
+    ("SK hynix", ("성장주", "반도체, 메모리, HBM, AI 메모리, DRAM")),
     ("레인보우로보틱스", ("성장주", "협동로봇, 자동화, AI 로보틱스")),
     ("두산에너빌리티", ("성장주", "원전, 에너지, SMR, 가스터빈")),
     ("한국전력", ("가치주", "원전·에너지, 전력망, AI 기반 전력수요 관리")),
@@ -206,7 +211,7 @@ def summarize_industry(value: Any, max_items: int = MAX_INDUSTRY_ITEMS) -> str:
 
 
 def _curated(row: dict[str, Any]) -> tuple[str, str] | None:
-    ticker = _clean(row.get("ticker")).upper()
+    ticker = canonical_ticker(_clean(row.get("ticker")))
     name = _clean(row.get("name"))
     if ticker in CURATED_BY_TICKER:
         return CURATED_BY_TICKER[ticker]

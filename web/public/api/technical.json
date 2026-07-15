@@ -4,7 +4,7 @@
     "schedule": "0 */2 * * *",
     "updatedAt": "2026-07-15T15:00:00+00:00",
     "lastSuccessfulRun": "2026-07-15T15:00:00+00:00",
-    "failedReason": "SKHYV: list index out of range",
+    "failedReason": null,
     "successfulRows": 40,
     "strategySeasonOpen": false
   },
@@ -2908,10 +2908,5 @@
       "진입 전략": "-"
     }
   },
-  "errors": [
-    {
-      "ticker": "SKHYV",
-      "error": "list index out of range"
-    }
-  ]
+  "errors": []
 }

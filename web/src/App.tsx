@@ -884,7 +884,14 @@ function storeOperatorWatchlistSortSettings(watchlistSort: WatchlistSortSettings
 }
 
 function normalizeWatchlistTickers(value: unknown) {
-  return Array.isArray(value) ? value.filter((ticker): ticker is string => typeof ticker === 'string') : null
+  if (!Array.isArray(value)) return null
+  const tickers: string[] = []
+  for (const item of value) {
+    if (typeof item !== 'string') continue
+    const ticker = canonicalTicker(item) || item.trim().toUpperCase()
+    if (ticker && !tickers.includes(ticker)) tickers.push(ticker)
+  }
+  return tickers
 }
 
 function normalizeNotificationChannel(value: unknown): NotificationDeliveryChannel {
@@ -1384,8 +1391,8 @@ function watchlistStockShell(ticker: string): Stock {
 }
 
 function resolveStockForTicker(ticker: string, primaryStocks: Stock[], fallbackStocks: Stock[] = []) {
-  const normalized = ticker.trim().toUpperCase()
-  const matchesTicker = (stock: Stock) => stock.ticker.trim().toUpperCase() === normalized
+  const normalized = canonicalTicker(ticker) || ticker.trim().toUpperCase()
+  const matchesTicker = (stock: Stock) => tickerMatches(stock.ticker, normalized)
   const fromPrimary = primaryStocks.find(matchesTicker)
   if (fromPrimary) return withDisplayStockName(fromPrimary)
   const fromFallback = fallbackStocks.find(matchesTicker)
@@ -1752,7 +1759,17 @@ function displayStockName(name: string) {
   let value = name.trim()
   if (!value) return '-'
 
-  for (const marker of [' American Depositary', ' Depositary Shares', ' ADS']) {
+  for (const marker of [
+    ' - American Depositary Shares',
+    ' - American Depository Shares',
+    ' American Depositary Shares',
+    ' American Depository Shares',
+    ' American Depositary',
+    ' American Depository',
+    ' Depositary Shares',
+    ' Depository Shares',
+    ' ADS',
+  ]) {
     if (value.includes(marker)) {
       value = value.split(marker, 1)[0].trim()
     }
@@ -1769,13 +1786,39 @@ function displayStockName(name: string) {
   return value
 }
 
+const TICKER_ALIASES: Record<string, string> = {
+  // Nasdaq when-issued → regular-way (effective 2026-07-13)
+  SKHYV: 'SKHY',
+}
+
+function canonicalTicker(ticker: string) {
+  const normalized = ticker.trim().toUpperCase()
+  if (!normalized) return ''
+  return TICKER_ALIASES[normalized] ?? normalized
+}
+
+function tickerMatches(left: string, right: string) {
+  return canonicalTicker(left) === canonicalTicker(right)
+}
+
 function withDisplayStockName(stock: Stock): Stock {
   return {
     ...stock,
+    ticker: canonicalTicker(stock.ticker) || stock.ticker,
     name: displayStockName(stock.name),
     // 구버전 캐시 페이로드 등 strategies가 없는 원본이 들어와도 항상 배열을 보장한다.
     strategies: stock.strategies ?? [],
   }
+}
+
+function withCanonicalTickerKeys<T>(rows: Record<string, T> | null | undefined): Record<string, T> {
+  if (!rows || typeof rows !== 'object') return {}
+  const next: Record<string, T> = {}
+  for (const [ticker, value] of Object.entries(rows)) {
+    const key = canonicalTicker(ticker) || ticker
+    next[key] = value
+  }
+  return next
 }
 
 function stockSearchRank(stock: Stock, normalizedQuery: string) {
@@ -2228,7 +2271,7 @@ function sortWatchlistStocks(stocks: Stock[], settings: WatchlistSortSettings, t
 }
 
 function stockName(ticker: string) {
-  return searchUniverse.find((stock) => stock.ticker === ticker)?.name ?? ticker
+  return searchUniverse.find((stock) => tickerMatches(stock.ticker, ticker))?.name ?? ticker
 }
 
 function stockMarket(ticker: string) {
@@ -5390,8 +5433,8 @@ function App() {
   const [apiStocks, setApiStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? cachedAppData.stocks.rows.map(withDisplayStockName) : searchUniverse.map(stockSearchShell))
   const [apiSearchStocks, setApiSearchStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? mergeStocks(cachedAppData.stocks.rows, searchUniverse) : searchUniverse.map(stockSearchShell))
   const [isStockSearchLoaded, setIsStockSearchLoaded] = useState(false)
-  const [apiValuationMetrics, setApiValuationMetrics] = useState<Record<string, ValuationMetric>>(() => cachedAppData?.valuation?.rows ?? {})
-  const [apiTechnicalRows, setApiTechnicalRows] = useState<Record<string, Record<string, string>>>(() => cachedAppData?.technical?.rows ?? {})
+  const [apiValuationMetrics, setApiValuationMetrics] = useState<Record<string, ValuationMetric>>(() => withCanonicalTickerKeys(cachedAppData?.valuation?.rows ?? {}))
+  const [apiTechnicalRows, setApiTechnicalRows] = useState<Record<string, Record<string, string>>>(() => withCanonicalTickerKeys(cachedAppData?.technical?.rows ?? {}))
   const [apiMarketSnapshot, setApiMarketSnapshot] = useState<string[][]>(() => cachedAppData?.technical?.marketSnapshot && isMeaningfulMarketSnapshot(cachedAppData.technical.marketSnapshot) ? mergeMarketSnapshot(cachedAppData.technical.marketSnapshot) : technicalMarketSnapshot)
   const [apiMarketEventGroups, setApiMarketEventGroups] = useState<MarketEventGroup[]>(() => cachedAppData?.marketEvents?.groups?.length ? cachedAppData.marketEvents.groups : marketEventGroups)
   const [marketEventYearLabel, setMarketEventYearLabel] = useState(() => cachedAppData?.marketEvents?.yearLabel ?? '2026년')
@@ -5533,10 +5576,10 @@ function App() {
       setApiSearchStocks((currentStocks) => mergeStocks(stocks, currentStocks))
     }
     if (data.valuation?.rows) {
-      setApiValuationMetrics(data.valuation.rows)
+      setApiValuationMetrics(withCanonicalTickerKeys(data.valuation.rows))
     }
     if (data.technical?.rows) {
-      setApiTechnicalRows(data.technical.rows)
+      setApiTechnicalRows(withCanonicalTickerKeys(data.technical.rows))
     }
     if (data.technical?.marketSnapshot && isMeaningfulMarketSnapshot(data.technical.marketSnapshot)) {
       setApiMarketSnapshot(mergeMarketSnapshot(data.technical.marketSnapshot))

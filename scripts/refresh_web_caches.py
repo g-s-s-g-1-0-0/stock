@@ -15,6 +15,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from calculator import build_stock_universe
 from calculator.pipeline import build_stock_search_cache, read_search_universe, run, write_cache
+from calculator.ticker_aliases import canonical_ticker
 from scripts.record_signal_snapshots import record_daily_signal_snapshots
 
 VALID_TASKS = {"stock-universe", "valuation", "technical", "stocks", "market-trends", "market-events"}
@@ -96,7 +97,7 @@ def load_requested_tickers() -> list[str]:
 
 
 def append_unique(tickers: list[str], value: object) -> None:
-    ticker = str(value or "").strip().upper()
+    ticker = canonical_ticker(value)
     if ticker and ticker not in tickers:
         tickers.append(ticker)
 
