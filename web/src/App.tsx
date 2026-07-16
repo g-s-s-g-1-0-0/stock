@@ -7006,6 +7006,12 @@ function App() {
     ))
   }
 
+  const toggleSelectAllTickers = (tickers: string[]) => {
+    setSelectedTickers((current) => (
+      tickers.length > 0 && tickers.every((ticker) => current.includes(ticker)) ? [] : tickers
+    ))
+  }
+
   const closeOperatorImportModal = () => {
     setIsOperatorImportOpen(false)
     setOperatorImportTickers([])
@@ -7016,6 +7022,12 @@ function App() {
       current.includes(key)
         ? current.filter((item) => item !== key)
         : [...current, key]
+    ))
+  }
+
+  const toggleSelectAllHoldingTrades = (keys: string[]) => {
+    setSelectedHoldingTradeKeys((current) => (
+      keys.length > 0 && keys.every((key) => current.includes(key)) ? [] : keys
     ))
   }
 
@@ -8960,7 +8972,22 @@ function App() {
                 >
                   <thead>
                     <tr>
-                      {canEditCurrentWatchlist && <th>선택</th>}
+                      {canEditCurrentWatchlist && (
+                        <th
+                          className="select-all-header"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => toggleSelectAllTickers(tableStocks.map((stock) => stock.ticker))}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault()
+                              toggleSelectAllTickers(tableStocks.map((stock) => stock.ticker))
+                            }
+                          }}
+                        >
+                          선택
+                        </th>
+                      )}
                       <th>No</th>
                       <th className="home-name-header">
                         <span>종목명</span>
@@ -9123,7 +9150,22 @@ function App() {
               >
                 <thead>
                   <tr>
-                    {canManageHoldingTrades && <th>선택</th>}
+                    {canManageHoldingTrades && (
+                      <th
+                        className="select-all-header"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => toggleSelectAllHoldingTrades(scopedOpenTrades.map((trade) => tradeKey(trade)))}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            toggleSelectAllHoldingTrades(scopedOpenTrades.map((trade) => tradeKey(trade)))
+                          }
+                        }}
+                      >
+                        선택
+                      </th>
+                    )}
                     <th>No</th>
                     <th className="home-name-header">
                       <span>종목명</span>

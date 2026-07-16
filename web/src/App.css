@@ -3016,6 +3016,11 @@
   cursor: pointer;
 }
 
+.select-all-header {
+  cursor: pointer;
+  user-select: none;
+}
+
 .empty-watchlist {
   display: grid;
   justify-items: center;
