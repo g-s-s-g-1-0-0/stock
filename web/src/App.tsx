@@ -2350,6 +2350,37 @@ function strategyCriteriaLabelTone(label: string) {
   return 'time'
 }
 
+function StrategyCriteriaCards({ investmentType }: { investmentType: InvestmentType }) {
+  const strategyCriteriaRows = strategyCriteriaRowsByInvestmentType[investmentType]
+
+  return (
+    <div className="strategy-criteria-cards">
+      {strategyFilters.map((code) => (
+        <article className="strategy-criteria-card" key={code}>
+          <header className="strategy-criteria-card-head">
+            <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{strategyDisplayName(code)}</span>
+          </header>
+          <p className="strategy-criteria-card-summary">{strategyInfo(code, investmentType)}</p>
+          <dl className="strategy-criteria-card-list">
+            {(strategyCriteriaRows[code] ?? []).map((row) => (
+              <div className="strategy-criteria-card-item" key={`${code}-${row.label}`}>
+                <dt className={`strategy-criteria-label strategy-criteria-label-${strategyCriteriaLabelTone(row.label)}`}>
+                  {row.label}
+                </dt>
+                <dd className="strategy-criteria-card-value">
+                  {Array.isArray(row.value) ? row.value.map((line) => (
+                    <span className="strategy-criteria-value-line" key={line}>{line}</span>
+                  )) : row.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </article>
+      ))}
+    </div>
+  )
+}
+
 function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentType }) {
   const strategyCriteriaRows = strategyCriteriaRowsByInvestmentType[investmentType]
 
@@ -2403,6 +2434,7 @@ function StrategyCriteriaContent({ investmentType }: { investmentType: Investmen
     <>
       <h3 id="strategy-criteria-title">{investmentProfileLabel(investmentType)} 전략별 매수·청산 기준</h3>
       <StrategyCriteriaTable investmentType={investmentType} />
+      <StrategyCriteriaCards investmentType={investmentType} />
     </>
   )
 }
