@@ -1130,11 +1130,12 @@
   width: max-content;
   min-width: 100%;
   max-width: none;
+  background: var(--surface);
 }
 
 .strategy-criteria-modal-table {
-  width: max-content;
-  min-width: 1080px;
+  width: 100%;
+  min-width: 1180px;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 12.5px;
@@ -1194,7 +1195,7 @@
 
 .strategy-criteria-modal-table > thead th:nth-child(3),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
-  min-width: 680px;
+  min-width: 780px;
 }
 
 .strategy-criteria-summary {
@@ -1279,15 +1280,10 @@
   font-size: 11px;
 }
 
-/* Card view is mobile-only; hidden on desktop where the table reads well. */
-.strategy-criteria-cards {
-  display: none;
-}
-
 @media (max-width: 760px) {
   .modal-backdrop.strategy-criteria-backdrop {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
     box-sizing: border-box;
     width: 100%;
@@ -1296,9 +1292,11 @@
     overflow: hidden;
   }
 
+  /* Fill the phone screen vertically; keep the desktop table and scroll it horizontally. */
   .confirm-modal.strategy-criteria-modal {
     width: 100%;
     max-width: 100%;
+    height: calc(100dvh - 24px);
     max-height: calc(100dvh - 24px);
     min-width: 0;
     margin: 0;
@@ -1313,86 +1311,8 @@
     font-size: 16px;
   }
 
-  /* Swap the wide table for a vertical card stack on phones. */
   .strategy-criteria-modal-table-wrap {
-    display: none;
-  }
-
-  .strategy-criteria-cards {
-    display: grid;
-    gap: 12px;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    padding: 2px 2px 4px;
-    margin: 0 -2px;
-  }
-
-  .strategy-criteria-card {
-    display: grid;
-    gap: 10px;
-    padding: 14px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    background: var(--surface);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-  }
-
-  .strategy-criteria-card-head {
-    display: flex;
-    align-items: center;
-  }
-
-  .strategy-criteria-card .strategy-pill {
-    font-size: 12px;
-  }
-
-  .strategy-criteria-card-summary {
-    margin: 0;
-    color: var(--muted);
-    font-size: 12.5px;
-    line-height: 1.6;
-    word-break: keep-all;
-    overflow-wrap: break-word;
-  }
-
-  .strategy-criteria-card-list {
-    display: grid;
-    gap: 10px;
-    margin: 0;
-    padding-top: 10px;
-    border-top: 1px solid rgba(226, 232, 240, 0.9);
-  }
-
-  .strategy-criteria-card-item {
-    display: grid;
-    grid-template-columns: 64px minmax(0, 1fr);
-    column-gap: 10px;
-    align-items: start;
-  }
-
-  .strategy-criteria-card-item .strategy-criteria-label {
-    font-size: 11px;
-  }
-
-  .strategy-criteria-card-value {
-    margin: 0;
-    color: var(--text);
-    font-size: 12.5px;
-    line-height: 1.6;
-    word-break: keep-all;
-    overflow-wrap: break-word;
-  }
-
-  .strategy-criteria-card-value .strategy-criteria-value-line {
-    white-space: normal;
-  }
-
-  .strategy-criteria-label {
-    height: 22px;
-    min-height: 22px;
+    max-height: none;
   }
 }
 
