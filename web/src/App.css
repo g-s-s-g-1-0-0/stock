@@ -1081,6 +1081,8 @@
   max-height: calc(100dvh - 48px);
   overflow: hidden;
   padding: 24px 24px 22px;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 .confirm-modal.strategy-criteria-modal h3 {
@@ -1250,7 +1252,7 @@
   .confirm-modal.strategy-criteria-modal h3 {
     margin-bottom: 18px;
     padding-right: 34px;
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .strategy-criteria-modal-table-wrap {
@@ -1259,34 +1261,63 @@
   }
 
   .strategy-criteria-modal-table {
-    min-width: 1020px;
-    font-size: 12px;
+    min-width: 980px;
+    font-size: 11px;
+  }
+
+  .strategy-criteria-modal-table > thead th {
+    font-size: 10.5px;
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
 
   .strategy-criteria-modal-table > thead th:first-child,
   .strategy-criteria-modal-table > tbody > tr > th:first-child {
-    width: 96px;
+    width: 88px;
   }
 
   .strategy-criteria-modal-table > thead th:nth-child(2),
   .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
-    width: 220px;
-    min-width: 200px;
+    width: 200px;
+    min-width: 180px;
   }
 
   .strategy-criteria-modal-table > thead th:nth-child(3),
   .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
-    min-width: 640px;
+    min-width: 600px;
   }
 
   .strategy-criteria-modal-table th,
   .strategy-criteria-modal-table td {
-    padding: 12px 10px;
+    padding: 10px 8px;
+  }
+
+  .strategy-criteria-summary {
+    font-size: 11px;
+    line-height: 1.45;
   }
 
   .strategy-criteria-item {
-    grid-template-columns: 72px minmax(0, 1fr);
-    column-gap: 10px;
+    grid-template-columns: 64px minmax(0, 1fr);
+    column-gap: 8px;
+  }
+
+  .strategy-criteria-label {
+    height: 20px;
+    min-height: 20px;
+    padding: 0 6px;
+    font-size: 10px;
+  }
+
+  .strategy-criteria-value {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .strategy-criteria-modal-table .strategy-pill {
+    max-width: 220px;
+    font-size: 10px;
+    padding: 3px 7px;
   }
 }
 
