@@ -14,7 +14,8 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-15:08",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-15:0930",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-16:08",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-16:0930"
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-16:0930",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-17:08"
     ],
     "sentKeys": [
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:012450:2026-07-01:20",
@@ -53,7 +54,7 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VRT:2026-07-08:20",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VRT:2026-07-10:20"
     ],
-    "updatedAt": "2026-07-16T00:31:33.522565+00:00"
+    "updatedAt": "2026-07-16T23:00:16.617911+00:00"
   },
   "nasdaqPeak": {
     "resetAt": "2026-05-14T20:55:50.998617+00:00",
@@ -98,11 +99,11 @@
     "updatedAt": "2026-07-15T04:59:59.592963+00:00"
   },
   "strategySeason": {
-    "open": false,
-    "sawRecovery": false,
     "nonRecoveryStreak": 0,
+    "open": false,
     "openedAt": null,
     "openedByTicker": null,
+    "sawRecovery": false,
     "updatedAt": "2026-07-14T07:40:00.492847Z"
   }
 }
