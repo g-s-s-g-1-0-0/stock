@@ -1091,6 +1091,7 @@
 
 .strategy-criteria-modal-table-wrap {
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   max-height: min(640px, calc(100dvh - 160px));
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -1099,7 +1100,7 @@
 
 .strategy-criteria-modal-table {
   width: 100%;
-  table-layout: fixed;
+  min-width: 1080px;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 13px;
@@ -1111,8 +1112,6 @@
   padding: 16px 14px;
   text-align: left;
   vertical-align: top;
-  overflow-wrap: anywhere;
-  word-break: keep-all;
 }
 
 .strategy-criteria-modal-table > thead th {
@@ -1154,12 +1153,13 @@
 
 .strategy-criteria-modal-table > thead th:nth-child(2),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
-  width: 23%;
+  width: 248px;
+  min-width: 220px;
 }
 
 .strategy-criteria-modal-table > thead th:nth-child(3),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
-  width: auto;
+  min-width: 680px;
 }
 
 .strategy-criteria-summary {
@@ -1167,6 +1167,8 @@
   color: var(--muted);
   font-size: 12.5px;
   line-height: 1.55;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .strategy-criteria-list {
@@ -1222,20 +1224,15 @@
 
 .strategy-criteria-value {
   margin: 0;
-  min-width: 0;
   color: var(--text);
   font-size: 12.5px;
   line-height: 1.55;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: keep-all;
+  white-space: nowrap;
 }
 
 .strategy-criteria-value-line {
   display: block;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: keep-all;
+  white-space: nowrap;
 }
 
 .strategy-criteria-value-line + .strategy-criteria-value-line {
@@ -1262,6 +1259,7 @@
   }
 
   .strategy-criteria-modal-table {
+    min-width: 1020px;
     font-size: 12px;
   }
 
@@ -1272,7 +1270,13 @@
 
   .strategy-criteria-modal-table > thead th:nth-child(2),
   .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
-    width: 28%;
+    width: 220px;
+    min-width: 200px;
+  }
+
+  .strategy-criteria-modal-table > thead th:nth-child(3),
+  .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
+    min-width: 640px;
   }
 
   .strategy-criteria-modal-table th,
