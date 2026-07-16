@@ -1243,81 +1243,148 @@
 
 @media (max-width: 760px) {
   .confirm-modal.strategy-criteria-modal {
-    width: calc(100vw - 20px);
-    max-width: calc(100vw - 20px);
-    max-height: calc(100dvh - 20px);
-    padding: 16px 12px;
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    padding: 12px 10px;
   }
 
   .confirm-modal.strategy-criteria-modal h3 {
-    margin-bottom: 18px;
-    padding-right: 34px;
-    font-size: 15px;
+    margin-bottom: 12px;
+    padding-right: 32px;
+    font-size: 13px;
   }
 
+  /*
+   * Mobile keeps the desktop table layout and scales the whole sheet down,
+   * so type matches desktop density while users swipe horizontally.
+   */
   .strategy-criteria-modal-table-wrap {
-    max-height: calc(100dvh - 100px);
+    max-height: calc(100dvh - 84px);
     border-radius: 10px;
+    zoom: 0.58;
   }
 
   .strategy-criteria-modal-table {
-    min-width: 980px;
-    font-size: 11px;
+    min-width: 1080px;
+    font-size: 13px;
   }
 
   .strategy-criteria-modal-table > thead th {
-    font-size: 10.5px;
-    padding-top: 10px;
-    padding-bottom: 10px;
+    font-size: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
 
   .strategy-criteria-modal-table > thead th:first-child,
   .strategy-criteria-modal-table > tbody > tr > th:first-child {
-    width: 88px;
+    width: 112px;
   }
 
   .strategy-criteria-modal-table > thead th:nth-child(2),
   .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
-    width: 200px;
-    min-width: 180px;
+    width: 248px;
+    min-width: 220px;
   }
 
   .strategy-criteria-modal-table > thead th:nth-child(3),
   .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
-    min-width: 600px;
+    min-width: 680px;
   }
 
   .strategy-criteria-modal-table th,
   .strategy-criteria-modal-table td {
-    padding: 10px 8px;
+    padding: 14px 12px;
   }
 
   .strategy-criteria-summary {
-    font-size: 11px;
-    line-height: 1.45;
+    font-size: 12.5px;
+    line-height: 1.55;
   }
 
   .strategy-criteria-item {
-    grid-template-columns: 64px minmax(0, 1fr);
-    column-gap: 8px;
+    grid-template-columns: 84px minmax(0, 1fr);
+    column-gap: 12px;
   }
 
   .strategy-criteria-label {
-    height: 20px;
-    min-height: 20px;
-    padding: 0 6px;
-    font-size: 10px;
+    height: 24px;
+    min-height: 24px;
+    padding: 0 8px;
+    font-size: 11px;
   }
 
   .strategy-criteria-value {
-    font-size: 11px;
-    line-height: 1.45;
+    font-size: 12.5px;
+    line-height: 1.55;
   }
 
   .strategy-criteria-modal-table .strategy-pill {
-    max-width: 220px;
-    font-size: 10px;
-    padding: 3px 7px;
+    max-width: 270px;
+    font-size: 11px;
+    padding: 4px 9px;
+  }
+
+  @supports not (zoom: 1) {
+    .strategy-criteria-modal-table-wrap {
+      zoom: normal;
+    }
+
+    .strategy-criteria-modal-table {
+      min-width: 920px;
+      font-size: 8.5px;
+    }
+
+    .strategy-criteria-modal-table > thead th {
+      font-size: 8px;
+      padding-top: 8px;
+      padding-bottom: 8px;
+    }
+
+    .strategy-criteria-modal-table > thead th:first-child,
+    .strategy-criteria-modal-table > tbody > tr > th:first-child {
+      width: 78px;
+    }
+
+    .strategy-criteria-modal-table > thead th:nth-child(2),
+    .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
+      width: 170px;
+      min-width: 150px;
+    }
+
+    .strategy-criteria-modal-table > thead th:nth-child(3),
+    .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
+      min-width: 560px;
+    }
+
+    .strategy-criteria-modal-table th,
+    .strategy-criteria-modal-table td {
+      padding: 7px 6px;
+    }
+
+    .strategy-criteria-summary,
+    .strategy-criteria-value {
+      font-size: 8.5px;
+      line-height: 1.4;
+    }
+
+    .strategy-criteria-item {
+      grid-template-columns: 56px minmax(0, 1fr);
+      column-gap: 6px;
+    }
+
+    .strategy-criteria-label {
+      height: 16px;
+      min-height: 16px;
+      padding: 0 4px;
+      font-size: 8px;
+    }
+
+    .strategy-criteria-modal-table .strategy-pill {
+      max-width: 180px;
+      font-size: 8px;
+      padding: 2px 5px;
+    }
   }
 }
 
