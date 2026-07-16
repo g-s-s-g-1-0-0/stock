@@ -2318,7 +2318,7 @@ function StrategyCriteriaModal({
   onClose: () => void
 }) {
   return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, onClose)}>
+    <div className="modal-backdrop strategy-criteria-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, onClose)}>
       <section className="confirm-modal strategy-criteria-modal" role="dialog" aria-modal="true" aria-labelledby="strategy-criteria-title" onMouseDown={(event) => event.stopPropagation()}>
         <button aria-label="전략 기준 닫기" className="modal-close-button" type="button" onClick={onClose}>
           ×

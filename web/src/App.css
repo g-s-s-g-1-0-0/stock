@@ -1076,9 +1076,12 @@
 }
 
 .confirm-modal.strategy-criteria-modal {
+  display: flex;
+  flex-direction: column;
   width: min(1230px, calc(100vw - 48px));
   max-width: 1230px;
   max-height: calc(100dvh - 48px);
+  min-width: 0;
   overflow: hidden;
   padding: 24px 24px 22px;
   text-size-adjust: 100%;
@@ -1086,14 +1089,21 @@
 }
 
 .confirm-modal.strategy-criteria-modal h3 {
+  flex: 0 0 auto;
   margin: 0 0 28px;
   padding-right: 38px;
   letter-spacing: -0.02em;
 }
 
 .strategy-criteria-modal-table-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   max-height: min(640px, calc(100dvh - 160px));
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -1103,7 +1113,7 @@
 }
 
 .strategy-criteria-modal-table {
-  width: 100%;
+  width: max-content;
   min-width: 1080px;
   border-collapse: separate;
   border-spacing: 0;
@@ -1250,33 +1260,87 @@
 }
 
 @media (max-width: 760px) {
-  .modal-backdrop:has(.strategy-criteria-modal) {
-    padding: 10px;
-    align-items: stretch;
+  .modal-backdrop.strategy-criteria-backdrop {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
   }
 
   .confirm-modal.strategy-criteria-modal {
-    width: calc(100vw - 20px);
-    max-width: calc(100vw - 20px);
-    max-height: calc(100dvh - 20px);
-    margin: auto;
-    padding: 16px 12px;
+    width: 100%;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    min-width: 0;
+    margin: 0;
+    padding: 14px 12px 12px;
+    border-radius: 14px;
   }
 
   .confirm-modal.strategy-criteria-modal h3 {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     padding-right: 34px;
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .strategy-criteria-modal-table-wrap {
-    max-height: calc(100dvh - 100px);
+    max-height: none;
     border-radius: 10px;
   }
 
-  /* Keep desktop table metrics; only enable horizontal scroll on narrow screens. */
   .strategy-criteria-modal-table {
-    min-width: 1080px;
+    min-width: 980px;
+    font-size: 11px;
+  }
+
+  .strategy-criteria-modal-table th,
+  .strategy-criteria-modal-table td,
+  .strategy-criteria-summary,
+  .strategy-criteria-value {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .strategy-criteria-modal-table > thead th {
+    font-size: 11px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .strategy-criteria-modal-table th,
+  .strategy-criteria-modal-table td {
+    padding: 12px 10px;
+  }
+
+  .strategy-criteria-modal-table > thead th:first-child,
+  .strategy-criteria-modal-table > tbody > tr > th:first-child {
+    width: 96px;
+  }
+
+  .strategy-criteria-modal-table > thead th:nth-child(2),
+  .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
+    width: 210px;
+    min-width: 190px;
+  }
+
+  .strategy-criteria-modal-table > thead th:nth-child(3),
+  .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
+    min-width: 620px;
+  }
+
+  .strategy-criteria-item {
+    grid-template-columns: 72px minmax(0, 1fr);
+    column-gap: 10px;
+  }
+
+  .strategy-criteria-label,
+  .strategy-criteria-modal-table .strategy-pill {
+    font-size: 11px;
+  }
+
+  .strategy-criteria-label {
+    height: 22px;
+    min-height: 22px;
   }
 }
 
