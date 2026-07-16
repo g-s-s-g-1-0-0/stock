@@ -2317,6 +2317,20 @@ function StrategyCriteriaModal({
   investmentType: InvestmentType
   onClose: () => void
 }) {
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    const previousBodyOverscroll = document.body.style.overscrollBehavior
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.overscrollBehavior = 'none'
+    return () => {
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.body.style.overscrollBehavior = previousBodyOverscroll
+    }
+  }, [])
+
   return (
     <div className="modal-backdrop strategy-criteria-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, onClose)}>
       <section className="confirm-modal strategy-criteria-modal" role="dialog" aria-modal="true" aria-labelledby="strategy-criteria-title" onMouseDown={(event) => event.stopPropagation()}>
@@ -2341,43 +2355,45 @@ function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentT
 
   return (
     <div className="strategy-criteria-modal-table-wrap">
-      <table className="strategy-criteria-modal-table">
-        <thead>
-          <tr>
-            <th>전략</th>
-            <th>성격</th>
-            <th>주요 기준</th>
-          </tr>
-        </thead>
-        <tbody>
-          {strategyFilters.map((code) => (
-            <tr key={code}>
-              <th scope="row">
-                <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{strategyDisplayName(code)}</span>
-              </th>
-              <td>
-                <p className="strategy-criteria-summary">{strategyInfo(code, investmentType)}</p>
-              </td>
-              <td>
-                <dl className="strategy-criteria-list">
-                  {(strategyCriteriaRows[code] ?? []).map((row) => (
-                    <div className="strategy-criteria-item" key={`${code}-${row.label}`}>
-                      <dt className={`strategy-criteria-label strategy-criteria-label-${strategyCriteriaLabelTone(row.label)}`}>
-                        {row.label}
-                      </dt>
-                      <dd className="strategy-criteria-value">
-                        {Array.isArray(row.value) ? row.value.map((line) => (
-                          <span className="strategy-criteria-value-line" key={line}>{line}</span>
-                        )) : row.value}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </td>
+      <div className="strategy-criteria-modal-table-scroll">
+        <table className="strategy-criteria-modal-table">
+          <thead>
+            <tr>
+              <th>전략</th>
+              <th>성격</th>
+              <th>주요 기준</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {strategyFilters.map((code) => (
+              <tr key={code}>
+                <th scope="row">
+                  <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{strategyDisplayName(code)}</span>
+                </th>
+                <td>
+                  <p className="strategy-criteria-summary">{strategyInfo(code, investmentType)}</p>
+                </td>
+                <td>
+                  <dl className="strategy-criteria-list">
+                    {(strategyCriteriaRows[code] ?? []).map((row) => (
+                      <div className="strategy-criteria-item" key={`${code}-${row.label}`}>
+                        <dt className={`strategy-criteria-label strategy-criteria-label-${strategyCriteriaLabelTone(row.label)}`}>
+                          {row.label}
+                        </dt>
+                        <dd className="strategy-criteria-value">
+                          {Array.isArray(row.value) ? row.value.map((line) => (
+                            <span className="strategy-criteria-value-line" key={line}>{line}</span>
+                          )) : row.value}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

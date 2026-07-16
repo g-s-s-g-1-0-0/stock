@@ -1075,17 +1075,26 @@
   background: #ffffff;
 }
 
+.modal-backdrop.strategy-criteria-backdrop {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
 .confirm-modal.strategy-criteria-modal {
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
   width: min(1230px, calc(100vw - 48px));
   max-width: 1230px;
   max-height: calc(100dvh - 48px);
   min-width: 0;
   overflow: hidden;
+  contain: layout paint;
   padding: 24px 24px 22px;
-  text-size-adjust: 100%;
-  -webkit-text-size-adjust: 100%;
+  text-size-adjust: none;
+  -webkit-text-size-adjust: none;
 }
 
 .confirm-modal.strategy-criteria-modal h3 {
@@ -1097,19 +1106,30 @@
 
 .strategy-criteria-modal-table-wrap {
   flex: 1 1 auto;
+  position: relative;
   min-width: 0;
   min-height: 0;
   width: 100%;
   max-width: 100%;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+  contain: inline-size;
   max-height: min(640px, calc(100dvh - 160px));
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--surface);
-  text-size-adjust: 100%;
-  -webkit-text-size-adjust: 100%;
+  text-size-adjust: none;
+  -webkit-text-size-adjust: none;
+}
+
+.strategy-criteria-modal-table-scroll {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
 }
 
 .strategy-criteria-modal-table {
@@ -1264,17 +1284,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
     padding: 12px;
+    overflow: hidden;
   }
 
   .confirm-modal.strategy-criteria-modal {
     width: 100%;
-    max-width: calc(100vw - 24px);
+    max-width: 100%;
     max-height: calc(100dvh - 24px);
     min-width: 0;
     margin: 0;
     padding: 14px 12px 12px;
     border-radius: 14px;
+    overflow: hidden;
   }
 
   .confirm-modal.strategy-criteria-modal h3 {
@@ -1302,6 +1327,7 @@
   }
 
   .strategy-criteria-modal-table > thead th {
+    position: static;
     font-size: 11px;
     padding-top: 10px;
     padding-bottom: 10px;
@@ -3375,6 +3401,11 @@
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.22);
   padding: 18px;
   text-align: left;
+}
+
+/* Keep wide strategy table scrolling inside the phone-sized popup on iOS Safari. */
+.confirm-modal.strategy-criteria-modal {
+  overflow: hidden !important;
 }
 
 .confirm-modal h3 {
