@@ -1091,7 +1091,6 @@
   max-height: calc(100dvh - 48px);
   min-width: 0;
   overflow: hidden;
-  contain: layout paint;
   padding: 24px 24px 22px;
   text-size-adjust: none;
   -webkit-text-size-adjust: none;
@@ -1111,12 +1110,8 @@
   min-height: 0;
   width: 100%;
   max-width: 100%;
-  overflow-x: auto;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-  touch-action: pan-x pan-y;
-  contain: inline-size;
+  overflow: auto;
+  overscroll-behavior: none;
   max-height: min(640px, calc(100dvh - 160px));
   border: 1px solid var(--border);
   border-radius: 12px;
