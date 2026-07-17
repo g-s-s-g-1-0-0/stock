@@ -2436,7 +2436,7 @@ function StrategyCriteriaContent({ investmentType }: { investmentType: Investmen
   return (
     <>
       <h3 id="strategy-criteria-title">{investmentProfileLabel(investmentType)} 전략별 매수·청산 기준</h3>
-      <p className="strategy-criteria-intro">
+      <div className="strategy-criteria-intro">
         이 전략은 <strong>공포장에서만</strong> 들어가서 매수 빈도가 낮고, 대기 구간이 길어질 수 있습니다.
         몇 년 동안 여러 전략을 테스트해 봤지만, 지루하더라도 <strong>리스크가 적고 수익률을 극대화</strong>하기에
         가장 좋은 전략이라 판단하고 있습니다.
@@ -2445,7 +2445,7 @@ function StrategyCriteriaContent({ investmentType }: { investmentType: Investmen
         소액 이자를 받는 편을 권합니다. RP에도 리스크는 있지만 주식 대비 상대적으로 낮은 편입니다.
         <br />
         RP에 대한 자세한 방법은 이용 중인 증권사로 <strong>「OO증권 RP 투자」</strong>를 검색해 자료를 참고하세요.
-      </p>
+      </div>
       <StrategyCriteriaTable investmentType={investmentType} />
     </>
   )
@@ -8029,6 +8029,10 @@ function App() {
     }
     if (isAccountDeleteConfirmOpen && !isDeletingAccount) {
       setIsAccountDeleteConfirmOpen(false)
+      return
+    }
+    if (isStrategyCriteriaOpen) {
+      setIsStrategyCriteriaOpen(false)
       return
     }
     if (isLoginOpen) {
