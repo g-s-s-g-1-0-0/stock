@@ -66,14 +66,25 @@ async function fetchJson<T>(paths: string[]): Promise<T | null> {
   return null
 }
 
+// Production prefers the GitHub-published JSON so scheduled cache commits can
+// skip rebuilding the Vite app on Vercel without serving stale market data.
+const publishedCacheBase = (
+  (import.meta.env.VITE_PUBLISHED_CACHE_BASE as string | undefined)?.trim()
+  || 'https://raw.githubusercontent.com/g-s-s-g-1-0-0/stock/main/web/public/api'
+).replace(/\/$/, '')
+
+function productionCachePaths(fileName: string): string[] {
+  return [`${publishedCacheBase}/${fileName}`, `/api/${fileName}`]
+}
+
 const dataPaths = {
-  stocks: import.meta.env.DEV ? ['/api/stocks.json', '/api/stocks', 'http://127.0.0.1:8787/api/stocks'] : ['/api/stocks.json'],
-  valuation: import.meta.env.DEV ? ['/api/valuation.json', '/api/valuation', 'http://127.0.0.1:8787/api/valuation'] : ['/api/valuation.json'],
-  technical: import.meta.env.DEV ? ['/api/technical.json', '/api/technical', 'http://127.0.0.1:8787/api/technical'] : ['/api/technical.json'],
-  marketEvents: import.meta.env.DEV ? ['/api/market-events.json', '/api/market-events', 'http://127.0.0.1:8787/api/market-events'] : ['/api/market-events.json'],
-  marketTrends: import.meta.env.DEV ? ['/api/market-trends.json', '/api/market-trends', 'http://127.0.0.1:8787/api/market-trends'] : ['/api/market-trends.json'],
-  tradeLogs: import.meta.env.DEV ? ['/api/trade-logs.json', '/api/trade-logs', 'http://127.0.0.1:8787/api/trade-logs'] : ['/api/trade-logs.json'],
-  stockSearch: import.meta.env.DEV ? ['/api/stock-search.json', '/api/stock-search', 'http://127.0.0.1:8787/api/stock-search'] : ['/api/stock-search.json'],
+  stocks: import.meta.env.DEV ? ['/api/stocks.json', '/api/stocks', 'http://127.0.0.1:8787/api/stocks'] : productionCachePaths('stocks.json'),
+  valuation: import.meta.env.DEV ? ['/api/valuation.json', '/api/valuation', 'http://127.0.0.1:8787/api/valuation'] : productionCachePaths('valuation.json'),
+  technical: import.meta.env.DEV ? ['/api/technical.json', '/api/technical', 'http://127.0.0.1:8787/api/technical'] : productionCachePaths('technical.json'),
+  marketEvents: import.meta.env.DEV ? ['/api/market-events.json', '/api/market-events', 'http://127.0.0.1:8787/api/market-events'] : productionCachePaths('market-events.json'),
+  marketTrends: import.meta.env.DEV ? ['/api/market-trends.json', '/api/market-trends', 'http://127.0.0.1:8787/api/market-trends'] : productionCachePaths('market-trends.json'),
+  tradeLogs: import.meta.env.DEV ? ['/api/trade-logs.json', '/api/trade-logs', 'http://127.0.0.1:8787/api/trade-logs'] : productionCachePaths('trade-logs.json'),
+  stockSearch: import.meta.env.DEV ? ['/api/stock-search.json', '/api/stock-search', 'http://127.0.0.1:8787/api/stock-search'] : productionCachePaths('stock-search.json'),
 }
 
 export async function fetchAppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog = unknown>() {

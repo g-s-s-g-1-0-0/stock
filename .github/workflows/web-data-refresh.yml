@@ -70,10 +70,6 @@ jobs:
       ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
       WEB_APP_URL: ${{ secrets.WEB_APP_URL }}
       NOTIFICATION_UNSUBSCRIBE_SECRET: ${{ secrets.NOTIFICATION_UNSUBSCRIBE_SECRET }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -304,27 +300,23 @@ jobs:
           PREVIOUS_TECHNICAL_PATH: ${{ runner.temp }}/technical.before-refresh.json
         run: python scripts/record_web_api_logs.py --skip-trade-log-update $REFRESH_TASKS
 
-      - name: Deploy refreshed web
-        if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' }}
-        working-directory: web
-        run: npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
-
       - name: Verify production auth config
-        if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' }}
+        if: ${{ env.SKIP_REFRESH != 'true' }}
         id: verify-auth-config
         continue-on-error: true
         run: |
-          # Give the production alias a moment to point at the new deployment.
-          sleep 15
+          # Cache-only pushes skip the Vite rebuild; still confirm login config stayed intact.
+          sleep 20
           python scripts/verify_web_auth_config.py
 
       - name: Notify admins if auth config is missing
-        if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' && steps.verify-auth-config.outcome == 'failure' }}
+        if: ${{ env.SKIP_REFRESH != 'true' && steps.verify-auth-config.outcome == 'failure' }}
         continue-on-error: true
         run: >
           python scripts/web_refresh_notifications.py admin-failure
-          --message "프로덕션 웹 배포 후 Supabase 로그인 설정(VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)이 빌드에 반영되지 않았습니다.
-          일반 사용자는 로그인할 수 없습니다. Vercel에서 Redeploy로 복구한 뒤, Actions vercel deploy 빌드에 VITE_ 환경변수가 주입되는지 확인해 주세요.
+          --message "프로덕션 웹 번들에 Supabase 로그인 설정이 없습니다.
+          일반 사용자는 로그인할 수 없습니다. Vercel에서 Use existing Build Cache를 끄고 Redeploy 한 뒤,
+          VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY가 Production에 있는지 확인해 주세요.
           site=${{ secrets.WEB_APP_URL }}"
 
       - name: Notify admins on failure

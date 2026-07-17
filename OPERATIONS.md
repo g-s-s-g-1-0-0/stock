@@ -21,9 +21,11 @@ Watch these values before public traffic spikes:
 
 ## Deployment
 
-- Vercel is connected to GitHub push auto-deploy.
-- Pushing to the GitHub repository deploys the web app automatically through Vercel.
-- The workflow's `Deploy refreshed web` step can remain skipped when `VERCEL_TOKEN` is empty, as long as the GitHub-to-Vercel integration is active.
+- Vercel is connected to GitHub push auto-deploy for real app/code changes.
+- Scheduled cache refreshes commit `web/public/api/*.json` only. `web/vercel.json` ignores those data-only builds so Vite is not rebuilt every two hours (a rebuild without `VITE_SUPABASE_*` previously took login offline).
+- After a data-only skip, the already-deployed app loads market JSON from GitHub (`raw.githubusercontent.com/.../web/public/api/`), with same-origin `/api/*.json` as fallback.
+- Full app builds refuse to proceed when `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` are missing (`web/scripts/assert-vite-supabase-env.mjs`).
+- The refresh workflow smoke-checks production for an inlined `supabase.co` host after each cache publish and emails admins on failure.
 - Admin market-event edits are saved by `web/api/admin/market-events.js`, which commits both `web/public/api/market-events.json` and `data/cache/market-events.json` through the GitHub API. Set `GITHUB_ACTIONS_TOKEN` with Actions and contents write access, `GITHUB_REPO`, and `GITHUB_REFRESH_REF` in Vercel.
 
 ## Email Notifications
