@@ -1172,14 +1172,18 @@
 
 .confirm-modal.strategy-criteria-modal .strategy-criteria-intro {
   flex: 0 0 auto;
+  display: grid;
+  gap: 8px;
   margin: 0 0 24px;
   padding-right: 38px;
-  color: var(--text);
-  font: inherit;
+}
+
+.confirm-modal.strategy-criteria-modal .strategy-criteria-intro p {
+  margin: 0;
+  color: var(--muted);
   font-size: 13px;
   font-weight: 400;
-  line-height: 1.16;
-  letter-spacing: -0.01em;
+  line-height: 1.55;
   word-break: keep-all;
   overflow-wrap: break-word;
 }
@@ -1328,9 +1332,10 @@
   .confirm-modal.strategy-criteria-modal .strategy-criteria-intro {
     margin: 0 0 20px;
     padding-right: 34px;
+  }
+
+  .confirm-modal.strategy-criteria-modal .strategy-criteria-intro p {
     font-size: 12.5px;
-    font-weight: 400;
-    line-height: 1.28;
   }
 
   .strategy-criteria-modal-table-wrap {
