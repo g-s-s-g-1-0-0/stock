@@ -1165,30 +1165,32 @@
   background: rgba(248, 250, 252, 0.72);
 }
 
-.strategy-criteria-modal-table > tbody > tr.strategy-criteria-preface-row > th,
-.strategy-criteria-modal-table > tbody > tr.strategy-criteria-preface-row > td {
-  background: #fffbeb;
-  padding-top: 14px;
-  padding-bottom: 14px;
-}
-
-.strategy-criteria-modal-table > tbody > tr.strategy-criteria-preface-row > th {
-  vertical-align: top;
-  padding-top: 16px;
-}
-
-.strategy-criteria-preface-copy {
-  display: grid;
-  gap: 6px;
-}
-
-.strategy-criteria-preface-copy .strategy-criteria-summary {
-  color: var(--text);
-}
-
 .strategy-criteria-modal-table > tbody > tr:last-child > th,
 .strategy-criteria-modal-table > tbody > tr:last-child > td {
   border-bottom: 0;
+}
+
+.strategy-criteria-intro {
+  margin: -12px 0 20px;
+  padding-right: 38px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.65;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.strategy-criteria-intro p {
+  margin: 0;
+}
+
+.strategy-criteria-intro p + p {
+  margin-top: 8px;
+}
+
+.strategy-criteria-intro strong {
+  font-weight: 700;
+  color: inherit;
 }
 
 .strategy-criteria-modal-table > thead th:first-child,
@@ -1274,11 +1276,6 @@
   color: #334155;
 }
 
-.strategy-criteria-label-note {
-  background: #ffedd5;
-  color: #9a3412;
-}
-
 .strategy-criteria-value {
   margin: 0;
   color: var(--text);
@@ -1330,6 +1327,12 @@
     margin-bottom: 14px;
     padding-right: 34px;
     font-size: 16px;
+  }
+
+  .strategy-criteria-intro {
+    margin: -4px 0 14px;
+    padding-right: 34px;
+    font-size: 12.5px;
   }
 
   .strategy-criteria-modal-table-wrap {

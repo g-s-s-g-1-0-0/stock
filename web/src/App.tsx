@@ -1989,15 +1989,6 @@ function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing'
 
 type StrategyCriteriaRow = { label: string; value: string | string[] }
 
-const strategyCriteriaPreface: StrategyCriteriaRow = {
-  label: '참고',
-  value: [
-    '이 전략은 공포장에서만 들어가서 매수 빈도가 낮고, 대기 구간이 길어질 수 있습니다. 몇 년 동안 여러 전략을 테스트해 봤지만, 지루하더라도 리스크가 적고 수익률을 극대화하기에 가장 좋은 전략이라 판단하고 있습니다.',
-    '매수 대기 중에는 현금을 그냥 두기보다, 같은 증권 계좌 안에서 원화·외화 RP로 소액 이자를 받는 편을 권합니다.',
-    'RP에도 리스크는 있지만 주식 대비 상대적으로 낮은 편입니다. RP에 대한 자세한 방법은 이용 중인 증권사로 「OO증권 RP 투자」를 검색해 자료를 참고하세요.',
-  ],
-}
-
 const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string, StrategyCriteriaRow[]>> = {
   swing: {
     '1': [
@@ -2387,7 +2378,6 @@ function StrategyCriteriaModal({
 }
 
 function strategyCriteriaLabelTone(label: string) {
-  if (label.startsWith('참고') || label.startsWith('기본')) return 'note'
   if (label.startsWith('익절') || label.startsWith('청산')) return 'take-profit'
   if (label.startsWith('손절')) return 'stop-loss'
   if (label.startsWith('진입') || label.startsWith('추가') || label.startsWith('시즌') || label.startsWith('대상')) return 'entry'
@@ -2396,9 +2386,6 @@ function strategyCriteriaLabelTone(label: string) {
 
 function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentType }) {
   const strategyCriteriaRows = strategyCriteriaRowsByInvestmentType[investmentType]
-  const prefaceLines = Array.isArray(strategyCriteriaPreface.value)
-    ? strategyCriteriaPreface.value
-    : [strategyCriteriaPreface.value]
 
   return (
     <div className="strategy-criteria-modal-table-wrap">
@@ -2412,20 +2399,6 @@ function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentT
             </tr>
           </thead>
           <tbody>
-            <tr className="strategy-criteria-preface-row">
-              <th scope="row">
-                <span className={`strategy-criteria-label strategy-criteria-label-${strategyCriteriaLabelTone(strategyCriteriaPreface.label)}`}>
-                  {strategyCriteriaPreface.label}
-                </span>
-              </th>
-              <td colSpan={2}>
-                <div className="strategy-criteria-preface-copy">
-                  {prefaceLines.map((line) => (
-                    <p className="strategy-criteria-summary" key={line}>{line}</p>
-                  ))}
-                </div>
-              </td>
-            </tr>
             {strategyFilters.map((code) => (
               <tr key={code}>
                 <th scope="row">
@@ -2463,6 +2436,18 @@ function StrategyCriteriaContent({ investmentType }: { investmentType: Investmen
   return (
     <>
       <h3 id="strategy-criteria-title">{investmentProfileLabel(investmentType)} 전략별 매수·청산 기준</h3>
+      <div className="strategy-criteria-intro">
+        <p>
+          이 전략은 <strong>공포장에서만</strong> 들어가서 매수 빈도가 낮고, 대기 구간이 길어질 수 있습니다.
+          몇 년 동안 여러 전략을 테스트해 봤지만, 지루하더라도 <strong>리스크가 적고 수익률을 극대화</strong>하기에
+          가장 좋은 전략이라 판단하고 있습니다.
+        </p>
+        <p>
+          매수 대기 중에는 현금을 그냥 두기보다, 같은 증권 계좌 안에서 <strong>원화·외화 RP</strong>로
+          소액 이자를 받는 편을 권합니다. RP에도 리스크는 있지만 주식 대비 상대적으로 낮은 편입니다.
+          RP에 대한 자세한 방법은 이용 중인 증권사로 <strong>「OO증권 RP 투자」</strong>를 검색해 자료를 참고하세요.
+        </p>
+      </div>
       <StrategyCriteriaTable investmentType={investmentType} />
     </>
   )
