@@ -2445,6 +2445,8 @@ function StrategyCriteriaContent({ investmentType }: { investmentType: Investmen
         <p>
           매수 대기 중에는 현금을 그냥 두기보다, 같은 증권 계좌 안에서 <strong>원화·외화 RP</strong>로
           소액 이자를 받는 편을 권합니다. RP에도 리스크는 있지만 주식 대비 상대적으로 낮은 편입니다.
+        </p>
+        <p>
           RP에 대한 자세한 방법은 이용 중인 증권사로 <strong>「OO증권 RP 투자」</strong>를 검색해 자료를 참고하세요.
         </p>
       </div>
