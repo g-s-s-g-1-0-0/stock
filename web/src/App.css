@@ -1170,8 +1170,9 @@
   border-bottom: 0;
 }
 
-.strategy-criteria-intro {
-  margin: 0 0 28px;
+.confirm-modal.strategy-criteria-modal .strategy-criteria-intro {
+  flex: 0 0 auto;
+  margin: 0 0 24px;
   padding-right: 38px;
   color: var(--text);
   font-size: 13px;
@@ -1321,7 +1322,7 @@
     font-size: 16px;
   }
 
-  .strategy-criteria-intro {
+  .confirm-modal.strategy-criteria-modal .strategy-criteria-intro {
     margin: 0 0 20px;
     padding-right: 34px;
     font-size: 12.5px;
