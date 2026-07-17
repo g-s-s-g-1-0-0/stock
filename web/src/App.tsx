@@ -1755,9 +1755,21 @@ function normalizeQuery(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, '')
 }
 
+function shareClassLabel(name: string) {
+  const classMatch = name.match(/\bClass\s+([A-Z])\b/i)
+  const seriesMatch = name.match(/\bSeries\s+([A-Z0-9]+)\b/i)
+  const preferred = /\bPreferred\b|\bMandatory Convertible\b|\bPref\b/i.test(name)
+  const labels: string[] = []
+  if (classMatch) labels.push(`Class ${classMatch[1].toUpperCase()}`)
+  if (seriesMatch && preferred) labels.push(`Series ${seriesMatch[1].toUpperCase()} Pref`)
+  else if (preferred && !classMatch) labels.push('Preferred')
+  return labels.join(' ')
+}
+
 function displayStockName(name: string) {
   let value = name.trim()
   if (!value) return '-'
+  const label = shareClassLabel(value)
 
   for (const marker of [
     ' - American Depositary Shares',
@@ -1768,6 +1780,14 @@ function displayStockName(name: string) {
     ' American Depository',
     ' Depositary Shares',
     ' Depository Shares',
+    ' Class A Common Stock',
+    ' Class B Common Stock',
+    ' Class C Common Stock',
+    ' Class A Capital Stock',
+    ' Class B Capital Stock',
+    ' Class C Capital Stock',
+    ' Common Stock',
+    ' Capital Stock',
     ' ADS',
   ]) {
     if (value.includes(marker)) {
@@ -1775,15 +1795,29 @@ function displayStockName(name: string) {
     }
   }
 
+  value = value
+    .replace(/\bClass\s+[A-Z]\b/gi, ' ')
+    .replace(/\bSeries\s+[A-Z0-9]+\b/gi, ' ')
+    .replace(/\bMandatory Convertible\b/gi, ' ')
+    .replace(/\bPreferred Stock\b/gi, ' ')
+    .replace(/\bPreferred\b/gi, ' ')
+    .replace(/\bPref\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/^[\s,-]+|[\s,-]+$/g, '')
+
   for (const suffix of [', Ltd.', ' Ltd.', ', Inc.', ' Inc.', ', Corp.', ' Corp.', ', Co.', ' Co.']) {
     const index = value.indexOf(suffix)
     if (index !== -1) {
-      value = value.slice(0, index + suffix.length).trim()
+      value = value.slice(0, index).trim()
       break
     }
   }
 
-  return value
+  value = value.replace(/\s+/g, ' ').replace(/^[\s,-]+|[\s,-]+$/g, '')
+  if (label && !new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i').test(value)) {
+    value = `${value} ${label}`.trim()
+  }
+  return value || '-'
 }
 
 const TICKER_ALIASES: Record<string, string> = {

@@ -201,7 +201,7 @@
     },
     {
       "ticker": "ASTS",
-      "name": "AST SpaceMobile",
+      "name": "AST SpaceMobile Class A",
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
@@ -233,7 +233,7 @@
     },
     {
       "ticker": "BE",
-      "name": "Bloom Energy",
+      "name": "Bloom Energy Class A",
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
@@ -361,7 +361,7 @@
     },
     {
       "ticker": "LPTH",
-      "name": "LightPath Technologies",
+      "name": "LightPath Technologies Class A",
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
@@ -393,7 +393,7 @@
     },
     {
       "ticker": "NBIS",
-      "name": "Nebius Group",
+      "name": "Nebius Group Class A",
       "market": "US",
       "fairPrice": "$150.00 ~ $210.00",
       "fairPriceReason": null,
@@ -409,7 +409,7 @@
     },
     {
       "ticker": "PL",
-      "name": "Planet Labs PBC",
+      "name": "Planet Labs PBC Class A",
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
@@ -457,7 +457,7 @@
     },
     {
       "ticker": "SNDK",
-      "name": "Sandisk",
+      "name": "Sandisk Corporation When-Issued",
       "market": "US",
       "fairPrice": "$287.70 ~ $431.55",
       "fairPriceReason": null,
@@ -569,7 +569,7 @@
     },
     {
       "ticker": "VRT",
-      "name": "Vertiv Holdings, LLC",
+      "name": "Vertiv Holdings, LLC Class A",
       "market": "US",
       "fairPrice": "$119.40 ~ $159.20",
       "fairPriceReason": null,

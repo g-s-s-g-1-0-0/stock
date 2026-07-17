@@ -42,25 +42,54 @@ def fetch_bytes(url: str) -> bytes:
         return response.read()
 
 
+def share_class_label(name: str) -> str:
+    """Keep Class A/B/C and preferred Series labels so sibling listings stay distinguishable."""
+
+    class_match = re.search(r"\bClass\s+([A-Z])\b", name, flags=re.IGNORECASE)
+    series_match = re.search(r"\bSeries\s+([A-Z0-9]+)\b", name, flags=re.IGNORECASE)
+    preferred = bool(re.search(r"\bPreferred\b|\bMandatory Convertible\b|\bPref\b", name, flags=re.IGNORECASE))
+    labels: list[str] = []
+    if class_match:
+        labels.append(f"Class {class_match.group(1).upper()}")
+    if series_match and preferred:
+        labels.append(f"Series {series_match.group(1).upper()} Pref")
+    elif preferred and not class_match:
+        labels.append("Preferred")
+    return " ".join(labels)
+
+
 def clean_us_name(name: str) -> str:
-    name = name.strip()
+    original = name.strip()
+    label = share_class_label(original)
+    cleaned = original
+    # Strip share-class phrases first; re-append a short label after boilerplate cleanup.
+    cleaned = re.sub(r"\bClass\s+[A-Z]\b", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\bSeries\s+[A-Z0-9]+\b", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\bMandatory Convertible\b", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\bPreferred Stock\b", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\bPreferred\b", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\bPref\b", "", cleaned, flags=re.IGNORECASE)
     for suffix in [
         " - Common Stock",
         " Common Stock",
         " Ordinary Shares",
-        " Class A",
-        " Class B",
-        " Class C",
+        " - Capital Stock",
+        " Capital Stock",
     ]:
-        name = name.replace(suffix, "")
-    name = re.sub(r"\s+-\s*$", "", name).strip()
-    name = re.sub(r"\s+-\s+\([^)]*\)$", "", name).strip()
-    name = re.sub(r"\s+\([^)]*\)$", "", name).strip()
-    name = re.sub(r"\s+Common Shares(?:\s+of\s+Beneficial\s+Interest)?$", "", name, flags=re.IGNORECASE).strip()
-    name = re.sub(r"\s+American Depositary Shares.*$", "", name, flags=re.IGNORECASE).strip()
-    name = re.sub(r"\s+Depositary Shares.*$", "", name, flags=re.IGNORECASE).strip()
-    name = re.sub(r"\s+Ordinary Share[s]?$", "", name, flags=re.IGNORECASE).strip()
-    name = re.sub(r"\s+New$", "", name, flags=re.IGNORECASE).strip()
+        cleaned = cleaned.replace(suffix, "")
+    cleaned = re.sub(r"\s+-\s*$", "", cleaned).strip()
+    cleaned = re.sub(r"\s+-\s+\([^)]*\)$", "", cleaned).strip()
+    cleaned = re.sub(r"\s+\([^)]*\)$", "", cleaned).strip()
+    cleaned = re.sub(r"\s+Common Shares(?:\s+of\s+Beneficial\s+Interest)?$", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"\s+American Depositary Shares.*$", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(
+        r"\s*-?\s*Depositary Shares(?:\s+representing.*)?$",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    ).strip()
+    cleaned = re.sub(r"\s+Ordinary Share[s]?$", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"\s+New$", "", cleaned, flags=re.IGNORECASE).strip()
     suffix_patterns = (
         r",?\s+Incorporated\.?$",
         r",?\s+Corporation\.?$",
@@ -77,11 +106,14 @@ def clean_us_name(name: str) -> str:
     while changed:
         changed = False
         for pattern in suffix_patterns:
-            cleaned = re.sub(pattern, "", name, flags=re.IGNORECASE).strip(" ,-")
-            if cleaned != name and cleaned:
-                name = cleaned
+            next_name = re.sub(pattern, "", cleaned, flags=re.IGNORECASE).strip(" ,-")
+            if next_name != cleaned and next_name:
+                cleaned = next_name
                 changed = True
-    return " ".join(name.split())
+    cleaned = " ".join(cleaned.split()).strip(" -")
+    if label and not re.search(re.escape(label), cleaned, flags=re.IGNORECASE):
+        cleaned = f"{cleaned} {label}".strip()
+    return cleaned
 
 
 def load_us_stocks() -> list[dict[str, str]]:

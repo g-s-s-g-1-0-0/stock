@@ -949,7 +949,7 @@
     },
     "ASTS": {
       "ticker": "ASTS",
-      "name": "AST SpaceMobile",
+      "name": "AST SpaceMobile Class A",
       "market": "US",
       "updatedAt": "2026-07-17T04:55:39+00:00",
       "dailyPriceDate": "2026-07-16",
@@ -1089,7 +1089,7 @@
     },
     "BE": {
       "ticker": "BE",
-      "name": "Bloom Energy",
+      "name": "Bloom Energy Class A",
       "market": "US",
       "updatedAt": "2026-07-17T04:55:39+00:00",
       "dailyPriceDate": "2026-07-16",
@@ -1649,7 +1649,7 @@
     },
     "LPTH": {
       "ticker": "LPTH",
-      "name": "LightPath Technologies",
+      "name": "LightPath Technologies Class A",
       "market": "US",
       "updatedAt": "2026-07-17T04:55:41+00:00",
       "dailyPriceDate": "2026-07-16",
@@ -1789,7 +1789,7 @@
     },
     "NBIS": {
       "ticker": "NBIS",
-      "name": "Nebius Group",
+      "name": "Nebius Group Class A",
       "market": "US",
       "updatedAt": "2026-07-17T04:55:41+00:00",
       "dailyPriceDate": "2026-07-16",
@@ -1859,7 +1859,7 @@
     },
     "PL": {
       "ticker": "PL",
-      "name": "Planet Labs PBC",
+      "name": "Planet Labs PBC Class A",
       "market": "US",
       "updatedAt": "2026-07-17T04:55:41+00:00",
       "dailyPriceDate": "2026-07-16",
@@ -2069,7 +2069,7 @@
     },
     "SNDK": {
       "ticker": "SNDK",
-      "name": "Sandisk",
+      "name": "Sandisk Corporation When-Issued",
       "market": "US",
       "updatedAt": "2026-07-17T04:55:42+00:00",
       "dailyPriceDate": "2026-07-16",
@@ -2559,7 +2559,7 @@
     },
     "VRT": {
       "ticker": "VRT",
-      "name": "Vertiv Holdings, LLC",
+      "name": "Vertiv Holdings, LLC Class A",
       "market": "US",
       "updatedAt": "2026-07-17T04:55:43+00:00",
       "dailyPriceDate": "2026-07-16",

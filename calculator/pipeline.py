@@ -174,6 +174,22 @@ def valuation_publish_iso(today: date | None = None) -> str:
     return datetime.combine(publish_date, time.min, tzinfo=KST).astimezone(timezone.utc).isoformat(timespec="seconds")
 
 
+def share_class_label(name: str) -> str:
+    """Keep Class A/B/C and preferred Series labels so sibling listings stay distinguishable."""
+
+    class_match = re.search(r"\bClass\s+([A-Z])\b", name, flags=re.IGNORECASE)
+    series_match = re.search(r"\bSeries\s+([A-Z0-9]+)\b", name, flags=re.IGNORECASE)
+    preferred = bool(re.search(r"\bPreferred\b|\bMandatory Convertible\b|\bPref\b", name, flags=re.IGNORECASE))
+    labels: list[str] = []
+    if class_match:
+        labels.append(f"Class {class_match.group(1).upper()}")
+    if series_match and preferred:
+        labels.append(f"Series {series_match.group(1).upper()} Pref")
+    elif preferred and not class_match:
+        labels.append("Preferred")
+    return " ".join(labels)
+
+
 def clean_stock_name(name: Any) -> str:
     value = str(name or "").strip()
     if not value:
@@ -181,13 +197,19 @@ def clean_stock_name(name: Any) -> str:
 
     value = re.sub(r"\s+", " ", value).strip()
     value = re.sub(r"\s+-\s*$", "", value).strip()
+    label = share_class_label(value)
 
     for marker in (
         " American Depositary",
         " Depositary Shares",
         " Class A Common Stock",
         " Class B Common Stock",
+        " Class C Common Stock",
+        " Class A Capital Stock",
+        " Class B Capital Stock",
+        " Class C Capital Stock",
         " Common Stock",
+        " Capital Stock",
         " common shares",
         " ordinary shares",
         " ADS",
@@ -195,6 +217,12 @@ def clean_stock_name(name: Any) -> str:
         if marker in value:
             value = value.split(marker, 1)[0].strip()
 
+    value = re.sub(r"\bClass\s+[A-Z]\b", "", value, flags=re.IGNORECASE)
+    value = re.sub(r"\bSeries\s+[A-Z0-9]+\b", "", value, flags=re.IGNORECASE)
+    value = re.sub(r"\bMandatory Convertible\b", "", value, flags=re.IGNORECASE)
+    value = re.sub(r"\bPreferred Stock\b", "", value, flags=re.IGNORECASE)
+    value = re.sub(r"\bPreferred\b", "", value, flags=re.IGNORECASE)
+    value = re.sub(r"\bPref\b", "", value, flags=re.IGNORECASE)
     value = re.sub(r"\bWhen-Issued\b", "", value, flags=re.IGNORECASE).strip(" ,-")
     value = re.sub(r"\s+-\s*$", "", value).strip()
 
@@ -216,6 +244,9 @@ def clean_stock_name(name: Any) -> str:
             if cleaned != value and cleaned:
                 value = cleaned
                 changed = True
+    value = re.sub(r"\s+", " ", value).strip(" ,-")
+    if label and not re.search(re.escape(label), value, flags=re.IGNORECASE):
+        value = f"{value} {label}".strip()
 
     return value or "-"
 
