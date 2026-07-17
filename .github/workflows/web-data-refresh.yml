@@ -309,6 +309,24 @@ jobs:
         working-directory: web
         run: npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
 
+      - name: Verify production auth config
+        if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' }}
+        id: verify-auth-config
+        continue-on-error: true
+        run: |
+          # Give the production alias a moment to point at the new deployment.
+          sleep 15
+          python scripts/verify_web_auth_config.py
+
+      - name: Notify admins if auth config is missing
+        if: ${{ env.SKIP_REFRESH != 'true' && env.VERCEL_TOKEN != '' && steps.verify-auth-config.outcome == 'failure' }}
+        continue-on-error: true
+        run: >
+          python scripts/web_refresh_notifications.py admin-failure
+          --message "프로덕션 웹 배포 후 Supabase 로그인 설정(VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)이 빌드에 반영되지 않았습니다.
+          일반 사용자는 로그인할 수 없습니다. Vercel에서 Redeploy로 복구한 뒤, Actions vercel deploy 빌드에 VITE_ 환경변수가 주입되는지 확인해 주세요.
+          site=${{ secrets.WEB_APP_URL }}"
+
       - name: Notify admins on failure
         if: failure()
         continue-on-error: true

@@ -6924,7 +6924,9 @@ function App() {
         ? !isLoginEmailValid || loginPassword.trim().length < 8 || loginPasswordConfirm.trim().length < 8 || loginPassword.trim() !== loginPasswordConfirm.trim()
         : !isLoginEmailValid || loginPassword.trim().length < 8
   const serviceStatusMessage = !isSupabaseConfigured
-    ? 'Supabase 프로젝트 URL과 anon key를 .env에 입력해 주세요.'
+    ? (import.meta.env.DEV
+      ? 'Supabase 프로젝트 URL과 anon key를 .env에 입력해 주세요.'
+      : '일시적으로 로그인을 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.')
     : !isRemoteDataReady
       ? '계정 데이터를 불러오는 중입니다.'
       : ''
@@ -7390,7 +7392,11 @@ function App() {
     const passwordConfirm = loginPasswordConfirm.trim()
 
     if (!supabase) {
-      setLoginError('Supabase 연결값이 설정되지 않았습니다.\n.env에 VITE_SUPABASE_URL과 VITE_SUPABASE_ANON_KEY를 입력해 주세요.')
+      setLoginError(
+        import.meta.env.DEV
+          ? 'Supabase 연결값이 설정되지 않았습니다.\n.env에 VITE_SUPABASE_URL과 VITE_SUPABASE_ANON_KEY를 입력해 주세요.'
+          : '일시적으로 로그인을 사용할 수 없습니다.\n잠시 후 다시 시도해 주세요.',
+      )
       return
     }
 
@@ -8085,6 +8091,28 @@ function App() {
     document.addEventListener('keydown', handleModalEscape)
     return () => document.removeEventListener('keydown', handleModalEscape)
   })
+
+  useEffect(() => {
+    if (isSupabaseConfigured || import.meta.env.DEV) return
+    if (typeof window === 'undefined') return
+    const storageKey = 'gongsu-supabase-missing-alert-at'
+    const lastRaw = window.localStorage.getItem(storageKey)
+    const lastAt = lastRaw ? Number(lastRaw) : 0
+    if (Number.isFinite(lastAt) && Date.now() - lastAt < 6 * 60 * 60 * 1000) return
+
+    window.localStorage.setItem(storageKey, String(Date.now()))
+    void fetch('/api/admin/runtime-alert', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        code: 'supabase_client_missing',
+        hostname: window.location.hostname,
+        href: window.location.href,
+      }),
+    }).catch(() => {
+      // Best-effort admin paging; ignore network failures.
+    })
+  }, [])
 
   useEffect(() => {
     setRefreshDataMessage('')
@@ -9709,7 +9737,13 @@ function App() {
                 <p>{authMode === 'login' ? '가입한 이메일과 비밀번호로 로그인해 주세요.' : authMode === 'signup' ? '이메일 인증으로 계정을 만들어 주세요.' : authMode === 'reset' ? '새 비밀번호를 입력해 변경을 완료해 주세요.' : '가입한 이메일을 입력하면 비밀번호 재설정 안내를 받을 수 있습니다.'}</p>
                 {serviceStatusMessage && (
                   <div className="recovery-sent-card">
-                    <strong>{isSupabaseConfigured ? '계정 동기화 중입니다.' : '서비스 계정 설정이 필요합니다.'}</strong>
+                    <strong>
+                      {isSupabaseConfigured
+                        ? '계정 동기화 중입니다.'
+                        : import.meta.env.DEV
+                          ? '서비스 계정 설정이 필요합니다.'
+                          : '로그인 일시 불가'}
+                    </strong>
                     <span>{serviceStatusMessage}</span>
                   </div>
                 )}

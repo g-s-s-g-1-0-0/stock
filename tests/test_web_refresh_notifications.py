@@ -91,6 +91,8 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn("git diff --quiet -- data/cache data/history data/search_universe.json web/public/api", workflow)
         self.assertIn("git add data/cache data/history data/search_universe.json web/public/api", workflow)
         self.assertIn('git commit -m "Update scheduled web data caches"', workflow)
+        self.assertIn("python scripts/verify_web_auth_config.py", workflow)
+        self.assertIn("프로덕션 웹 배포 후 Supabase 로그인 설정", workflow)
 
 class WebRefreshNotificationsTest(unittest.TestCase):
     def setUp(self) -> None:
