@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15262,
-    "industryEnrichedAt": "2026-07-15T16:49:15+00:00",
-    "industryEnrichedTickers": 30
+    "industryEnrichedAt": "2026-07-17T05:43:45+00:00",
+    "industryEnrichedTickers": 1
   },
   "rows": [
     {
@@ -113227,7 +113227,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "AI, 광고, 클라우드, Waymo, TPU",
-      "rawIndustry": "-",
+      "rawIndustry": "Communication Services | Internet Content &amp; Information",
       "products": "-",
       "updatedAt": "2026-07-15T16:48:58+00:00"
     },
