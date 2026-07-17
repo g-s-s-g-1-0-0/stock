@@ -30,8 +30,8 @@ const CONSTANTS = {
     adxD1:     22,
   },
   STRATEGY: {
-    VIX_MIN:         30,
-    VIX_RELEASE:     23,
+    VIX_MIN:         22,
+    VIX_RELEASE:     18,
     RSI_MAX:         35,
     CCI_MIN:        -150,
     LR_TOUCH_RATIO:  1.05,
@@ -673,7 +673,7 @@ function clearExitReason(stockName) {
 /**
  * 매수 조건 평가 — 전략 1 > 전략 2
  *
- * 1: MA200 아래 + VIX≥30 + 과매도 + LR 추세선 터치 + QQQ 하락장(<-3%)
+ * 1: MA200 아래 + VIX≥22 + 과매도 + LR 추세선 터치 + QQQ 하락장(<-3%)
  * 2: 시즌 열림 + 회복장 + QQQ≤차단선 + 경고선 미도달 + MA20/60/144/200 터치
  */
 function evaluateBuyCondition(ind, vixD, ixicDist, ixicFilterActive, isHolding = false, holdingStrategyType = null, allProperties = null, nasdaqBuyBlockMax = null) {

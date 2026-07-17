@@ -1997,7 +1997,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         value: [
           'QQQ 이격도 < -3%',
           '종목 현재가 < MA200',
-          'VIX >= 30',
+          'VIX >= 22',
           'RSI < 35 또는 CCI < -150',
           'LR 추세선 방어',
         ],
@@ -2007,7 +2007,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         value: [
           'QQQ는 나스닥100 대표 ETF라 시장 전체 하락 여부를 보는 기준입니다.',
           'MA200은 최근 약 1년 평균 가격입니다. 현재가가 그 아래에 있어야 장기 평균보다 싸진 종목으로 봅니다.',
-          'VIX는 공포지수입니다. 30 이상이면 투자자들이 겁을 많이 내는 급락장에 가깝습니다.',
+          'VIX는 공포지수입니다. 22 이상이면 변동성이 눈에 띄게 높아진 구간으로 봅니다.',
           'RSI와 CCI는 주가가 단기간에 너무 많이 팔렸는지 보는 지표입니다. 둘 중 하나라도 과매도이면 반등 후보로 봅니다.',
           'LR 추세선은 최근 하락 흐름의 지지선입니다. 저가가 이 선 근처에서 버티면 무너지는 중이 아니라 지지받는 중으로 봅니다.',
         ],
@@ -2089,7 +2089,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         value: [
           'QQQ 이격도 < -3%',
           '종목 현재가 < MA200',
-          'VIX >= 30',
+          'VIX >= 22',
           'RSI < 35 또는 CCI < -150',
           'LR 추세선 방어',
         ],
@@ -2099,7 +2099,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         value: [
           'QQQ는 나스닥100 대표 ETF라 시장 전체 하락 여부를 보는 기준입니다.',
           'MA200은 최근 약 1년 평균 가격입니다. 현재가가 그 아래에 있어야 장기 평균보다 싸진 종목으로 봅니다.',
-          'VIX는 공포지수입니다. 30 이상이면 투자자들이 겁을 많이 내는 급락장에 가깝습니다.',
+          'VIX는 공포지수입니다. 22 이상이면 변동성이 눈에 띄게 높아진 구간으로 봅니다.',
           'RSI와 CCI는 주가가 단기간에 너무 많이 팔렸는지 보는 지표입니다. 둘 중 하나라도 과매도이면 반등 후보로 봅니다.',
           'LR 추세선은 최근 하락 흐름의 지지선입니다. 저가가 이 선 근처에서 버티면 무너지는 중이 아니라 지지받는 중으로 봅니다.',
           '가치투자에서는 이 조건을 장기 보유 후보를 싸게 담는 신호로 사용합니다.',

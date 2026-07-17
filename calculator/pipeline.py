@@ -897,7 +897,14 @@ def latest_technical_row(
         else "QQQ ≤ 매수 차단선"
     )
     strategy_labels = {
-        "1": ["현재가 < MA200", "VIX >= 30", "RSI < 35 또는 CCI < -150", "LR 추세선 상승", "저가 추세선 터치", downtrend_label],
+        "1": [
+            "현재가 < MA200",
+            f"VIX >= {float(STRATEGY_RULES['VIX_MIN']):.0f}",
+            "RSI < 35 또는 CCI < -150",
+            "LR 추세선 상승",
+            "저가 추세선 터치",
+            downtrend_label,
+        ],
         "2": ["시즌 열림", "회복장", buy_block_label, "MA20/60/144/200 터치"],
     }
     condition_summaries = []

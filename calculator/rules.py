@@ -12,8 +12,8 @@ from typing import Any
 
 
 STRATEGY_RULES: dict[str, float | int] = {
-    "VIX_MIN": 30,
-    "VIX_RELEASE": 23,
+    "VIX_MIN": 22,
+    "VIX_RELEASE": 18,
     "RSI_MAX": 35,
     "CCI_MIN": -150,
     "LR_TOUCH_RATIO": 1.05,
