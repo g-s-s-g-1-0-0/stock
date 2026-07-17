@@ -1165,6 +1165,23 @@
   background: rgba(248, 250, 252, 0.72);
 }
 
+.strategy-criteria-modal-table > tbody > tr.strategy-criteria-preface-row > td {
+  background: #fffbeb;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+.strategy-criteria-preface-item {
+  grid-template-columns: 84px minmax(0, 1fr);
+}
+
+.strategy-criteria-value-wrap,
+.strategy-criteria-value-wrap .strategy-criteria-value-line {
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
 .strategy-criteria-modal-table > tbody > tr:last-child > th,
 .strategy-criteria-modal-table > tbody > tr:last-child > td {
   border-bottom: 0;
@@ -1251,6 +1268,11 @@
 .strategy-criteria-label-time {
   background: #f1f5f9;
   color: #334155;
+}
+
+.strategy-criteria-label-note {
+  background: #ffedd5;
+  color: #9a3412;
 }
 
 .strategy-criteria-value {

@@ -1989,6 +1989,16 @@ function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing'
 
 type StrategyCriteriaRow = { label: string; value: string | string[] }
 
+const strategyCriteriaPreface: StrategyCriteriaRow = {
+  label: '참고',
+  value: [
+    '이 전략은 공포장에서만 들어가서 매수 빈도가 낮고, 대기 구간이 길어질 수 있습니다.',
+    '매수 대기 중에는 현금을 그냥 두기보다, 같은 증권 계좌 안에서 원화·외화 RP로 소액 이자를 받는 편을 권합니다.',
+    '현금을 다른 통장으로 빼 두면 신호가 와도 타이밍을 놓치기 쉽습니다. RP는 계좌에 돈을 둔 채로 용돈 벌이 정도를 노리는 용도입니다.',
+    'RP에도 리스크는 있지만 주식 대비 상대적으로 낮은 편입니다. 자세한 방법은 이용 중인 증권사로 「OO증권 RP 투자」를 검색해 자료를 참고하세요.',
+  ],
+}
+
 const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string, StrategyCriteriaRow[]>> = {
   swing: {
     '1': [
@@ -2378,6 +2388,7 @@ function StrategyCriteriaModal({
 }
 
 function strategyCriteriaLabelTone(label: string) {
+  if (label.startsWith('참고') || label.startsWith('기본')) return 'note'
   if (label.startsWith('익절') || label.startsWith('청산')) return 'take-profit'
   if (label.startsWith('손절')) return 'stop-loss'
   if (label.startsWith('진입') || label.startsWith('추가') || label.startsWith('시즌') || label.startsWith('대상')) return 'entry'
@@ -2386,6 +2397,9 @@ function strategyCriteriaLabelTone(label: string) {
 
 function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentType }) {
   const strategyCriteriaRows = strategyCriteriaRowsByInvestmentType[investmentType]
+  const prefaceLines = Array.isArray(strategyCriteriaPreface.value)
+    ? strategyCriteriaPreface.value
+    : [strategyCriteriaPreface.value]
 
   return (
     <div className="strategy-criteria-modal-table-wrap">
@@ -2399,6 +2413,22 @@ function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentT
             </tr>
           </thead>
           <tbody>
+            <tr className="strategy-criteria-preface-row">
+              <td colSpan={3}>
+                <dl className="strategy-criteria-list">
+                  <div className="strategy-criteria-item strategy-criteria-preface-item">
+                    <dt className={`strategy-criteria-label strategy-criteria-label-${strategyCriteriaLabelTone(strategyCriteriaPreface.label)}`}>
+                      {strategyCriteriaPreface.label}
+                    </dt>
+                    <dd className="strategy-criteria-value strategy-criteria-value-wrap">
+                      {prefaceLines.map((line) => (
+                        <span className="strategy-criteria-value-line" key={line}>{line}</span>
+                      ))}
+                    </dd>
+                  </div>
+                </dl>
+              </td>
+            </tr>
             {strategyFilters.map((code) => (
               <tr key={code}>
                 <th scope="row">
