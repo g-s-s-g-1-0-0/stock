@@ -1165,21 +1165,25 @@
   background: rgba(248, 250, 252, 0.72);
 }
 
+.strategy-criteria-modal-table > tbody > tr.strategy-criteria-preface-row > th,
 .strategy-criteria-modal-table > tbody > tr.strategy-criteria-preface-row > td {
   background: #fffbeb;
   padding-top: 14px;
   padding-bottom: 14px;
 }
 
-.strategy-criteria-preface-item {
-  grid-template-columns: 84px minmax(0, 1fr);
+.strategy-criteria-modal-table > tbody > tr.strategy-criteria-preface-row > th {
+  vertical-align: top;
+  padding-top: 16px;
 }
 
-.strategy-criteria-value-wrap,
-.strategy-criteria-value-wrap .strategy-criteria-value-line {
-  white-space: normal;
-  word-break: keep-all;
-  overflow-wrap: break-word;
+.strategy-criteria-preface-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.strategy-criteria-preface-copy .strategy-criteria-summary {
+  color: var(--text);
 }
 
 .strategy-criteria-modal-table > tbody > tr:last-child > th,

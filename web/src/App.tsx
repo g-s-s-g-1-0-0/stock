@@ -2414,19 +2414,17 @@ function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentT
           </thead>
           <tbody>
             <tr className="strategy-criteria-preface-row">
-              <td colSpan={3}>
-                <dl className="strategy-criteria-list">
-                  <div className="strategy-criteria-item strategy-criteria-preface-item">
-                    <dt className={`strategy-criteria-label strategy-criteria-label-${strategyCriteriaLabelTone(strategyCriteriaPreface.label)}`}>
-                      {strategyCriteriaPreface.label}
-                    </dt>
-                    <dd className="strategy-criteria-value strategy-criteria-value-wrap">
-                      {prefaceLines.map((line) => (
-                        <span className="strategy-criteria-value-line" key={line}>{line}</span>
-                      ))}
-                    </dd>
-                  </div>
-                </dl>
+              <th scope="row">
+                <span className={`strategy-criteria-label strategy-criteria-label-${strategyCriteriaLabelTone(strategyCriteriaPreface.label)}`}>
+                  {strategyCriteriaPreface.label}
+                </span>
+              </th>
+              <td colSpan={2}>
+                <div className="strategy-criteria-preface-copy">
+                  {prefaceLines.map((line) => (
+                    <p className="strategy-criteria-summary" key={line}>{line}</p>
+                  ))}
+                </div>
               </td>
             </tr>
             {strategyFilters.map((code) => (
