@@ -1171,19 +1171,13 @@
 }
 
 .strategy-criteria-intro {
-  display: grid;
-  gap: 6px;
   margin: -12px 0 20px;
   padding-right: 38px;
   color: var(--text);
   font-size: 13px;
+  line-height: 1.16;
   word-break: keep-all;
   overflow-wrap: break-word;
-}
-
-.strategy-criteria-intro p {
-  margin: 0;
-  line-height: 1.16;
 }
 
 .strategy-criteria-intro strong {
@@ -1331,10 +1325,7 @@
     margin: -4px 0 14px;
     padding-right: 34px;
     font-size: 12.5px;
-  }
-
-  .strategy-criteria-intro p {
-    line-height: 1.38;
+    line-height: 1.28;
   }
 
   .strategy-criteria-modal-table-wrap {
