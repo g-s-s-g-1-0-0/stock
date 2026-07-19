@@ -2985,6 +2985,11 @@ function technicalMetricTone(label: string, value: string, stock: Stock, apiRow:
     return technicalMovingAverageTone(label, currentPrice, value)
   }
 
+  if (label === '하루 평균 변동폭(ATR%)') return toneByLowerBetter(number, 3, 6)
+  if (label === '52주 신고가 대비') return toneByHigherBetter(number, -8, -25)
+  if (label === '신고가 후 경과일') return number === null ? null : number <= 20 ? 'good' : number <= 60 ? 'neutral' : 'weak'
+  if (label === 'QQQ 대비 상대강도(20일)') return toneByHigherBetter(number, 2, -3)
+
   return null
 }
 
@@ -3928,6 +3933,10 @@ const technicalMetricColumns: TechnicalColumn[] = [
   { label: '144일 이동평균선', tooltip: '최근 144일 평균 가격입니다. 장기 흐름이 바뀌는지 200일선보다 조금 빠르게 볼 때 씁니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 43, 0.78, 0.24, 4)) },
   { label: '200일 이동평균선', tooltip: '최근 200일 평균 가격입니다. 현재가가 이 선 위면 장기 흐름이 좋다고 보는 경우가 많습니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 44, 0.72, 0.28, 4)) },
   { label: '120일 저가 회귀 추세선', tooltip: '최근 120일의 낮은 가격 흐름을 따라 그은 선입니다. 현재가가 위에 있으면 저점이 높아지는 흐름입니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 45, 0.68, 0.34, 4)) },
+  { key: 'ATR (14, %)', label: '하루 평균 변동폭(ATR%)', tooltip: '이 종목이 최근 14일 동안 하루에 평균 몇 % 움직였는지 봅니다. 값이 클수록 크게 출렁이는 종목이라 손절 여유를 더 두거나 수량을 줄이는 편이 안전합니다.', value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 46, 1.5, 5), 2)}%` },
+  { key: '52주 신고가 대비', label: '52주 신고가 대비', tooltip: '최근 1년 최고가에서 지금 얼마나 내려와 있는지 봅니다. 0%에 가까울수록 신고가 부근의 강한 종목이고, -30% 이하면 고점에서 크게 밀린 상태입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 47, -38, 38), 2) + '%' },
+  { key: '52주 신고가 후 경과일', label: '신고가 후 경과일', tooltip: '최근 1년 최고가를 찍은 뒤 며칠이 지났는지 봅니다. 짧을수록 최근까지 신고가를 만들던 강한 흐름입니다.', value: (stock, index) => `${Math.round(technicalNumber(stock, index, 48, 1, 180, 0))}일` },
+  { key: 'QQQ 대비 상대강도 (20일)', label: 'QQQ 대비 상대강도(20일)', tooltip: '최근 20거래일 동안 이 종목이 나스닥(QQQ)보다 얼마나 더 올랐는지(%p) 봅니다. 플러스면 시장보다 강했고, 마이너스면 시장보다 약했다는 뜻입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 49, -12, 24), 2) + '%p' },
   { label: '실적발표일 (한국 시간 기준)', tooltip: '한국 시간 기준 실적 발표일입니다. 실적 전후에는 가격이 크게 움직일 수 있어 주의합니다.', value: (stock) => technicalEarningsDate(stock) },
   { label: '진입가', tooltip: '현재 보유 중인 종목을 산 가격입니다. 보유 전이면 빈 값으로 표시합니다.', value: (stock) => technicalEntryPrice(stock) },
   { label: '진입일', tooltip: '현재 보유 중인 종목을 산 날짜입니다. 보유 전이면 빈 값으로 표시합니다.', value: (stock) => technicalEntryDate(stock) },

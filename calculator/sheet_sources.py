@@ -286,6 +286,84 @@ def calc_adx(rows: list[dict[str, float]], period: int = 14) -> dict[str, float]
     }
 
 
+def calc_atr_pct(rows: list[dict[str, float]], period: int = 14) -> float:
+    trs = []
+    for i in range(1, len(rows)):
+        current = rows[i]
+        prev = rows[i - 1]
+        trs.append(max(
+            current["high"] - current["low"],
+            abs(current["high"] - prev["close"]),
+            abs(current["low"] - prev["close"]),
+        ))
+    if len(trs) < period:
+        return math.nan
+    atr = ema_latest(trs, period)
+    close = rows[-1]["close"]
+    return atr / close * 100 if close else math.nan
+
+
+def calc_high52(rows: list[dict[str, float]]) -> dict[str, float]:
+    window = rows[-252:]
+    highs = [row["high"] for row in window]
+    if not highs:
+        return {"dist52wHigh": math.nan, "daysSince52wHigh": math.nan}
+    peak = max(highs)
+    # 같은 고가가 여러 번이면 가장 최근 발생일 기준
+    peak_index = len(highs) - 1 - highs[::-1].index(peak)
+    close = rows[-1]["close"]
+    return {
+        "dist52wHigh": round((close / peak - 1) * 100, 2) if peak else math.nan,
+        "daysSince52wHigh": len(highs) - 1 - peak_index,
+    }
+
+
+def calc_williams_r(rows: list[dict[str, float]], period: int = 14) -> float:
+    window = rows[-period:]
+    if len(window) < period:
+        return math.nan
+    highest = max(row["high"] for row in window)
+    lowest = min(row["low"] for row in window)
+    close = rows[-1]["close"]
+    if highest - lowest == 0:
+        return 0.0
+    return (highest - close) / (highest - lowest) * -100
+
+
+def calc_obv20(rows: list[dict[str, float]], period: int = 20) -> float:
+    """최근 20일 순매집 강도. 부호 있는 거래량 합을 20일 평균 거래량으로 나눠
+    '평균 거래량 며칠치가 순유입/순유출됐는지'로 읽는다."""
+    if len(rows) < period + 1:
+        return math.nan
+    avg_volume = sum(row["volume"] for row in rows[-period:]) / period
+    if avg_volume <= 0:
+        return math.nan
+    signed = 0.0
+    for i in range(len(rows) - period, len(rows)):
+        change = rows[i]["close"] - rows[i - 1]["close"]
+        if change > 0:
+            signed += rows[i]["volume"]
+        elif change < 0:
+            signed -= rows[i]["volume"]
+    return signed / avg_volume
+
+
+_QQQ_RETURN_CACHE: dict[int, float] = {}
+
+
+def qqq_return_pct(period: int = 20) -> float:
+    """QQQ 최근 period 거래일 수익률(%). 실행당 1회만 조회."""
+    if period not in _QQQ_RETURN_CACHE:
+        try:
+            closes = [row["close"] for row in fetch_ohlcv("QQQ")]
+            _QQQ_RETURN_CACHE[period] = (
+                (closes[-1] / closes[-1 - period] - 1) * 100 if len(closes) > period else math.nan
+            )
+        except Exception:  # noqa: BLE001 - RS는 best-effort 부가 지표
+            _QQQ_RETURN_CACHE[period] = math.nan
+    return _QQQ_RETURN_CACHE[period]
+
+
 def calc_lr(rows: list[dict[str, float]], period: int = 120) -> dict[str, float]:
     lows = [row["low"] for row in rows[-155:]]
     y = lows[-period:]
@@ -319,6 +397,10 @@ def calc_technical_row(ticker: str) -> dict[str, float]:
     ma20 = sum(closes[-20:]) / 20
     ma20_d1 = sum(closes[-21:-1]) / 20
     ma20_prev5 = sum(closes[-25:-5]) / 20
+    high52 = calc_high52(rows)
+    ret20 = (closes[-1] / closes[-21] - 1) * 100 if len(closes) > 20 else math.nan
+    qqq_ret20 = qqq_return_pct(20)
+    rs20 = ret20 - qqq_ret20 if ret20 == ret20 and qqq_ret20 == qqq_ret20 else math.nan
     return {
         "date": latest.get("date", ""),
         "open": open_,
@@ -350,6 +432,12 @@ def calc_technical_row(ticker: str) -> dict[str, float]:
         "cciSlope": round(cci_values[-1] - cci_values[-2], 2),
         "macdSlope": round(macd["macd"] - macd["macdD1"], 2),
         "volRatio": round(latest["volume"] / avg_volume_5, 2),
+        "atrPct": round(calc_atr_pct(rows), 2),
+        "dist52wHigh": high52["dist52wHigh"],
+        "daysSince52wHigh": high52["daysSince52wHigh"],
+        "rs20": round(rs20, 2) if rs20 == rs20 else math.nan,
+        "obv20": round(calc_obv20(rows), 2),
+        "williamsR": round(calc_williams_r(rows), 2),
         **macd,
         **bb,
         **adx,

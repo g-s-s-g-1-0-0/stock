@@ -503,6 +503,36 @@ def fmt_signed_number(value: Any) -> str:
     return f"{parsed:+.2f}"
 
 
+def fmt_percent_plain(value: Any) -> str:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    if parsed != parsed:
+        return "-"
+    return f"{parsed:.2f}%"
+
+
+def fmt_signed_percent_point(value: Any) -> str:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    if parsed != parsed:
+        return "-"
+    return f"{parsed:+.2f}%p"
+
+
+def fmt_trading_days(value: Any) -> str:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return "-"
+    if parsed != parsed:
+        return "-"
+    return f"{int(parsed)}일"
+
+
 def qqq_market_state_snapshot() -> dict[str, Any]:
     qqq = calc_technical_row("QQQ")
     qqq_rows = fetch_us_ohlcv("QQQ", range_value="2y")
@@ -993,6 +1023,12 @@ def latest_technical_row(
         "144일 이동평균선": fmt_price(row["ma144"], stock["market"]),
         "200일 이동평균선": fmt_price(row["ma200"], stock["market"]),
         "120일 저가 회귀 추세선": fmt_price(row["lrTrendline"], stock["market"]),
+        "ATR (14, %)": fmt_percent_plain(row.get("atrPct")),
+        "52주 신고가 대비": fmt_signed_percent(row.get("dist52wHigh")),
+        "52주 신고가 후 경과일": fmt_trading_days(row.get("daysSince52wHigh")),
+        "QQQ 대비 상대강도 (20일)": fmt_signed_percent_point(row.get("rs20")),
+        "OBV 누적강도 (20일)": fmt_signed_number(row.get("obv20")),
+        "Williams %R (14)": fmt_number(row.get("williamsR")),
         "실적발표일 (한국 시간 기준)": earnings_date or "-",
         "진입가": "-",
         "진입일": "-",
