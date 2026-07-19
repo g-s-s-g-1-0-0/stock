@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-07-19T14:56:03+00:00",
-    "lastSuccessfulRun": "2026-07-19T14:56:03+00:00",
+    "updatedAt": "2026-07-19T15:00:49+00:00",
+    "lastSuccessfulRun": "2026-07-19T15:00:49+00:00",
     "failedReason": null
   },
   "rows": [
@@ -22674,6 +22674,13 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "AMACU",
+      "name": "AMR Resources Acquisition Corp - Units",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
       "ticker": "AMAL",
       "name": "Amalgamated Financial",
       "market": "US",
@@ -22931,6 +22938,13 @@
       "market": "US",
       "category": "성장주",
       "industry": "바이오, 제약·헬스케어"
+    },
+    {
+      "ticker": "AMMO",
+      "name": "VistaShares Defense Supercycle ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
     },
     {
       "ticker": "AMN",
@@ -23767,7 +23781,7 @@
     },
     {
       "ticker": "APM",
-      "name": "Aptorum Group Class A",
+      "name": "Aptorum Group",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -36471,13 +36485,6 @@
       "industry": "-"
     },
     {
-      "ticker": "CPRX",
-      "name": "Catalyst Pharmaceuticals",
-      "market": "US",
-      "category": "성장주",
-      "industry": "바이오, 제약·헬스케어"
-    },
-    {
       "ticker": "CPRY",
       "name": "Calamos Russell 2000 Structured Alt Protection ETF January",
       "market": "US",
@@ -37411,6 +37418,13 @@
     {
       "ticker": "CSQ",
       "name": "Calamos Strategic Total Return Fund - Closed End Fund",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
+    },
+    {
+      "ticker": "CSQR",
+      "name": "Csquare",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -39747,6 +39761,13 @@
       "industry": "-"
     },
     {
+      "ticker": "DGAC",
+      "name": "Disciplined Growth Acquisition Class A",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
       "ticker": "DGAP",
       "name": "FT Vest U.S. Equity Buffer & Digital Return ETF - April",
       "market": "US",
@@ -40874,6 +40895,13 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "DPU",
+      "name": "Top KingWin Class A",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
+    },
+    {
       "ticker": "DPZ",
       "name": "Domino's Pizza",
       "market": "US",
@@ -41037,6 +41065,13 @@
     {
       "ticker": "DRMP",
       "name": "Tuttle Capital Memory Stack Income Blast ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "DRMY",
+      "name": "XFUNDS Memory Income ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -45275,13 +45310,6 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
-    },
-    {
-      "ticker": "EVLVW",
-      "name": "Evolv Technologies Holdings, Inc. - Warrant",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
       "ticker": "EVMN",
@@ -50667,6 +50695,13 @@
       "industry": "바이오, 제약·헬스케어"
     },
     {
+      "ticker": "GALX",
+      "name": "VistaShares Space Supercycle ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "GAM",
       "name": "General American Investors",
       "market": "US",
@@ -53885,13 +53920,6 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
-    },
-    {
-      "ticker": "GTLS",
-      "name": "Chart Industries",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "산업재, 장비·제조, 자동화"
     },
     {
       "ticker": "GTM",
@@ -64961,13 +64989,6 @@
       "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
-      "ticker": "LCDL",
-      "name": "GraniteShares 2x Long LCID Daily ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
-    },
-    {
       "ticker": "LCDS",
       "name": "JPMorgan Fundamental Data Science Large Core ETF",
       "market": "US",
@@ -74656,13 +74677,6 @@
       "industry": "바이오, 제약·헬스케어"
     },
     {
-      "ticker": "NUVL",
-      "name": "Nuvalent",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
       "ticker": "NUW",
       "name": "Nuveen AMT-Free Municipal Value Fund",
       "market": "US",
@@ -81761,13 +81775,6 @@
       "industry": "-"
     },
     {
-      "ticker": "PTNM",
-      "name": "Pitanium",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
       "ticker": "PTNQ",
       "name": "Pacer Trendpilot 100 ETF",
       "market": "US",
@@ -82644,7 +82651,7 @@
     },
     {
       "ticker": "QH",
-      "name": "Quhuo Limited - American Depository Shares",
+      "name": "Quhuo Class A",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -82823,6 +82830,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "QMLS",
+      "name": "QumulusAI",
+      "market": "US",
+      "category": "성장주",
+      "industry": "소프트웨어·클라우드, 보안, AI 플랫폼"
     },
     {
       "ticker": "QMMM",
@@ -83292,13 +83306,6 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
-    },
-    {
-      "ticker": "QTEXW",
-      "name": "QTREX Quantum Ltd. - Warrant",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
       "ticker": "QTI",
@@ -86374,6 +86381,13 @@
       "industry": "-"
     },
     {
+      "ticker": "RTOO",
+      "name": "VistaShares Robotics Supercycle ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "RTRE",
       "name": "Rareview Total Return Bond ETF",
       "market": "US",
@@ -89034,6 +89048,20 @@
       "industry": "-"
     },
     {
+      "ticker": "SHOT",
+      "name": "RMG ML Sports Holdings Class A",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
+    },
+    {
+      "ticker": "SHOTR",
+      "name": "RMG ML Sports Holdings - Rights",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
       "ticker": "SHOTU",
       "name": "RMG ML Sports Holdings - Unit",
       "market": "US",
@@ -89725,13 +89753,6 @@
       "market": "US",
       "category": "성장주",
       "industry": "바이오, 제약·헬스케어"
-    },
-    {
-      "ticker": "SLAI",
-      "name": "SOLAI Class A",
-      "market": "US",
-      "category": "성장주",
-      "industry": "소프트웨어·클라우드, 보안, AI 플랫폼"
     },
     {
       "ticker": "SLB",
@@ -92616,6 +92637,13 @@
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "STDN",
+      "name": "Standard Nuclear Class A",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
     },
     {
       "ticker": "STE",
@@ -95567,6 +95595,13 @@
     {
       "ticker": "TKNS",
       "name": "21Shares Active Crypto ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "TKNZ",
+      "name": "T. Rowe Price Active Crypto ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -102313,13 +102348,6 @@
       "industry": "레버리지·테마 ETF"
     },
     {
-      "ticker": "WAI",
-      "name": "Top KingWin",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
       "ticker": "WAL",
       "name": "Western Alliance Bancorporation",
       "market": "US",
@@ -106236,8 +106264,8 @@
       "ticker": "Z",
       "name": "Zillow Group Class C",
       "market": "US",
-      "category": "가치주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
+      "category": "혼합주",
+      "industry": "-"
     },
     {
       "ticker": "ZALT",
