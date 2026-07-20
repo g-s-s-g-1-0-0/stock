@@ -3316,7 +3316,7 @@
 .floating-tooltip {
   position: fixed;
   z-index: 1000;
-  width: 260px;
+  width: 280px;
   max-width: calc(100vw - 32px);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -3329,7 +3329,7 @@
   padding: 10px 12px;
   pointer-events: none;
   text-align: left;
-  white-space: normal;
+  white-space: pre-line;
   transform: translate(-50%, -100%);
 }
 

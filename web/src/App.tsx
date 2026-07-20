@@ -303,6 +303,10 @@ const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
 const FAIR_PRICE_UNAVAILABLE_LABEL = '적자 상태라 판단 불가'
 const ETF_FAIR_PRICE_UNAVAILABLE_LABEL = 'ETF라 판단 불가'
 const FAIR_PRICE_RANGE_TOOLTIP = 'EPS(TTM) × 적용 PER 배수로 계산합니다. 가치주는 10~15배, 혼합주는 15~25배를 적용하고, 성장주는 매출 성장률에 따라 15~20배부터 최대 50~70배까지 적용합니다. EPS가 0 이하이면 판단 불가로 표시합니다.'
+
+function metricTooltip(concept: string, colorGuide: string) {
+  return `${concept}\n\n색 표시: ${colorGuide}`
+}
 const ADMIN_LOGS_PAGE_SIZE = 50
 const BOARD_POST_PAGE_SIZE = 50
 const MAX_BOARD_COMMENTS_PER_POST = 50
@@ -3692,26 +3696,26 @@ const marketEventGroups: MarketEventGroup[] = [
 ]
 
 const valueMetricColumns: Array<{ label: string; value: (metric: ValuationMetric) => string; tooltip?: string }> = [
-  { label: 'Market Cap', value: (metric) => metric.marketCap, tooltip: '회사의 전체 몸값입니다. 큰 회사일수록 안정적일 수 있지만, 같은 업종 대비 너무 비싼지는 함께 봅니다.' },
-  { label: 'Sales', value: (metric) => metric.sales, tooltip: '최근에 벌어들인 매출 규모입니다. 매출이 크더라도 성장률이 낮으면 투자 매력은 줄 수 있습니다.' },
-  { label: 'Sales Q/Q', value: (metric) => metric.salesQoq, tooltip: '직전 분기보다 매출이 얼마나 늘었는지 봅니다. 높으면 최근 흐름이 좋고, 계속 마이너스면 수요 둔화를 의심합니다.' },
-  { label: 'Sales Y/Y (TTM)', value: (metric) => metric.salesYoyTtm, tooltip: '최근 12개월 매출이 1년 전보다 얼마나 늘었는지 봅니다. 성장률이 둔화되면 비싼 가격을 조심해서 봅니다.' },
-  { label: 'Sales past 3/5Y', value: (metric) => metric.salesPastYears, tooltip: '최근 3년/5년 동안 매출이 꾸준히 늘었는지 봅니다. 들쭉날쭉하면 경기 영향을 많이 받는지 확인합니다.' },
-  { label: 'Current Ratio', value: (metric) => metric.currentRatio, tooltip: '1년 안에 갚을 돈을 감당할 여력이 있는지 봅니다. 보통 1 이상이면 단기 자금 사정이 무난하다고 봅니다.' },
-  { label: 'P/FCF', value: (metric) => metric.priceToFreeCashFlow, tooltip: '회사가 실제로 남기는 현금 대비 가격입니다. 낮으면 현금창출력 대비 싸고, 높으면 기대가 많이 반영된 상태일 수 있습니다.' },
-  { label: 'P/S', value: (metric) => metric.priceToSales, tooltip: '매출 대비 회사 가격이 얼마나 비싼지 봅니다. 낮을수록 부담이 작고, 성장주는 업종 평균과 같이 비교합니다.' },
-  { label: 'PER', value: (metric) => metric.per, tooltip: '이익 대비 주가가 얼마나 비싼지 보는 지표입니다. 낮으면 싸 보일 수 있고, 성장률이 낮은데 높으면 부담입니다.' },
-  { label: 'PBR', value: (metric) => metric.pbr, tooltip: '회사가 가진 순자산 대비 주가가 비싼지 봅니다. 수익성이 낮은데 이 값이 높으면 주의가 필요합니다.' },
-  { label: 'ROE', value: (metric) => metric.roe, tooltip: '회사가 가진 돈으로 얼마나 이익을 잘 내는지 봅니다. 높고 꾸준하면 좋지만, 빚 때문에 높아진 건 아닌지 확인합니다.' },
-  { label: 'PEG', value: (metric) => metric.peg, tooltip: '이익 성장 속도 대비 주가가 비싼지 봅니다. 1 안팎이면 무난하고, 높을수록 성장 대비 비싸다는 뜻입니다.' },
-  { label: 'Shares Outstanding', value: (metric) => metric.sharesOutstanding, tooltip: '시장에 풀린 전체 주식 수입니다. 늘어나면 기존 주주의 몫이 줄 수 있고, 줄어들면 주당 가치에 유리합니다.' },
-  { label: 'Gross Margin', value: (metric) => metric.grossMargin, tooltip: '제품을 팔고 원가를 뺀 뒤 얼마나 남는지 봅니다. 높을수록 가격 경쟁력이 좋고, 하락하면 원가 부담을 의심합니다.' },
-  { label: 'Oper. Margin', value: (metric) => metric.operatingMargin, tooltip: '본업에서 매출 대비 얼마나 이익을 남기는지 봅니다. 높고 안정적이면 좋고, 마이너스면 비용 구조를 먼저 봅니다.' },
-  { label: 'EPS (TTM)', value: (metric) => metric.epsTtm, tooltip: '최근 12개월 동안 주식 1주당 벌어들인 이익입니다. 높고 증가하면 이익 체력이 좋다고 봅니다.' },
-  { label: 'EPS Next Y', value: (metric) => metric.epsNextYear, tooltip: '다음 해에 예상되는 1주당 이익입니다. 현재보다 높으면 성장 기대가 있고, 자주 낮아지면 보수적으로 봅니다.' },
-  { label: 'EPS Q/Q (%)', value: (metric) => metric.epsQoq, tooltip: '직전 분기보다 1주당 이익이 얼마나 늘었는지 봅니다. 높으면 최근 실적 흐름이 좋다는 뜻입니다.' },
-  { label: 'Rule of 40%', value: (metric) => metric.ruleOf40, tooltip: '성장률과 이익률을 같이 보는 지표입니다. 40% 이상이면 성장과 수익의 균형이 좋다고 봅니다.' },
-  { label: '실적발표일 (한국 시간 기준)', value: (metric) => metric.earningsDate },
+  { label: 'Market Cap', value: (metric) => metric.marketCap, tooltip: metricTooltip('회사의 전체 몸값입니다. 큰 회사일수록 안정적일 수 있지만, 같은 업종 대비 너무 비싼지는 함께 봅니다.', '10조 이상 빨강, 1조 이상 회색, 그 미만 파랑.') },
+  { label: 'Sales', value: (metric) => metric.sales, tooltip: metricTooltip('최근에 벌어들인 매출 규모입니다. 매출이 크더라도 성장률이 낮으면 투자 매력은 줄 수 있습니다.', '1조 이상 빨강, 1,000억 이상 회색, 그 미만 파랑.') },
+  { label: 'Sales Q/Q', value: (metric) => metric.salesQoq, tooltip: metricTooltip('직전 분기보다 매출이 얼마나 늘었는지 봅니다. 높으면 최근 흐름이 좋고, 계속 마이너스면 수요 둔화를 의심합니다.', '10% 이상 빨강, 0% 이상 회색, 그 미만 파랑.') },
+  { label: 'Sales Y/Y (TTM)', value: (metric) => metric.salesYoyTtm, tooltip: metricTooltip('최근 12개월 매출이 1년 전보다 얼마나 늘었는지 봅니다. 성장률이 둔화되면 비싼 가격을 조심해서 봅니다.', '15% 이상 빨강, 0% 이상 회색, 그 미만 파랑.') },
+  { label: 'Sales past 3/5Y', value: (metric) => metric.salesPastYears, tooltip: metricTooltip('최근 3년/5년 동안 매출이 꾸준히 늘었는지 봅니다. 들쭉날쭉하면 경기 영향을 많이 받는지 확인합니다.', '3·5년 평균 12% 이상 빨강, 0% 이상 회색, 그 미만 파랑.') },
+  { label: 'Current Ratio', value: (metric) => metric.currentRatio, tooltip: metricTooltip('1년 안에 갚을 돈을 감당할 여력이 있는지 봅니다. 보통 100% 이상이면 단기 자금 사정이 무난하다고 봅니다.', '120% 이상 빨강, 70% 이상 회색, 그 미만 파랑.') },
+  { label: 'P/FCF', value: (metric) => metric.priceToFreeCashFlow, tooltip: metricTooltip('회사가 실제로 남기는 현금 대비 가격입니다. 낮으면 현금창출력 대비 싸고, 높으면 기대가 많이 반영된 상태일 수 있습니다.', '20 이하 빨강, 35 이하 회색, 그 초과 파랑.') },
+  { label: 'P/S', value: (metric) => metric.priceToSales, tooltip: metricTooltip('매출 대비 회사 가격이 얼마나 비싼지 봅니다. 낮을수록 부담이 작고, 성장주는 업종 평균과 같이 비교합니다.', '3 이하 빨강, 8 이하 회색, 그 초과 파랑.') },
+  { label: 'PER', value: (metric) => metric.per, tooltip: metricTooltip('이익 대비 주가가 얼마나 비싼지 보는 지표입니다. 낮으면 싸 보일 수 있고, 성장률이 낮은데 높으면 부담입니다.', '25 이하 빨강, 40 이하 회색, 그 초과 파랑.') },
+  { label: 'PBR', value: (metric) => metric.pbr, tooltip: metricTooltip('회사가 가진 순자산 대비 주가가 비싼지 봅니다. 수익성이 낮은데 이 값이 높으면 주의가 필요합니다.', '3 이하 빨강, 8 이하 회색, 그 초과 파랑.') },
+  { label: 'ROE', value: (metric) => metric.roe, tooltip: metricTooltip('회사가 가진 돈으로 얼마나 이익을 잘 내는지 봅니다. 높고 꾸준하면 좋지만, 빚 때문에 높아진 건 아닌지 확인합니다.', '20% 이상 빨강, 10% 이상 회색, 그 미만 파랑.') },
+  { label: 'PEG', value: (metric) => metric.peg, tooltip: metricTooltip('이익 성장 속도 대비 주가가 비싼지 봅니다. 1 안팎이면 무난하고, 높을수록 성장 대비 비싸다는 뜻입니다.', '1.2 이하 빨강, 2 이하 회색, 그 초과 파랑.') },
+  { label: 'Shares Outstanding', value: (metric) => metric.sharesOutstanding, tooltip: metricTooltip('시장에 풀린 전체 주식 수입니다. 늘어나면 기존 주주의 몫이 줄 수 있고, 줄어들면 주당 가치에 유리합니다.', '없음') },
+  { label: 'Gross Margin', value: (metric) => metric.grossMargin, tooltip: metricTooltip('제품을 팔고 원가를 뺀 뒤 얼마나 남는지 봅니다. 높을수록 가격 경쟁력이 좋고, 하락하면 원가 부담을 의심합니다.', '50% 이상 빨강, 25% 이상 회색, 그 미만 파랑.') },
+  { label: 'Oper. Margin', value: (metric) => metric.operatingMargin, tooltip: metricTooltip('본업에서 매출 대비 얼마나 이익을 남기는지 봅니다. 높고 안정적이면 좋고, 마이너스면 비용 구조를 먼저 봅니다.', '20% 이상 빨강, 8% 이상 회색, 그 미만 파랑.') },
+  { label: 'EPS (TTM)', value: (metric) => metric.epsTtm, tooltip: metricTooltip('최근 12개월 동안 주식 1주당 벌어들인 이익입니다. 높고 증가하면 이익 체력이 좋다고 봅니다.', '플러스 빨강, 0 회색, 마이너스 파랑.') },
+  { label: 'EPS Next Y', value: (metric) => metric.epsNextYear, tooltip: metricTooltip('다음 해에 예상되는 1주당 이익입니다. 현재보다 높으면 성장 기대가 있고, 자주 낮아지면 보수적으로 봅니다.', '플러스 빨강, 0 회색, 마이너스 파랑.') },
+  { label: 'EPS Q/Q (%)', value: (metric) => metric.epsQoq, tooltip: metricTooltip('직전 분기보다 1주당 이익이 얼마나 늘었는지 봅니다. 높으면 최근 실적 흐름이 좋다는 뜻입니다.', '20% 이상 빨강, 0% 이상 회색, 그 미만 파랑.') },
+  { label: 'Rule of 40%', value: (metric) => metric.ruleOf40, tooltip: metricTooltip('성장률과 이익률을 같이 보는 지표입니다. 40% 이상이면 성장과 수익의 균형이 좋다고 봅니다.', '40% 이상 빨강, 20% 이상 회색, 그 미만 파랑.') },
+  { label: '실적발표일 (한국 시간 기준)', value: (metric) => metric.earningsDate, tooltip: metricTooltip('한국 시간 기준 실적 발표일입니다. 실적 전후에는 가격이 크게 움직일 수 있어 주의합니다.', '당일(D-0) 강조 빨강, D-1~D-3 주황, 그 외 없음.') },
 ]
 
 const technicalMarketSnapshot: string[][] = [
@@ -3885,62 +3889,73 @@ function technicalEntryStrategy(stock: Stock, targetTrades: TradeLog[] = []) {
   return strategies.length > 0 ? strategies.join(', ') : '-'
 }
 
+const RSI_TONE_GUIDE = '35 이하 또는 45~80 빨강, 35 초과~45 미만 회색, 80 초과 파랑.'
+const CCI_TONE_GUIDE = '-150 이하 빨강, 200 이하 회색, 그 초과 파랑.'
+const MACD_TONE_GUIDE = '0 이상 빨강, -500 이상 회색, 그 미만 파랑.'
+const MACD_HIST_TONE_GUIDE = '0 이상 빨강, -1 이상 회색, 그 미만 파랑.'
+const ADX_TONE_GUIDE = '30 이상 빨강, 20 이상 회색, 그 미만 파랑.'
+const VOLUME_RATIO_TONE_GUIDE = '100~200% 빨강, 50~250% 회색, 그 외 파랑.'
+const BB_HIGH_TONE_GUIDE = '35~85 빨강, 20~95 회색, 그 외 파랑.'
+const BB_WIDTH_TONE_GUIDE = '60일 평균의 85% 이하 빨강, 120% 이하 회색, 그 초과 파랑.'
+const MA_DEFAULT_TONE_GUIDE = '현재가가 선 위~+80% 빨강, -5%~+100% 회색, 그 외 파랑.'
+const EARNINGS_TONE_GUIDE = '당일(D-0) 강조 빨강, D-1~D-3 주황, 그 외 없음.'
+
 const technicalMetricColumns: TechnicalColumn[] = [
-  { label: 'RSI (D)', tooltip: '최근 14일 기준으로 주가가 얼마나 강하게 올랐는지 봅니다. 70 이상은 과열, 30 이하는 과매도에 가깝습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 1, 29, 58), 2) },
-  { label: 'RSI (D-1)', tooltip: '어제 기준 RSI입니다. 오늘 값과 비교해 매수세가 더 강해졌는지 약해졌는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 2, 28, 57), 2) },
-  { key: 'RSI Signal', label: 'RSI EMA(9)', tooltip: 'RSI 값들을 9일 EMA로 부드럽게 만든 비교선입니다. RSI가 이 선 위면 단기 힘이 유지되는 쪽으로 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 3, 32, 48), 2) },
-  { key: 'RSI 기울기', label: 'RSI 변화(D-D-1)', tooltip: '오늘 RSI에서 어제 RSI를 뺀 값입니다. 플러스면 매수세가 강해지고, 마이너스면 힘이 약해지는 흐름입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 4, -9, 16), 2) },
-  { label: 'CCI (D)', tooltip: '최근 14일 고가·저가·종가의 typical price 기준 CCI입니다. +100 이상은 강세, -100 이하는 약세나 과매도에 가깝습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 5, -130, 280), 2) },
-  { label: 'CCI (D-1)', tooltip: '어제 기준 14일 CCI입니다. 오늘 값과 비교해 강세나 약세가 이어지는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 6, -125, 270), 2) },
-  { key: 'CCI Signal', label: 'CCI EMA(9)', tooltip: '14일 CCI 값들을 9일 EMA로 부드럽게 만든 비교선입니다. CCI가 이 선 위로 올라서면 단기 반등 힘이 붙었다고 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 7, -90, 240), 2) },
-  { key: 'CCI 기울기', label: 'CCI 변화(D-D-1)', tooltip: '오늘 CCI에서 어제 CCI를 뺀 값입니다. 크게 오르면 반등 시도, 크게 내리면 힘이 약해진 흐름입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 8, -58, 136), 2) },
-  { label: 'MACD (12, 26, D)', tooltip: '짧은 평균가격과 긴 평균가격의 차이입니다. 0보다 높으면 상승 흐름, 낮으면 하락 흐름이 우세합니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 9, -900, 12000), 2) },
-  { label: 'MACD (12, 26, D-1)', tooltip: '어제 기준 MACD입니다. 오늘 값과 비교해 추세가 강해졌는지 약해졌는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 10, -850, 11200), 2) },
-  { key: 'MACD Signal', label: 'MACD Signal EMA(9)', tooltip: 'MACD 값들을 9일 EMA로 부드럽게 만든 비교선입니다. MACD가 이 선 위면 상승 힘이 있고, 아래면 힘이 약해질 수 있습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 11, -700, 9800), 2) },
-  { key: 'MACD Histogram (D)', label: 'MACD Hist(D)', tooltip: 'MACD에서 Signal을 뺀 값입니다. 값이 커지면 추세가 강해지고, 작아지면 힘이 약해질 수 있습니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 12, -4200, 7600), 2) },
-  { key: 'M - H (D-1)', label: 'MACD Hist(D-1)', tooltip: '어제 기준 MACD Histogram입니다. 오늘 값과 비교해 모멘텀이 이어지는지 봅니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 13, -2400, 5000), 2) },
-  { key: 'M - H (D-2)', label: 'MACD Hist(D-2)', tooltip: '2거래일 전 MACD Histogram입니다. 최근 3일 흐름을 같이 봐서 일시적인 신호를 줄입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 14, -2100, 4600), 2) },
-  { key: 'MACD 기울기', label: 'MACD 기울기', tooltip: '오늘 MACD 값에서 어제 MACD 값을 뺀 값입니다. 플러스면 MACD 추세가 개선되고, 마이너스면 상승 힘이 약해질 수 있습니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 15, -620, 1360), 2) },
-  { label: '+DI (DMI, 14)', tooltip: '상승 힘을 보여주는 지표입니다. +DI가 -DI보다 높으면 매수세가 더 강하다고 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 16, 12, 52), 2) },
-  { label: '-DI (DMI, 14)', tooltip: '하락 힘을 보여주는 지표입니다. -DI가 +DI보다 높으면 매도 압력이 더 강하다고 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 17, 9, 48), 2) },
-  { label: 'ADX (14, D)', tooltip: '상승이든 하락이든 추세가 얼마나 강한지 봅니다. 20 이상이면 추세가 생겼고, 40 이상이면 강한 편입니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 18, 14, 58), 2) },
-  { label: 'ADX (14, D-1)', tooltip: '어제 기준 ADX입니다. 오늘 값과 비교해 추세의 힘이 커졌는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 19, 13, 57), 2) },
-  { label: 'ADX (14, D-2)', tooltip: '2거래일 전 ADX입니다. 최근 3일 동안 추세의 힘이 강해지는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 20, 13, 55), 2) },
-  { key: 'ADX 기울기', label: 'ADX 변화(D-D-1)', tooltip: '오늘 ADX에서 어제 ADX를 뺀 값입니다. 오르면 추세가 강해지고, 내리면 횡보 가능성이 커집니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 21, -6, 12), 2) },
-  { key: 'Candle Open', label: '시가(D)', tooltip: '오늘 장이 시작된 가격입니다. 종가와 비교해 장중에 매수세가 강했는지 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 22, 0.965, 0.07, 4)) },
-  { key: 'C - High', label: '고가(D)', tooltip: '오늘 가장 높게 거래된 가격입니다. 종가가 고가에 가까우면 매수세가 끝까지 강했다고 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 23, 1.005, 0.06, 4)) },
-  { key: 'C - Low', label: '저가(D)', tooltip: '오늘 가장 낮게 거래된 가격입니다. 저가에서 얼마나 회복했는지로 반등 힘을 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 24, 0.925, 0.065, 4)) },
-  { key: 'C - Close', label: '종가(D)', tooltip: '오늘 마감 가격입니다. 대부분의 기술 지표가 이 가격을 기준으로 계산됩니다.', value: (stock) => stock.currentPrice },
-  { key: 'C - Volume', label: '캔들 거래량(D)', tooltip: '오늘 캔들 데이터의 실제 거래량입니다. 가격 움직임에 거래량이 같이 붙으면 신뢰도가 높아집니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 25) },
-  { label: '아래꼬리 길이', tooltip: '시가와 종가 중 낮은 값에서 저가를 뺀 폭을 종가 대비 비율로 봅니다. 길수록 저점 매수세가 들어왔다고 볼 수 있습니다.', value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 26, 0, 4), 2)}%` },
-  { label: '위꼬리 길이', tooltip: '고가에서 시가와 종가 중 높은 값을 뺀 폭을 종가 대비 비율로 봅니다. 길수록 위에서 매물이 많이 나왔다고 볼 수 있습니다.', value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 27, 0, 4), 2)}%` },
-  { label: '몸통 길이', tooltip: '시가와 종가의 차이를 종가 대비 비율로 봅니다. 클수록 그날 방향성이 뚜렷합니다.', value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 28, 0.05, 5), 2)}%` },
-  { key: '거래량 (D)', label: '5일 평균 대비 거래량(D)', tooltip: '오늘 실제 거래량을 최근 5일 평균 거래량으로 나눈 비율입니다. 100% 이상이면 최근 5일 평균보다 거래가 많습니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 29) },
-  { key: '거래량 (D-1)', label: '전일 5일 평균 대비 거래량(D-1)', tooltip: '어제 실제 거래량을 어제 기준 직전 5일 평균 거래량으로 나눈 비율입니다. 오늘 비율과 비교해 관심이 늘었는지 확인합니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 30) },
-  { label: '20일 평균 대비 거래량 (D)', tooltip: '최근 20일 평균보다 오늘 거래가 얼마나 많은지 봅니다. 100% 이상이면 평소보다 활발합니다.', value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 31, 45, 165), 0)}%` },
-  { key: '절대 거래량 (D)', label: '실제 거래량(D)', tooltip: '오늘 실제 거래된 주식 수입니다. 거래가 너무 적으면 신호가 좋아도 매매가 어려울 수 있습니다.', value: (stock, index) => formatTechnicalVolume(stock, index, 32) },
-  { label: '볼린저밴드 %B (종가)', tooltip: '종가가 가격 범위 안에서 위쪽인지 아래쪽인지 봅니다. 80 이상은 상단, 20 이하는 하단에 가깝습니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 33, 5, 112), 2) },
-  { label: '볼린저밴드 %B (저가)', tooltip: '오늘 저가가 가격 범위 안에서 어디였는지 봅니다. 장중에 아래쪽을 찍고 회복했는지 확인합니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 34, 0, 105), 2) },
-  { key: '볼린저밴드 Peak (D)', label: '볼린저밴드 %B (고가)', tooltip: '오늘 고가가 볼린저밴드 안에서 어디까지 올라갔는지 보는 값입니다. 과열 후 힘이 약해지는지 볼 때 씁니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 35, 20, 95), 2) },
-  { key: '볼린저밴드 Peak (D-1)', label: '전일 볼린저밴드 %B (고가)', tooltip: '어제 고가 기준 볼린저밴드 %B입니다. 오늘 고가 위치와 비교해 과열이 이어지는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 36, 18, 92), 2) },
-  { label: '볼린저밴드 폭 (D)', tooltip: '가격이 움직이는 범위의 넓이입니다. 좁으면 조용한 구간, 넓으면 크게 움직이는 구간입니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 37, 8, 48), 2) },
-  { label: '볼린저밴드 폭 (D-1)', tooltip: '어제 기준 가격 범위의 넓이입니다. 오늘과 비교해 움직임이 커졌는지 작아졌는지 봅니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 38, 8, 46), 2) },
-  { key: '지난 60일 볼린저밴드 폭 평균', label: '볼린저밴드 폭 60일 평균', tooltip: '최근 60거래일 동안의 볼린저밴드 폭 평균입니다. 현재 폭이 평소보다 좁은지 넓은지 비교합니다.', value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 39, 12, 42), 2) },
-  { label: '현재가', tooltip: '가장 최근 가격입니다. 평균선, 가격 범위, 진입가와 비교해 현재 위치를 봅니다.', value: (stock) => stock.currentPrice },
-  { label: '5일 이동평균선', tooltip: '최근 5일 평균 가격입니다. 현재가가 이 선 위면 단기 흐름이 강한 편입니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 40, 0.965, 0.07, 4)) },
-  { label: '20일 이동평균선', tooltip: '최근 20일 평균 가격입니다. 이 선 위에 있으면 단기 상승 흐름이 유지된다고 봅니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 41, 0.92, 0.13, 4)) },
-  { label: '60일 이동평균선', tooltip: '최근 60일 평균 가격입니다. 이 선 위면 중기 흐름이 좋고, 아래면 약세를 의심합니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 42, 0.84, 0.2, 4)) },
-  { label: '144일 이동평균선', tooltip: '최근 144일 평균 가격입니다. 장기 흐름이 바뀌는지 200일선보다 조금 빠르게 볼 때 씁니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 43, 0.78, 0.24, 4)) },
-  { label: '200일 이동평균선', tooltip: '최근 200일 평균 가격입니다. 현재가가 이 선 위면 장기 흐름이 좋다고 보는 경우가 많습니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 44, 0.72, 0.28, 4)) },
-  { label: '120일 저가 회귀 추세선', tooltip: '최근 120일의 낮은 가격 흐름을 따라 그은 선입니다. 현재가가 위에 있으면 저점이 높아지는 흐름입니다.', value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 45, 0.68, 0.34, 4)) },
-  { key: 'ATR (14, %)', label: '하루 평균 변동폭(ATR%)', tooltip: '이 종목이 최근 14일 동안 하루에 평균 몇 % 움직였는지 봅니다. 값이 클수록 크게 출렁이는 종목이라 손절 여유를 더 두거나 수량을 줄이는 편이 안전합니다.', value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 46, 1.5, 5), 2)}%` },
-  { key: '52주 신고가 대비', label: '52주 신고가 대비', tooltip: '최근 1년 최고가에서 지금 얼마나 내려와 있는지 봅니다. 0%에 가까울수록 신고가 부근의 강한 종목이고, -30% 이하면 고점에서 크게 밀린 상태입니다.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 47, -38, 38), 2) + '%' },
-  { key: '52주 신고가 후 경과일', label: '신고가 후 경과일', tooltip: '최근 1년 최고가를 찍은 뒤 며칠이 지났는지 봅니다. 짧을수록 최근까지 신고가를 만들던 강한 흐름입니다.', value: (stock, index) => `${Math.round(technicalNumber(stock, index, 48, 1, 180, 0))}일` },
-  { key: 'QQQ 대비 상대강도 (20일)', label: 'QQQ 대비 상대강도(20일)', tooltip: '최근 20거래일 동안 이 종목이 나스닥(QQQ)보다 얼마나 더 올랐는지(%p)입니다. +면 시장보다 강함, -면 약함. 색 표시: +2%p 이상 빨강(강함), -3%p 미만 파랑(약함), 그 사이 회색.', value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 49, -12, 24), 2) + '%p' },
-  { label: '실적발표일 (한국 시간 기준)', tooltip: '한국 시간 기준 실적 발표일입니다. 실적 전후에는 가격이 크게 움직일 수 있어 주의합니다.', value: (stock) => technicalEarningsDate(stock) },
-  { label: '진입가', tooltip: '현재 보유 중인 종목을 산 가격입니다. 보유 전이면 빈 값으로 표시합니다.', value: (stock) => technicalEntryPrice(stock) },
-  { label: '진입일', tooltip: '현재 보유 중인 종목을 산 날짜입니다. 보유 전이면 빈 값으로 표시합니다.', value: (stock) => technicalEntryDate(stock) },
-  { label: '진입 전략', tooltip: '매수할 때 사용된 전략명입니다. A~H 전략 설명은 Home의 전략 툴팁과 같은 기준입니다.', value: (stock) => technicalEntryStrategy(stock) },
+  { label: 'RSI (D)', tooltip: metricTooltip('최근 14일 기준으로 주가가 얼마나 강하게 올랐는지 봅니다. 70 이상은 과열, 30 이하는 과매도에 가깝습니다.', RSI_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 1, 29, 58), 2) },
+  { label: 'RSI (D-1)', tooltip: metricTooltip('어제 기준 RSI입니다. 오늘 값과 비교해 매수세가 더 강해졌는지 약해졌는지 봅니다.', RSI_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 2, 28, 57), 2) },
+  { key: 'RSI Signal', label: 'RSI EMA(9)', tooltip: metricTooltip('RSI 값들을 9일 EMA로 부드럽게 만든 비교선입니다. RSI가 이 선 위면 단기 힘이 유지되는 쪽으로 봅니다.', RSI_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 3, 32, 48), 2) },
+  { key: 'RSI 기울기', label: 'RSI 변화(D-D-1)', tooltip: metricTooltip('오늘 RSI에서 어제 RSI를 뺀 값입니다. 플러스면 매수세가 강해지고, 마이너스면 힘이 약해지는 흐름입니다.', '+2 이상 빨강, 0 이상 회색, 그 미만 파랑.'), value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 4, -9, 16), 2) },
+  { label: 'CCI (D)', tooltip: metricTooltip('최근 14일 고가·저가·종가의 typical price 기준 CCI입니다. +100 이상은 강세, -100 이하는 약세나 과매도에 가깝습니다.', CCI_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 5, -130, 280), 2) },
+  { label: 'CCI (D-1)', tooltip: metricTooltip('어제 기준 14일 CCI입니다. 오늘 값과 비교해 강세나 약세가 이어지는지 봅니다.', CCI_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 6, -125, 270), 2) },
+  { key: 'CCI Signal', label: 'CCI EMA(9)', tooltip: metricTooltip('14일 CCI 값들을 9일 EMA로 부드럽게 만든 비교선입니다. CCI가 이 선 위로 올라서면 단기 반등 힘이 붙었다고 봅니다.', CCI_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 7, -90, 240), 2) },
+  { key: 'CCI 기울기', label: 'CCI 변화(D-D-1)', tooltip: metricTooltip('오늘 CCI에서 어제 CCI를 뺀 값입니다. 크게 오르면 반등 시도, 크게 내리면 힘이 약해진 흐름입니다.', '+10 이상 빨강, 0 이상 회색, 그 미만 파랑.'), value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 8, -58, 136), 2) },
+  { label: 'MACD (12, 26, D)', tooltip: metricTooltip('짧은 평균가격과 긴 평균가격의 차이입니다. 0보다 높으면 상승 흐름, 낮으면 하락 흐름이 우세합니다.', MACD_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 9, -900, 12000), 2) },
+  { label: 'MACD (12, 26, D-1)', tooltip: metricTooltip('어제 기준 MACD입니다. 오늘 값과 비교해 추세가 강해졌는지 약해졌는지 봅니다.', MACD_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 10, -850, 11200), 2) },
+  { key: 'MACD Signal', label: 'MACD Signal EMA(9)', tooltip: metricTooltip('MACD 값들을 9일 EMA로 부드럽게 만든 비교선입니다. MACD가 이 선 위면 상승 힘이 있고, 아래면 힘이 약해질 수 있습니다.', MACD_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 11, -700, 9800), 2) },
+  { key: 'MACD Histogram (D)', label: 'MACD Hist(D)', tooltip: metricTooltip('MACD에서 Signal을 뺀 값입니다. 값이 커지면 추세가 강해지고, 작아지면 힘이 약해질 수 있습니다.', MACD_HIST_TONE_GUIDE), value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 12, -4200, 7600), 2) },
+  { key: 'M - H (D-1)', label: 'MACD Hist(D-1)', tooltip: metricTooltip('어제 기준 MACD Histogram입니다. 오늘 값과 비교해 모멘텀이 이어지는지 봅니다.', MACD_HIST_TONE_GUIDE), value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 13, -2400, 5000), 2) },
+  { key: 'M - H (D-2)', label: 'MACD Hist(D-2)', tooltip: metricTooltip('2거래일 전 MACD Histogram입니다. 최근 3일 흐름을 같이 봐서 일시적인 신호를 줄입니다.', MACD_HIST_TONE_GUIDE), value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 14, -2100, 4600), 2) },
+  { key: 'MACD 기울기', label: 'MACD 기울기', tooltip: metricTooltip('오늘 MACD 값에서 어제 MACD 값을 뺀 값입니다. 플러스면 MACD 추세가 개선되고, 마이너스면 상승 힘이 약해질 수 있습니다.', MACD_HIST_TONE_GUIDE), value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 15, -620, 1360), 2) },
+  { label: '+DI (DMI, 14)', tooltip: metricTooltip('상승 힘을 보여주는 지표입니다. +DI가 -DI보다 높으면 매수세가 더 강하다고 봅니다.', '-DI보다 3 이상 크면 빨강, ±3 이내 회색, 그 외 파랑.'), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 16, 12, 52), 2) },
+  { label: '-DI (DMI, 14)', tooltip: metricTooltip('하락 힘을 보여주는 지표입니다. -DI가 +DI보다 높으면 매도 압력이 더 강하다고 봅니다.', '+DI보다 3 이상 작으면 빨강, ±3 이내 회색, 그 외 파랑.'), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 17, 9, 48), 2) },
+  { label: 'ADX (14, D)', tooltip: metricTooltip('상승이든 하락이든 추세가 얼마나 강한지 봅니다. 20 이상이면 추세가 생겼고, 40 이상이면 강한 편입니다.', ADX_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 18, 14, 58), 2) },
+  { label: 'ADX (14, D-1)', tooltip: metricTooltip('어제 기준 ADX입니다. 오늘 값과 비교해 추세의 힘이 커졌는지 봅니다.', ADX_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 19, 13, 57), 2) },
+  { label: 'ADX (14, D-2)', tooltip: metricTooltip('2거래일 전 ADX입니다. 최근 3일 동안 추세의 힘이 강해지는지 봅니다.', ADX_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 20, 13, 55), 2) },
+  { key: 'ADX 기울기', label: 'ADX 변화(D-D-1)', tooltip: metricTooltip('오늘 ADX에서 어제 ADX를 뺀 값입니다. 오르면 추세가 강해지고, 내리면 횡보 가능성이 커집니다.', '+1 이상 빨강, 0 이상 회색, 그 미만 파랑.'), value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 21, -6, 12), 2) },
+  { key: 'Candle Open', label: '시가(D)', tooltip: metricTooltip('오늘 장이 시작된 가격입니다. 종가와 비교해 장중에 매수세가 강했는지 봅니다.', '종가가 시가보다 +2% 이상 빨강, ±2% 이내 회색, 그 외 파랑.'), value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 22, 0.965, 0.07, 4)) },
+  { key: 'C - High', label: '고가(D)', tooltip: metricTooltip('오늘 가장 높게 거래된 가격입니다. 종가가 고가에 가까우면 매수세가 끝까지 강했다고 봅니다.', '없음'), value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 23, 1.005, 0.06, 4)) },
+  { key: 'C - Low', label: '저가(D)', tooltip: metricTooltip('오늘 가장 낮게 거래된 가격입니다. 저가에서 얼마나 회복했는지로 반등 힘을 봅니다.', '없음'), value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 24, 0.925, 0.065, 4)) },
+  { key: 'C - Close', label: '종가(D)', tooltip: metricTooltip('오늘 마감 가격입니다. 대부분의 기술 지표가 이 가격을 기준으로 계산됩니다.', '없음'), value: (stock) => stock.currentPrice },
+  { key: 'C - Volume', label: '캔들 거래량(D)', tooltip: metricTooltip('오늘 캔들 데이터의 실제 거래량입니다. 가격 움직임에 거래량이 같이 붙으면 신뢰도가 높아집니다.', '없음'), value: (stock, index) => formatTechnicalVolume(stock, index, 25) },
+  { label: '아래꼬리 길이', tooltip: metricTooltip('시가와 종가 중 낮은 값에서 저가를 뺀 폭을 종가 대비 비율로 봅니다. 길수록 저점 매수세가 들어왔다고 볼 수 있습니다.', '1.5% 이상 빨강, 0.5% 이상 회색, 그 미만 파랑.'), value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 26, 0, 4), 2)}%` },
+  { label: '위꼬리 길이', tooltip: metricTooltip('고가에서 시가와 종가 중 높은 값을 뺀 폭을 종가 대비 비율로 봅니다. 길수록 위에서 매물이 많이 나왔다고 볼 수 있습니다.', '1% 이하 빨강, 2.5% 이하 회색, 그 초과 파랑.'), value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 27, 0, 4), 2)}%` },
+  { label: '몸통 길이', tooltip: metricTooltip('시가와 종가의 차이를 종가 대비 비율로 봅니다. 클수록 그날 방향성이 뚜렷합니다.', '1% 이상 빨강, 0.3% 이상 회색, 그 미만 파랑.'), value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 28, 0.05, 5), 2)}%` },
+  { key: '거래량 (D)', label: '5일 평균 대비 거래량(D)', tooltip: metricTooltip('오늘 실제 거래량을 최근 5일 평균 거래량으로 나눈 비율입니다. 100% 이상이면 최근 5일 평균보다 거래가 많습니다.', VOLUME_RATIO_TONE_GUIDE), value: (stock, index) => formatTechnicalVolume(stock, index, 29) },
+  { key: '거래량 (D-1)', label: '전일 5일 평균 대비 거래량(D-1)', tooltip: metricTooltip('어제 실제 거래량을 어제 기준 직전 5일 평균 거래량으로 나눈 비율입니다. 오늘 비율과 비교해 관심이 늘었는지 확인합니다.', VOLUME_RATIO_TONE_GUIDE), value: (stock, index) => formatTechnicalVolume(stock, index, 30) },
+  { label: '20일 평균 대비 거래량 (D)', tooltip: metricTooltip('최근 20일 평균보다 오늘 거래가 얼마나 많은지 봅니다. 100% 이상이면 평소보다 활발합니다.', VOLUME_RATIO_TONE_GUIDE), value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 31, 45, 165), 0)}%` },
+  { key: '절대 거래량 (D)', label: '실제 거래량(D)', tooltip: metricTooltip('오늘 실제 거래된 주식 수입니다. 거래가 너무 적으면 신호가 좋아도 매매가 어려울 수 있습니다.', '없음'), value: (stock, index) => formatTechnicalVolume(stock, index, 32) },
+  { label: '볼린저밴드 %B (종가)', tooltip: metricTooltip('종가가 가격 범위 안에서 위쪽인지 아래쪽인지 봅니다. 80 이상은 상단, 20 이하는 하단에 가깝습니다.', '30~85 빨강, 20~95 회색, 그 외 파랑.'), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 33, 5, 112), 2) },
+  { label: '볼린저밴드 %B (저가)', tooltip: metricTooltip('오늘 저가가 가격 범위 안에서 어디였는지 봅니다. 장중에 아래쪽을 찍고 회복했는지 확인합니다.', '50 이하 빨강, 80 이하 회색, 그 초과 파랑.'), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 34, 0, 105), 2) },
+  { key: '볼린저밴드 Peak (D)', label: '볼린저밴드 %B (고가)', tooltip: metricTooltip('오늘 고가가 볼린저밴드 안에서 어디까지 올라갔는지 보는 값입니다. 과열 후 힘이 약해지는지 볼 때 씁니다.', BB_HIGH_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 35, 20, 95), 2) },
+  { key: '볼린저밴드 Peak (D-1)', label: '전일 볼린저밴드 %B (고가)', tooltip: metricTooltip('어제 고가 기준 볼린저밴드 %B입니다. 오늘 고가 위치와 비교해 과열이 이어지는지 봅니다.', BB_HIGH_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 36, 18, 92), 2) },
+  { label: '볼린저밴드 폭 (D)', tooltip: metricTooltip('가격이 움직이는 범위의 넓이입니다. 좁으면 조용한 구간, 넓으면 크게 움직이는 구간입니다.', BB_WIDTH_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 37, 8, 48), 2) },
+  { label: '볼린저밴드 폭 (D-1)', tooltip: metricTooltip('어제 기준 가격 범위의 넓이입니다. 오늘과 비교해 움직임이 커졌는지 작아졌는지 봅니다.', BB_WIDTH_TONE_GUIDE), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 38, 8, 46), 2) },
+  { key: '지난 60일 볼린저밴드 폭 평균', label: '볼린저밴드 폭 60일 평균', tooltip: metricTooltip('최근 60거래일 동안의 볼린저밴드 폭 평균입니다. 현재 폭이 평소보다 좁은지 넓은지 비교합니다.', '없음'), value: (stock, index) => formatTechnicalNumber(technicalNumber(stock, index, 39, 12, 42), 2) },
+  { label: '현재가', tooltip: metricTooltip('가장 최근 가격입니다. 평균선, 가격 범위, 진입가와 비교해 현재 위치를 봅니다.', '없음'), value: (stock) => stock.currentPrice },
+  { label: '5일 이동평균선', tooltip: metricTooltip('최근 5일 평균 가격입니다. 현재가가 이 선 위면 단기 흐름이 강한 편입니다.', MA_DEFAULT_TONE_GUIDE), value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 40, 0.965, 0.07, 4)) },
+  { label: '20일 이동평균선', tooltip: metricTooltip('최근 20일 평균 가격입니다. 이 선 위에 있으면 단기 상승 흐름이 유지된다고 봅니다.', '현재가가 선 위~+8% 빨강, -2%~+20% 회색, 그 외 파랑.'), value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 41, 0.92, 0.13, 4)) },
+  { label: '60일 이동평균선', tooltip: metricTooltip('최근 60일 평균 가격입니다. 이 선 위면 중기 흐름이 좋고, 아래면 약세를 의심합니다.', MA_DEFAULT_TONE_GUIDE), value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 42, 0.84, 0.2, 4)) },
+  { label: '144일 이동평균선', tooltip: metricTooltip('최근 144일 평균 가격입니다. 장기 흐름이 바뀌는지 200일선보다 조금 빠르게 볼 때 씁니다.', MA_DEFAULT_TONE_GUIDE), value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 43, 0.78, 0.24, 4)) },
+  { label: '200일 이동평균선', tooltip: metricTooltip('최근 200일 평균 가격입니다. 현재가가 이 선 위면 장기 흐름이 좋다고 보는 경우가 많습니다.', '현재가가 선 위~+80% 빨강, -10%~+100% 회색, 그 외 파랑.'), value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 44, 0.72, 0.28, 4)) },
+  { label: '120일 저가 회귀 추세선', tooltip: metricTooltip('최근 120일의 낮은 가격 흐름을 따라 그은 선입니다. 현재가가 위에 있으면 저점이 높아지는 흐름입니다.', MA_DEFAULT_TONE_GUIDE), value: (stock, index) => formatTechnicalPrice(stock, stockPriceNumber(stock) * technicalNumber(stock, index, 45, 0.68, 0.34, 4)) },
+  { key: 'ATR (14, %)', label: '하루 평균 변동폭(ATR%)', tooltip: metricTooltip('이 종목이 최근 14일 동안 하루에 평균 몇 % 움직였는지 봅니다. 값이 클수록 크게 출렁이는 종목이라 손절 여유를 더 두거나 수량을 줄이는 편이 안전합니다.', '3% 이하 빨강, 6% 이하 회색, 그 초과 파랑.'), value: (stock, index) => `${formatTechnicalNumber(technicalNumber(stock, index, 46, 1.5, 5), 2)}%` },
+  { key: '52주 신고가 대비', label: '52주 신고가 대비', tooltip: metricTooltip('최근 1년 최고가에서 지금 얼마나 내려와 있는지 봅니다. 0%에 가까울수록 신고가 부근의 강한 종목이고, -30% 이하면 고점에서 크게 밀린 상태입니다.', '-8% 이상 빨강, -25% 이상 회색, 그 미만 파랑.'), value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 47, -38, 38), 2) + '%' },
+  { key: '52주 신고가 후 경과일', label: '신고가 후 경과일', tooltip: metricTooltip('최근 1년 최고가를 찍은 뒤 며칠이 지났는지 봅니다. 짧을수록 최근까지 신고가를 만들던 강한 흐름입니다.', '20일 이하 빨강, 60일 이하 회색, 그 초과 파랑.'), value: (stock, index) => `${Math.round(technicalNumber(stock, index, 48, 1, 180, 0))}일` },
+  { key: 'QQQ 대비 상대강도 (20일)', label: 'QQQ 대비 상대강도(20일)', tooltip: metricTooltip('최근 20거래일 동안 이 종목이 나스닥(QQQ)보다 얼마나 더 올랐는지(%p)입니다. +면 시장보다 강함, -면 약함.', '+2%p 이상 빨강, -3%p 이상 회색, 그 미만 파랑.'), value: (stock, index) => formatSignedTechnical(technicalNumber(stock, index, 49, -12, 24), 2) + '%p' },
+  { label: '실적발표일 (한국 시간 기준)', tooltip: metricTooltip('한국 시간 기준 실적 발표일입니다. 실적 전후에는 가격이 크게 움직일 수 있어 주의합니다.', EARNINGS_TONE_GUIDE), value: (stock) => technicalEarningsDate(stock) },
+  { label: '진입가', tooltip: metricTooltip('현재 보유 중인 종목을 산 가격입니다. 보유 전이면 빈 값으로 표시합니다.', '없음'), value: (stock) => technicalEntryPrice(stock) },
+  { label: '진입일', tooltip: metricTooltip('현재 보유 중인 종목을 산 날짜입니다. 보유 전이면 빈 값으로 표시합니다.', '없음'), value: (stock) => technicalEntryDate(stock) },
+  { label: '진입 전략', tooltip: metricTooltip('매수할 때 사용된 전략명입니다. A~H 전략 설명은 Home의 전략 툴팁과 같은 기준입니다.', '없음'), value: (stock) => technicalEntryStrategy(stock) },
 ]
 
 function MetricValue({
@@ -4046,7 +4061,7 @@ function ValueAnalysisPage({
               <th>티커</th>
               <th>
                 <MetricValue
-                  tooltip="가치주는 이익 대비 가격 부담이 낮은 종목입니다. 성장주는 매출·이익 성장 기대가 큰 종목, 혼합주는 두 성격이 함께 있는 종목입니다."
+                  tooltip={metricTooltip('가치주는 이익 대비 가격 부담이 낮은 종목입니다. 성장주는 매출·이익 성장 기대가 큰 종목, 혼합주는 두 성격이 함께 있는 종목입니다.', '없음')}
                   onTooltipClose={onTooltipClose}
                   onTooltipOpen={onTooltipOpen}
                 >
@@ -4056,15 +4071,31 @@ function ValueAnalysisPage({
               <th>산업</th>
               <th>
                 <MetricValue
-                  tooltip={FAIR_PRICE_RANGE_TOOLTIP}
+                  tooltip={metricTooltip(FAIR_PRICE_RANGE_TOOLTIP, '저평가 빨강, 보통 회색, 고평가 파랑.')}
                   onTooltipClose={onTooltipClose}
                   onTooltipOpen={onTooltipOpen}
                 >
                   적정 주가 범위
                 </MetricValue>
               </th>
-              <th>현재가</th>
-              <th>가치 평가</th>
+              <th>
+                <MetricValue
+                  tooltip={metricTooltip('관심종목의 현재 가격입니다. 적정 주가 범위와 함께 보면 비싼지 싼지 가늠하기 쉽습니다.', '저평가 빨강, 보통 회색, 고평가 파랑.')}
+                  onTooltipClose={onTooltipClose}
+                  onTooltipOpen={onTooltipOpen}
+                >
+                  현재가
+                </MetricValue>
+              </th>
+              <th>
+                <MetricValue
+                  tooltip={metricTooltip('현재가가 적정 주가 범위보다 아래면 저평가, 안이면 보통, 위면 고평가입니다.', '저평가 빨강, 보통 회색, 고평가 파랑.')}
+                  onTooltipClose={onTooltipClose}
+                  onTooltipOpen={onTooltipOpen}
+                >
+                  가치 평가
+                </MetricValue>
+              </th>
               {valueMetricColumns.map((column) => (
                 <th className={column.label.startsWith('실적발표일') ? 'earnings-date-cell' : undefined} key={column.label}>
                   <MetricValue
@@ -4237,7 +4268,15 @@ function TechnicalAnalysisPage({
               <tr>
                 <th>종목명</th>
                 <th>티커</th>
-                <th>투자의견</th>
+                <th>
+                  <MetricValue
+                    tooltip={metricTooltip('관심종목의 매수·관망·매도 신호입니다. 전략 조건에 따라 자동으로 바뀝니다.', '매수 초록, 관망 회색, 매도 빨강.')}
+                    onTooltipClose={onTooltipClose}
+                    onTooltipOpen={onTooltipOpen}
+                  >
+                    투자의견
+                  </MetricValue>
+                </th>
                 {technicalMetricColumns.map((column) => (
                   <th className={column.label.startsWith('실적발표일') ? 'earnings-date-cell' : undefined} key={column.label}>
                     <MetricValue
