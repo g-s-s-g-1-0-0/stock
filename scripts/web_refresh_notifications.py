@@ -1945,18 +1945,14 @@ def latest_ohlcv_date(row: dict[str, Any], market: str) -> str:
 
 
 def ma_support_send_slot(now: datetime | None = None) -> str | None:
+    # Only cron/explicit slot triggers (MA_SUPPORT_SCAN_FORCE). No wall-clock fallback.
     current = now or datetime.now().astimezone()
     kst_now = current.astimezone(KST)
     if kst_now.weekday() >= 5:
         return None
-    if os.environ.get("MA_SUPPORT_SCAN_FORCE", "").strip().lower() in {"1", "true", "yes", "on"}:
-        return os.environ.get("MA_SUPPORT_SCAN_SLOT", "").strip() or "manual"
-    minutes = kst_now.hour * 60 + kst_now.minute
-    if (8 * 60) <= minutes < (9 * 60):
-        return "08"
-    if (9 * 60 + 30) <= minutes < (10 * 60):
-        return "0930"
-    return None
+    if os.environ.get("MA_SUPPORT_SCAN_FORCE", "").strip().lower() not in {"1", "true", "yes", "on"}:
+        return None
+    return os.environ.get("MA_SUPPORT_SCAN_SLOT", "").strip() or "manual"
 
 
 def is_morning_ma_scan_window(now: datetime | None = None) -> bool:
@@ -2281,7 +2277,7 @@ def send_ma_support_notifications(current: Path = DEFAULT_CURRENT_STOCKS) -> int
     now = datetime.now().astimezone()
     slot = ma_support_send_slot(now)
     if slot is None:
-        print("MA support notification skipped outside KST morning scan window.")
+        print("MA support notification skipped: MA_SUPPORT_SCAN_FORCE is not set (cron/explicit slot required).")
         return 0
 
     stocks = stock_rows_by_ticker(current)

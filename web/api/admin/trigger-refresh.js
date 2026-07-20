@@ -111,18 +111,11 @@ function isSeoulWeekday() {
   return weekday !== 'Sat' && weekday !== 'Sun'
 }
 
-function inferMaSupportSlot() {
-  const { hour, minute } = seoulDateParts()
-  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return ''
-  const minutes = hour * 60 + minute
-  if (minutes >= 8 * 60 && minutes < 9 * 60) return '08'
-  if (minutes >= 9 * 60 + 30 && minutes < 10 * 60) return '0930'
-  return ''
-}
-
 function readMaSupportScanSlot(req, scope, isCronRequest) {
   if (isCronRequest && !isSeoulWeekday()) return ''
-  const explicitSlot = normalizeMaSupportSlot(
+  // Require an explicit slot. Do not infer from wall-clock time — otherwise a
+  // general technical refresh during the morning window can send MA emails.
+  return normalizeMaSupportSlot(
     req.query?.ma_support_scan_slot ||
     req.query?.ma_support_slot ||
     req.query?.slot ||
@@ -130,9 +123,6 @@ function readMaSupportScanSlot(req, scope, isCronRequest) {
     req.body?.ma_support_slot ||
     req.body?.slot
   )
-  if (explicitSlot) return explicitSlot
-  if (isCronRequest && scope === 'technical') return inferMaSupportSlot()
-  return ''
 }
 
 async function readSupabaseUser(accessToken) {

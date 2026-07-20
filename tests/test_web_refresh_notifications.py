@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import os
 import unittest
 from datetime import date, datetime
 from pathlib import Path
@@ -564,16 +565,37 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
         self.assertIsNone(signal)
 
-    def test_ma_support_notifications_only_run_in_8am_kst_window(self) -> None:
+    def test_ma_support_notifications_require_scan_force(self) -> None:
         kst = ZoneInfo("Asia/Seoul")
+        morning = datetime(2026, 6, 30, 8, 0, tzinfo=kst)
+        force_keys = ("MA_SUPPORT_SCAN_FORCE", "MA_SUPPORT_SCAN_SLOT")
+        original = {key: os.environ.get(key) for key in force_keys}
 
-        self.assertTrue(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 8, 0, tzinfo=kst)))
-        self.assertTrue(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 8, 59, tzinfo=kst)))
-        self.assertFalse(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 9, 0, tzinfo=kst)))
-        self.assertFalse(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 9, 29, tzinfo=kst)))
-        self.assertTrue(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 9, 30, tzinfo=kst)))
-        self.assertTrue(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 9, 59, tzinfo=kst)))
-        self.assertFalse(self.notifications.is_morning_ma_scan_window(datetime(2026, 6, 30, 10, 0, tzinfo=kst)))
+        try:
+            for key in force_keys:
+                os.environ.pop(key, None)
+            self.assertIsNone(self.notifications.ma_support_send_slot(morning))
+            self.assertFalse(self.notifications.is_morning_ma_scan_window(morning))
+
+            os.environ["MA_SUPPORT_SCAN_FORCE"] = "true"
+            os.environ["MA_SUPPORT_SCAN_SLOT"] = "08"
+            self.assertEqual(self.notifications.ma_support_send_slot(morning), "08")
+            self.assertTrue(self.notifications.is_morning_ma_scan_window(morning))
+
+            os.environ["MA_SUPPORT_SCAN_SLOT"] = "0930"
+            self.assertEqual(
+                self.notifications.ma_support_send_slot(datetime(2026, 6, 30, 15, 0, tzinfo=kst)),
+                "0930",
+            )
+
+            weekend = datetime(2026, 6, 27, 8, 0, tzinfo=kst)
+            self.assertIsNone(self.notifications.ma_support_send_slot(weekend))
+        finally:
+            for key, value in original.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
 
     def test_ma_support_email_body_includes_qqq_distance_status_without_explainer(self) -> None:
         body = self.notifications.ma_support_email_body(

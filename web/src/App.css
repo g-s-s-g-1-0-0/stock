@@ -4403,10 +4403,6 @@
   min-width: 150px;
 }
 
-.technical-analysis-table td:nth-child(54) {
-  text-align: left !important;
-}
-
 .value-analysis-table .earnings-date-cell,
 .technical-analysis-table .earnings-date-cell {
   text-align: center !important;
