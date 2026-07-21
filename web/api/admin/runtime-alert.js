@@ -94,7 +94,7 @@ export default async function handler(req, res) {
 
   const recipients = readAdminEmails()
   if (!recipients.length) {
-    return json(res, 500, { ok: false, error: 'ADMIN_EMAILS is missing' })
+    return json(res, 500, { ok: false, error: 'Alert unavailable' })
   }
 
   try {
@@ -102,8 +102,9 @@ export default async function handler(req, res) {
     for (const to of recipients) {
       await sendBrevoEmail({ to, subject, html })
     }
-    return json(res, 200, { ok: true, sent: recipients.length })
+    return json(res, 200, { ok: true })
   } catch (error) {
-    return json(res, 500, { ok: false, error: error instanceof Error ? error.message : String(error) })
+    console.error('[runtime-alert]', error instanceof Error ? error.message : error)
+    return json(res, 500, { ok: false, error: 'Alert unavailable' })
   }
 }

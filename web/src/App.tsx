@@ -762,12 +762,11 @@ function authCallbackParams() {
 function authCallbackMessage() {
   const params = authCallbackParams()
   const errorCode = params.get('error_code')
-  const errorDescription = params.get('error_description') ?? params.get('error')
   if (errorCode === 'otp_expired') {
     return '가입 확인 링크가 만료되었거나 이미 사용되었습니다.\n회원가입 탭에서 같은 이메일로 다시 요청해 주세요.'
   }
-  if (errorDescription) {
-    return `인증 링크를 처리하지 못했습니다.\n${errorDescription.replace(/\+/g, ' ')}`
+  if (params.get('error') || params.get('error_description') || errorCode) {
+    return '인증 링크를 처리하지 못했습니다.\n링크를 다시 요청하거나 잠시 후 다시 시도해 주세요.'
   }
   return ''
 }
@@ -7467,7 +7466,7 @@ function App() {
         redirectTo: window.location.origin,
       })
       if (error) {
-        setLoginError(`비밀번호 재설정 안내를 보내지 못했습니다.\n${error.message}`)
+        setLoginError('비밀번호 재설정 안내를 보내지 못했습니다.\n잠시 후 다시 시도해 주세요.')
         return
       }
       setLoginError('')
@@ -7522,9 +7521,10 @@ function App() {
         },
       })
       if (error) {
-        setLoginError(error.message.includes('already registered')
+        const alreadyRegistered = /already registered|already been registered|user already exists/i.test(error.message)
+        setLoginError(alreadyRegistered
           ? '이미 가입된 이메일입니다.\n로그인 탭에서 기존 계정으로 로그인해 주세요.'
-          : `회원가입을 완료하지 못했습니다.\n${error.message}`)
+          : '회원가입을 완료하지 못했습니다.\n잠시 후 다시 시도해 주세요.')
         return
       }
       if (Array.isArray(data.user?.identities) && data.user.identities.length === 0) {
@@ -7598,7 +7598,7 @@ function App() {
       },
     })
     if (error) {
-      setLoginError(`확인 메일을 다시 보내지 못했습니다.\n${error.message}`)
+      setLoginError('확인 메일을 다시 보내지 못했습니다.\n잠시 후 다시 시도해 주세요.')
       return
     }
     setLoginError('')
@@ -7619,10 +7619,7 @@ function App() {
     try {
       const { error } = await supabase.rpc('delete_own_account')
       if (error) {
-        const message = error.message.includes('delete_own_account') || error.message.includes('schema cache')
-          ? '회원탈퇴 RPC가 아직 DB에 적용되지 않았습니다.\nSupabase migration 008_refresh_delete_own_account_rpc.sql을 적용한 뒤 다시 시도해 주세요.'
-          : `회원탈퇴를 완료하지 못했습니다.\n${error.message}`
-        setAccountDeleteError(message)
+        setAccountDeleteError('회원탈퇴를 완료하지 못했습니다.\n잠시 후 다시 시도해 주세요.')
         setIsAccountDeleteConfirmOpen(false)
         setIsLoginOpen(true)
         return
@@ -7804,7 +7801,7 @@ function App() {
       })
       const payload = await response.json().catch(() => ({}))
       if (!response.ok || !payload?.url) {
-        throw new Error(payload?.error || 'Slack 연동을 시작하지 못했습니다.')
+        throw new Error('Slack start failed')
       }
       if (oauthWindow) {
         oauthWindow.opener = null
@@ -7812,9 +7809,9 @@ function App() {
       } else {
         window.open(String(payload.url), '_blank', 'noopener,noreferrer')
       }
-    } catch (error) {
+    } catch {
       oauthWindow?.close()
-      setAuthInfoMessage(error instanceof Error ? error.message : 'Slack 연동을 시작하지 못했습니다.')
+      setAuthInfoMessage('Slack 연동을 시작하지 못했습니다.\n잠시 후 다시 시도해 주세요.')
     } finally {
       setConnectingNotificationChannel(null)
     }
