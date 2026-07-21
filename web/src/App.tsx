@@ -307,6 +307,7 @@ const FAIR_PRICE_RANGE_TOOLTIP = 'EPS(TTM) × 적용 PER 배수로 계산합니�
 function metricTooltip(concept: string, colorGuide: string) {
   if (!colorGuide || colorGuide === '없음') return concept
   const formattedGuide = colorGuide
+    .replace(/\.$/, '')
     .replace(/\s*·\s*(일반:)/g, '\n$1')
     .replace(/\s*·\s*(부정:)/g, '\n$1')
     .replace(/^긍정:/, '긍정(빨강):')
