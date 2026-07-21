@@ -306,11 +306,7 @@ const FAIR_PRICE_RANGE_TOOLTIP = 'EPS(TTM) × 적용 PER 배수로 계산합니�
 
 function metricTooltip(concept: string, colorGuide: string) {
   if (!colorGuide || colorGuide === '없음') return concept
-  // 실적일처럼 주의 색(주황)을 쓰는 경우는 별도 안내를 유지한다.
-  if (colorGuide.includes('주황')) {
-    return `${concept}\n\n색 표시: ${colorGuide}`
-  }
-  return `${concept}\n\n색 표시(빨강=긍정 · 회색=일반 · 파랑=부정): ${colorGuide}`
+  return `${concept}\n\n${colorGuide}`
 }
 const ADMIN_LOGS_PAGE_SIZE = 50
 const BOARD_POST_PAGE_SIZE = 50
