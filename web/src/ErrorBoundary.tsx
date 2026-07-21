@@ -35,9 +35,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           wordBreak: 'break-word',
         }}
       >
-        <h1 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>화면을 표시하는 중 오류가 발생했어요</h1>
+        <h1 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>화면을 불러오지 못했습니다</h1>
         <p style={{ fontSize: 14, color: '#4b5563', marginBottom: 16 }}>
-          잠시 후 다시 시도해 주세요. 문제가 계속되면 페이지를 새로고침해 주세요.
+          새로고침 후 다시 시도해 주세요.
         </p>
         <button
           type="button"

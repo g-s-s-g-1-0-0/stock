@@ -766,7 +766,7 @@ function authCallbackMessage() {
     return '가입 확인 링크가 만료되었거나 이미 사용되었습니다.\n회원가입 탭에서 같은 이메일로 다시 요청해 주세요.'
   }
   if (params.get('error') || params.get('error_description') || errorCode) {
-    return '인증 링크를 처리하지 못했습니다.\n링크를 다시 요청하거나 잠시 후 다시 시도해 주세요.'
+    return '인증 링크를 처리하지 못했습니다.\n링크를 다시 요청해 주세요.'
   }
   return ''
 }
@@ -7466,7 +7466,7 @@ function App() {
         redirectTo: window.location.origin,
       })
       if (error) {
-        setLoginError('비밀번호 재설정 안내를 보내지 못했습니다.\n잠시 후 다시 시도해 주세요.')
+        setLoginError('비밀번호 재설정 안내를 보내지 못했습니다.')
         return
       }
       setLoginError('')
@@ -7524,7 +7524,7 @@ function App() {
         const alreadyRegistered = /already registered|already been registered|user already exists/i.test(error.message)
         setLoginError(alreadyRegistered
           ? '이미 가입된 이메일입니다.\n로그인 탭에서 기존 계정으로 로그인해 주세요.'
-          : '회원가입을 완료하지 못했습니다.\n잠시 후 다시 시도해 주세요.')
+          : '회원가입을 완료하지 못했습니다.')
         return
       }
       if (Array.isArray(data.user?.identities) && data.user.identities.length === 0) {
@@ -7598,7 +7598,7 @@ function App() {
       },
     })
     if (error) {
-      setLoginError('확인 메일을 다시 보내지 못했습니다.\n잠시 후 다시 시도해 주세요.')
+      setLoginError('확인 메일을 다시 보내지 못했습니다.')
       return
     }
     setLoginError('')
@@ -7619,7 +7619,7 @@ function App() {
     try {
       const { error } = await supabase.rpc('delete_own_account')
       if (error) {
-        setAccountDeleteError('회원탈퇴를 완료하지 못했습니다.\n잠시 후 다시 시도해 주세요.')
+        setAccountDeleteError('회원탈퇴를 완료하지 못했습니다.')
         setIsAccountDeleteConfirmOpen(false)
         setIsLoginOpen(true)
         return
@@ -7811,7 +7811,7 @@ function App() {
       }
     } catch {
       oauthWindow?.close()
-      setAuthInfoMessage('Slack 연동을 시작하지 못했습니다.\n잠시 후 다시 시도해 주세요.')
+      setAuthInfoMessage('슬랙 연동을 시작하지 못했습니다.')
     } finally {
       setConnectingNotificationChannel(null)
     }
