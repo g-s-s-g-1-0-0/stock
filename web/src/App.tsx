@@ -309,6 +309,9 @@ function metricTooltip(concept: string, colorGuide: string) {
   const formattedGuide = colorGuide
     .replace(/\s*·\s*(일반:)/g, '\n$1')
     .replace(/\s*·\s*(부정:)/g, '\n$1')
+    .replace(/^긍정:/, '긍정(빨강):')
+    .replace(/\n일반:/g, '\n일반(회색):')
+    .replace(/\n부정:/g, '\n부정(파랑):')
   return `${concept}\n\n${formattedGuide}`
 }
 const ADMIN_LOGS_PAGE_SIZE = 50
