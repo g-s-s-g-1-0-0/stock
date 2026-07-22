@@ -557,6 +557,16 @@ def build_market_snapshot() -> tuple[list[list[str]], dict[str, Any], float | No
         ["시장 주요 이벤트", market_event],
     ]
     vix_today: float | None = None
+    qqq_state: dict[str, Any] = {}
+    qqq_error: str | None = None
+
+    # 장 상태는 매매 국면의 핵심이라 이벤트 바로 다음에 둔다.
+    try:
+        qqq_state = qqq_market_state_snapshot()
+        rows.append(["장 상태", str(qqq_state.get("regimeLabel") or "판단 불가")])
+    except Exception as exc:  # noqa: BLE001 - snapshot rows are best-effort
+        qqq_error = str(exc)
+        rows.append(["장 상태", f"수집 실패: {exc}"])
 
     try:
         vix_rows = fetch_ohlcv("^VIX")
@@ -585,9 +595,7 @@ def build_market_snapshot() -> tuple[list[list[str]], dict[str, Any], float | No
     except Exception as exc:  # noqa: BLE001
         rows.append(["달러 인덱스", f"수집 실패: {exc}"])
 
-    qqq_state: dict[str, Any] = {}
-    try:
-        qqq_state = qqq_market_state_snapshot()
+    if qqq_state:
         rows.extend([
             ["QQQ 주봉 RSI (14)", fmt_number(qqq_state.get("weeklyRsi"))],
             ["QQQ 일봉 RSI (14, 당일)", fmt_number(qqq_state.get("dailyRsi"))],
@@ -606,8 +614,8 @@ def build_market_snapshot() -> tuple[list[list[str]], dict[str, Any], float | No
             ["나스닥 (QQQ, 200일 이동평균선)", fmt_number(qqq_state.get("ma200"))],
             ["나스닥 (QQQ, 200일선 이격도)", fmt_signed_percent(qqq_state.get("premiumPercent"))],
         ])
-    except Exception as exc:  # noqa: BLE001
-        rows.append(["나스닥 (QQQ)", f"수집 실패: {exc}"])
+    elif qqq_error is not None:
+        rows.append(["나스닥 (QQQ)", f"수집 실패: {qqq_error}"])
 
     return rows, qqq_state, vix_today
 

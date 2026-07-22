@@ -3729,6 +3729,7 @@ const valueMetricColumns: Array<{ label: string; value: (metric: ValuationMetric
 
 const technicalMarketSnapshot: string[][] = [
   ['시장 주요 이벤트', '당분간 없음'],
+  ['장 상태', '횡보장 고점'],
   ['VIX (변동성지수) 당일·전날', '16.99 / 16.89'],
   ['미국 10년물 금리', '4.378'],
   ['달러 인덱스', '98.21'],
@@ -3748,6 +3749,7 @@ const technicalMarketSnapshot: string[][] = [
 
 const technicalSummaryTooltips: Record<string, string> = {
   '시장 주요 이벤트': '금리, 물가, 고용처럼 시장 전체 변동성을 키울 수 있는 일정을 먼저 확인합니다.',
+  '장 상태': 'QQQ 200일선 이격도와 최근 급락 이력으로 보는 시장 국면입니다. 회복장·정상장·횡보장 고점·하락장에 따라 매수 차단선과 전략 허용 범위가 달라집니다.',
   'VIX (변동성지수) 당일·전날': '시장 공포심과 변동성 수준을 봅니다. 높거나 급등하면 보수적으로 판단합니다.',
   'CNN 공포·탐욕지수 당일·전날': '투자 심리가 과열인지 공포인지 확인합니다. 극단 구간에서는 반대 움직임을 주의합니다.',
   '미국 10년물 금리': '성장주와 할인율에 영향을 주는 핵심 금리입니다. 급등하면 기술주 부담이 커질 수 있습니다.',
@@ -3782,12 +3784,17 @@ function mergeMarketSnapshot(snapshot: string[][]): string[][] {
   const normalizedRows = snapshot
     .filter(([label]) => label !== '기술분석 갱신 주기')
     .map(([label, value]) => [label, incomingValues.get(label) ?? value])
-  const [eventRow = technicalMarketSnapshot[0], ...restRows] = normalizedRows
+  const eventRow = normalizedRows.find(([label]) => label === '시장 주요 이벤트') ?? technicalMarketSnapshot[0]
+  const regimeRow = normalizedRows.find(([label]) => label === '장 상태')
+    ?? technicalMarketSnapshot.find(([label]) => label === '장 상태')
+    ?? ['장 상태', '판단 불가']
+  const restRows = normalizedRows.filter(([label]) => label !== '시장 주요 이벤트' && label !== '장 상태')
   const vixRows = restRows.filter(([label]) => label.startsWith('VIX'))
   const otherRows = restRows.filter(([label]) => !label.startsWith('VIX'))
 
   return [
     eventRow,
+    regimeRow,
     ...vixRows,
     ...otherRows,
   ]
@@ -4192,6 +4199,7 @@ function TechnicalAnalysisPage({
   const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleStocks.length, 0)
   const isEmpty = stocks.length === 0
   const sheetWheelRef = useEdgeScrollWheelRef()
+  const regimeSnapshot = marketSnapshot.find(([label]) => label === '장 상태')?.[1] ?? '횡보장 고점'
   const vixSnapshot = marketSnapshot.find(([label]) => label === 'VIX (변동성지수) 당일·전날')?.[1] ?? '16.99 / 16.89'
   const fearGreedSnapshot = marketSnapshot.find(([label]) => label === 'CNN 공포·탐욕지수 당일·전날')?.[1]
   const tnxSnapshot = marketSnapshot.find(([label]) => label === '미국 10년물 금리')?.[1] ?? '4.378'
@@ -4227,6 +4235,7 @@ function TechnicalAnalysisPage({
       >
         <summary>
           <span>공통 지표</span>
+          <strong>장 상태 {regimeSnapshot}</strong>
           <strong>VIX (변동성지수) {vixSnapshot}</strong>
           {fearGreedSnapshot && <strong>CNN 공포·탐욕지수 {fearGreedSnapshot}</strong>}
           <strong>{qqqSummary}</strong>
