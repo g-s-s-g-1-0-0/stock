@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-07-22T15:00:58Z",
+    "updatedAt": "2026-07-22T16:55:21Z",
     "rowCount": 2
   },
   "rows": [
@@ -107,7 +107,7 @@
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-21T16:47:56.286808+00:00"
+      "remoteUpdatedAt": "2026-07-22T16:19:52.697406+00:00"
     },
     {
       "id": "026d7675-fa4f-44d9-8792-88cb35fe276a",
@@ -122,7 +122,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-21T16:47:56.297081+00:00"
+      "remoteUpdatedAt": "2026-07-22T16:19:52.623117+00:00"
     }
   ]
 }
