@@ -2471,7 +2471,7 @@ def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuatio
 
     sent = 0
     for recipient in recipients:
-        tickers = watchlists.get(recipient.owner_id, set())
+        tickers = watchlist_tickers_for_recipient(recipient, watchlists, admin_uses_operator=True)
         candidates = earnings_candidates(tickers, stocks, valuations)
         if not candidates:
             continue
@@ -2482,19 +2482,108 @@ def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuatio
     return sent
 
 
+def load_personal_exit_changes_by_owner(path: Path = PERSONAL_TRADE_EXITS) -> dict[str, list[dict[str, Any]]]:
+    """record_web_api_logs가 남긴 개인 로그 자동 청산 이벤트를 계정별 변경 목록으로 변환한다."""
+    payload = read_json(path)
+    events = payload.get("events") if isinstance(payload, dict) else []
+    result: dict[str, list[dict[str, Any]]] = {}
+    for event in events or []:
+        if not isinstance(event, dict):
+            continue
+        owner_id = str(event.get("ownerId") or "")
+        trades = [trade for trade in event.get("trades") or [] if isinstance(trade, dict)]
+        if owner_id and trades:
+            result[owner_id] = [exit_change_from_trade(trade) for trade in trades]
+    return result
+
+
+def consume_personal_exit_events(path: Path = PERSONAL_TRADE_EXITS) -> None:
+    """발송 완료한 개인 청산 이벤트를 비워 다음 실행에서 중복 발송되지 않게 한다."""
+    payload = read_json(path)
+    if not (isinstance(payload, dict) and payload.get("events")):
+        return
+    meta = payload.get("meta") if isinstance(payload.get("meta"), dict) else {}
+    path.write_text(
+        json.dumps(
+            {
+                "meta": {
+                    "kind": "personal-trade-exits",
+                    "updatedAt": meta.get("updatedAt"),
+                    "lastSentAt": datetime.now(KST).isoformat(timespec="seconds"),
+                },
+                "events": [],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def load_personal_open_trade_tickers_by_owner() -> dict[str, set[str]]:
+    rows = supabase_request("/rest/v1/user_settings?select=owner_id,personal_trade_logs")
+    result: dict[str, set[str]] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        owner_id = str(row.get("owner_id") or "")
+        trades = row.get("personal_trade_logs")
+        if not owner_id or not isinstance(trades, list):
+            continue
+        open_tickers = {
+            trade_ticker(trade)
+            for trade in trades
+            if isinstance(trade, dict) and is_open_trade(trade)
+        }
+        open_tickers.discard("")
+        if open_tickers:
+            result[owner_id] = open_tickers
+    return result
+
+
+def opinion_groups_for_tickers(
+    current: dict[str, dict[str, Any]],
+    tickers: set[str],
+    open_tickers: set[str],
+) -> tuple[list[str], list[str], list[str]]:
+    """공개 의견 요약을 특정 계정의 관심종목·보유 종목 범위로 좁힌다."""
+    buy_opinions: list[str] = []
+    watch_holding_opinions: list[str] = []
+    sell_opinions: list[str] = []
+    for ticker, stock in current.items():
+        normalized_ticker = str(ticker).strip().upper()
+        if normalized_ticker not in tickers:
+            continue
+        opinion = str(stock.get("opinion") or "").strip()
+        label = display_stock(stock, normalized_ticker)
+        if opinion == "매수":
+            buy_opinions.append(label)
+        elif opinion == "관망" and normalized_ticker in open_tickers:
+            watch_holding_opinions.append(label)
+        elif opinion == "매도":
+            sell_opinions.append(label)
+    return buy_opinions, watch_holding_opinions, sell_opinions
+
+
 def send_opinion_notifications(
     previous: Path,
     current: Path,
     previous_trade_logs: Path | None = None,
     current_trade_logs: Path | None = None,
 ) -> int:
+    """의견 변경·청산 알림을 계정 단위로 보낸다.
+
+    모든 계정(어드민 포함)에 같은 규칙을 적용한다: 각 계정의 관심종목과 보유 포지션에
+    해당하는 변경만 골라 그 계정에게만 발송한다. 계정의 로그는 어드민이면 공개 시스템
+    로그, 일반 계정이면 personal_trade_logs이며, 청산 알림도 각자 자기 로그 기준이다.
+    """
     reset_active = bool(runtime_reset_state())
-    exit_changes = (
+    system_exit_changes = (
         trade_exit_changes(previous_trade_logs, current_trade_logs)
         if previous_trade_logs is not None and current_trade_logs is not None
         else []
     )
-    exit_tickers = {str(change.get("ticker") or "").strip().upper() for change in exit_changes}
     changes = opinion_changes(
         previous,
         current,
@@ -2502,17 +2591,8 @@ def send_opinion_notifications(
         previous_trade_logs,
         current_trade_logs,
     )
-    if exit_tickers:
-        changes = [
-            change
-            for change in changes
-            if not (
-                str(change.get("ticker") or "").strip().upper() in exit_tickers
-                and change.get("to") == "매도"
-            )
-        ]
-    changes.extend(exit_changes)
-    if not changes:
+    personal_exits_by_owner = load_personal_exit_changes_by_owner()
+    if not changes and not system_exit_changes and not personal_exits_by_owner:
         print("No opinion changes.")
         if reset_active:
             clear_runtime_reset()
@@ -2525,43 +2605,83 @@ def send_opinion_notifications(
     ]
     if not recipients:
         print("No recipients for opinionChangeEmail.")
+        consume_personal_exit_events()
         if reset_active:
             clear_runtime_reset()
         return 0
 
-    buy_opinions, watch_holding_opinions, sell_opinions = opinion_groups(current)
-    # 가치투자(long_term)는 청산 조건 자체를 인식하지 않으므로 의견이 '매도'로 가는 일이 없다.
-    # 따라서 매수 신호와 매수→관망(매수 의견 해제)만 알리고, 매도 전환·청산은 제외한다.
-    long_term_changes = [
-        change
-        for change in changes
-        if change.get("to") == "매수" or (change.get("to") == "관망" and change.get("from") == "매수")
-    ]
-
-    swing_recipients = [r for r in recipients if r.investment_type != "long_term"]
-    long_term_recipients = [r for r in recipients if r.investment_type == "long_term"]
+    watchlists = load_watchlists()
+    personal_open_tickers = load_personal_open_trade_tickers_by_owner()
+    system_open_tickers = {
+        trade_ticker(row)
+        for row in trade_rows(current_trade_logs or DEFAULT_CURRENT_TRADE_LOGS)
+        if is_open_trade(row)
+    }
+    system_open_tickers.discard("")
+    current_stocks = stock_rows_by_ticker(current)
 
     sent = 0
-    if swing_recipients:
-        subject = "투자의견 변경 알림 (" + ", ".join(change["ticker"] for change in changes[:8]) + ")"
-        body = opinion_email_body(changes, buy_opinions, watch_holding_opinions, sell_opinions)
-        for recipient in swing_recipients:
-            send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
-            sent += 1
-    if long_term_recipients and long_term_changes:
-        subject = "투자의견 변경 알림 (" + ", ".join(change["ticker"] for change in long_term_changes[:8]) + ")"
-        body = opinion_email_body(
-            long_term_changes,
-            buy_opinions,
-            watch_holding_opinions,
-            None,
-            include_sell_summary=False,
-            include_recommended_sell_price=False,
-        )
-        for recipient in long_term_recipients:
-            send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
-            sent += 1
+    for recipient in recipients:
+        my_tickers = watchlist_tickers_for_recipient(recipient, watchlists, admin_uses_operator=True)
+        if recipient.is_admin:
+            my_open_tickers = system_open_tickers
+            my_exit_changes = system_exit_changes
+        else:
+            my_open_tickers = personal_open_tickers.get(recipient.owner_id, set())
+            my_exit_changes = personal_exits_by_owner.get(recipient.owner_id, [])
+        relevant_tickers = my_tickers | my_open_tickers
+        my_opinion_changes = [
+            change
+            for change in changes
+            if str(change.get("ticker") or "").strip().upper() in relevant_tickers
+        ]
 
+        if recipient.investment_type == "long_term":
+            # 가치투자(long_term)는 청산 조건 자체를 인식하지 않으므로 의견이 '매도'로 가는 일이 없다.
+            # 따라서 매수 신호와 매수→관망(매수 의견 해제)만 알리고, 매도 전환·청산은 제외한다.
+            my_changes = [
+                change
+                for change in my_opinion_changes
+                if change.get("to") == "매수" or (change.get("to") == "관망" and change.get("from") == "매수")
+            ]
+            if not my_changes:
+                continue
+            buy_opinions, watch_holding_opinions, _ = opinion_groups_for_tickers(
+                current_stocks, relevant_tickers, my_open_tickers
+            )
+            body = opinion_email_body(
+                my_changes,
+                buy_opinions,
+                watch_holding_opinions,
+                None,
+                include_sell_summary=False,
+                include_recommended_sell_price=False,
+            )
+        else:
+            # 내 로그에서 청산된 종목은 의견 '매도' 전환 대신 진입가·수익률이 담긴 청산 항목으로 보여준다.
+            exit_tickers = {str(change.get("ticker") or "").strip().upper() for change in my_exit_changes}
+            my_changes = [
+                change
+                for change in my_opinion_changes
+                if not (
+                    str(change.get("ticker") or "").strip().upper() in exit_tickers
+                    and change.get("to") == "매도"
+                )
+            ]
+            my_changes.extend(my_exit_changes)
+            if not my_changes:
+                continue
+            buy_opinions, watch_holding_opinions, sell_opinions = opinion_groups_for_tickers(
+                current_stocks, relevant_tickers, my_open_tickers
+            )
+            body = opinion_email_body(my_changes, buy_opinions, watch_holding_opinions, sell_opinions)
+
+        subject_tickers = list(dict.fromkeys(str(change["ticker"]) for change in my_changes))
+        subject = "투자의견 변경 알림 (" + ", ".join(subject_tickers[:8]) + ")"
+        send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
+        sent += 1
+
+    consume_personal_exit_events()
     if reset_active:
         clear_runtime_reset()
     print(f"Sent opinion notifications: {sent}")
@@ -2595,59 +2715,6 @@ def send_trade_exit_notifications(
         send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
         sent += 1
     print(f"Sent trade exit notifications: {sent}")
-    return sent
-
-
-def send_personal_exit_notifications(path: Path = PERSONAL_TRADE_EXITS) -> int:
-    """개인 로그에서 자동 청산된 포지션을 해당 계정에게만 알린다.
-
-    record_web_api_logs가 이번 실행의 청산 이벤트를 이 파일에 남기고,
-    발송 후에는 재발송을 막기 위해 이벤트를 비운 상태로 다시 쓴다.
-    """
-    payload = read_json(path)
-    events = payload.get("events") if isinstance(payload, dict) else []
-    events = [event for event in events or [] if isinstance(event, dict)]
-    if not events:
-        print("No personal trade exits.")
-        return 0
-
-    recipients_by_owner = {
-        recipient.owner_id: recipient
-        for recipient in load_recipients()
-        if recipient.owner_id and enabled(recipient, "opinionChangeEmail")
-    }
-    sent = 0
-    for event in events:
-        owner_id = str(event.get("ownerId") or "")
-        trades = [trade for trade in event.get("trades") or [] if isinstance(trade, dict)]
-        recipient = recipients_by_owner.get(owner_id)
-        if not recipient or not trades:
-            continue
-        changes = [exit_change_from_trade(trade) for trade in trades]
-        tickers = ", ".join(str(change.get("ticker") or "-") for change in changes[:8])
-        subject = f"[보유 종목 자동 청산] {tickers}"
-        body = opinion_email_body(changes)
-        send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
-        sent += 1
-
-    # 발송 완료한 이벤트는 소비 처리해 다음 실행에서 중복 발송되지 않게 한다.
-    path.write_text(
-        json.dumps(
-            {
-                "meta": {
-                    "kind": "personal-trade-exits",
-                    "updatedAt": payload.get("meta", {}).get("updatedAt") if isinstance(payload.get("meta"), dict) else None,
-                    "lastSentAt": datetime.now(KST).isoformat(timespec="seconds"),
-                },
-                "events": [],
-            },
-            ensure_ascii=False,
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    print(f"Sent personal exit notifications: {sent}")
     return sent
 
 
@@ -2718,9 +2785,6 @@ def main() -> int:
     trade_exit_parser.add_argument("--previous", type=Path, default=DEFAULT_PREVIOUS_TRADE_LOGS)
     trade_exit_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_TRADE_LOGS)
 
-    personal_exits_parser = subparsers.add_parser("personal-exits")
-    personal_exits_parser.add_argument("--path", type=Path, default=PERSONAL_TRADE_EXITS)
-
     earnings_parser = subparsers.add_parser("earnings")
     earnings_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
     earnings_parser.add_argument("--valuation", type=Path, default=DEFAULT_VALUATION)
@@ -2751,9 +2815,6 @@ def main() -> int:
         return 0
     if args.command == "trade-exit":
         send_trade_exit_notifications(args.previous, args.current)
-        return 0
-    if args.command == "personal-exits":
-        send_personal_exit_notifications(args.path)
         return 0
     if args.command == "earnings":
         send_earnings_notifications(args.current, args.valuation)
