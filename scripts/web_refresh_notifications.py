@@ -1667,7 +1667,7 @@ def send_stock_universe_report_notifications(
     recipients = [
         recipient
         for recipient in load_recipients()
-        if recipient.is_admin and enabled(recipient, "weeklyTrendReport")
+        if recipient.is_admin and enabled(recipient, "weeklyTrendReport", default=False)
     ]
     if not recipients:
         print("No admin recipients for stock universe report.")
