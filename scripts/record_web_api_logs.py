@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import re
@@ -842,6 +843,154 @@ def mark_exit_opinion(stock: dict[str, Any], technical_row: dict[str, Any], reas
     return changed
 
 
+def load_personal_watchlists() -> dict[str, dict[str, list[str]]]:
+    """개인(owner_id 있는) 관심종목을 사용자별 투자유형 맵으로 읽어온다."""
+    if not supabase_url() or not service_key():
+        return {}
+    try:
+        rows = supabase_request(
+            "/rest/v1/watchlists?select=owner_id,scope,tickers,tickers_by_type&owner_id=not.is.null"
+        )
+    except (HTTPError, URLError, TimeoutError) as error:
+        print(f"[trade_logs] personal watchlist fetch failed; skipped: {error}")
+        return {}
+
+    result: dict[str, dict[str, list[str]]] = {}
+    for row in rows or []:
+        if not isinstance(row, dict) or row.get("scope") == "operator":
+            continue
+        owner_id = str(row.get("owner_id") or "").strip()
+        if not owner_id:
+            continue
+        by_type = result.setdefault(owner_id, {investment_type: [] for investment_type in INVESTMENT_TYPES})
+        raw_by_type = row.get("tickers_by_type")
+        had_typed = False
+        if isinstance(raw_by_type, dict):
+            for investment_type in INVESTMENT_TYPES:
+                values = raw_by_type.get(investment_type)
+                if isinstance(values, list) and values:
+                    had_typed = True
+                append_watchlist_values(by_type[investment_type], values)
+        if not had_typed:
+            flat: list[str] = []
+            append_watchlist_values(flat, row.get("tickers"))
+            for investment_type in INVESTMENT_TYPES:
+                append_watchlist_values(by_type[investment_type], flat)
+    return result
+
+
+def load_personal_trade_log_rows() -> dict[str, list[dict[str, Any]]]:
+    rows = supabase_request("/rest/v1/user_settings?select=owner_id,personal_trade_logs")
+    result: dict[str, list[dict[str, Any]]] = {}
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        owner_id = str(row.get("owner_id") or "").strip()
+        if not owner_id:
+            continue
+        raw = row.get("personal_trade_logs")
+        result[owner_id] = [trade for trade in raw if isinstance(trade, dict)] if isinstance(raw, list) else []
+    return result
+
+
+def serialize_trade(trade: dict[str, Any]) -> str:
+    return json.dumps(trade, ensure_ascii=False, sort_keys=True)
+
+
+def merge_personal_engine_result(
+    owner_id: str,
+    before_by_key: dict[tuple[str, str, str, str], str],
+    engine_trades: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """엔진 결과를 저장 직전의 최신 원격 로그와 병합한다.
+
+    엔진이 도는 동안 사용자가 화면에서 청산/삭제했다면 사용자의 마지막 액션을 우선한다:
+    사용자가 건드린(변경·삭제된) 항목은 그대로 두고, 엔진이 새로 추가한 거래와
+    사용자가 건드리지 않은 항목의 엔진 갱신분만 얹는다.
+    """
+    fresh_rows = supabase_request(
+        f"/rest/v1/user_settings?select=personal_trade_logs&owner_id=eq.{owner_id}"
+    )
+    fresh_raw = fresh_rows[0].get("personal_trade_logs") if isinstance(fresh_rows, list) and fresh_rows else None
+    fresh_trades = [trade for trade in fresh_raw if isinstance(trade, dict)] if isinstance(fresh_raw, list) else []
+    fresh_by_key = {trade_key(trade): serialize_trade(trade) for trade in fresh_trades}
+    if fresh_by_key == before_by_key:
+        return engine_trades
+
+    merged = list(fresh_trades)
+    merged_keys = {trade_key(trade) for trade in merged}
+    for trade in engine_trades:
+        key = trade_key(trade)
+        if key not in before_by_key:
+            # 엔진이 이번 실행에서 새로 추가한 거래.
+            if key not in merged_keys:
+                merged.append(trade)
+                merged_keys.add(key)
+            continue
+        if key in fresh_by_key and fresh_by_key[key] == before_by_key.get(key):
+            # 사용자가 건드리지 않은 항목만 엔진 갱신분으로 교체한다.
+            merged = [trade if trade_key(item) == key else item for item in merged]
+    return merged
+
+
+def process_personal_trade_logs(
+    personal_watchlists: dict[str, dict[str, list[str]]],
+    *,
+    season: dict[str, Any],
+    engine_kwargs: dict[str, Any],
+) -> None:
+    """모든 개인 계정의 관심종목에 운영자 로그와 동일한 진입/청산 엔진을 적용한다."""
+    if not supabase_url() or not service_key():
+        return
+    try:
+        logs_by_owner = load_personal_trade_log_rows()
+    except (HTTPError, URLError, TimeoutError) as error:
+        print(f"[trade_logs] personal trade log fetch failed; skipped: {error}")
+        return
+
+    owners = {owner_id for owner_id, by_type in personal_watchlists.items() if any(by_type.values())}
+    for owner_id, trades in logs_by_owner.items():
+        if any(str(trade.get("status") or "") == "보유 중" for trade in trades):
+            owners.add(owner_id)
+
+    processed = 0
+    updated = 0
+    for owner_id in sorted(owners):
+        if owner_id not in logs_by_owner:
+            # user_settings 행이 아직 없는 계정은 다음 로그인 때 트리거로 생성된 뒤 처리한다.
+            continue
+        before_trades = logs_by_owner[owner_id]
+        before_by_key = {trade_key(trade): serialize_trade(trade) for trade in before_trades}
+        entry_tickers_by_type = personal_watchlists.get(owner_id) or {
+            investment_type: [] for investment_type in INVESTMENT_TYPES
+        }
+        result = run_trade_engine(
+            copy.deepcopy(before_trades),
+            entry_tickers_by_type,
+            season=copy.deepcopy(season),
+            # 런타임 리셋 시드는 운영자 로그 복구용이라 개인 로그에는 적용하지 않는다.
+            seed_after_reset=False,
+            mutate_public_state=False,
+            **engine_kwargs,
+        )
+        processed += 1
+        next_trades = result["trades"]
+        next_by_key = {trade_key(trade): serialize_trade(trade) for trade in next_trades}
+        if next_by_key == before_by_key:
+            continue
+        try:
+            merged = merge_personal_engine_result(owner_id, before_by_key, next_trades)
+            supabase_request(
+                f"/rest/v1/user_settings?owner_id=eq.{owner_id}",
+                method="PATCH",
+                payload={"personal_trade_logs": merged, "portfolio_state_initialized": True},
+            )
+            updated += 1
+        except (HTTPError, URLError, TimeoutError) as error:
+            print(f"[trade_logs] personal trade log save failed for {owner_id}: {error}")
+    print(f"[trade_logs] personal logs processed={processed} updated={updated}")
+
+
 def update_trade_logs(
     stocks: list[dict[str, Any]],
     previous_stocks: dict[str, dict[str, Any]],
@@ -855,7 +1004,6 @@ def update_trade_logs(
     trades = [row for row in rows if isinstance(row, dict)]
     stocks_by_symbol = stocks_by_ticker(stocks)
     entry_tickers_by_type = load_watchlist_tickers_by_type(stocks)
-    entry_tickers = {ticker for values in entry_tickers_by_type.values() for ticker in values}
     today = kst_trade_date()
     today_date = parse_trade_date(today) or datetime.now(timezone.utc).astimezone(KST).date()
     nasdaq_peak_alert = bool((qqq_market_state or {}).get("peakTriggered"))
@@ -877,11 +1025,117 @@ def update_trade_logs(
     )
     seed_after_reset = runtime_reset_requested()
     now = datetime.now(timezone.utc)
+    signal_state_changed = False
+    deferred_tickers: set[str] = set()
+
+    # 장 마감 시장의 신호 복원은 공용 상태 작업이라 모든 로그 처리 전에 한 번만 수행한다.
+    for stock in stocks:
+        ticker = str(stock.get("ticker") or "").strip().upper()
+        if not ticker:
+            continue
+        market = normalize_market(stock.get("market"), ticker)
+        if not should_defer_market_signal(market, now):
+            continue
+        row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
+        if not isinstance(row, dict):
+            row = {}
+        deferred_tickers.add(ticker)
+        signal_state_changed = restore_previous_signal_state(
+            stock,
+            row,
+            previous_stocks.get(ticker),
+            previous_technical.get(ticker, {}) if isinstance(previous_technical, dict) else {},
+        ) or signal_state_changed
+
+    engine_kwargs: dict[str, Any] = {
+        "stocks": stocks,
+        "stocks_by_symbol": stocks_by_symbol,
+        "previous_stocks": previous_stocks,
+        "technical": technical,
+        "previous_technical": previous_technical,
+        "deferred_tickers": deferred_tickers,
+        "nasdaq_peak_alert": nasdaq_peak_alert,
+        "recovery_ended": recovery_ended,
+        "now": now,
+        "today": today,
+        "today_date": today_date,
+    }
+
+    # 개인 로그는 운영자 패스가 공개 신호 상태(관심종목 외 매수 억제 등)를 변형하기 전에 처리한다.
+    personal_watchlists = load_personal_watchlists()
+    process_personal_trade_logs(personal_watchlists, season=season, engine_kwargs=engine_kwargs)
+    personal_signal_tickers = {
+        ticker
+        for by_type in personal_watchlists.values()
+        for values in by_type.values()
+        for ticker in values
+    }
+
+    result = run_trade_engine(
+        trades,
+        entry_tickers_by_type,
+        season=season,
+        seed_after_reset=seed_after_reset,
+        mutate_public_state=True,
+        signal_tickers=personal_signal_tickers,
+        **engine_kwargs,
+    )
+    signal_state_changed = result["signal_state_changed"] or signal_state_changed
+
+    refreshed_at = publish_iso()
+    payload = {
+        "meta": {
+            "kind": "trade-logs",
+            "schedule": "auto",
+            "updatedAt": refreshed_at,
+            "lastSuccessfulRun": refreshed_at,
+            "failedReason": None,
+            "appendedOpenTrades": result["appended"],
+            "closedTrades": result["closed"],
+            "correctedClosedStatuses": result["corrected"],
+            "nasdaqPeakLiquidation": nasdaq_peak_alert,
+            "recoveryEndedLiquidation": recovery_ended,
+            "strategySeasonOpen": bool(result["season"].get("open")),
+        },
+        "rows": result["trades"],
+    }
+    write_trade_logs(payload)
+    return signal_state_changed
+
+
+def run_trade_engine(
+    trades: list[dict[str, Any]],
+    entry_tickers_by_type: dict[str, list[str]],
+    *,
+    stocks: list[dict[str, Any]],
+    stocks_by_symbol: dict[str, dict[str, Any]],
+    previous_stocks: dict[str, dict[str, Any]],
+    technical: dict[str, Any],
+    previous_technical: dict[str, Any],
+    season: dict[str, Any],
+    deferred_tickers: set[str],
+    nasdaq_peak_alert: bool,
+    recovery_ended: bool,
+    seed_after_reset: bool,
+    now: datetime,
+    today: str,
+    today_date: date,
+    mutate_public_state: bool,
+    signal_tickers: set[str] | None = None,
+) -> dict[str, Any]:
+    """매수 진입/청산 엔진. 운영자 공용 로그와 개인 로그에 같은 규칙을 적용한다.
+
+    mutate_public_state=True(운영자 패스)일 때만 공개 캐시(stocks/technical)의 의견·신호와
+    시장 시즌 상태 파일을 갱신한다. 개인 패스는 전달받은 trades만 다루고 공용 상태는 읽기 전용이다.
+    signal_tickers는 운영자 관심종목이 아니어도 매수 신호 억제에서 제외할 종목(개인 관심종목 합집합)이다.
+    """
+    entry_tickers = {ticker for values in entry_tickers_by_type.values() for ticker in values}
+    signal_tickers = signal_tickers or set()
+    deferred_tickers = set(deferred_tickers)
     appended = 0
     closed = 0
     corrected_closed_statuses = 0
     signal_state_changed = False
-    deferred_tickers: set[str] = set()
 
     # Migrate legacy B holdings → strategy 1; close holdings from removed strategies.
     for trade in trades:
@@ -909,24 +1163,6 @@ def update_trade_logs(
     for trade in trades:
         if normalize_closed_trade_status(trade):
             corrected_closed_statuses += 1
-
-    for stock in stocks:
-        ticker = str(stock.get("ticker") or "").strip().upper()
-        if not ticker:
-            continue
-        market = normalize_market(stock.get("market"), ticker)
-        if not should_defer_market_signal(market, now):
-            continue
-        row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
-        if not isinstance(row, dict):
-            row = {}
-        deferred_tickers.add(ticker)
-        signal_state_changed = restore_previous_signal_state(
-            stock,
-            row,
-            previous_stocks.get(ticker),
-            previous_technical.get(ticker, {}) if isinstance(previous_technical, dict) else {},
-        ) or signal_state_changed
 
     # 관심종목(watchlist)에서 제거된 종목이라도 이미 '보유 중'인 포지션은 청산(매도)될 때까지
     # 그대로 추적한다. 매수/추가매수 시그널만 차단되며(아래 진입 루프 참고), 청산 추적은 유지된다.
@@ -996,7 +1232,7 @@ def update_trade_logs(
         if exit_result["shouldExit"]:
             exit_reason = str(exit_result.get("reason") or "시스템 매도")
             close_trade(trade, sell_price=exit_price, today=today, reason=exit_reason)
-            if stock:
+            if stock and mutate_public_state:
                 signal_state_changed = mark_exit_opinion(stock, row, exit_reason) or signal_state_changed
             closed += 1
             continue
@@ -1013,34 +1249,36 @@ def update_trade_logs(
             "openedByTicker": None,
             "updatedAt": publish_iso(),
         }
-    save_strategy_season_state(season)
+    if mutate_public_state:
+        save_strategy_season_state(season)
 
     current_open_counts = open_trade_counts(trades)
     current_open_trades = open_trades_by_slot(trades)
     current_open_by_ticker = open_trades_by_ticker(trades)
 
-    for stock in stocks:
-        ticker = str(stock.get("ticker") or "").strip().upper()
-        if not ticker:
-            continue
-        if ticker in deferred_tickers:
-            continue
-        row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
-        if not isinstance(row, dict):
-            row = {}
-        closed_trade = latest_closed_trade_for_ticker(trades, ticker)
-        preserved = preserve_recent_sell_opinion(stock, row, closed_trade)
-        if within_sell_hold(closed_trade):
-            signal_state_changed = preserved or signal_state_changed
-        elif isinstance(row, dict) and row.get("exitReason"):
-            row.pop("exitReason")
-            row.pop("opinionReason", None)
-            if row.get("opinion") == "매도":
-                row["opinion"] = "관망"
-            if stock.get("opinion") == "매도":
-                stock["opinion"] = "관망"
-                stock.pop("opinionReason", None)
-            signal_state_changed = True
+    if mutate_public_state:
+        for stock in stocks:
+            ticker = str(stock.get("ticker") or "").strip().upper()
+            if not ticker:
+                continue
+            if ticker in deferred_tickers:
+                continue
+            row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
+            if not isinstance(row, dict):
+                row = {}
+            closed_trade = latest_closed_trade_for_ticker(trades, ticker)
+            preserved = preserve_recent_sell_opinion(stock, row, closed_trade)
+            if within_sell_hold(closed_trade):
+                signal_state_changed = preserved or signal_state_changed
+            elif isinstance(row, dict) and row.get("exitReason"):
+                row.pop("exitReason")
+                row.pop("opinionReason", None)
+                if row.get("opinion") == "매도":
+                    row["opinion"] = "관망"
+                if stock.get("opinion") == "매도":
+                    stock["opinion"] = "관망"
+                    stock.pop("opinionReason", None)
+                signal_state_changed = True
 
     for stock in stocks:
         ticker = str(stock.get("ticker") or "").strip().upper()
@@ -1054,8 +1292,9 @@ def update_trade_logs(
             row = {}
         # 관심종목(watchlist)에 없는 종목은 보유 포지션 청산 추적을 위해 가격만 갱신할 뿐,
         # 매수/추가매수 시그널을 발생시키지 않는다. 진입 신호로 '매수'가 계산됐더라도 관망으로 되돌린다.
+        # 단, 개인 관심종목(signal_tickers)에 담긴 종목은 개인 로그·알림이 신호를 써야 하므로 억제하지 않는다.
         if ticker not in entry_tickers:
-            if current_opinion == "매수":
+            if current_opinion == "매수" and mutate_public_state and ticker not in signal_tickers:
                 signal_state_changed = suppress_offlist_buy_signal(stock, row) or signal_state_changed
             continue
         current_price = parse_price(stock.get("currentPrice") or tech_value(row, "현재가"))
@@ -1130,7 +1369,7 @@ def update_trade_logs(
                 current_open_by_ticker.setdefault(ticker, []).append(new_trade)
                 appended += 1
                 ticker_appended = True
-        if open_for_ticker_all and not ticker_appended:
+        if open_for_ticker_all and not ticker_appended and mutate_public_state:
             signal_state_changed = block_held_public_buy_signal(stock, row) or signal_state_changed
 
     # Drop retired A/C/D/E/F/G/H rows from the live log; keep 1/2 (+ migrated B).
@@ -1148,28 +1387,18 @@ def update_trade_logs(
         cleaned.append(trade)
     trades = cleaned
 
-    deduped = list({trade_key(trade): trade for trade in trades}.values())
-    refreshed_at = publish_iso()
-    if season.get("open") and not recovery_ended:
+    # 중복 제거는 공용 로그 정리용이다. 개인 로그는 사용자 데이터 유실을 막기 위해 그대로 둔다.
+    deduped = list({trade_key(trade): trade for trade in trades}.values()) if mutate_public_state else trades
+    if mutate_public_state and season.get("open") and not recovery_ended:
         save_strategy_season_state(season)
-    payload = {
-        "meta": {
-            "kind": "trade-logs",
-            "schedule": "auto",
-            "updatedAt": refreshed_at,
-            "lastSuccessfulRun": refreshed_at,
-            "failedReason": None,
-            "appendedOpenTrades": appended,
-            "closedTrades": closed,
-            "correctedClosedStatuses": corrected_closed_statuses,
-            "nasdaqPeakLiquidation": nasdaq_peak_alert,
-            "recoveryEndedLiquidation": recovery_ended,
-            "strategySeasonOpen": bool(season.get("open")),
-        },
-        "rows": deduped,
+    return {
+        "trades": deduped,
+        "appended": appended,
+        "closed": closed,
+        "corrected": corrected_closed_statuses,
+        "signal_state_changed": signal_state_changed,
+        "season": season,
     }
-    write_trade_logs(payload)
-    return signal_state_changed
 
 
 def parse_log_tasks(argv: list[str]) -> set[str]:

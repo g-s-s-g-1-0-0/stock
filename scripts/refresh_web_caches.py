@@ -126,6 +126,25 @@ def load_trade_log_tickers() -> list[str]:
     return []
 
 
+def load_personal_open_trade_tickers() -> list[str]:
+    """개인 로그의 '보유 중' 종목. 관심종목에서 빠져도 청산 추적을 위해 universe에 유지한다."""
+    try:
+        rows = supabase_request("/rest/v1/user_settings?select=personal_trade_logs")
+    except OSError:
+        return []
+    tickers: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        trades = row.get("personal_trade_logs")
+        if not isinstance(trades, list):
+            continue
+        for trade in trades:
+            if isinstance(trade, dict) and str(trade.get("status") or "") == "보유 중":
+                append_unique(tickers, trade.get("ticker"))
+    return tickers
+
+
 def refresh_tickers() -> list[str]:
     rows = load_watchlist_rows()
     write_watchlist_snapshot(rows)
@@ -139,6 +158,8 @@ def refresh_tickers() -> list[str]:
     for ticker in load_requested_tickers():
         append_unique(tickers, ticker)
     for ticker in load_trade_log_tickers():
+        append_unique(tickers, ticker)
+    for ticker in load_personal_open_trade_tickers():
         append_unique(tickers, ticker)
     return tickers
 

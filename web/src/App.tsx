@@ -105,6 +105,12 @@ type TradeLog = {
   status: TradeStatus
   // 가치투자에서 개인이 직접 청산한 거래임을 표시. 자동 매도 신호와 구분해 로그/현금 계산에 포함한다.
   manualExit?: boolean
+  // 서버 자동 기록 엔진의 관리 필드. 화면에서는 쓰지 않지만 저장 시 유실되지 않게 보존한다.
+  sellTimestamp?: string
+  exitReason?: string
+  restoreWatchDate?: string
+  restoreSignalCounts?: Record<string, number>
+  upperExitArmedDate?: string
 }
 
 type TooltipState = {
@@ -965,6 +971,11 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     holdingDays: typeof candidate.holdingDays === 'number' || candidate.holdingDays === '-' ? candidate.holdingDays : '-',
     status: ['익절', '손절', '실패 익절', '보유 중'].includes(normalizedStatus) ? normalizedStatus as TradeStatus : '보유 중',
     manualExit: candidate.manualExit === true ? true : undefined,
+    sellTimestamp: typeof candidate.sellTimestamp === 'string' ? candidate.sellTimestamp : undefined,
+    exitReason: typeof candidate.exitReason === 'string' ? candidate.exitReason : undefined,
+    restoreWatchDate: typeof candidate.restoreWatchDate === 'string' ? candidate.restoreWatchDate : undefined,
+    restoreSignalCounts: candidate.restoreSignalCounts && typeof candidate.restoreSignalCounts === 'object' ? candidate.restoreSignalCounts : undefined,
+    upperExitArmedDate: typeof candidate.upperExitArmedDate === 'string' ? candidate.upperExitArmedDate : undefined,
   }
 }
 
@@ -3087,6 +3098,24 @@ function valuationFromPriceRange(currentPrice: string, fairPrice: string): Valua
 
 function tradeKey(trade: TradeLog) {
   return trade.slotId || `${trade.investmentType ?? 'shared'}-${trade.ticker}-${trade.buyDate}-${strategyCode(trade.strategy)}-${trade.buyPrice}`
+}
+
+// 서버 자동 기록 엔진이 원격에 추가/청산한 거래를 화면의 오래된 상태로 덮어쓰지 않도록 병합한다.
+// 사용자의 마지막 액션이 우선: 이 세션에서 직접 삭제한 항목은 되살리지 않고,
+// 사용자가 직접 청산(manualExit)한 항목은 원격 상태보다 우선한다.
+function mergePersonalTradeLogs(local: TradeLog[], remote: TradeLog[], deletedKeys: Set<string>): TradeLog[] {
+  const localKeys = new Set(local.map((trade) => tradeKey(trade)))
+  const merged = local.map((trade) => {
+    if (trade.status !== '보유 중' || trade.manualExit) return trade
+    const remoteTrade = remote.find((item) => tradeKey(item) === tradeKey(trade))
+    // 엔진이 원격에서 자동 청산한 거래는 청산된 상태를 유지한다.
+    return remoteTrade && remoteTrade.status !== '보유 중' ? remoteTrade : trade
+  })
+  for (const remoteTrade of remote) {
+    const key = tradeKey(remoteTrade)
+    if (!localKeys.has(key) && !deletedKeys.has(key)) merged.push(remoteTrade)
+  }
+  return merged
 }
 
 function tradeMatchesInvestmentType(trade: TradeLog, targetInvestmentType: InvestmentType) {
@@ -5616,6 +5645,8 @@ function App() {
   const resetSyncGenerationRef = useRef(0)
   const operatorWatchlistRemoteUpdatedAtRef = useRef<number | null>(null)
   const personalWatchlistRemoteUpdatedAtRef = useRef<number | null>(null)
+  // 이 세션에서 사용자가 직접 삭제한 개인 거래 키. 저장 병합 시 서버 엔진 항목이 되살아나지 않게 한다.
+  const deletedPersonalTradeKeysRef = useRef<Set<string>>(new Set())
   const pullRefreshStartYRef = useRef<number | null>(null)
   const pullRefreshDistanceRef = useRef(0)
 
@@ -5888,14 +5919,30 @@ function App() {
     if (!supabase || !session) return
 
     try {
+      // 서버 자동 기록 엔진이 이 화면이 모르는 사이 추가/청산한 항목을 덮어쓰지 않도록 원격과 병합한다.
+      let mergedTrades = trades
+      try {
+        const { data } = await supabase
+          .from('user_settings')
+          .select('personal_trade_logs')
+          .eq('owner_id', session.id)
+          .maybeSingle()
+        const remoteTrades = Array.isArray(data?.personal_trade_logs)
+          ? data.personal_trade_logs.map(normalizeTradeLog).filter((trade): trade is TradeLog => Boolean(trade))
+          : []
+        mergedTrades = mergePersonalTradeLogs(trades, remoteTrades, deletedPersonalTradeKeysRef.current)
+      } catch {
+        // 병합 조회에 실패하면 현재 화면 상태 그대로 저장한다.
+      }
       await supabase
         .from('user_settings')
         .upsert({
           owner_id: session.id,
-          personal_trade_logs: trades,
+          personal_trade_logs: mergedTrades,
           contribution_settings: settings,
           portfolio_state_initialized: true,
         })
+      storePersonalTradeLogs(session, mergedTrades)
     } catch {
       // Local storage remains the offline fallback if the remote schema is not applied yet.
     }
@@ -7236,6 +7283,10 @@ function App() {
   const removeSelectedHoldingTrades = async () => {
     if (selectedHoldingTradeKeys.length === 0 || isSavingTradeLogs) return
     try {
+      if (!(isAdminUser && isOperatorDataMode)) {
+        // 저장 병합 시 서버 자동 기록 엔진이 방금 삭제한 항목을 되살리지 않게 기록한다.
+        for (const key of selectedHoldingTradeKeys) deletedPersonalTradeKeysRef.current.add(key)
+      }
       await commitManagedHoldingTradeLogs((current) => current.filter((trade) => !selectedHoldingTradeKeys.includes(tradeKey(trade))))
       setSelectedHoldingTradeKeys([])
       setIsHoldingDeleteConfirmOpen(false)
