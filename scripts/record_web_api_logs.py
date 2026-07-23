@@ -41,6 +41,8 @@ TECHNICAL_CACHE_PATH = ROOT_DIR / "data" / "cache" / "technical.json"
 TECHNICAL_PUBLIC_PATH = API_DIR / "technical.json"
 TRADE_LOG_CACHE_PATH = ROOT_DIR / "data" / "cache" / "trade-logs.json"
 TRADE_LOG_PUBLIC_PATH = API_DIR / "trade-logs.json"
+# 개인 로그에서 이번 실행에 자동 청산된 거래. 알림 스크립트가 읽어 개인 청산 메일을 보낸 뒤 비운다.
+PERSONAL_TRADE_EXITS_PATH = ROOT_DIR / "data" / "cache" / "personal-trade-exits.json"
 RUNTIME_STATE_PATH = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
 MAX_LOG_ROWS = 80
 OPERATION_LOG_RETENTION_DAYS = int(os.environ.get("OPERATION_LOG_RETENTION_DAYS", "7"))
@@ -933,6 +935,20 @@ def merge_personal_engine_result(
     return merged
 
 
+def write_personal_trade_exits(events: list[dict[str, Any]]) -> None:
+    PERSONAL_TRADE_EXITS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "meta": {
+            "kind": "personal-trade-exits",
+            "updatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        },
+        "events": events,
+    }
+    PERSONAL_TRADE_EXITS_PATH.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+
+
 def process_personal_trade_logs(
     personal_watchlists: dict[str, dict[str, list[str]]],
     *,
@@ -955,12 +971,16 @@ def process_personal_trade_logs(
 
     processed = 0
     updated = 0
+    exit_events: list[dict[str, Any]] = []
     for owner_id in sorted(owners):
         if owner_id not in logs_by_owner:
             # user_settings 행이 아직 없는 계정은 다음 로그인 때 트리거로 생성된 뒤 처리한다.
             continue
         before_trades = logs_by_owner[owner_id]
         before_by_key = {trade_key(trade): serialize_trade(trade) for trade in before_trades}
+        before_open_keys = {
+            trade_key(trade) for trade in before_trades if str(trade.get("status") or "") == "보유 중"
+        }
         entry_tickers_by_type = personal_watchlists.get(owner_id) or {
             investment_type: [] for investment_type in INVESTMENT_TYPES
         }
@@ -988,7 +1008,19 @@ def process_personal_trade_logs(
             updated += 1
         except (HTTPError, URLError, TimeoutError) as error:
             print(f"[trade_logs] personal trade log save failed for {owner_id}: {error}")
-    print(f"[trade_logs] personal logs processed={processed} updated={updated}")
+            continue
+        # 이번 실행에서 엔진이 자동 청산한 포지션 → 개인 청산 메일 대상.
+        closed_now = [
+            trade
+            for trade in merged
+            if trade_key(trade) in before_open_keys
+            and str(trade.get("status") or "") != "보유 중"
+            and trade.get("manualExit") is not True
+        ]
+        if closed_now:
+            exit_events.append({"ownerId": owner_id, "trades": closed_now})
+    write_personal_trade_exits(exit_events)
+    print(f"[trade_logs] personal logs processed={processed} updated={updated} exits={len(exit_events)}")
 
 
 def update_trade_logs(

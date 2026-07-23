@@ -53,6 +53,7 @@ DEFAULT_PREVIOUS_SEARCH_UNIVERSE = ROOT_DIR / "data" / "cache" / "search-univers
 DEFAULT_CURRENT_SEARCH_UNIVERSE = ROOT_DIR / "data" / "search_universe.json"
 DEFAULT_PREVIOUS_TRADE_LOGS = ROOT_DIR / "data" / "cache" / "trade-logs.before-refresh.json"
 DEFAULT_CURRENT_TRADE_LOGS = ROOT_DIR / "web" / "public" / "api" / "trade-logs.json"
+PERSONAL_TRADE_EXITS = ROOT_DIR / "data" / "cache" / "personal-trade-exits.json"
 NOTIFICATION_STATE = ROOT_DIR / "data" / "cache" / "web-notification-state.json"
 KST = ZoneInfo("Asia/Seoul")
 ET = ZoneInfo("America/New_York")
@@ -428,6 +429,45 @@ def opinion_changes(
     return changes
 
 
+def exit_change_from_trade(
+    current: dict[str, Any],
+    previous_trade: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    previous_trade = previous_trade or {}
+    fallback_ticker = str(current.get("ticker") or previous_trade.get("ticker") or "-")
+    current_status = str(current.get("status") or "").strip()
+    result = current.get("returnPct", 0)
+    try:
+        result_text = f"{float(result):+.2f}%"
+    except (TypeError, ValueError):
+        result_text = str(result or "-")
+    buy_price = current.get("buyPrice") or previous_trade.get("buyPrice") or "-"
+    buy_date = current.get("buyDate") or previous_trade.get("buyDate") or "-"
+    strategy = current.get("strategy") or previous_trade.get("strategy") or "-"
+    try:
+        return_pct_value = float(result)
+    except (TypeError, ValueError):
+        return_pct_value = None
+    exit_reason = enrich_profit_exit_reason(
+        str(current.get("exitReason") or current_status or "시스템 매도"),
+        strategy_code(strategy),
+        return_pct_value,
+    )
+    return {
+        "ticker": current.get("ticker") or fallback_ticker,
+        "name": current.get("name") or previous_trade.get("name") or fallback_ticker,
+        "from": "보유 중",
+        "to": "매도",
+        "price": current.get("sellPrice") or current.get("currentPrice") or "-",
+        "buyPrice": buy_price,
+        "returnPct": current.get("returnPct", 0),
+        "strategy": strategy,
+        "reason": exit_reason,
+        "entryNote": f"진입가 {buy_price} ({buy_date}) · 수익률 {result_text}",
+        "status": current_status,
+    }
+
+
 def trade_exit_changes(previous_path: Path, current_path: Path) -> list[dict[str, Any]]:
     previous = {
         trade_key(row): row
@@ -440,39 +480,9 @@ def trade_exit_changes(previous_path: Path, current_path: Path) -> list[dict[str
         previous_trade = previous.get(key)
         if not previous_trade:
             continue
-        current_status = str(current.get("status") or "").strip()
-        if current_status == "보유 중":
+        if str(current.get("status") or "").strip() == "보유 중":
             continue
-        result = current.get("returnPct", 0)
-        try:
-            result_text = f"{float(result):+.2f}%"
-        except (TypeError, ValueError):
-            result_text = str(result or "-")
-        buy_price = current.get("buyPrice") or previous_trade.get("buyPrice") or "-"
-        buy_date = current.get("buyDate") or previous_trade.get("buyDate") or "-"
-        strategy = current.get("strategy") or previous_trade.get("strategy") or "-"
-        try:
-            return_pct_value = float(result)
-        except (TypeError, ValueError):
-            return_pct_value = None
-        exit_reason = enrich_profit_exit_reason(
-            str(current.get("exitReason") or current_status or "시스템 매도"),
-            strategy_code(strategy),
-            return_pct_value,
-        )
-        changes.append({
-            "ticker": current.get("ticker") or key[0],
-            "name": current.get("name") or previous_trade.get("name") or key[0],
-            "from": "보유 중",
-            "to": "매도",
-            "price": current.get("sellPrice") or current.get("currentPrice") or "-",
-            "buyPrice": buy_price,
-            "returnPct": current.get("returnPct", 0),
-            "strategy": strategy,
-            "reason": exit_reason,
-            "entryNote": f"진입가 {buy_price} ({buy_date}) · 수익률 {result_text}",
-            "status": current_status,
-        })
+        changes.append(exit_change_from_trade(current, previous_trade))
     return changes
 
 
@@ -2588,6 +2598,59 @@ def send_trade_exit_notifications(
     return sent
 
 
+def send_personal_exit_notifications(path: Path = PERSONAL_TRADE_EXITS) -> int:
+    """개인 로그에서 자동 청산된 포지션을 해당 계정에게만 알린다.
+
+    record_web_api_logs가 이번 실행의 청산 이벤트를 이 파일에 남기고,
+    발송 후에는 재발송을 막기 위해 이벤트를 비운 상태로 다시 쓴다.
+    """
+    payload = read_json(path)
+    events = payload.get("events") if isinstance(payload, dict) else []
+    events = [event for event in events or [] if isinstance(event, dict)]
+    if not events:
+        print("No personal trade exits.")
+        return 0
+
+    recipients_by_owner = {
+        recipient.owner_id: recipient
+        for recipient in load_recipients()
+        if recipient.owner_id and enabled(recipient, "opinionChangeEmail")
+    }
+    sent = 0
+    for event in events:
+        owner_id = str(event.get("ownerId") or "")
+        trades = [trade for trade in event.get("trades") or [] if isinstance(trade, dict)]
+        recipient = recipients_by_owner.get(owner_id)
+        if not recipient or not trades:
+            continue
+        changes = [exit_change_from_trade(trade) for trade in trades]
+        tickers = ", ".join(str(change.get("ticker") or "-") for change in changes[:8])
+        subject = f"[보유 종목 자동 청산] {tickers}"
+        body = opinion_email_body(changes)
+        send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
+        sent += 1
+
+    # 발송 완료한 이벤트는 소비 처리해 다음 실행에서 중복 발송되지 않게 한다.
+    path.write_text(
+        json.dumps(
+            {
+                "meta": {
+                    "kind": "personal-trade-exits",
+                    "updatedAt": payload.get("meta", {}).get("updatedAt") if isinstance(payload.get("meta"), dict) else None,
+                    "lastSentAt": datetime.now(KST).isoformat(timespec="seconds"),
+                },
+                "events": [],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    print(f"Sent personal exit notifications: {sent}")
+    return sent
+
+
 def send_admin_failure(message: str) -> int:
     recipients = [
         recipient
@@ -2655,6 +2718,9 @@ def main() -> int:
     trade_exit_parser.add_argument("--previous", type=Path, default=DEFAULT_PREVIOUS_TRADE_LOGS)
     trade_exit_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_TRADE_LOGS)
 
+    personal_exits_parser = subparsers.add_parser("personal-exits")
+    personal_exits_parser.add_argument("--path", type=Path, default=PERSONAL_TRADE_EXITS)
+
     earnings_parser = subparsers.add_parser("earnings")
     earnings_parser.add_argument("--current", type=Path, default=DEFAULT_CURRENT_STOCKS)
     earnings_parser.add_argument("--valuation", type=Path, default=DEFAULT_VALUATION)
@@ -2685,6 +2751,9 @@ def main() -> int:
         return 0
     if args.command == "trade-exit":
         send_trade_exit_notifications(args.previous, args.current)
+        return 0
+    if args.command == "personal-exits":
+        send_personal_exit_notifications(args.path)
         return 0
     if args.command == "earnings":
         send_earnings_notifications(args.current, args.valuation)
