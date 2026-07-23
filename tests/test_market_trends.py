@@ -96,6 +96,23 @@ class MarketTrendsTest(unittest.TestCase):
 
         self.assertEqual("이번 주 전체 시장 분위기는 우주항공과 로봇·자동화 분야도 주목을 받고 있습니다.", normalized)
 
+    def test_market_trend_week_date_normalizes_to_monday(self) -> None:
+        self.assertEqual(self.pipeline.market_trend_week_date("2026.07.15"), "2026.07.13")
+        self.assertEqual(self.pipeline.market_trend_week_date("2026.07.19"), "2026.07.13")
+        self.assertEqual(self.pipeline.market_trend_week_date("2026.05.25"), "2026.05.25")
+
+    def test_sanitize_market_trend_rows_keeps_latest_row_per_week(self) -> None:
+        rows = [
+            {"date": "2026.07.12", "ranks": ["A | a"], "summary": "old sunday"},
+            {"date": "2026.07.15", "ranks": ["B | b"], "summary": "mid week"},
+            {"date": "2026.07.19", "ranks": ["C | c"], "summary": "latest sunday"},
+        ]
+
+        sanitized = self.pipeline.sanitize_market_trend_rows(rows)
+
+        self.assertEqual([row["date"] for row in sanitized], ["2026.07.06", "2026.07.13"])
+        self.assertEqual(sanitized[-1]["summary"], "latest sunday")
+
 
 if __name__ == "__main__":
     unittest.main()

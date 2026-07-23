@@ -16,7 +16,7 @@ import re
 import urllib.error
 import urllib.request
 from collections import Counter
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
@@ -77,6 +77,8 @@ MAX_REFRESH_UNIVERSE = int(os.environ.get("MAX_REFRESH_UNIVERSE", "200"))
 KST = ZoneInfo("Asia/Seoul")
 ET = ZoneInfo("America/New_York")
 MARKET_EVENTS_WEEKLY_SCHEDULE = "0 0 * * 1"
+# 주간 시장 트렌드: 한국시간 월요일 00:00 (UTC 일요일 15:00). 일→월 전환 직후 1회.
+MARKET_TRENDS_WEEKLY_SCHEDULE = "0 15 * * 0"
 IGNORED_MARKET_EVENT_TITLES = {"나스닥 100 리밸런싱"}
 FED_FOMC_SCHEDULE_URL = "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm"
 BLS_RELEASE_SCHEDULE_URLS = {
@@ -1555,12 +1557,30 @@ def market_trend_signal_evidence_text(signal_rows: list[dict[str, Any]]) -> str:
     )
 
 
+def market_trend_week_date(value: datetime | date | str | None = None) -> str:
+    """주간 트렌드 날짜를 해당 주의 월요일(KST)로 정규화한다."""
+
+    if isinstance(value, str) and value.strip():
+        try:
+            parsed = datetime.strptime(value.strip(), "%Y.%m.%d").replace(tzinfo=KST)
+        except ValueError:
+            parsed = datetime.now(KST)
+    elif isinstance(value, datetime):
+        parsed = value.astimezone(KST) if value.tzinfo else value.replace(tzinfo=KST)
+    elif isinstance(value, date):
+        parsed = datetime.combine(value, time.min, tzinfo=KST)
+    else:
+        parsed = datetime.now(KST)
+    monday = parsed.date() - timedelta(days=parsed.weekday())
+    return monday.strftime("%Y.%m.%d")
+
+
 def market_trend_row_from_signals(signal_rows: list[dict[str, Any]], failed_reason: str | None = None) -> dict[str, Any]:
     summary = "관심종목의 가격·기술 모멘텀에서 강하게 확인된 메가트렌드를 우선 반영했습니다."
     if failed_reason:
         summary += f" RSS/LLM 분석은 실패해 내부 신호 기준으로 대체했습니다: {failed_reason}"
     return {
-        "date": datetime.now().astimezone().strftime("%Y.%m.%d"),
+        "date": market_trend_week_date(),
         "ranks": [str(row["rankText"]) for row in signal_rows[:10]],
         "summary": summary,
     }
@@ -1602,17 +1622,20 @@ def normalize_market_trend_summary(value: Any) -> str:
 
 
 def sanitize_market_trend_rows(rows: list[Any]) -> list[Any]:
-    sanitized_rows = []
+    """날짜를 주 단위 월요일로 맞추고, 같은 주 중복은 뒤쪽(최신) 행을 남긴다."""
+
+    by_week: dict[str, dict[str, Any]] = {}
     for row in rows:
         if not isinstance(row, dict):
             continue
-        sanitized_rows.append({
+        week_date = market_trend_week_date(sanitize_market_trend_text(row.get("date", "")))
+        by_week[week_date] = {
             **row,
-            "date": sanitize_market_trend_text(row.get("date", "")),
+            "date": week_date,
             "ranks": [sanitize_market_trend_text(rank) for rank in row.get("ranks", []) if isinstance(rank, str)],
             "summary": normalize_market_trend_summary(row.get("summary", "")),
-        })
-    return sanitized_rows
+        }
+    return [by_week[week] for week in sorted(by_week)]
 
 
 def fetch_market_trend_news() -> str:
@@ -1648,7 +1671,7 @@ def parse_market_trend_analysis(text: str) -> dict[str, Any]:
             summary = summary_match.group(1).strip()
 
     return {
-        "date": datetime.now().astimezone().strftime("%Y.%m.%d"),
+        "date": market_trend_week_date(),
         "ranks": ranks[:10],
         "summary": summary,
     }
@@ -1723,13 +1746,20 @@ def http_error_detail(exc: urllib.error.HTTPError) -> str:
 
 
 def upsert_market_trend_row(rows: list[Any], new_row: dict[str, Any]) -> list[Any]:
+    week_date = market_trend_week_date(new_row.get("date"))
+    normalized_row = {
+        **new_row,
+        "date": week_date,
+        "ranks": [sanitize_market_trend_text(rank) for rank in new_row.get("ranks", []) if isinstance(rank, str)],
+        "summary": normalize_market_trend_summary(new_row.get("summary", "")),
+    }
     sanitized_rows = sanitize_market_trend_rows(rows)
-    existing_index = next((index for index, row in enumerate(sanitized_rows) if row.get("date") == new_row["date"]), None)
+    existing_index = next((index for index, row in enumerate(sanitized_rows) if row.get("date") == week_date), None)
     if existing_index is None:
-        sanitized_rows.append(new_row)
+        sanitized_rows.append(normalized_row)
     else:
-        sanitized_rows[existing_index] = new_row
-    return sanitized_rows[-26:]
+        sanitized_rows[existing_index] = normalized_row
+    return sanitize_market_trend_rows(sanitized_rows)[-26:]
 
 
 def build_market_trends_cache() -> dict[str, Any]:
@@ -1746,7 +1776,7 @@ def build_market_trends_cache() -> dict[str, Any]:
                 "meta": {
                     **existing.get("meta", {}),
                     "kind": "market-trends",
-                    "schedule": "0 0 * * 1",
+                    "schedule": MARKET_TRENDS_WEEKLY_SCHEDULE,
                     "updatedAt": now_iso(),
                     "lastSuccessfulRun": now_iso(),
                     "failedReason": "GROQ_API_KEY 환경변수가 없어 LLM 분석 없이 내부 가격·기술 모멘텀 신호로 시장 트렌드를 갱신했습니다.",
@@ -1757,7 +1787,7 @@ def build_market_trends_cache() -> dict[str, Any]:
             "meta": {
                 **existing.get("meta", {}),
                 "kind": "market-trends",
-                "schedule": "0 0 * * 1",
+                "schedule": MARKET_TRENDS_WEEKLY_SCHEDULE,
                 "updatedAt": now_iso(),
                 "lastSuccessfulRun": existing.get("meta", {}).get("lastSuccessfulRun"),
                 "failedReason": "GROQ_API_KEY 환경변수가 설정되어 있지 않아 기존 시장 트렌드 캐시를 유지했습니다.",
@@ -1779,7 +1809,7 @@ def build_market_trends_cache() -> dict[str, Any]:
                 "meta": {
                     **existing.get("meta", {}),
                     "kind": "market-trends",
-                    "schedule": "0 0 * * 1",
+                    "schedule": MARKET_TRENDS_WEEKLY_SCHEDULE,
                     "updatedAt": now_iso(),
                     "lastSuccessfulRun": now_iso(),
                     "failedReason": f"Groq API 호출 실패 후 내부 가격·기술 모멘텀 신호로 대체했습니다: {http_error_detail(exc)}",
@@ -1790,7 +1820,7 @@ def build_market_trends_cache() -> dict[str, Any]:
             "meta": {
                 **existing.get("meta", {}),
                 "kind": "market-trends",
-                "schedule": "0 0 * * 1",
+                "schedule": MARKET_TRENDS_WEEKLY_SCHEDULE,
                 "updatedAt": now_iso(),
                 "lastSuccessfulRun": existing.get("meta", {}).get("lastSuccessfulRun"),
                 "failedReason": f"Groq API 호출 실패: {http_error_detail(exc)}",
@@ -1805,7 +1835,7 @@ def build_market_trends_cache() -> dict[str, Any]:
                 "meta": {
                     **existing.get("meta", {}),
                     "kind": "market-trends",
-                    "schedule": "0 0 * * 1",
+                    "schedule": MARKET_TRENDS_WEEKLY_SCHEDULE,
                     "updatedAt": now_iso(),
                     "lastSuccessfulRun": now_iso(),
                     "failedReason": f"RSS/Groq 분석 실패 후 내부 가격·기술 모멘텀 신호로 대체했습니다: {exc}",
@@ -1816,7 +1846,7 @@ def build_market_trends_cache() -> dict[str, Any]:
             "meta": {
                 **existing.get("meta", {}),
                 "kind": "market-trends",
-                "schedule": "0 0 * * 1",
+                "schedule": MARKET_TRENDS_WEEKLY_SCHEDULE,
                 "updatedAt": now_iso(),
                 "lastSuccessfulRun": existing.get("meta", {}).get("lastSuccessfulRun"),
                 "failedReason": str(exc),
@@ -1827,7 +1857,7 @@ def build_market_trends_cache() -> dict[str, Any]:
     return {
         "meta": {
             "kind": "market-trends",
-            "schedule": "0 0 * * 1",
+            "schedule": MARKET_TRENDS_WEEKLY_SCHEDULE,
             "updatedAt": now_iso(),
             "lastSuccessfulRun": now_iso() if rows else None,
             "failedReason": None,

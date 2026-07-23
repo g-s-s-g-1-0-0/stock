@@ -1532,12 +1532,18 @@ def stock_universe_changes(previous: Path, current: Path = DEFAULT_CURRENT_SEARC
 
 
 def is_weekly_report_window(now: datetime | None = None) -> bool:
+    """주간 리포트 발송 창: 한국시간 월요일 00:00~03:00.
+
+    cron은 월요일 00:00 KST(UTC 일요일 15:00)에 1회 돌지만, GitHub Actions 지연을
+    감안해 같은 월요일 새벽 3시까지 허용한다.
+    """
+
     if os.environ.get("WEEKLY_REPORT_FORCE", "").strip().lower() in {"1", "true", "yes", "on"}:
         return True
     current = now or datetime.now().astimezone()
     kst_now = current.astimezone(KST)
     minutes = kst_now.hour * 60 + kst_now.minute
-    return kst_now.weekday() == 0 and 0 <= minutes < 60
+    return kst_now.weekday() == 0 and 0 <= minutes < 180
 
 
 def stock_universe_change_section(changes: dict[str, Any]) -> str:
@@ -1618,7 +1624,7 @@ def weekly_trend_email_body(trend: dict[str, Any]) -> str:
 
 def send_weekly_trend_notifications() -> int:
     if not is_weekly_report_window():
-        print("Weekly trend notification skipped outside KST Monday 00:00-01:00 window.")
+        print("Weekly trend notification skipped outside KST Monday 00:00-03:00 window.")
         return 0
 
     trend = latest_market_trend()
@@ -1651,7 +1657,7 @@ def send_stock_universe_report_notifications(
     current: Path = DEFAULT_CURRENT_SEARCH_UNIVERSE,
 ) -> int:
     if not is_weekly_report_window():
-        print("Stock universe report skipped outside KST Monday 00:00-01:00 window.")
+        print("Stock universe report skipped outside KST Monday 00:00-03:00 window.")
         return 0
 
     if not previous.exists():

@@ -9,6 +9,8 @@ on:
     - cron: "30,40,50 0 * * 1-5"
     # Daily valuation refresh + earnings D-1 emails (00:00 UTC = 09:00 KST).
     - cron: "0 0 * * *"
+    # Weekly market trends + universe report: Monday 00:00 KST (Sunday 15:00 UTC).
+    - cron: "0 15 * * 0"
   workflow_dispatch:
     inputs:
       refresh_scope:
@@ -100,7 +102,12 @@ jobs:
             PUBLISH_AT=""
             SEND_NOTIFICATIONS="true"
             # Exact match first: "0 0 * * *" also contains " 0 " and must not use the MA 09:30 slot.
-            if [ "${{ github.event.schedule }}" = "0 0 * * *" ]; then
+            if [ "${{ github.event.schedule }}" = "0 15 * * 0" ]; then
+              TASKS="stock-universe market-trends"
+              FORCE_REFRESH="true"
+              MA_SUPPORT_SCAN_FORCE="false"
+              MA_SUPPORT_SCAN_SLOT=""
+            elif [ "${{ github.event.schedule }}" = "0 0 * * *" ]; then
               TASKS="valuation"
               FORCE_REFRESH="false"
               MA_SUPPORT_SCAN_FORCE="false"

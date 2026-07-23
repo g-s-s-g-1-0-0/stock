@@ -2368,6 +2368,76 @@ function recommendedSellPriceNote(strategy: string) {
   return '권장 매도가 참고 정보가 준비 중입니다.'
 }
 
+function CustomSelect<T extends string | number>({
+  value,
+  options,
+  onChange,
+  ariaLabel,
+}: {
+  value: T
+  options: Array<{ value: T; label: string }>
+  onChange: (value: T) => void
+  ariaLabel?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const selected = options.find((option) => String(option.value) === String(value)) ?? options[0]
+
+  useEffect(() => {
+    if (!open) return undefined
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open])
+
+  return (
+    <div className={`custom-select${open ? ' open' : ''}`} ref={rootRef}>
+      <button
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-label={ariaLabel}
+        className="custom-select-trigger"
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <span>{selected?.label ?? ''}</span>
+        <em aria-hidden="true" />
+      </button>
+      {open && (
+        <ul className="custom-select-menu" role="listbox">
+          {options.map((option) => {
+            const isActive = String(option.value) === String(value)
+            return (
+              <li key={String(option.value)} role="option" aria-selected={isActive}>
+                <button
+                  className={isActive ? 'active' : ''}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value)
+                    setOpen(false)
+                  }}
+                >
+                  <span>{option.label}</span>
+                  {isActive && <strong aria-hidden="true">✓</strong>}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 function StrategyCriteriaModal({
   investmentType,
   onClose,
@@ -9858,7 +9928,9 @@ function App() {
                     로그인으로 돌아가기
                   </button>
                 )}
-                <p>{authMode === 'login' ? '가입한 이메일과 비밀번호로 로그인해 주세요.' : authMode === 'signup' ? '이메일과 비밀번호로 계정을 만들어 주세요.' : authMode === 'reset' ? '새 비밀번호를 입력해 변경을 완료해 주세요.' : '가입한 이메일을 입력하면 비밀번호 재설정 안내를 받을 수 있습니다.'}</p>
+                {authMode !== 'signup' && (
+                  <p>{authMode === 'login' ? '가입한 이메일과 비밀번호로 로그인해 주세요.' : authMode === 'reset' ? '새 비밀번호를 입력해 변경을 완료해 주세요.' : '가입한 이메일을 입력하면 비밀번호 재설정 안내를 받을 수 있습니다.'}</p>
+                )}
                 {serviceStatusMessage && (
                   <div className="recovery-sent-card">
                     <strong>
@@ -10070,25 +10142,25 @@ function App() {
                 </label>
                 <label className="login-field">
                   <span>입금 주기</span>
-                  <select
+                  <CustomSelect
+                    ariaLabel="입금 주기"
                     value={contributionDraft.frequency}
-                    onChange={(event) => setContributionDraft((current) => current ? { ...current, frequency: event.target.value as ContributionFrequency } : current)}
-                  >
-                    <option value="weekly">매주</option>
-                    <option value="monthly">매월</option>
-                  </select>
+                    options={[
+                      { value: 'weekly', label: '매주' },
+                      { value: 'monthly', label: '매월' },
+                    ]}
+                    onChange={(nextFrequency) => setContributionDraft((current) => current ? { ...current, frequency: nextFrequency } : current)}
+                  />
                 </label>
                 {contributionDraft.frequency === 'weekly' ? (
                   <label className="login-field">
                     <span>입금 요일</span>
-                    <select
-                      value={contributionDraft.dayOfWeek}
-                      onChange={(event) => setContributionDraft((current) => current ? { ...current, dayOfWeek: event.target.value } : current)}
-                    >
-                      {weekdayOptions.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
+                    <CustomSelect
+                      ariaLabel="입금 요일"
+                      value={Number(contributionDraft.dayOfWeek)}
+                      options={weekdayOptions}
+                      onChange={(nextDay) => setContributionDraft((current) => current ? { ...current, dayOfWeek: String(nextDay) } : current)}
+                    />
                   </label>
                 ) : (
                   <label className="login-field">
