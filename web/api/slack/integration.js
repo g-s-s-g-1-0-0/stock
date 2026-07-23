@@ -2,7 +2,7 @@ const DEFAULT_NOTIFICATION_PREFERENCES = {
   opinionChangeEmail: true,
   nasdaqPeakEmail: true,
   maSupportEmail: true,
-  weeklyTrendReport: true,
+  weeklyTrendReport: false,
   earningsDayBefore: true,
   adminAutoUpdateFailureEmail: true,
   recipientEmail: '',

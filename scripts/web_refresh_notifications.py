@@ -1629,7 +1629,7 @@ def send_weekly_trend_notifications() -> int:
     recipients = [
         recipient
         for recipient in load_recipients()
-        if enabled(recipient, "weeklyTrendReport")
+        if enabled(recipient, "weeklyTrendReport", default=False)
     ]
     if not recipients:
         print("No recipients for weeklyTrendReport.")

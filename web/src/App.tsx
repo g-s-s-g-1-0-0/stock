@@ -332,7 +332,7 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   nasdaqPeakEmail: true,
   nasdaqWarnEmail: true,
   maSupportEmail: true,
-  weeklyTrendReport: true,
+  weeklyTrendReport: false,
   earningsDayBefore: true,
   adminAutoUpdateFailureEmail: true,
   recipientEmail: '',
