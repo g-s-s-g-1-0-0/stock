@@ -6874,7 +6874,7 @@ function App() {
       .map((code) => formatWinRate(code, scopedTrades.filter((trade) => strategyCode(trade.strategy) === code))),
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
-    ? '장기형은 청산된 거래가 슬롯을 비우고, 현재 보유 중인 거래만 투자금 슬롯을 차지합니다.'
+    ? '가치투자형은 청산된 거래가 슬롯을 비우고, 현재 보유 중인 거래만 투자금 슬롯을 차지합니다.'
     : '청산 기준: 전략 1&2 회복장 종료 전량매도(+성공/−실패) · 하드손절 -30%'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
@@ -7405,19 +7405,22 @@ function App() {
     // 투자 유형 전환은 표시 기준과 함께 '활성 관심종목 목록'을 해당 유형의 보관소 값으로 바꾼다.
     // 현재 유형의 변경분은 미러링 effect가 이미 유형별 보관소에 반영해 두므로 여기선 다음 유형 목록만 로드한다.
     if (nextInvestmentType !== currentType) {
-      const nextList = isOperatorDataMode
-        ? operatorWatchlistByType[nextInvestmentType] ?? []
-        : personalWatchlistByType[nextInvestmentType] ?? []
-      // 활성 유형 flat 컬럼이 새 유형 목록을 가리키도록 갱신한다. (유형별 목록은 보존)
       if (isOperatorDataMode) {
-        setOperatorWatchlist(nextList)
-        if (userSession) {
-          void persistWatchlist('operator', nextList, userSession, operatorWatchlistByType).then(notifyWatchlistPersistFailure)
+        const nextOperatorList = operatorWatchlistByType[nextInvestmentType] ?? []
+        setOperatorWatchlist(nextOperatorList)
+        // 운영자 관심종목 쓰기는 어드민만 가능하다. 일반 계정이 공수성가 탭에서
+        // 성향만 바꿀 때 operator scope에 저장하려다 RLS로 실패하던 문제를 막는다.
+        if (userSession && isAdminUser) {
+          void persistWatchlist('operator', nextOperatorList, userSession, operatorWatchlistByType).then(notifyWatchlistPersistFailure)
         }
-      } else {
-        setWatchlist(nextList)
+      }
+
+      // 개인 계정은 보고 있는 탭과 관계없이 개인 관심종목·성향만 저장한다.
+      if (!isAdminUser) {
+        const nextPersonalList = personalWatchlistByType[nextInvestmentType] ?? []
+        setWatchlist(nextPersonalList)
         if (userSession) {
-          void persistWatchlist('personal', nextList, userSession, personalWatchlistByType).then(notifyWatchlistPersistFailure)
+          void persistWatchlist('personal', nextPersonalList, userSession, personalWatchlistByType).then(notifyWatchlistPersistFailure)
         }
       }
     }
@@ -9855,7 +9858,7 @@ function App() {
                     로그인으로 돌아가기
                   </button>
                 )}
-                <p>{authMode === 'login' ? '가입한 이메일과 비밀번호로 로그인해 주세요.' : authMode === 'signup' ? '이메일 인증으로 계정을 만들어 주세요.' : authMode === 'reset' ? '새 비밀번호를 입력해 변경을 완료해 주세요.' : '가입한 이메일을 입력하면 비밀번호 재설정 안내를 받을 수 있습니다.'}</p>
+                <p>{authMode === 'login' ? '가입한 이메일과 비밀번호로 로그인해 주세요.' : authMode === 'signup' ? '이메일과 비밀번호로 계정을 만들어 주세요.' : authMode === 'reset' ? '새 비밀번호를 입력해 변경을 완료해 주세요.' : '가입한 이메일을 입력하면 비밀번호 재설정 안내를 받을 수 있습니다.'}</p>
                 {serviceStatusMessage && (
                   <div className="recovery-sent-card">
                     <strong>
@@ -9910,6 +9913,11 @@ function App() {
                     placeholder="name@example.com"
                     type="email"
                     />
+                    {authMode === 'signup' && (
+                      <span className="field-message field-message-note">
+                        가입 확인 메일을 받을 실제 이메일 주소를 입력해 주세요.
+                      </span>
+                    )}
                   </label>
                 )}
                 {authMode !== 'reset' && shouldShowEmailValidation && <span className="login-error">이메일 형식이 올바르지 않습니다.</span>}
