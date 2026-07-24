@@ -4330,7 +4330,8 @@ function TechnicalAnalysisPage({
   const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleStocks.length, 0)
   const isEmpty = stocks.length === 0
   const sheetWheelRef = useEdgeScrollWheelRef()
-  const regimeSnapshot = marketSnapshot.find(([label]) => label === '장 상태')?.[1] ?? '횡보장 고점'
+  // 펼쳐보기에는 'QQQ 이격도 N%' 근거가 붙은 전체 값을 쓰고, 접힌 요약 칩은 짧은 라벨만 남긴다.
+  const regimeSnapshot = (marketSnapshot.find(([label]) => label === '장 상태')?.[1] ?? '횡보장 고점').replace(/\s*\(.*\)\s*$/, '')
   const vixSnapshot = marketSnapshot.find(([label]) => label === 'VIX (변동성지수) 당일·전날')?.[1] ?? '16.99 / 16.89'
   const fearGreedSnapshot = marketSnapshot.find(([label]) => label === 'CNN 공포·탐욕지수 당일·전날')?.[1]
   const tnxSnapshot = marketSnapshot.find(([label]) => label === '미국 10년물 금리')?.[1] ?? '4.378'

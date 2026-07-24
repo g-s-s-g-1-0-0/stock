@@ -565,7 +565,12 @@ def build_market_snapshot() -> tuple[list[list[str]], dict[str, Any], float | No
     # 장 상태는 매매 국면의 핵심이라 이벤트 바로 다음에 둔다.
     try:
         qqq_state = qqq_market_state_snapshot()
-        rows.append(["장 상태", str(qqq_state.get("regimeLabel") or "판단 불가")])
+        regime_label = str(qqq_state.get("regimeLabel") or "판단 불가")
+        # 펼쳐보기에서 판단 근거가 보이도록 대표 기준인 QQQ 200일선 이격도를 함께 표기한다.
+        premium_text = fmt_signed_percent(qqq_state.get("premiumPercent"))
+        if premium_text != "-":
+            regime_label = f"{regime_label} (QQQ 이격도 {premium_text})"
+        rows.append(["장 상태", regime_label])
     except Exception as exc:  # noqa: BLE001 - snapshot rows are best-effort
         qqq_error = str(exc)
         rows.append(["장 상태", f"수집 실패: {exc}"])
