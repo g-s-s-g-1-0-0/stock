@@ -2003,11 +2003,23 @@ function strategyDisplayName(strategy: string) {
   return String(strategy || '').trim() || '-'
 }
 
+// 보유 종목 직접 추가에서 '전략과 무관'을 선택한 경우의 전략 표기.
+// 이 접두어가 붙은 거래는 서버 자동 청산 엔진에서도 제외된다.
+const STRATEGY_FREE_SELECT_VALUE = 'free'
+const STRATEGY_FREE_LOG_LABEL = '직접 기입: 전략과 무관'
+
+function isStrategyFreeTrade(strategy: string) {
+  return String(strategy || '').trim().startsWith('직접 기입')
+}
+
 function investmentProfileLabel(investmentType: InvestmentType) {
   return investmentType === 'swing' ? '스윙투자' : '가치투자'
 }
 
 function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing') {
+  if (isStrategyFreeTrade(strategy)) {
+    return '전략과 무관하게 직접 기입한 보유 항목입니다. 자동 청산 조건이 적용되지 않으며, 직접 청산할 때까지 보유 상태로 유지됩니다.'
+  }
   const descriptions: Record<InvestmentType, Record<string, string>> = {
     swing: {
       '1': '공황 저점은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 첫 매수 기회를 찾는 전략입니다. 시장이 충분히 눌렸는지, 종목도 과하게 팔렸는지, 저점에서 버티는 힘이 있는지를 함께 확인합니다.',
@@ -2234,6 +2246,9 @@ function tradeResultInfo(trade: TradeLog) {
     return '보유종목에서 직접 청산한 기록입니다. 자동 매도 신호가 아니라 입력한 청산가와 청산일 기준으로 수익률을 계산합니다.'
   }
   if (trade.manualEntry && trade.status === '보유 중') {
+    if (isStrategyFreeTrade(trade.strategy)) {
+      return '전략과 무관하게 직접 추가한 보유 항목입니다. 자동 청산 조건이 적용되지 않으며, 직접 청산할 때까지 보유 상태로 유지됩니다.'
+    }
     return '보유중인 종목에 직접 추가한 항목입니다. 입력한 매수일·평단가 기준으로 자동 청산 로직이 동일하게 적용되며, 청산 조건을 충족하면 자동으로 청산됩니다.'
   }
   if (trade.status !== '보유 중') return tradeCriteriaInfo(trade.strategy)
@@ -2375,6 +2390,9 @@ function recommendedSellPriceText(trade: TradeLog) {
 }
 
 function recommendedSellPriceNote(strategy: string) {
+  if (isStrategyFreeTrade(strategy)) {
+    return '전략과 무관한 직접 기입 항목은 자동 청산 없이 직접 청산으로 정리합니다.'
+  }
   const code = strategyCode(strategy)
   if (code === '1' || code === '2') {
     return '목표가 익절 없음. 회복장 종료 전량매도 또는 -30% 손절.'
@@ -7415,7 +7433,9 @@ function App() {
       name: resolved.name || resolvedTicker,
       market: resolved.market,
       currentPrice: resolved.currentPrice && resolved.currentPrice !== '-' ? resolved.currentPrice : undefined,
-      strategy: strategyDisplayName(manualHoldingDraft.strategy),
+      strategy: manualHoldingDraft.strategy === STRATEGY_FREE_SELECT_VALUE
+        ? STRATEGY_FREE_LOG_LABEL
+        : strategyDisplayName(manualHoldingDraft.strategy),
       buyDate: normalizeTradeDateInput(manualHoldingDraft.buyDate),
       buyPrice: '',
       sellDate: '-',
@@ -9454,21 +9474,11 @@ function App() {
                   <h2>보유중인 종목 (전략 단위)</h2>
                   <span>총 {scopedOpenTrades.length}개</span>
                 </div>
-                <p className="section-note holding-section-note">시스템 기준이라 실제 보유와 다를 수 있어요.</p>
+                <p className="section-note holding-section-note">앱 서비스 기준이라 실제 보유와는 무관합니다.</p>
               </div>
               <div className="heading-actions">
                 {canManageHoldingTrades && (
                   <>
-                    <button
-                      className="manual-holding-add-button"
-                      disabled={isSavingTradeLogs}
-                      type="button"
-                      onClick={() => {
-                        if (!isSavingTradeLogs) openManualHoldingModal()
-                      }}
-                    >
-                      직접 추가
-                    </button>
                     <button
                       aria-hidden={selectedHoldingTradeKeys.length === 0}
                       className={`liquidation-selected-button ${selectedHoldingTradeKeys.length === 0 ? 'reserved-action-button' : ''}`}
@@ -9490,6 +9500,16 @@ function App() {
                       }}
                     >
                       삭제
+                    </button>
+                    <button
+                      className="add-stock-button"
+                      disabled={isSavingTradeLogs}
+                      type="button"
+                      onClick={() => {
+                        if (!isSavingTradeLogs) openManualHoldingModal()
+                      }}
+                    >
+                      + 직접 추가
                     </button>
                   </>
                 )}
@@ -10383,15 +10403,16 @@ function App() {
       )}
       {manualHoldingDraft && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => { if (!isSavingTradeLogs) setManualHoldingDraft(null) })}>
-          <div aria-modal="true" className="confirm-modal holding-liquidation-modal" role="dialog">
+          <div aria-modal="true" className="confirm-modal holding-liquidation-modal manual-holding-modal" role="dialog">
             <button className="modal-close-button" disabled={isSavingTradeLogs} type="button" aria-label="닫기" onClick={() => setManualHoldingDraft(null)}>×</button>
             <h3>보유 종목을 직접 추가할까요?</h3>
             <p>
               이미 보유 중인 종목을 매수일·평단가와 함께 입력하면 보유 목록과 트레이딩 로그에 기록됩니다.
               관심종목에 없는 종목은 자동으로 추가되며, 추가 시점부터 자동 청산 로직이 동일하게 적용됩니다.
               이미 청산 조건에 해당하는 종목은 다음 데이터 갱신 때 바로 청산될 수 있습니다.
+              단, ‘전략과 무관’으로 추가한 항목은 자동 청산에서 제외되며 직접 청산으로만 정리됩니다.
             </p>
-            <div className="holding-liquidation-list">
+            <div className="holding-liquidation-list manual-holding-list">
               <div className="holding-liquidation-row manual-holding-row">
                 <label>
                   <span>티커</span>
@@ -10422,10 +10443,13 @@ function App() {
                   />
                 </label>
                 <label>
-                  <span>매수 전략</span>
+                  <span>적용할 전략</span>
                   <CustomSelect
-                    ariaLabel="매수 전략 선택"
-                    options={strategyFilters.map((code) => ({ value: code, label: strategyDisplayName(code) }))}
+                    ariaLabel="적용할 전략 선택"
+                    options={[
+                      ...strategyFilters.map((code) => ({ value: code, label: strategyDisplayName(code) })),
+                      { value: STRATEGY_FREE_SELECT_VALUE, label: '전략과 무관' },
+                    ]}
                     value={manualHoldingDraft.strategy}
                     onChange={(value) => updateManualHoldingDraft('strategy', String(value))}
                   />

@@ -1066,18 +1066,6 @@
   background: #ffedd5;
 }
 
-.manual-holding-add-button {
-  border-color: rgba(37, 99, 235, 0.26);
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-weight: 900;
-}
-
-.manual-holding-add-button:hover {
-  border-color: rgba(37, 99, 235, 0.4);
-  background: #dbeafe;
-}
-
 .reserved-action-button {
   pointer-events: none;
   visibility: hidden;
@@ -3768,6 +3756,17 @@
   padding-right: 2px;
 }
 
+/* 직접 추가 팝업은 행이 1개뿐이라 스크롤이 필요 없고, 전략 드롭다운 메뉴가 잘리지 않게 overflow를 푼다. */
+.confirm-modal.manual-holding-modal {
+  overflow: visible;
+}
+
+.holding-liquidation-list.manual-holding-list {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+
 .holding-liquidation-row {
   display: grid;
   grid-template-columns: minmax(180px, 1.2fr) repeat(3, minmax(110px, 1fr)) minmax(92px, auto);
@@ -5905,9 +5904,13 @@
     flex: 0 0 auto;
   }
 
+  /* 청산/삭제 버튼이 나타나 폭이 부족하면 우측 정렬을 유지한 채 두 줄로 쌓는다. */
   .holding-heading .heading-actions {
     flex: 0 0 auto;
     min-height: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 6px;
   }
 
   /* 선택 전에는 청산/삭제 버튼이 자리를 차지하지 않게 해, 설명이 제목 바로 아래로 붙는다. */

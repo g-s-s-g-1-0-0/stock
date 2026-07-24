@@ -333,6 +333,11 @@ def trade_investment_type(trade: dict[str, Any]) -> str:
     return "long_term" if trade.get("manualExit") is True else "swing"
 
 
+def is_strategy_free_trade(trade: dict[str, Any]) -> bool:
+    """웹 '직접 추가'에서 전략과 무관으로 기입한 보유 항목 여부. 자동 청산 대상에서 제외한다."""
+    return str(trade.get("strategy") or "").strip().startswith("직접 기입")
+
+
 def open_trade_slots(trades: list[dict[str, Any]]) -> set[tuple[str, str, str]]:
     return {
         (
@@ -1210,6 +1215,8 @@ def run_trade_engine(
         if str(trade.get("status") or "") != "보유 중":
             continue
         if trade_investment_type(trade) == "long_term":
+            continue
+        if is_strategy_free_trade(trade):
             continue
         market = normalize_market(stock.get("market") or trade.get("market"), ticker)
         if should_defer_market_signal(market, now):
