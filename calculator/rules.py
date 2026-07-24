@@ -33,8 +33,8 @@ STRATEGY_RULES: dict[str, float | int] = {
 }
 
 STRATEGY_LABELS = {
-    "1": "공황 저점",
-    "2": "이평선 눌림",
+    "1": "시장 공포 저점 진입",
+    "2": "상승 추세 이평선 눌림목",
 }
 
 # Legacy A–H codes map to nothing active; B maps to 1 for migration.

@@ -60,7 +60,7 @@ def test_long_term_trade_does_not_auto_exit_on_target(monkeypatch, tmp_path):
                 "slotId": "MSFT_long_term_1_20260701_1",
                 "investmentType": "long_term",
                 "ticker": "MSFT",
-                "strategy": "1. 공황 저점",
+                "strategy": "1. 시장 공포 저점 진입",
                 "buyDate": "2026.07.01",
                 "buyPrice": "$100.00",
                 "currentPrice": "$100.00",
@@ -101,7 +101,7 @@ def test_nasdaq_peak_liquidates_only_non_exempt_strategy_slots(monkeypatch, tmp_
         "rows": [
             {
                 "ticker": "NVDA",
-                "strategy": "1. 공황 저점",
+                "strategy": "1. 시장 공포 저점 진입",
                 "buyDate": "2026.05.01",
                 "buyPrice": "$100.00",
                 "sellDate": "보유 중",
@@ -112,7 +112,7 @@ def test_nasdaq_peak_liquidates_only_non_exempt_strategy_slots(monkeypatch, tmp_
             },
             {
                 "ticker": "NVDA",
-                "strategy": "1. 공황 저점",
+                "strategy": "1. 시장 공포 저점 진입",
                 "buyDate": "2026.05.02",
                 "buyPrice": "$95.00",
                 "sellDate": "보유 중",
@@ -151,7 +151,7 @@ def test_exit_updates_stock_and_technical_opinion_to_sell(monkeypatch, tmp_path)
             {
                 "ticker": "WULF",
                 "name": "TeraWulf",
-                "strategy": "1. 공황 저점",
+                "strategy": "1. 시장 공포 저점 진입",
                 "buyDate": "2026.05.23",
                 "buyPrice": "$22.84",
                 "currentPrice": "$25.84",
@@ -189,7 +189,7 @@ def test_closed_market_defers_peak_liquidation_and_restores_previous_opinion(mon
                 "ticker": "TE",
                 "name": "TE Connectivity",
                 "market": "US",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.06.23",
                 "buyPrice": "$100.00",
                 "currentPrice": "$115.00",
@@ -220,7 +220,7 @@ def test_closed_market_defers_peak_liquidation_and_restores_previous_opinion(mon
             "currentPrice": "$114.00",
             "opinion": "매수",
             "opinionReason": "보유 유지",
-            "strategies": ["2. 이평선 눌림"],
+            "strategies": ["2. 상승 추세 이평선 눌림목"],
         }
     }
     technical = {
@@ -237,7 +237,7 @@ def test_closed_market_defers_peak_liquidation_and_restores_previous_opinion(mon
             "opinion": "매수",
             "opinionReason": "보유 유지",
             "entrySignalCodes": "2",
-            "entryStrategy": "2. 이평선 눌림",
+            "entryStrategy": "2. 상승 추세 이평선 눌림목",
         }
     }
 
@@ -250,7 +250,7 @@ def test_closed_market_defers_peak_liquidation_and_restores_previous_opinion(mon
     assert updated["meta"]["closedTrades"] == 0
     assert stocks[0]["opinion"] == "매수"
     assert stocks[0]["opinionReason"] == "보유 유지"
-    assert stocks[0]["strategies"] == ["2. 이평선 눌림"]
+    assert stocks[0]["strategies"] == ["2. 상승 추세 이평선 눌림목"]
     assert technical["TE"]["opinion"] == "매수"
     assert technical["TE"]["opinionReason"] == "보유 유지"
     assert technical["TE"]["entrySignalCodes"] == "H"
@@ -267,7 +267,7 @@ def test_live_h_strategy_target_exit_runs_when_daily_price_date_is_unchanged(mon
                 "ticker": "TE",
                 "name": "TE Connectivity",
                 "market": "US",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.06.24",
                 "buyPrice": "$100.00",
                 "currentPrice": "$105.00",
@@ -315,7 +315,7 @@ def test_live_h_strategy_stop_is_ignored_until_fresh_daily_close(monkeypatch, tm
                 "ticker": "TE",
                 "name": "TE Connectivity",
                 "market": "US",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.06.24",
                 "buyPrice": "$100.00",
                 "currentPrice": "$100.00",
@@ -359,7 +359,7 @@ def test_fresh_daily_h_strategy_exits_on_ma20_support_failure(monkeypatch, tmp_p
                 "ticker": "TE",
                 "name": "TE Connectivity",
                 "market": "US",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.06.24",
                 "buyPrice": "$100.00",
                 "currentPrice": "$100.00",
@@ -403,7 +403,7 @@ def test_extended_target_touch_arms_ef_exit_without_selling(monkeypatch, tmp_pat
             {
                 "ticker": "BE",
                 "name": "Bloom Energy",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.06.06",
                 "buyPrice": "$265.11",
                 "currentPrice": "$312.00",
@@ -453,7 +453,7 @@ def test_stale_daily_indicator_exit_is_ignored_when_extended_target_not_touched(
         "rows": [
             {
                 "ticker": "BE",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.06.06",
                 "buyPrice": "$265.11",
                 "currentPrice": "$280.00",
@@ -495,7 +495,7 @@ def test_fresh_daily_indicator_exit_uses_daily_close_price(monkeypatch, tmp_path
         "rows": [
             {
                 "ticker": "BE",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.06.06",
                 "buyPrice": "$265.11",
                 "currentPrice": "$300.00",
@@ -542,7 +542,7 @@ def test_recent_closed_trade_preserves_sell_opinion_during_reentry_cooldown(monk
             {
                 "ticker": "WULF",
                 "name": "TeraWulf",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.05.23",
                 "buyPrice": "$22.84",
                 "currentPrice": "$24.59",
@@ -588,7 +588,7 @@ def test_sell_opinion_turns_watch_after_hold_even_when_price_recovers(monkeypatc
             {
                 "ticker": "CRDO",
                 "name": "Credo Technology Group Holding",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.05.15",
                 "buyPrice": "$174.37",
                 "currentPrice": "$229.00",
@@ -621,7 +621,7 @@ def test_nasdaq_peak_uses_existing_trade_price_when_stock_cache_omits_ticker(mon
         "rows": [
             {
                 "ticker": "NVDA",
-                "strategy": "1. 공황 저점",
+                "strategy": "1. 시장 공포 저점 진입",
                 "buyDate": "2026.05.01",
                 "buyPrice": "$100.00",
                 "currentPrice": "$120.00",
@@ -651,7 +651,7 @@ def test_profitable_exit_before_strategy_target_is_failure_profit(monkeypatch, t
         "rows": [
             {
                 "ticker": "AVGO",
-                "strategy": "1. 공황 저점",
+                "strategy": "1. 시장 공포 저점 진입",
                 "buyDate": "2026.05.01",
                 "buyPrice": "$100.00",
                 "currentPrice": "$115.00",
@@ -675,7 +675,7 @@ def test_profitable_exit_before_strategy_target_is_failure_profit(monkeypatch, t
 
 
 def test_h_strategy_twelve_percent_target_is_success_profit():
-    trade = {"strategy": "2. 이평선 눌림"}
+    trade = {"strategy": "2. 상승 추세 이평선 눌림목"}
 
     assert logs.target_return_pct(trade["strategy"]) == 12.0
     assert logs.trade_status_for_exit(trade, 15.46) == "익절"
@@ -689,7 +689,7 @@ def test_closed_trade_status_is_normalized_to_strategy_target(monkeypatch, tmp_p
             {
                 "slotId": "GLW_2_20260622_1",
                 "ticker": "GLW",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.06.22",
                 "buyPrice": "$194.92",
                 "sellDate": "2026.06.25",
@@ -721,8 +721,8 @@ def test_buy_signals_append_one_open_trade_per_strategy(monkeypatch, tmp_path):
     updated = logs.load_json(cache_path, {})
     rows = updated["rows"]
     assert [row["strategy"] for row in rows] == [
-        "1. 공황 저점",
-        "1. 공황 저점",
+        "1. 시장 공포 저점 진입",
+        "1. 시장 공포 저점 진입",
     ]
     assert [row["investmentType"] for row in rows] == ["swing", "swing"]
     assert all(row["status"] == "보유 중" for row in rows)
@@ -737,7 +737,7 @@ def test_same_strategy_does_not_duplicate_while_signal_never_left(monkeypatch, t
         "rows": [
             {
                 "ticker": "MP",
-                "strategy": "1. 공황 저점",
+                "strategy": "1. 시장 공포 저점 진입",
                 "buyDate": today,
                 "buyPrice": "$100.00",
                 "currentPrice": "$101.00",
@@ -770,7 +770,7 @@ def test_same_strategy_adds_slot_after_ten_percent_drop_and_ten_days(monkeypatch
         "rows": [
             {
                 "ticker": "MP",
-                "strategy": "1. 공황 저점",
+                "strategy": "1. 시장 공포 저점 진입",
                 "buyDate": today,
                 "buyPrice": "$100.00",
                 "currentPrice": "$90.00",
@@ -794,7 +794,7 @@ def test_same_strategy_adds_slot_after_ten_percent_drop_and_ten_days(monkeypatch
     updated = logs.load_json(cache_path, {})
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
     assert len(rows) == 2
-    assert rows[1]["strategy"] == "1. 공황 저점"
+    assert rows[1]["strategy"] == "1. 시장 공포 저점 진입"
     assert rows[1]["investmentType"] == "swing"
     assert rows[1]["slotId"].startswith("MP_1_")
     assert updated["meta"]["appendedOpenTrades"] == 1
@@ -808,7 +808,7 @@ def test_ef_family_blocks_cross_strategy_slot_until_restore_condition(monkeypatc
         "rows": [
             {
                 "ticker": "DL",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": today,
                 "buyPrice": "$100.00",
                 "currentPrice": "$99.00",
@@ -831,7 +831,7 @@ def test_ef_family_blocks_cross_strategy_slot_until_restore_condition(monkeypatc
     updated = logs.load_json(cache_path, {})
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
     assert len(rows) == 1
-    assert rows[0]["strategy"] == "2. 이평선 눌림"
+    assert rows[0]["strategy"] == "2. 상승 추세 이평선 눌림목"
     assert "restoreWatchDate" in rows[0]
     assert updated["meta"]["appendedOpenTrades"] == 0
 
@@ -844,7 +844,7 @@ def test_ef_family_adds_cross_strategy_slot_after_ten_percent_drop_ten_days_and_
         "rows": [
             {
                 "ticker": "DL",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": today,
                 "buyPrice": "$100.00",
                 "currentPrice": "$90.00",
@@ -881,8 +881,8 @@ def test_ef_family_adds_cross_strategy_slot_after_ten_percent_drop_ten_days_and_
     updated = logs.load_json(cache_path, {})
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
     assert [row["strategy"] for row in rows] == [
-        "2. 이평선 눌림",
-        "2. 이평선 눌림",
+        "2. 상승 추세 이평선 눌림목",
+        "2. 상승 추세 이평선 눌림목",
     ]
     assert rows[1]["investmentType"] == "swing"
     assert rows[1]["slotId"].startswith("DL_2_")
@@ -897,7 +897,7 @@ def test_same_day_sell_does_not_reopen_same_strategy(monkeypatch, tmp_path):
         "rows": [
             {
                 "ticker": "MP",
-                "strategy": "1. 공황 저점",
+                "strategy": "1. 시장 공포 저점 진입",
                 "buyDate": "2026.05.01",
                 "buyPrice": "$100.00",
                 "currentPrice": "$130.00",
@@ -930,7 +930,7 @@ def test_offlist_ticker_does_not_generate_buy_signal(monkeypatch, tmp_path):
     monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["MSFT"]})
 
     stock = {"ticker": "ACLS", "name": "Axcelis", "market": "US", "currentPrice": "$154.49", "opinion": "매수"}
-    technical = {"ACLS": {"opinion": "매수", "entrySignalCodes": "2", "entryStrategy": "2. 이평선 눌림", "현재가": "$154.49"}}
+    technical = {"ACLS": {"opinion": "매수", "entrySignalCodes": "2", "entryStrategy": "2. 상승 추세 이평선 눌림목", "현재가": "$154.49"}}
 
     changed = logs.update_trade_logs([stock], {}, technical, {"peakTriggered": False})
 
@@ -955,7 +955,7 @@ def test_offlist_held_trade_keeps_tracking_but_blocks_additional_buy(monkeypatch
             {
                 "slotId": "ACLS_2_20260522_1",
                 "ticker": "ACLS",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.05.22",
                 "buyPrice": "$152.51",
                 "currentPrice": "$152.51",
@@ -993,7 +993,7 @@ def test_held_trade_buy_signal_without_add_slot_keeps_buy_opinion(monkeypatch, t
             {
                 "slotId": "INTC_2_20260606_1",
                 "ticker": "INTC",
-                "strategy": "2. 이평선 눌림",
+                "strategy": "2. 상승 추세 이평선 눌림목",
                 "buyDate": "2026.06.06",
                 "buyPrice": "$102.90",
                 "currentPrice": "$102.90",
@@ -1007,8 +1007,8 @@ def test_held_trade_buy_signal_without_add_slot_keeps_buy_opinion(monkeypatch, t
         ]
     }), encoding="utf-8")
 
-    stock = {"ticker": "INTC", "name": "Intel", "market": "US", "currentPrice": "$109.82", "opinion": "매수", "strategies": ["2. 이평선 눌림"]}
-    technical = {"INTC": {"opinion": "매수", "entrySignalCodes": "2", "entryStrategy": "2. 이평선 눌림", "현재가": "$109.82"}}
+    stock = {"ticker": "INTC", "name": "Intel", "market": "US", "currentPrice": "$109.82", "opinion": "매수", "strategies": ["2. 상승 추세 이평선 눌림목"]}
+    technical = {"INTC": {"opinion": "매수", "entrySignalCodes": "2", "entryStrategy": "2. 상승 추세 이평선 눌림목", "현재가": "$109.82"}}
 
     changed = logs.update_trade_logs([stock], {"INTC": {"opinion": "관망"}}, technical, {"peakTriggered": False})
 
@@ -1035,7 +1035,7 @@ def test_offlist_held_trade_still_liquidates_on_exit(monkeypatch, tmp_path):
             {
                 "slotId": "OFL_1_20260501_1",
                 "ticker": "OFL",
-                "strategy": "1. 공황 저점",
+                "strategy": "1. 시장 공포 저점 진입",
                 "buyDate": "2026.05.01",
                 "buyPrice": "$100.00",
                 "currentPrice": "$120.00",

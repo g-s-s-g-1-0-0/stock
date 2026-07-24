@@ -134,7 +134,7 @@ def test_non_holding_strategy2_entry_when_season_open(monkeypatch):
 
     assert result["opinion"] == "매수"
     assert result["entrySignalCodes"] == "2"
-    assert result["entryStrategy"] == "2. 이평선 눌림"
+    assert result["entryStrategy"] == "2. 상승 추세 이평선 눌림목"
 
 
 def test_open_holding_strategies_reads_primary_code(monkeypatch):
@@ -143,8 +143,8 @@ def test_open_holding_strategies_reads_primary_code(monkeypatch):
         "read_cache",
         lambda name: {
             "rows": [
-                {"ticker": "278470", "strategy": "2. 이평선 눌림", "status": "보유 중"},
-                {"ticker": "AAPL", "strategy": "1. 공황 저점", "status": "손절"},
+                {"ticker": "278470", "strategy": "2. 상승 추세 이평선 눌림목", "status": "보유 중"},
+                {"ticker": "AAPL", "strategy": "1. 시장 공포 저점 진입", "status": "손절"},
             ]
         }
         if name == "trade-logs"

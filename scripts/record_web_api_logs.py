@@ -1551,8 +1551,8 @@ def tech_value(row: dict[str, Any], *candidates: str) -> Any:
 
 
 TECHNICAL_GROUP_TITLES = {
-    "1": "공황 저점 (시즌 오픈)",
-    "2": "이평선 눌림 (시즌 중)",
+    "1": "시장 공포 저점 진입 (시즌 오픈)",
+    "2": "상승 추세 이평선 눌림목 (시즌 중)",
 }
 CIRCLED_NUMBERS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨"]
 

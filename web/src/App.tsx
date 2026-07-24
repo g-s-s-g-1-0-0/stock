@@ -1262,7 +1262,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '₩84,200',
     valuation: '보통',
     opinion: '관망',
-    strategies: ['1. 공황 저점'],
+    strategies: ['1. 시장 공포 저점 진입'],
     updatedAt: '2시간 전',
   },
   {
@@ -1273,7 +1273,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$109.88',
     valuation: '고평가',
     opinion: '관망',
-    strategies: ['1. 공황 저점'],
+    strategies: ['1. 시장 공포 저점 진입'],
     updatedAt: '2시간 전',
   },
   {
@@ -1284,7 +1284,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$195.42',
     valuation: '보통',
     opinion: '매수',
-    strategies: ['1. 공황 저점', '2. 이평선 눌림'],
+    strategies: ['1. 시장 공포 저점 진입', '2. 상승 추세 이평선 눌림목'],
     updatedAt: '2시간 전',
   },
   {
@@ -1295,7 +1295,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$265.30',
     valuation: '고평가',
     opinion: '매도',
-    strategies: ['2. 이평선 눌림'],
+    strategies: ['2. 상승 추세 이평선 눌림목'],
     updatedAt: '2시간 전',
   },
   {
@@ -1306,7 +1306,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '₩209,500',
     valuation: '저평가',
     opinion: '매수',
-    strategies: ['2. 이평선 눌림'],
+    strategies: ['2. 상승 추세 이평선 눌림목'],
     updatedAt: '2시간 전',
   },
   {
@@ -1317,7 +1317,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '₩169,400',
     valuation: '보통',
     opinion: '관망',
-    strategies: ['1. 공황 저점'],
+    strategies: ['1. 시장 공포 저점 진입'],
     updatedAt: '2시간 전',
   },
   {
@@ -1328,7 +1328,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '₩151,800',
     valuation: '고평가',
     opinion: '매도',
-    strategies: ['2. 이평선 눌림'],
+    strategies: ['2. 상승 추세 이평선 눌림목'],
     updatedAt: '2시간 전',
   },
   {
@@ -1339,7 +1339,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$38.30',
     valuation: '보통',
     opinion: '매수',
-    strategies: ['1. 공황 저점'],
+    strategies: ['1. 시장 공포 저점 진입'],
     updatedAt: '2시간 전',
   },
   {
@@ -1350,7 +1350,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$20.70',
     valuation: '저평가',
     opinion: '관망',
-    strategies: ['2. 이평선 눌림'],
+    strategies: ['2. 상승 추세 이평선 눌림목'],
     updatedAt: '2시간 전',
   },
   {
@@ -1361,7 +1361,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$95.20',
     valuation: '보통',
     opinion: '매수',
-    strategies: ['1. 공황 저점'],
+    strategies: ['1. 시장 공포 저점 진입'],
     updatedAt: '2시간 전',
   },
   {
@@ -1372,7 +1372,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$57.40',
     valuation: '저평가',
     opinion: '관망',
-    strategies: ['1. 공황 저점'],
+    strategies: ['1. 시장 공포 저점 진입'],
     updatedAt: '2시간 전',
   },
   {
@@ -1383,7 +1383,7 @@ const searchUniverse: Stock[] = [
     currentPrice: '$485.90',
     valuation: '보통',
     opinion: '매수',
-    strategies: ['2. 이평선 눌림'],
+    strategies: ['2. 상승 추세 이평선 눌림목'],
     updatedAt: '2시간 전',
   },
 ]
@@ -1447,7 +1447,7 @@ const localTestPersonalTrades: TradeLog[] = [
     name: 'Broadcom',
     market: 'US',
     currentPrice: '$425.19',
-    strategy: '1. 공황 저점',
+    strategy: '1. 시장 공포 저점 진입',
     buyDate: '2026.04.18',
     buyPrice: '$389.40',
     sellDate: '-',
@@ -1462,7 +1462,7 @@ const localTestPersonalTrades: TradeLog[] = [
     name: 'Microsoft',
     market: 'US',
     currentPrice: '$485.90',
-    strategy: '2. 이평선 눌림',
+    strategy: '2. 상승 추세 이평선 눌림목',
     buyDate: '2026.04.22',
     buyPrice: '$461.30',
     sellDate: '-',
@@ -1477,7 +1477,7 @@ const localTestPersonalTrades: TradeLog[] = [
     name: 'Broadcom',
     market: 'US',
     currentPrice: '$425.19',
-    strategy: '1. 공황 저점',
+    strategy: '1. 시장 공포 저점 진입',
     buyDate: '2026.04.18',
     buyPrice: '$389.40',
     sellDate: '2026.05.15',
@@ -1492,7 +1492,7 @@ const localTestPersonalTrades: TradeLog[] = [
     name: 'NVIDIA',
     market: 'US',
     currentPrice: '$118.40',
-    strategy: '1. 공황 저점',
+    strategy: '1. 시장 공포 저점 진입',
     buyDate: '2026.04.15',
     buyPrice: '$104.20',
     sellDate: '2026.05.08',
@@ -1507,7 +1507,7 @@ const localTestPersonalTrades: TradeLog[] = [
     name: '삼성전자',
     market: 'KR',
     currentPrice: '₩78,300',
-    strategy: '2. 이평선 눌림',
+    strategy: '2. 상승 추세 이평선 눌림목',
     buyDate: '2026.05.02',
     buyPrice: '₩75,100',
     sellDate: '-',
@@ -1985,8 +1985,8 @@ function tradeReturnClass(value: number) {
 }
 
 const STRATEGY_LABELS: Record<string, string> = {
-  '1': '공황 저점',
-  '2': '이평선 눌림',
+  '1': '시장 공포 저점 진입',
+  '2': '상승 추세 이평선 눌림목',
 }
 
 function strategyCode(strategy: string) {
@@ -2022,12 +2022,12 @@ function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing'
   }
   const descriptions: Record<InvestmentType, Record<string, string>> = {
     swing: {
-      '1': '공황 저점은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 첫 매수 기회를 찾는 전략입니다. 시장이 충분히 눌렸는지, 종목도 과하게 팔렸는지, 저점에서 버티는 힘이 있는지를 함께 확인합니다.',
-      '2': '이평선 눌림은 공황 저점으로 매수 시즌이 열린 뒤 회복장에서 추가 매수 자리를 찾는 전략입니다. 계속 오른 종목을 따라 사지 않고, 상승 흐름 안에서 평균 가격선 근처까지 쉬어 갈 때만 봅니다.',
+      '1': '시장 공포 저점 진입은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 첫 매수 기회를 찾는 전략입니다. 시장이 충분히 눌렸는지, 종목도 과하게 팔렸는지, 저점에서 버티는 힘이 있는지를 함께 확인합니다.',
+      '2': '상승 추세 이평선 눌림목은 시장 공포 저점 진입으로 매수 시즌이 열린 뒤 회복장에서 추가 매수 자리를 찾는 전략입니다. 계속 오른 종목을 따라 사지 않고, 상승 흐름 안에서 평균 가격선 근처까지 쉬어 갈 때만 봅니다.',
     },
     long_term: {
-      '1': '공황 저점은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 장기 보유 후보를 처음 편입하는 전략입니다. 단기 반등보다 좋은 종목을 무리하지 않은 가격에 담는 데 초점을 둡니다.',
-      '2': '이평선 눌림은 공황 저점으로 매수 시즌이 열린 뒤 회복장에서 장기 보유 후보를 추가로 담는 전략입니다. 계속 오른 가격을 따라 사지 않고, 상승 흐름 안에서 평균 가격선 근처까지 쉬어 갈 때만 봅니다.',
+      '1': '시장 공포 저점 진입은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 장기 보유 후보를 처음 편입하는 전략입니다. 단기 반등보다 좋은 종목을 무리하지 않은 가격에 담는 데 초점을 둡니다.',
+      '2': '상승 추세 이평선 눌림목은 시장 공포 저점 진입으로 매수 시즌이 열린 뒤 회복장에서 장기 보유 후보를 추가로 담는 전략입니다. 계속 오른 가격을 따라 사지 않고, 상승 흐름 안에서 평균 가격선 근처까지 쉬어 갈 때만 봅니다.',
     },
   }
   return descriptions[investmentType][strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
