@@ -1066,6 +1066,18 @@
   background: #ffedd5;
 }
 
+.manual-holding-add-button {
+  border-color: rgba(37, 99, 235, 0.26);
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 900;
+}
+
+.manual-holding-add-button:hover {
+  border-color: rgba(37, 99, 235, 0.4);
+  background: #dbeafe;
+}
+
 .reserved-action-button {
   pointer-events: none;
   visibility: hidden;
@@ -1183,6 +1195,7 @@
   color: var(--muted);
   font-size: 13px;
   font-weight: 400;
+  letter-spacing: -0.01em;
   line-height: 1;
   word-break: keep-all;
   overflow-wrap: break-word;
@@ -3766,6 +3779,10 @@
   padding: 12px;
 }
 
+.holding-liquidation-row.manual-holding-row {
+  grid-template-columns: minmax(130px, 1.1fr) repeat(2, minmax(110px, 1fr)) minmax(150px, 1.2fr);
+}
+
 .holding-liquidation-title {
   display: grid;
   gap: 4px;
@@ -3828,7 +3845,8 @@
 
 @media (max-width: 720px) {
   .investment-option-grid,
-  .holding-liquidation-row {
+  .holding-liquidation-row,
+  .holding-liquidation-row.manual-holding-row {
     grid-template-columns: 1fr;
   }
 

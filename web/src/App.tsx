@@ -105,6 +105,8 @@ type TradeLog = {
   status: TradeStatus
   // 가치투자에서 개인이 직접 청산한 거래임을 표시. 자동 매도 신호와 구분해 로그/현금 계산에 포함한다.
   manualExit?: boolean
+  // 보유중인 종목에 직접 추가한 항목임을 표시. 추가 시점 이후에는 자동 청산 로직이 동일하게 적용된다.
+  manualEntry?: boolean
   // 서버 자동 기록 엔진의 관리 필드. 화면에서는 쓰지 않지만 저장 시 유실되지 않게 보존한다.
   sellTimestamp?: string
   exitReason?: string
@@ -142,6 +144,13 @@ type HoldingLiquidationDraft = {
   buyPrice: string
   sellDate: string
   sellPrice: string
+}
+
+type ManualHoldingDraft = {
+  ticker: string
+  buyDate: string
+  buyPrice: string
+  strategy: string
 }
 
 type ContributionFrequency = 'weekly' | 'monthly'
@@ -971,6 +980,7 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     holdingDays: typeof candidate.holdingDays === 'number' || candidate.holdingDays === '-' ? candidate.holdingDays : '-',
     status: ['익절', '손절', '실패 익절', '보유 중'].includes(normalizedStatus) ? normalizedStatus as TradeStatus : '보유 중',
     manualExit: candidate.manualExit === true ? true : undefined,
+    manualEntry: candidate.manualEntry === true ? true : undefined,
     sellTimestamp: typeof candidate.sellTimestamp === 'string' ? candidate.sellTimestamp : undefined,
     exitReason: typeof candidate.exitReason === 'string' ? candidate.exitReason : undefined,
     restoreWatchDate: typeof candidate.restoreWatchDate === 'string' ? candidate.restoreWatchDate : undefined,
@@ -2207,6 +2217,7 @@ function tradeResultLabel(trade: TradeLog) {
   if (trade.status === '익절') return '성공(익절)'
   if (trade.status === '손절') return '실패(손절)'
   if (trade.status === '실패 익절') return '실패(익절)'
+  if (trade.manualEntry) return '보유중(직접)'
   return '보유중'
 }
 
@@ -2221,6 +2232,9 @@ function tradeCriteriaInfo(strategy: string) {
 function tradeResultInfo(trade: TradeLog) {
   if (trade.manualExit && trade.status !== '보유 중') {
     return '보유종목에서 직접 청산한 기록입니다. 자동 매도 신호가 아니라 입력한 청산가와 청산일 기준으로 수익률을 계산합니다.'
+  }
+  if (trade.manualEntry && trade.status === '보유 중') {
+    return '보유중인 종목에 직접 추가한 항목입니다. 입력한 매수일·평단가 기준으로 자동 청산 로직이 동일하게 적용되며, 청산 조건을 충족하면 자동으로 청산됩니다.'
   }
   if (trade.status !== '보유 중') return tradeCriteriaInfo(trade.strategy)
   return '아직 매도 신호가 없어 성공/실패를 확정하지 않은 보유 중 거래입니다. 보유 여부는 투자금 산정과 별개로 구분해서 봅니다.'
@@ -5627,6 +5641,7 @@ function App() {
   const [isHoldingDeleteConfirmOpen, setIsHoldingDeleteConfirmOpen] = useState(false)
   const [isHoldingLiquidationOpen, setIsHoldingLiquidationOpen] = useState(false)
   const [holdingLiquidationDrafts, setHoldingLiquidationDrafts] = useState<HoldingLiquidationDraft[]>([])
+  const [manualHoldingDraft, setManualHoldingDraft] = useState<ManualHoldingDraft | null>(null)
   const [contributionSettings, setContributionSettings] = useState<ContributionSettings>(() => readStoredContributionSettings(initialLocalTestSession))
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
   const [contributionSettingsMode, setContributionSettingsMode] = useState<ContributionSettingsMode>('cash')
@@ -7161,18 +7176,8 @@ function App() {
     }
   }
 
-  const addToWatchlist = async (ticker: string) => {
-    if (!userSession) {
-      openLoginForAddStock()
-      return
-    }
-
-    const targetWatchlist = isOperatorDataMode ? operatorWatchlist : watchlist
-    if (targetWatchlist.length >= MAX_WATCHLIST_ITEMS) {
-      setIsAddingStock(true)
-      return
-    }
-
+  // 관심종목 추가의 코어 로직. 검색창 UI를 건드리지 않아 보유 종목 직접 추가 등에서도 재사용한다.
+  const addTickerToWatchlist = (ticker: string) => {
     resetSyncGenerationRef.current += 1
 
     const stockToAdd = resolveStockForTicker(ticker, apiStocks, apiSearchStocks)
@@ -7206,6 +7211,21 @@ function App() {
         if (result.ok && isNewTicker) void refreshAddedWatchlistStock(resolvedTicker)
       })
     }
+  }
+
+  const addToWatchlist = async (ticker: string) => {
+    if (!userSession) {
+      openLoginForAddStock()
+      return
+    }
+
+    const targetWatchlist = isOperatorDataMode ? operatorWatchlist : watchlist
+    if (targetWatchlist.length >= MAX_WATCHLIST_ITEMS) {
+      setIsAddingStock(true)
+      return
+    }
+
+    addTickerToWatchlist(ticker)
     setQuery('')
     setIsAddingStock(true)
   }
@@ -7360,6 +7380,61 @@ function App() {
       await commitManagedHoldingTradeLogs((current) => current.filter((trade) => !selectedHoldingTradeKeys.includes(tradeKey(trade))))
       setSelectedHoldingTradeKeys([])
       setIsHoldingDeleteConfirmOpen(false)
+    } catch {
+      // The user-facing save error is surfaced in the refresh message area.
+    }
+  }
+
+  const openManualHoldingModal = () => {
+    if (!userSession) {
+      openLoginForAddStock()
+      return
+    }
+    setManualHoldingDraft({ ticker: '', buyDate: todayTradeDateString(), buyPrice: '', strategy: '1' })
+  }
+
+  const updateManualHoldingDraft = (field: keyof ManualHoldingDraft, value: string) => {
+    setManualHoldingDraft((current) => (current ? { ...current, [field]: value } : current))
+  }
+
+  const isManualHoldingReady = manualHoldingDraft !== null
+    && manualHoldingDraft.ticker.trim().length > 0
+    && (parsePriceValue(manualHoldingDraft.buyPrice) ?? 0) > 0
+    && !Number.isNaN(parseTradeDate(manualHoldingDraft.buyDate))
+
+  const confirmManualHoldingAdd = async () => {
+    if (!manualHoldingDraft || !isManualHoldingReady || isSavingTradeLogs) return
+
+    const resolved = resolveStockForTicker(manualHoldingDraft.ticker, apiStocks, apiSearchStocks)
+    const resolvedTicker = resolved.ticker
+    const buyPriceValue = parsePriceValue(manualHoldingDraft.buyPrice) ?? 0
+    const newTrade: TradeLog = {
+      slotId: `manual_${resolvedTicker}_${displayedInvestmentType}_${manualHoldingDraft.strategy}_${Date.now()}`,
+      investmentType: displayedInvestmentType,
+      ticker: resolvedTicker,
+      name: resolved.name || resolvedTicker,
+      market: resolved.market,
+      currentPrice: resolved.currentPrice && resolved.currentPrice !== '-' ? resolved.currentPrice : undefined,
+      strategy: strategyDisplayName(manualHoldingDraft.strategy),
+      buyDate: normalizeTradeDateInput(manualHoldingDraft.buyDate),
+      buyPrice: '',
+      sellDate: '-',
+      sellPrice: '-',
+      returnPct: 0,
+      holdingDays: '-',
+      status: '보유 중',
+      manualEntry: true,
+    }
+    newTrade.buyPrice = formatTradePrice(newTrade, buyPriceValue, manualHoldingDraft.buyPrice)
+
+    try {
+      await commitManagedHoldingTradeLogs((current) => [...current, newTrade])
+      // 관심종목에 없으면 자동으로 추가한다. 관심종목에 있어야 매수 신호·데이터 갱신이 유지된다.
+      const targetWatchlist = isOperatorDataMode ? operatorWatchlist : watchlist
+      if (!targetWatchlist.includes(resolvedTicker) && targetWatchlist.length < MAX_WATCHLIST_ITEMS) {
+        addTickerToWatchlist(resolvedTicker)
+      }
+      setManualHoldingDraft(null)
     } catch {
       // The user-facing save error is surfaced in the refresh message area.
     }
@@ -9385,6 +9460,16 @@ function App() {
                 {canManageHoldingTrades && (
                   <>
                     <button
+                      className="manual-holding-add-button"
+                      disabled={isSavingTradeLogs}
+                      type="button"
+                      onClick={() => {
+                        if (!isSavingTradeLogs) openManualHoldingModal()
+                      }}
+                    >
+                      직접 추가
+                    </button>
+                    <button
                       aria-hidden={selectedHoldingTradeKeys.length === 0}
                       className={`liquidation-selected-button ${selectedHoldingTradeKeys.length === 0 ? 'reserved-action-button' : ''}`}
                       tabIndex={selectedHoldingTradeKeys.length === 0 ? -1 : 0}
@@ -10292,6 +10377,68 @@ function App() {
             <div className="modal-actions">
               <button className="modal-cancel" type="button" onClick={() => setContributionDraft(null)}>취소</button>
               <button className="modal-confirm" disabled={isContributionSaveDisabled} type="button" onClick={saveContributionSettings}>저장</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {manualHoldingDraft && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => { if (!isSavingTradeLogs) setManualHoldingDraft(null) })}>
+          <div aria-modal="true" className="confirm-modal holding-liquidation-modal" role="dialog">
+            <button className="modal-close-button" disabled={isSavingTradeLogs} type="button" aria-label="닫기" onClick={() => setManualHoldingDraft(null)}>×</button>
+            <h3>보유 종목을 직접 추가할까요?</h3>
+            <p>
+              이미 보유 중인 종목을 매수일·평단가와 함께 입력하면 보유 목록과 트레이딩 로그에 기록됩니다.
+              관심종목에 없는 종목은 자동으로 추가되며, 추가 시점부터 자동 청산 로직이 동일하게 적용됩니다.
+              이미 청산 조건에 해당하는 종목은 다음 데이터 갱신 때 바로 청산될 수 있습니다.
+            </p>
+            <div className="holding-liquidation-list">
+              <div className="holding-liquidation-row manual-holding-row">
+                <label>
+                  <span>티커</span>
+                  <input
+                    autoFocus
+                    disabled={isSavingTradeLogs}
+                    placeholder="예: AAPL, 005930"
+                    value={manualHoldingDraft.ticker}
+                    onChange={(event) => updateManualHoldingDraft('ticker', event.target.value.toUpperCase())}
+                  />
+                </label>
+                <label>
+                  <span>매수일</span>
+                  <input
+                    disabled={isSavingTradeLogs}
+                    type="date"
+                    value={tradeDateInputValue(manualHoldingDraft.buyDate)}
+                    onChange={(event) => updateManualHoldingDraft('buyDate', normalizeTradeDateInput(event.target.value))}
+                  />
+                </label>
+                <label>
+                  <span>평단가</span>
+                  <input
+                    inputMode="decimal"
+                    disabled={isSavingTradeLogs}
+                    value={manualHoldingDraft.buyPrice}
+                    onChange={(event) => updateManualHoldingDraft('buyPrice', event.target.value)}
+                  />
+                </label>
+                <label>
+                  <span>매수 전략</span>
+                  <CustomSelect
+                    ariaLabel="매수 전략 선택"
+                    options={strategyFilters.map((code) => ({ value: code, label: strategyDisplayName(code) }))}
+                    value={manualHoldingDraft.strategy}
+                    onChange={(value) => updateManualHoldingDraft('strategy', String(value))}
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="modal-cancel" disabled={isSavingTradeLogs} type="button" onClick={() => setManualHoldingDraft(null)}>
+                취소
+              </button>
+              <button className="modal-confirm" disabled={!isManualHoldingReady || isSavingTradeLogs} type="button" onClick={() => void confirmManualHoldingAdd()}>
+                {isSavingTradeLogs ? '저장 중...' : '추가'}
+              </button>
             </div>
           </div>
         </div>
