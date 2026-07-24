@@ -10425,7 +10425,7 @@ function App() {
                   />
                 </label>
                 <label>
-                  <span>매수일</span>
+                  <span>최종 매수일</span>
                   <input
                     disabled={isSavingTradeLogs}
                     type="date"
