@@ -1179,12 +1179,12 @@
 }
 
 .confirm-modal.strategy-criteria-modal .strategy-criteria-intro p {
+  /* 다른 confirm-modal 상단 설명(.confirm-modal p)과 동일한 본문 톤 */
   margin: 0;
   color: var(--muted);
   font-size: 13px;
   font-weight: 400;
-  letter-spacing: -0.01em;
-  line-height: 1;
+  line-height: 1.55;
   word-break: keep-all;
   overflow-wrap: break-word;
 }
@@ -1333,10 +1333,6 @@
   .confirm-modal.strategy-criteria-modal .strategy-criteria-intro {
     margin: 0 0 20px;
     padding-right: 34px;
-  }
-
-  .confirm-modal.strategy-criteria-modal .strategy-criteria-intro p {
-    font-size: 12.5px;
   }
 
   .strategy-criteria-modal-table-wrap {
@@ -3806,10 +3802,13 @@
 .holding-liquidation-row label {
   display: grid;
   gap: 5px;
+  min-width: 0;
 }
 
 .holding-liquidation-row input {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   border: 1px solid var(--border);
   border-radius: 9px;
@@ -3819,6 +3818,23 @@
   font-size: 12px;
   outline: none;
   padding: 9px 10px;
+}
+
+/* iOS date 입력은 기본 가운데 정렬·고유 최소폭으로 박스를 넘기기 쉬워 일반 텍스트 필드처럼 맞춘다. */
+.holding-liquidation-row input[type='date'] {
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: left;
+}
+
+.holding-liquidation-row input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+
+.holding-liquidation-row input[type='date']::-webkit-datetime-edit {
+  padding: 0;
+  text-align: left;
 }
 
 .holding-liquidation-row input:focus {
@@ -3851,6 +3867,15 @@
 
   .holding-liquidation-return {
     justify-content: flex-start;
+  }
+
+  /*
+   * iOS Safari는 포커스된 input/select 글자가 16px 미만이면 페이지를 확대한다.
+   * 직접 추가 팝업의 autofocus 티커 입력 때문에 다른 팝업과 달리 확대된 채로 열리던 문제를 막는다.
+   */
+  .holding-liquidation-row input,
+  .holding-liquidation-modal .custom-select-trigger {
+    font-size: 16px;
   }
 }
 
