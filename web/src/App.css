@@ -1196,7 +1196,8 @@
 
 .strategy-criteria-modal-table > thead th:first-child,
 .strategy-criteria-modal-table > tbody > tr > th:first-child {
-  width: 112px;
+  width: 200px;
+  min-width: 200px;
   padding-right: 8px;
   padding-left: 8px;
   text-align: center;
@@ -1208,8 +1209,8 @@
 
 .strategy-criteria-modal-table > thead th:nth-child(2),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
-  width: 248px;
-  min-width: 220px;
+  width: 160px;
+  min-width: 160px;
 }
 
 .strategy-criteria-modal-table > thead th:nth-child(3),
@@ -1297,6 +1298,8 @@
 
 .strategy-criteria-modal-table .strategy-pill {
   font-size: 11px;
+  max-width: none;
+  white-space: nowrap;
 }
 
 @media (max-width: 760px) {
