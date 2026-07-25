@@ -98,7 +98,8 @@ class MarketTrendsTest(unittest.TestCase):
 
     def test_market_trend_week_date_normalizes_to_monday(self) -> None:
         self.assertEqual(self.pipeline.market_trend_week_date("2026.07.15"), "2026.07.13")
-        self.assertEqual(self.pipeline.market_trend_week_date("2026.07.19"), "2026.07.13")
+        # UTC 일요일 라벨은 cron(KST 월요일 00:00) 주차인 다음 월요일로 올린다.
+        self.assertEqual(self.pipeline.market_trend_week_date("2026.07.19"), "2026.07.20")
         self.assertEqual(self.pipeline.market_trend_week_date("2026.05.25"), "2026.05.25")
 
     def test_sanitize_market_trend_rows_keeps_latest_row_per_week(self) -> None:
@@ -110,7 +111,8 @@ class MarketTrendsTest(unittest.TestCase):
 
         sanitized = self.pipeline.sanitize_market_trend_rows(rows)
 
-        self.assertEqual([row["date"] for row in sanitized], ["2026.07.06", "2026.07.13"])
+        self.assertEqual([row["date"] for row in sanitized], ["2026.07.13", "2026.07.20"])
+        self.assertEqual(sanitized[0]["summary"], "mid week")
         self.assertEqual(sanitized[-1]["summary"], "latest sunday")
 
 

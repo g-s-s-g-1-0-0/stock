@@ -1563,7 +1563,11 @@ def market_trend_signal_evidence_text(signal_rows: list[dict[str, Any]]) -> str:
 
 
 def market_trend_week_date(value: datetime | date | str | None = None) -> str:
-    """주간 트렌드 날짜를 해당 주의 월요일(KST)로 정규화한다."""
+    """주간 트렌드 날짜를 리포트 주차의 월요일(KST)로 정규화한다.
+
+    주간 cron은 KST 월요일 00:00(UTC 일요일 15:00)에 돈다. 예전에 UTC 일요일
+    날짜로 저장된 행은 ISO 주(직전 월요일)가 아니라 그 직후 월요일(실제 리포트 주차)로 올린다.
+    """
 
     if isinstance(value, str) and value.strip():
         try:
@@ -1576,7 +1580,11 @@ def market_trend_week_date(value: datetime | date | str | None = None) -> str:
         parsed = datetime.combine(value, time.min, tzinfo=KST)
     else:
         parsed = datetime.now(KST)
-    monday = parsed.date() - timedelta(days=parsed.weekday())
+    # 일요일 라벨 = cron 실행일(UTC) → 바로 이어지는 월요일 주차.
+    if parsed.weekday() == 6:
+        monday = parsed.date() + timedelta(days=1)
+    else:
+        monday = parsed.date() - timedelta(days=parsed.weekday())
     return monday.strftime("%Y.%m.%d")
 
 
