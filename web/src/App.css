@@ -1209,8 +1209,8 @@
 
 .strategy-criteria-modal-table > thead th:nth-child(2),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
-  width: 160px;
-  min-width: 160px;
+  width: 200px;
+  min-width: 180px;
 }
 
 .strategy-criteria-modal-table > thead th:nth-child(3),
