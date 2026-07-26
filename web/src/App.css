@@ -1196,8 +1196,8 @@
 
 .strategy-criteria-modal-table > thead th:first-child,
 .strategy-criteria-modal-table > tbody > tr > th:first-child {
-  width: 200px;
-  min-width: 200px;
+  width: 184px;
+  min-width: 184px;
   padding-right: 8px;
   padding-left: 8px;
   text-align: center;
