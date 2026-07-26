@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-07-26T15:00:55+00:00",
-    "lastSuccessfulRun": "2026-07-26T15:00:55+00:00",
+    "updatedAt": "2026-07-26T16:00:34+00:00",
+    "lastSuccessfulRun": "2026-07-26T16:00:34+00:00",
     "failedReason": null
   },
   "rows": [
@@ -4248,6 +4248,13 @@
       "market": "KR",
       "category": "가치주",
       "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
+      "ticker": "0218L0",
+      "name": "네오뷰",
+      "market": "KR",
+      "category": "가치주",
+      "industry": "2차전지, 전기차 배터리, 배터리 소재"
     },
     {
       "ticker": "022100",
