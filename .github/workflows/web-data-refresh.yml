@@ -7,8 +7,9 @@ on:
     # notification script receives the intended slot explicitly.
     - cron: "0,10,20,30,40,50 23 * * 0-4"
     - cron: "30,40,50 0 * * 1-5"
-    # Daily valuation refresh + earnings D-1 emails (00:00 UTC = 09:00 KST).
-    - cron: "0 0 * * *"
+    # Daily valuation refresh + earnings D-1 emails: Monday–Sunday 00:00 KST
+    # (UTC 15:00). Keep this distinct from MA morning slots at UTC 00:xx.
+    - cron: "0 15 * * *"
     # Weekly market trends + universe report: Monday 00:00 KST (Sunday 15:00 UTC).
     - cron: "0 15 * * 0"
   workflow_dispatch:
@@ -101,13 +102,13 @@ jobs:
           if [ "${{ github.event_name }}" = "schedule" ]; then
             PUBLISH_AT=""
             SEND_NOTIFICATIONS="true"
-            # Exact match first: "0 0 * * *" also contains " 0 " and must not use the MA 09:30 slot.
+            # Exact match first: weekly `0 15 * * 0` must not fall through to daily valuation.
             if [ "${{ github.event.schedule }}" = "0 15 * * 0" ]; then
               TASKS="stock-universe market-trends"
               FORCE_REFRESH="true"
               MA_SUPPORT_SCAN_FORCE="false"
               MA_SUPPORT_SCAN_SLOT=""
-            elif [ "${{ github.event.schedule }}" = "0 0 * * *" ]; then
+            elif [ "${{ github.event.schedule }}" = "0 15 * * *" ]; then
               TASKS="valuation"
               FORCE_REFRESH="false"
               MA_SUPPORT_SCAN_FORCE="false"

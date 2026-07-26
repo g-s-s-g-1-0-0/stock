@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "valuation",
-    "schedule": "0 0 * * *",
+    "schedule": "0 15 * * *",
     "updatedAt": "2026-07-25T15:00:00+00:00",
     "lastSuccessfulRun": "2026-07-25T15:00:00+00:00",
     "failedReason": null,

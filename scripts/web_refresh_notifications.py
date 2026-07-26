@@ -2476,15 +2476,20 @@ def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuatio
         return 0
 
     sent = 0
+    skipped_empty = 0
     for recipient in recipients:
         tickers = watchlist_tickers_for_recipient(recipient, watchlists, admin_uses_operator=True)
         candidates = earnings_candidates(tickers, stocks, valuations)
         if not candidates:
+            skipped_empty += 1
             continue
         subject = "[실적발표 D-1] " + ", ".join(stock["ticker"] for stock in candidates[:8]) + " — 내일 발표"
         send_notification(recipient, subject, append_notification_footer(earnings_email_body(candidates), recipient, "earningsDayBefore"))
         sent += 1
-    print(f"Sent earnings notifications: {sent}")
+    print(
+        f"Sent earnings notifications: {sent} "
+        f"(recipients={len(recipients)} empty_watchlist_or_no_d1={skipped_empty})"
+    )
     return sent
 
 

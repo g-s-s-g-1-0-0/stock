@@ -1211,7 +1211,7 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
     return {
         "meta": {
             "kind": "valuation",
-            "schedule": "0 0 * * *",
+            "schedule": "0 15 * * *",
             "updatedAt": refreshed_at,
             "lastSuccessfulRun": refreshed_at if successful_rows else existing_meta.get("lastSuccessfulRun"),
             "failedReason": "; ".join(f"{e['ticker']}: {e['error']}" for e in errors) if errors else None,

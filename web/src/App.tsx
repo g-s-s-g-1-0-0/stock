@@ -4346,7 +4346,7 @@ function TechnicalAnalysisPage({
         <div>
           <h2>기술 분석</h2>
           <p>Home 관심 종목 기준으로 RSI, CCI, MACD, DMI, 캔들, 거래량, 볼린저밴드, 이동평균 데이터 등의 기술 지표들을 활용해 매매 타이밍을 판단합니다.</p>
-          <p className="page-update-note">각 지표는 2시간마다 업데이트되며, 삼성증권 앱과 동일한 계산 방식을 적용하기 때문에 본인이 바라보는 지표와 일부 다를 수 있습니다.</p>
+          <p className="page-update-note">각 지표는 2시간마다 업데이트되며, 삼성증권 앱과 동일한 계산 방식을 적용하기 때문에 다른 증권사 사용 시 본인이 바라보는 지표와 일부 다를 수 있습니다.</p>
         </div>
         <span className="section-heading-meta">총 {visibleStocks.length}개 <b>|</b> {updateLabel}</span>
       </div>
@@ -4873,6 +4873,7 @@ function MarketTrendsPage({
         <div>
           <h2>시장 트렌드</h2>
           <p>주간 시장에서 자주 언급된 핵심 테마와 섹터를 순위별로 확인합니다.</p>
+          <p className="page-update-note">매주 월요일 자정(한국시간)에 1회 업데이트됩니다.</p>
         </div>
         <span className="section-heading-meta">총 {rows.length}개 <b>|</b> {updateLabel}</span>
       </div>
