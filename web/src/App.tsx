@@ -2564,7 +2564,7 @@ function StrategyCriteriaContent({ investmentType }: { investmentType: Investmen
       <h3 id="strategy-criteria-title">{investmentProfileLabel(investmentType)} 전략별 매수·청산 기준</h3>
       <div className="strategy-criteria-intro">
         <p>
-          이 전략은 <strong>공포장에서만</strong> 진입하기 때문에 매수 기회가 드물고, 기다리는 기간이 길 수 있습니다. 몇 년간 여러 전략을 테스트한 결과, 느리더라도 <strong>리스크를 줄이면서 수익률을 극대화</strong>하는 데 가장 좋은 전략이라고 판단합니다. 기다리다 지쳐 조급하게 매수하게 될 것 같다면, 대기 자금은 같은 증권 계좌의 <strong>원화·외화 RP</strong>에 넣어 이자를 받는 편이 낫습니다. RP에도 리스크는 있지만 주식보다는 낮은 편입니다. RP 이용 방법은 <strong>「OO증권 RP 투자」</strong>로 검색해 이용 중인 증권사의 안내를 참고하세요.
+          몇 년간 여러 전략을 테스트한 결과, 아래 전략이 <strong>리스크를 줄이면서 수익을 극대화</strong>하는 데 가장 좋은 전략이라고 판단합니다. 다만, 매수 기회가 드물고 기다리는 기간이 길 수 있기 때문에 다소 지루할 수 있습니다. 기다리다 지쳐 조급하게 매수하게 될 것 같다면, 대기 자금은 같은 증권 계좌의 <strong>원화·외화 RP</strong>에 넣어 이자를 받는 편이 나을 수 있습니다. RP에도 리스크는 있지만 주식보다는 낮은 편입니다. RP 투자 방법은 <strong>「OO증권 RP 투자」</strong>로 검색해 이용 중인 증권사의 안내를 참고하세요.
         </p>
       </div>
       <StrategyCriteriaTable investmentType={investmentType} />
