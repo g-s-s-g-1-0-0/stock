@@ -9893,7 +9893,10 @@ function App() {
                     </div>
                     {isEmailNotificationChannel && (
                       <label className="account-alert-email-field notification-channel-email-field">
-                        <span>알림 받을 이메일</span>
+                        <div className="account-alert-email-field-header">
+                          <span>알림 받을 이메일</span>
+                          <small>비워두면 가입한 이메일을 사용합니다.</small>
+                        </div>
                         <input
                           autoComplete="email"
                           inputMode="email"
@@ -9902,7 +9905,6 @@ function App() {
                           value={notificationPreferences.recipientEmail}
                           onChange={(event) => updateNotificationRecipientEmail(event.target.value)}
                         />
-                        <small>비워두면 가입한 이메일을 사용합니다.</small>
                       </label>
                     )}
                   </div>

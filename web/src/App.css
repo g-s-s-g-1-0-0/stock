@@ -5363,6 +5363,14 @@
   padding-bottom: 0;
 }
 
+.account-alert-email-field-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.account-alert-email-field-header span,
 .account-alert-email-field span {
   color: var(--text-h);
   font-size: 12px;
@@ -5387,10 +5395,12 @@
   box-shadow: 0 0 0 3px rgba(34, 136, 238, 0.12);
 }
 
+.account-alert-email-field-header small,
 .account-alert-email-field small {
   color: var(--muted);
   font-size: 11px;
   line-height: 1.35;
+  text-align: right;
 }
 
 .account-alert-toggle {
@@ -6297,6 +6307,14 @@
   }
 
   .account-alert-header small {
+    text-align: left;
+  }
+
+  .account-alert-email-field-header {
+    display: grid;
+  }
+
+  .account-alert-email-field-header small {
     text-align: left;
   }
 
