@@ -1138,11 +1138,17 @@
 
 .strategy-criteria-modal-table th,
 .strategy-criteria-modal-table td {
+  border-right: 1px solid var(--sheet-border);
   border-bottom: 1px solid rgba(226, 232, 240, 0.95);
   padding: 16px 14px;
   text-align: left;
   vertical-align: top;
   font-size: 12.5px;
+}
+
+.strategy-criteria-modal-table th:last-child,
+.strategy-criteria-modal-table td:last-child {
+  border-right: 0;
 }
 
 .strategy-criteria-modal-table > thead th {
