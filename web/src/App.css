@@ -1202,8 +1202,8 @@
 
 .strategy-criteria-modal-table > thead th:first-child,
 .strategy-criteria-modal-table > tbody > tr > th:first-child {
-  width: 184px;
-  min-width: 184px;
+  width: 160px;
+  min-width: 160px;
   padding-right: 8px;
   padding-left: 8px;
   text-align: center;
@@ -1221,7 +1221,7 @@
 
 .strategy-criteria-modal-table > thead th:nth-child(3),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
-  min-width: 796px;
+  min-width: 820px;
 }
 
 .strategy-criteria-summary {
