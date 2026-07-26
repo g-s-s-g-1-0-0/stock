@@ -1130,7 +1130,7 @@
 
 .strategy-criteria-modal-table {
   width: 100%;
-  min-width: 1180px;
+  min-width: 1196px;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 12.5px;
@@ -1215,7 +1215,7 @@
 
 .strategy-criteria-modal-table > thead th:nth-child(3),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
-  min-width: 780px;
+  min-width: 796px;
 }
 
 .strategy-criteria-summary {
