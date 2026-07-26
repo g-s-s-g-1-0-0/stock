@@ -1094,6 +1094,7 @@
   padding: 24px 24px 22px;
   text-size-adjust: none;
   -webkit-text-size-adjust: none;
+  contain: layout paint;
 }
 
 .confirm-modal.strategy-criteria-modal h3 {
@@ -1118,6 +1119,7 @@
   background: var(--surface);
   text-size-adjust: none;
   -webkit-text-size-adjust: none;
+  contain: content;
 }
 
 .strategy-criteria-modal-table-scroll {
@@ -1202,8 +1204,8 @@
 
 .strategy-criteria-modal-table > thead th:first-child,
 .strategy-criteria-modal-table > tbody > tr > th:first-child {
-  width: 160px;
-  min-width: 160px;
+  width: 128px;
+  min-width: 128px;
   padding-right: 8px;
   padding-left: 8px;
   text-align: center;
@@ -1215,13 +1217,13 @@
 
 .strategy-criteria-modal-table > thead th:nth-child(2),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
-  width: 200px;
-  min-width: 180px;
+  width: 168px;
+  min-width: 156px;
 }
 
 .strategy-criteria-modal-table > thead th:nth-child(3),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
-  min-width: 820px;
+  min-width: 884px;
 }
 
 .strategy-criteria-summary {
@@ -1304,8 +1306,11 @@
 
 .strategy-criteria-modal-table .strategy-pill {
   font-size: 11px;
-  max-width: none;
-  white-space: nowrap;
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.35;
+  text-align: center;
+  justify-content: center;
 }
 
 @media (max-width: 760px) {

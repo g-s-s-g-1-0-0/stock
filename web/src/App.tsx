@@ -1,5 +1,6 @@
 import './App.css'
 import { Fragment, type CSSProperties, type FormEvent, type MouseEvent as ReactMouseEvent, type ReactNode, type RefObject, type TouchEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { User } from '@supabase/supabase-js'
 import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, saveTradeLogs, type AppData, type RuntimeMeta } from './api'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
@@ -2498,12 +2499,17 @@ function StrategyCriteriaModal({
     document.body.style.overflow = 'hidden'
     document.documentElement.style.overflow = 'hidden'
     document.body.style.overscrollBehavior = 'none'
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.body.style.overflow = previousBodyOverflow
       document.documentElement.style.overflow = previousHtmlOverflow
       document.body.style.overscrollBehavior = previousBodyOverscroll
+      document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [])
+  }, [onClose])
 
   return (
     <div className="modal-backdrop strategy-criteria-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, onClose)}>
@@ -2603,6 +2609,24 @@ function StrategyFilterLabel({
     >
       전략
     </button>
+  )
+}
+
+/** Keep open-state local so opening the criteria modal does not re-render the whole App tree. */
+function StrategyCriteriaLauncher({ investmentType }: { investmentType: InvestmentType }) {
+  const [open, setOpen] = useState(false)
+  const close = useCallback(() => setOpen(false), [])
+
+  return (
+    <>
+      <StrategyFilterLabel onOpenModal={() => setOpen(true)} />
+      {open
+        ? createPortal(
+            <StrategyCriteriaModal investmentType={investmentType} onClose={close} />,
+            document.body,
+          )
+        : null}
+    </>
   )
 }
 
@@ -5657,7 +5681,6 @@ function App() {
   const [viewMode, setViewMode] = useState<'personal' | 'operator'>(() => readStoredViewMode())
   const [showViewModeHint, setShowViewModeHint] = useState(() => localStorage.getItem(VIEW_MODE_HINT_STORAGE_KEY) !== 'true')
   const [selectedStrategy, setSelectedStrategy] = useState('전체')
-  const [isStrategyCriteriaOpen, setIsStrategyCriteriaOpen] = useState(false)
   const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc')
   const [activeTooltip, setActiveTooltip] = useState<TooltipState | null>(null)
   const [selectedTickers, setSelectedTickers] = useState<string[]>([])
@@ -8331,10 +8354,6 @@ function App() {
       setIsAccountDeleteConfirmOpen(false)
       return
     }
-    if (isStrategyCriteriaOpen) {
-      setIsStrategyCriteriaOpen(false)
-      return
-    }
     if (isLoginOpen) {
       closeLoginModal()
       return
@@ -8989,9 +9008,7 @@ function App() {
             <div className="log-title-row">
               <h2>트레이딩 로그</h2>
               <div className="strategy-filter" aria-label="전략 필터">
-                <StrategyFilterLabel
-                  onOpenModal={() => setIsStrategyCriteriaOpen(true)}
-                />
+                <StrategyCriteriaLauncher investmentType={displayedInvestmentType} />
                 {['전체', ...strategyFilters].map((code) => (
                   <button
                     className={selectedStrategy === code ? 'active' : ''}
@@ -9760,9 +9777,6 @@ function App() {
         >
           {activeTooltip.text}
         </div>
-      )}
-      {isStrategyCriteriaOpen && (
-        <StrategyCriteriaModal investmentType={displayedInvestmentType} onClose={() => setIsStrategyCriteriaOpen(false)} />
       )}
       {shouldShowInvestmentProfileOnboarding && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, closeInvestmentProfileOnboarding)}>
