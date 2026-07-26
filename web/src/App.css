@@ -1202,8 +1202,8 @@
 
 .strategy-criteria-modal-table > thead th:first-child,
 .strategy-criteria-modal-table > tbody > tr > th:first-child {
-  width: 150px;
-  min-width: 150px;
+  width: 180px;
+  min-width: 180px;
   padding-right: 8px;
   padding-left: 8px;
   text-align: center;
@@ -1215,13 +1215,13 @@
 
 .strategy-criteria-modal-table > thead th:nth-child(2),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
-  width: 168px;
-  min-width: 156px;
+  width: 200px;
+  min-width: 200px;
 }
 
 .strategy-criteria-modal-table > thead th:nth-child(3),
 .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
-  min-width: 862px;
+  min-width: 800px;
 }
 
 .strategy-criteria-summary {
@@ -1304,11 +1304,8 @@
 
 .strategy-criteria-modal-table .strategy-pill {
   font-size: 11px;
-  max-width: 100%;
-  white-space: normal;
-  line-height: 1.35;
-  text-align: center;
-  justify-content: center;
+  max-width: none;
+  white-space: nowrap;
 }
 
 @media (max-width: 760px) {
