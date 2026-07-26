@@ -2080,7 +2080,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         label: '관망',
         value: [
           '보유 중 유지 조건이 깨지면 매수 → 관망으로 바뀝니다. 자동으로 파는 신호가 아닙니다.',
-          '유지 조건은 진입과 같고, VIX만 22 → 18로 조금 완화합니다.',
+          '살 때와 같은 조건을 계속 봅니다. 다만 공포지수(VIX)는 살 때 22 이상, 들고 있을 때는 18 이상이면 유지로 봅니다.',
         ],
       },
       {
@@ -2130,7 +2130,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         label: '관망',
         value: [
           '보유 중 유지 조건이 깨지면 매수 → 관망으로 바뀝니다. 자동으로 파는 신호가 아닙니다.',
-          '시즌·회복장·매수차단선만 유지하면 되고, 이평선 터치는 매일 다시 볼 필요 없습니다.',
+          '이미 산 뒤에는 이평선에 다시 닿았는지는 안 봅니다. 시즌이 열려 있고, 회복장이고, QQQ가 과열 차단선 아래인지만 보면 매수 의견을 유지합니다.',
         ],
       },
       {
