@@ -65,6 +65,8 @@ Brevo is the preferred free-volume upgrade path when notification volume outgrow
 
 Notification failures are not ignored. If an email step fails, the GitHub Actions run should fail and appear in the repository Actions tab.
 
+Weekly trend and earnings D-1 emails record what they sent in `data/cache/web-notification-state.json`, which the workflow commits after the email steps. A second trigger for the same report date (weekly) or the same KST date and ticker set (earnings) is skipped, so overlapping external cron and GitHub `schedule:` runs no longer resend the same mail. Look for `already_sent=` in the Actions log to confirm a skip.
+
 One-click unsubscribe links require these Vercel environment variables on the deployed web app:
 
 - `SUPABASE_URL`

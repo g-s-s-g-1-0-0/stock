@@ -313,41 +313,87 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         original_load_recipients = self.notifications.load_recipients
         original_send_notification = self.notifications.send_notification
         original_window = self.notifications.is_weekly_report_window
+        original_state_path = self.notifications.NOTIFICATION_STATE
 
         try:
-            self.notifications.is_weekly_report_window = lambda: True
-            self.notifications.latest_market_trend = lambda: {
-                "date": "2026.06.15",
-                "summary": "요약",
-                "ranks": ["우주항공 | SpaceX"],
-            }
-            self.notifications.load_recipients = lambda: [
-                self.notifications.Recipient(
-                    owner_id="admin",
-                    email="admin@example.com",
-                    is_admin=True,
-                    preferences={"weeklyTrendReport": True},
-                ),
-                self.notifications.Recipient(
-                    owner_id="user",
-                    email="user@example.com",
-                    is_admin=False,
-                    preferences={"weeklyTrendReport": True},
-                ),
-            ]
-            self.notifications.send_notification = (
-                lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
-            )
+            with TemporaryDirectory() as temp_dir:
+                self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
+                self.notifications.is_weekly_report_window = lambda: True
+                self.notifications.latest_market_trend = lambda: {
+                    "date": "2026.06.15",
+                    "summary": "요약",
+                    "ranks": ["우주항공 | SpaceX"],
+                }
+                self.notifications.load_recipients = lambda: [
+                    self.notifications.Recipient(
+                        owner_id="admin",
+                        email="admin@example.com",
+                        is_admin=True,
+                        preferences={"weeklyTrendReport": True},
+                    ),
+                    self.notifications.Recipient(
+                        owner_id="user",
+                        email="user@example.com",
+                        is_admin=False,
+                        preferences={"weeklyTrendReport": True},
+                    ),
+                ]
+                self.notifications.send_notification = (
+                    lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
+                )
 
-            sent = self.notifications.send_weekly_trend_notifications()
+                sent = self.notifications.send_weekly_trend_notifications()
         finally:
             self.notifications.latest_market_trend = original_latest_market_trend
             self.notifications.load_recipients = original_load_recipients
             self.notifications.send_notification = original_send_notification
             self.notifications.is_weekly_report_window = original_window
+            self.notifications.NOTIFICATION_STATE = original_state_path
 
         self.assertEqual(2, sent)
         self.assertEqual(["admin@example.com", "user@example.com"], [message[0] for message in sent_messages])
+
+    def test_weekly_trend_report_sends_once_per_report_date(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        original_latest_market_trend = self.notifications.latest_market_trend
+        original_load_recipients = self.notifications.load_recipients
+        original_send_notification = self.notifications.send_notification
+        original_window = self.notifications.is_weekly_report_window
+        original_state_path = self.notifications.NOTIFICATION_STATE
+
+        try:
+            with TemporaryDirectory() as temp_dir:
+                self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
+                self.notifications.is_weekly_report_window = lambda: True
+                self.notifications.latest_market_trend = lambda: {
+                    "date": "2026.07.27",
+                    "summary": "요약",
+                    "ranks": ["우주항공 | SpaceX"],
+                }
+                self.notifications.load_recipients = lambda: [
+                    self.notifications.Recipient(
+                        owner_id="admin",
+                        email="admin@example.com",
+                        is_admin=True,
+                        preferences={"weeklyTrendReport": True},
+                    ),
+                ]
+                self.notifications.send_notification = (
+                    lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
+                )
+
+                first_sent = self.notifications.send_weekly_trend_notifications()
+                second_sent = self.notifications.send_weekly_trend_notifications()
+        finally:
+            self.notifications.latest_market_trend = original_latest_market_trend
+            self.notifications.load_recipients = original_load_recipients
+            self.notifications.send_notification = original_send_notification
+            self.notifications.is_weekly_report_window = original_window
+            self.notifications.NOTIFICATION_STATE = original_state_path
+
+        self.assertEqual(1, first_sent)
+        self.assertEqual(0, second_sent)
+        self.assertEqual(1, len(sent_messages))
 
     def test_stock_universe_report_sends_only_to_admins(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
@@ -391,6 +437,111 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
         self.assertEqual(1, sent)
         self.assertEqual(["admin@example.com"], [message[0] for message in sent_messages])
+
+    def test_earnings_notifications_send_once_per_kst_day_for_same_candidates(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        original_load_recipients = self.notifications.load_recipients
+        original_load_watchlists = self.notifications.load_watchlists
+        original_send_notification = self.notifications.send_notification
+        original_state_path = self.notifications.NOTIFICATION_STATE
+
+        try:
+            with TemporaryDirectory() as temp_dir:
+                current = Path(temp_dir) / "stocks.json"
+                valuation = Path(temp_dir) / "valuation.json"
+                current.write_text(
+                    json.dumps({"rows": [{"ticker": "BE", "name": "Bloom Energy", "opinion": "관망"}]}),
+                    encoding="utf-8",
+                )
+                valuation.write_text(
+                    json.dumps({"rows": {"BE": {"earningsDate": "2026-07-29 (D-1)"}}}),
+                    encoding="utf-8",
+                )
+                self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
+                self.notifications.load_recipients = lambda: [
+                    self.notifications.Recipient(
+                        owner_id="admin-1",
+                        email="admin@example.com",
+                        is_admin=True,
+                        preferences={"earningsDayBefore": True},
+                    ),
+                ]
+                self.notifications.load_watchlists = lambda: {"": {"BE"}}
+                self.notifications.send_notification = (
+                    lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
+                )
+
+                first_sent = self.notifications.send_earnings_notifications(current, valuation)
+                second_sent = self.notifications.send_earnings_notifications(current, valuation)
+        finally:
+            self.notifications.load_recipients = original_load_recipients
+            self.notifications.load_watchlists = original_load_watchlists
+            self.notifications.send_notification = original_send_notification
+            self.notifications.NOTIFICATION_STATE = original_state_path
+
+        self.assertEqual(1, first_sent)
+        self.assertEqual(0, second_sent)
+        self.assertEqual(1, len(sent_messages))
+        self.assertIn("[실적발표 D-1] BE", sent_messages[0][1])
+
+    def test_earnings_notifications_resend_when_candidates_change(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        original_load_recipients = self.notifications.load_recipients
+        original_load_watchlists = self.notifications.load_watchlists
+        original_send_notification = self.notifications.send_notification
+        original_state_path = self.notifications.NOTIFICATION_STATE
+
+        try:
+            with TemporaryDirectory() as temp_dir:
+                current = Path(temp_dir) / "stocks.json"
+                valuation = Path(temp_dir) / "valuation.json"
+                current.write_text(
+                    json.dumps({
+                        "rows": [
+                            {"ticker": "BE", "name": "Bloom Energy", "opinion": "관망"},
+                            {"ticker": "STX", "name": "Seagate", "opinion": "관망"},
+                        ]
+                    }),
+                    encoding="utf-8",
+                )
+                valuation.write_text(
+                    json.dumps({"rows": {"BE": {"earningsDate": "2026-07-29 (D-1)"}}}),
+                    encoding="utf-8",
+                )
+                self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
+                self.notifications.load_recipients = lambda: [
+                    self.notifications.Recipient(
+                        owner_id="admin-1",
+                        email="admin@example.com",
+                        is_admin=True,
+                        preferences={"earningsDayBefore": True},
+                    ),
+                ]
+                self.notifications.load_watchlists = lambda: {"": {"BE", "STX"}}
+                self.notifications.send_notification = (
+                    lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
+                )
+
+                first_sent = self.notifications.send_earnings_notifications(current, valuation)
+                valuation.write_text(
+                    json.dumps({
+                        "rows": {
+                            "BE": {"earningsDate": "2026-07-29 (D-1)"},
+                            "STX": {"earningsDate": "2026-07-29 (D-1)"},
+                        }
+                    }),
+                    encoding="utf-8",
+                )
+                second_sent = self.notifications.send_earnings_notifications(current, valuation)
+        finally:
+            self.notifications.load_recipients = original_load_recipients
+            self.notifications.load_watchlists = original_load_watchlists
+            self.notifications.send_notification = original_send_notification
+            self.notifications.NOTIFICATION_STATE = original_state_path
+
+        self.assertEqual(1, first_sent)
+        self.assertEqual(1, second_sent)
+        self.assertIn("[실적발표 D-1] BE, STX", sent_messages[1][1])
 
     def test_weekly_reports_skip_outside_monday_midnight_window(self) -> None:
         kst = ZoneInfo("Asia/Seoul")

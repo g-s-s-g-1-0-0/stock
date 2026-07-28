@@ -157,6 +157,32 @@ def clear_runtime_reset() -> None:
     write_json(NOTIFICATION_STATE, state)
 
 
+def read_sent_keys(section: str) -> set[str]:
+    state = read_json(NOTIFICATION_STATE)
+    section_state = state.get(section) if isinstance(state, dict) else None
+    keys = section_state.get("sentKeys") if isinstance(section_state, dict) else None
+    return {str(key) for key in keys} if isinstance(keys, list) else set()
+
+
+def record_sent_keys(section: str, keys: set[str], limit: int = 500) -> None:
+    """이미 보낸 알림 키를 남겨 같은 내용이 재발송되지 않게 한다.
+
+    워크플로가 이메일 발송 뒤 data/cache를 커밋하므로, 외부 cron과 GitHub
+    schedule이 같은 작업을 두 번 트리거해도 다음 실행이 이 상태를 읽어 건너뛴다.
+    """
+
+    if not keys:
+        return
+    state = read_json(NOTIFICATION_STATE)
+    if not isinstance(state, dict):
+        state = {}
+    state[section] = {
+        "sentKeys": sorted(read_sent_keys(section) | keys)[-limit:],
+        "updatedAt": datetime.now().astimezone().isoformat(),
+    }
+    write_json(NOTIFICATION_STATE, state)
+
+
 def now_labels() -> tuple[str, str]:
     now = datetime.now().astimezone()
     return (
@@ -1644,11 +1670,20 @@ def send_weekly_trend_notifications() -> int:
     report_date = str(trend.get("date") or datetime.now(KST).strftime("%Y.%m.%d"))
     subject = f"[주간 트렌드] 시장 트렌드 리포트 ({report_date})"
     body = weekly_trend_email_body(trend)
+    sent_keys = read_sent_keys("weeklyTrend")
+    newly_sent_keys: set[str] = set()
     sent = 0
+    skipped_duplicate = 0
     for recipient in recipients:
+        key = f"{recipient.owner_id}:{report_date}"
+        if key in sent_keys:
+            skipped_duplicate += 1
+            continue
         send_notification(recipient, subject, append_notification_footer(body, recipient, "weeklyTrendReport"))
+        newly_sent_keys.add(key)
         sent += 1
-    print(f"Sent weekly trend notifications: {sent}")
+    record_sent_keys("weeklyTrend", newly_sent_keys)
+    print(f"Sent weekly trend notifications: {sent} (already_sent={skipped_duplicate})")
     return sent
 
 
@@ -2462,6 +2497,13 @@ def earnings_email_body(candidates: list[dict[str, Any]]) -> str:
     """
 
 
+def earnings_send_key(recipient: Recipient, candidates: list[dict[str, Any]], now: datetime | None = None) -> str:
+    current = now or datetime.now().astimezone()
+    kst_date = current.astimezone(KST).date().isoformat()
+    tickers = ",".join(sorted(str(candidate["ticker"]) for candidate in candidates))
+    return f"{recipient.owner_id}:{kst_date}:{tickers}"
+
+
 def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuation: Path = DEFAULT_VALUATION) -> int:
     stocks = stock_rows_by_ticker(current)
     valuations = valuation_rows_by_ticker(valuation)
@@ -2475,20 +2517,29 @@ def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuatio
         print("No recipients for earningsDayBefore.")
         return 0
 
+    sent_keys = read_sent_keys("earnings")
+    newly_sent_keys: set[str] = set()
     sent = 0
     skipped_empty = 0
+    skipped_duplicate = 0
     for recipient in recipients:
         tickers = watchlist_tickers_for_recipient(recipient, watchlists, admin_uses_operator=True)
         candidates = earnings_candidates(tickers, stocks, valuations)
         if not candidates:
             skipped_empty += 1
             continue
+        key = earnings_send_key(recipient, candidates)
+        if key in sent_keys:
+            skipped_duplicate += 1
+            continue
         subject = "[실적발표 D-1] " + ", ".join(stock["ticker"] for stock in candidates[:8]) + " — 내일 발표"
         send_notification(recipient, subject, append_notification_footer(earnings_email_body(candidates), recipient, "earningsDayBefore"))
+        newly_sent_keys.add(key)
         sent += 1
+    record_sent_keys("earnings", newly_sent_keys)
     print(
         f"Sent earnings notifications: {sent} "
-        f"(recipients={len(recipients)} empty_watchlist_or_no_d1={skipped_empty})"
+        f"(recipients={len(recipients)} empty_watchlist_or_no_d1={skipped_empty} already_sent={skipped_duplicate})"
     )
     return sent
 
