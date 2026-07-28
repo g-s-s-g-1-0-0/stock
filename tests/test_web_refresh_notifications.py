@@ -204,7 +204,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertNotIn("권장 매도가", body)
         self.assertNotIn("₩110,760", body)
 
-    def test_h_strategy_buy_reason_and_target_price_use_existing_email_format(self) -> None:
+    def test_strategy2_buy_reason_uses_email_format_without_fixed_target_price(self) -> None:
         trade = {
             "ticker": "SOXL",
             "strategy": "2. 상승 추세 이평선 눌림목",
@@ -217,19 +217,22 @@ class WebRefreshNotificationsTest(unittest.TestCase):
             "strategies": ["2. 상승 추세 이평선 눌림목"],
         }
         technical = {
-            "entrySignalCodes": "H",
+            "entrySignalCodes": "2",
             "20일 이동평균선": "$98.00",
-            "MA20 5일 기울기": "+0.40%",
-            "20일 평균 대비 거래량 (D)": "125%",
-            "C - Low": "$97.50",
+            "60일 이동평균선": "$95.00",
+            "200일 이동평균선": "$90.00",
+            "RSI (D)": "58.20",
         }
 
-        self.assertEqual("$112.00", self.notifications.recommended_sell_price_for_trade(trade, stock, technical))
+        # 청산은 회복장 종료 시점에 판단하므로 고정 목표가를 제시하지 않는다.
+        self.assertEqual("-", self.notifications.recommended_sell_price_for_trade(trade, stock, technical))
         reason = self.notifications.buy_reason_for_trade(trade, stock, technical)
 
         self.assertIn("2. 상승 추세 이평선 눌림목", reason)
-        self.assertIn("MA20", reason)
-        self.assertIn("20일 거래량비", reason)
+        self.assertIn("MA20 $98.00", reason)
+        self.assertIn("MA60 $95.00", reason)
+        self.assertIn("MA200 $90.00", reason)
+        self.assertIn("RSI 58.20", reason)
 
     def test_opinion_email_body_includes_trade_exit_in_sell_summary(self) -> None:
         body = self.notifications.opinion_email_body([
@@ -547,7 +550,9 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         kst = ZoneInfo("Asia/Seoul")
 
         self.assertTrue(self.notifications.is_weekly_report_window(datetime(2026, 7, 6, 0, 30, tzinfo=kst)))
-        self.assertFalse(self.notifications.is_weekly_report_window(datetime(2026, 7, 6, 1, 0, tzinfo=kst)))
+        # GitHub Actions 지연을 감안해 같은 월요일 03:00까지 허용한다.
+        self.assertTrue(self.notifications.is_weekly_report_window(datetime(2026, 7, 6, 2, 59, tzinfo=kst)))
+        self.assertFalse(self.notifications.is_weekly_report_window(datetime(2026, 7, 6, 3, 0, tzinfo=kst)))
         self.assertFalse(self.notifications.is_weekly_report_window(datetime(2026, 6, 30, 20, 5, tzinfo=kst)))
 
     def test_opinion_changes_labels_watch_to_buy_with_added_trade_as_additional_buy(self) -> None:
@@ -590,7 +595,8 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("매수(보유중)", changes[0]["fromLabel"])
         self.assertEqual("추가 매수", changes[0]["toLabel"])
         self.assertEqual("재진입 1회차 — 최초 진입가 $100.00", changes[0]["entryNote"])
-        self.assertEqual("$100.80", changes[0]["recommendedSellPrice"])
+        # 전략 1/2는 고정 목표 수익률이 없어 권장 매도가를 계산하지 않는다.
+        self.assertEqual("-", changes[0]["recommendedSellPrice"])
 
     def test_opinion_changes_skips_held_buy_signal_without_added_trade(self) -> None:
         with TemporaryDirectory() as temp_dir:
@@ -1268,7 +1274,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                     "rows": {
                         "MP": {
                             "200일 이동평균선": "$60.00",
-                            "볼린저밴드 %B (저가)": "8.40",
+                            "20일 이동평균선": "$80.00",
                             "decisionLog": "MP 최종 판단: 관망\n시장 국면: 급락 후 회복장 / QQQ 이격도 +7.20% / 이벤트: 당분간 없음",
                         }
                     }
@@ -1281,13 +1287,15 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual(1, len(changes))
         self.assertIn("매수 조건 해제", changes[0]["reason"])
         self.assertIn("2. 상승 추세 이평선 눌림목", changes[0]["reason"])
-        self.assertIn("BB 하단 눌림 해소", changes[0]["reason"])
-        self.assertIn("저가 %B 8.40", changes[0]["reason"])
+        # 전략 2는 이평선 눌림목이므로 해제 사유도 이평선 기준으로 설명한다.
+        self.assertIn("이평선 회복 실패", changes[0]["reason"])
+        self.assertIn("MA20 $80.00", changes[0]["reason"])
         self.assertNotIn("시장 국면:", changes[0]["reason"])
 
     def test_refresh_to_opinion_change_sends_email_end_to_end(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
         original_load_recipients = self.notifications.load_recipients
+        original_load_watchlists = self.notifications.load_watchlists
         original_send_email = self.notifications.send_email
         self.notifications.load_recipients = lambda: [
             self.notifications.Recipient(
@@ -1297,6 +1305,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 preferences={"opinionChangeEmail": True},
             )
         ]
+        self.notifications.load_watchlists = lambda: {"user-1": {"MP"}}
         self.notifications.send_email = lambda email, subject, body: sent_messages.append((email, subject, body))
 
         try:
@@ -1317,6 +1326,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 sent = self.notifications.send_opinion_notifications(previous, current)
         finally:
             self.notifications.load_recipients = original_load_recipients
+            self.notifications.load_watchlists = original_load_watchlists
             self.notifications.send_email = original_send_email
 
         self.assertEqual(1, sent)
@@ -1333,16 +1343,19 @@ class WebRefreshNotificationsTest(unittest.TestCase):
     def test_opinion_notification_combines_trade_exit_changes(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
         original_load_recipients = self.notifications.load_recipients
+        original_load_watchlists = self.notifications.load_watchlists
         original_send_email = self.notifications.send_email
+        # 시스템 거래 로그 기반 청산은 어드민 계정으로만 전달된다.
         self.notifications.load_recipients = lambda: [
             self.notifications.Recipient(
-                owner_id="user-1",
+                owner_id="admin-1",
                 email="user@example.com",
-                is_admin=False,
+                is_admin=True,
                 preferences={"opinionChangeEmail": True},
                 investment_type="swing",
             )
         ]
+        self.notifications.load_watchlists = lambda: {"": {"ACLS", "039030"}}
         self.notifications.send_email = lambda email, subject, body: sent_messages.append((email, subject, body))
 
         try:
@@ -1380,6 +1393,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 )
         finally:
             self.notifications.load_recipients = original_load_recipients
+            self.notifications.load_watchlists = original_load_watchlists
             self.notifications.send_email = original_send_email
 
         self.assertEqual(1, sent)
@@ -1396,6 +1410,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
     def test_opinion_notification_branches_by_investment_type(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
         original_load_recipients = self.notifications.load_recipients
+        original_load_watchlists = self.notifications.load_watchlists
         original_send_email = self.notifications.send_email
         self.notifications.load_recipients = lambda: [
             self.notifications.Recipient(
@@ -1413,6 +1428,10 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 investment_type="long_term",
             ),
         ]
+        self.notifications.load_watchlists = lambda: {
+            "swing-user": {"ACLS", "039030", "TSLA"},
+            "value-user": {"ACLS", "039030", "TSLA"},
+        }
         self.notifications.send_email = lambda email, subject, body: sent_messages.append((email, subject, body))
 
         try:
@@ -1454,6 +1473,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                 )
         finally:
             self.notifications.load_recipients = original_load_recipients
+            self.notifications.load_watchlists = original_load_watchlists
             self.notifications.send_email = original_send_email
 
         self.assertEqual(2, sent)
@@ -1497,7 +1517,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                     encoding="utf-8",
                 )
                 current.write_text(
-                    json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "strategy": "1. 시장 공포 저점 진입", "buyDate": "2026.05.09", "buyPrice": "$67.43", "sellPrice": "$75.00", "returnPct": 11.23, "status": "익절", "exitReason": "목표 수익 달성 즉시 매도"}]}),
+                    json.dumps({"rows": [{"ticker": "MP", "name": "MP Materials", "strategy": "1. 시장 공포 저점 진입", "buyDate": "2026.05.09", "buyPrice": "$67.43", "sellPrice": "$75.00", "returnPct": 11.23, "status": "익절", "exitReason": "회복장 종료 전량매도"}]}),
                     encoding="utf-8",
                 )
 
@@ -1511,8 +1531,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("투자의견 변경 알림 (MP)", sent_messages[0][1])
         self.assertIn("MP Materials", sent_messages[0][2])
         self.assertIn("매도", sent_messages[0][2])
-        self.assertIn("목표 수익 달성 즉시 매도 +11.23%", sent_messages[0][2])
-        self.assertIn("상승 흐름 강화 기준 +12%", sent_messages[0][2])
+        self.assertIn("회복장 종료 전량매도 +11.23%", sent_messages[0][2])
         self.assertIn("이유:", sent_messages[0][2])
         self.assertIn("현재 매도 의견 종목:</strong> MP Materials (MP)", sent_messages[0][2])
         self.assertNotIn("매도 사유", sent_messages[0][2])
