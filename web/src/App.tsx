@@ -22,7 +22,6 @@ type NotificationPreferences = {
   opinionChangeEmail: boolean
   nasdaqPeakEmail: boolean
   nasdaqWarnEmail: boolean
-  maSupportEmail: boolean
   weeklyTrendReport: boolean
   earningsDayBefore: boolean
   adminAutoUpdateFailureEmail: boolean
@@ -71,7 +70,7 @@ type WatchlistPersistResult =
   | { ok: true }
   | { ok: false; reason?: 'auth'; error?: unknown }
 
-type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'nasdaqWarnEmail' | 'maSupportEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
+type NotificationPreferenceKey = 'opinionChangeEmail' | 'nasdaqPeakEmail' | 'nasdaqWarnEmail' | 'weeklyTrendReport' | 'earningsDayBefore' | 'adminAutoUpdateFailureEmail'
 
 type Stock = {
   ticker: string
@@ -341,7 +340,6 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   opinionChangeEmail: true,
   nasdaqPeakEmail: true,
   nasdaqWarnEmail: true,
-  maSupportEmail: true,
   weeklyTrendReport: false,
   earningsDayBefore: true,
   adminAutoUpdateFailureEmail: true,
@@ -942,7 +940,6 @@ function normalizeNotificationPreferences(value: unknown): NotificationPreferenc
     opinionChangeEmail: typeof candidate?.opinionChangeEmail === 'boolean' ? candidate.opinionChangeEmail : DEFAULT_NOTIFICATION_PREFERENCES.opinionChangeEmail,
     nasdaqPeakEmail: typeof candidate?.nasdaqPeakEmail === 'boolean' ? candidate.nasdaqPeakEmail : DEFAULT_NOTIFICATION_PREFERENCES.nasdaqPeakEmail,
     nasdaqWarnEmail: typeof candidate?.nasdaqWarnEmail === 'boolean' ? candidate.nasdaqWarnEmail : DEFAULT_NOTIFICATION_PREFERENCES.nasdaqWarnEmail,
-    maSupportEmail: typeof candidate?.maSupportEmail === 'boolean' ? candidate.maSupportEmail : DEFAULT_NOTIFICATION_PREFERENCES.maSupportEmail,
     weeklyTrendReport: typeof candidate?.weeklyTrendReport === 'boolean' ? candidate.weeklyTrendReport : DEFAULT_NOTIFICATION_PREFERENCES.weeklyTrendReport,
     earningsDayBefore: typeof candidate?.earningsDayBefore === 'boolean' ? candidate.earningsDayBefore : DEFAULT_NOTIFICATION_PREFERENCES.earningsDayBefore,
     adminAutoUpdateFailureEmail: typeof candidate?.adminAutoUpdateFailureEmail === 'boolean' ? candidate.adminAutoUpdateFailureEmail : DEFAULT_NOTIFICATION_PREFERENCES.adminAutoUpdateFailureEmail,
@@ -3624,7 +3621,6 @@ const notificationOptions: Array<{ key: NotificationPreferenceKey; title: string
   { key: 'earningsDayBefore', title: '실적발표 전날', description: '관심종목 실적발표 전 리스크 점검' },
 ]
 const adminNotificationOptions: Array<{ key: NotificationPreferenceKey; title: string; description: string }> = [
-  { key: 'maSupportEmail', title: '이평선 반등/돌파 후보', description: '관리자 전용: 장 시작 후 관심종목이 20/200일선 지지 반등 또는 돌파 후보로 잡힐 때' },
   { key: 'adminAutoUpdateFailureEmail', title: '자동 업데이트 실패', description: '관리자 전용: 같은 작업이 연속 3회 이상 실패할 때' },
 ]
 const apiLogTabs: Array<{ key: ApiLogTrigger; label: string; description: string }> = [

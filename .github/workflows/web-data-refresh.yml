@@ -2,13 +2,7 @@ name: Web data refresh
 
 on:
   schedule:
-    # Moving-average support candidate emails: 08:00 and 09:30 KST on weekdays.
-    # GitHub scheduled runs can be delayed, so each slot has retry crons and the
-    # notification script receives the intended slot explicitly.
-    - cron: "0,10,20,30,40,50 23 * * 0-4"
-    - cron: "30,40,50 0 * * 1-5"
-    # Daily valuation refresh + earnings D-1 emails: Monday–Sunday 00:00 KST
-    # (UTC 15:00). Keep this distinct from MA morning slots at UTC 00:xx.
+    # Daily valuation refresh + earnings D-1 emails: Monday–Sunday 00:00 KST (UTC 15:00).
     - cron: "0 15 * * *"
     # Weekly market trends + universe report: Monday 00:00 KST (Sunday 15:00 UTC).
     - cron: "0 15 * * 0"
@@ -41,10 +35,6 @@ on:
         default: ""
       refresh_tickers:
         description: "Comma-separated tickers to force into this refresh"
-        required: false
-        default: ""
-      ma_support_scan_slot:
-        description: "MA support notification slot override (08 or 0930)"
         required: false
         default: ""
 
@@ -106,65 +96,36 @@ jobs:
             if [ "${{ github.event.schedule }}" = "0 15 * * 0" ]; then
               TASKS="stock-universe market-trends"
               FORCE_REFRESH="true"
-              MA_SUPPORT_SCAN_FORCE="false"
-              MA_SUPPORT_SCAN_SLOT=""
-            elif [ "${{ github.event.schedule }}" = "0 15 * * *" ]; then
+            else
               TASKS="valuation"
               FORCE_REFRESH="false"
-              MA_SUPPORT_SCAN_FORCE="false"
-              MA_SUPPORT_SCAN_SLOT=""
-            else
-              TASKS="technical"
-              FORCE_REFRESH="true"
-              MA_SUPPORT_SCAN_FORCE="true"
-              case "${{ github.event.schedule }}" in
-                *" 23 "*) MA_SUPPORT_SCAN_SLOT="08" ;;
-                *" 0 "*) MA_SUPPORT_SCAN_SLOT="0930" ;;
-                *) MA_SUPPORT_SCAN_SLOT="manual" ;;
-              esac
             fi
           else
-            MA_SUPPORT_SCAN_SLOT="${{ inputs.ma_support_scan_slot || '' }}"
-            if [ "$MA_SUPPORT_SCAN_SLOT" = "08" ] || [ "$MA_SUPPORT_SCAN_SLOT" = "0930" ]; then
-              TASKS="technical"
-            else
-              MA_SUPPORT_SCAN_SLOT=""
-              case "${{ inputs.refresh_scope }}" in
-              all) TASKS="stock-universe valuation technical market-trends market-events" ;;
-              analysis) TASKS="valuation technical" ;;
-              stock-universe) TASKS="stock-universe" ;;
-              valuation) TASKS="valuation" ;;
-              technical) TASKS="technical" ;;
-              market-trends) TASKS="stock-universe market-trends" ;;
-              market-events) TASKS="market-events" ;;
-              *) TASKS="stock-universe valuation technical market-trends market-events" ;;
-              esac
-            fi
+            case "${{ inputs.refresh_scope }}" in
+            all) TASKS="stock-universe valuation technical market-trends market-events" ;;
+            analysis) TASKS="valuation technical" ;;
+            stock-universe) TASKS="stock-universe" ;;
+            valuation) TASKS="valuation" ;;
+            technical) TASKS="technical" ;;
+            market-trends) TASKS="stock-universe market-trends" ;;
+            market-events) TASKS="market-events" ;;
+            *) TASKS="stock-universe valuation technical market-trends market-events" ;;
+            esac
             SEND_NOTIFICATIONS="${{ inputs.send_notifications || 'true' }}"
             RAW_PUBLISH_AT="${{ inputs.scheduled_publish_at || '' }}"
-            if [ -n "$MA_SUPPORT_SCAN_SLOT" ]; then
-              PUBLISH_AT=""
-            elif [ "$RAW_PUBLISH_AT" = "immediate" ]; then
+            if [ "$RAW_PUBLISH_AT" = "immediate" ]; then
               PUBLISH_AT=""
             elif [ -n "$RAW_PUBLISH_AT" ]; then
               PUBLISH_AT="$RAW_PUBLISH_AT"
             else
               PUBLISH_AT="$(python -c 'from datetime import datetime, timedelta, timezone; now = datetime.now(timezone.utc); publish_at = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1); print(publish_at.isoformat(timespec="seconds").replace("+00:00", "Z") if now.minute >= 50 else "")')"
             fi
-            if [ -n "$MA_SUPPORT_SCAN_SLOT" ]; then
-              FORCE_REFRESH="true"
-              MA_SUPPORT_SCAN_FORCE="true"
-            else
-              FORCE_REFRESH="false"
-              MA_SUPPORT_SCAN_FORCE="false"
-            fi
+            FORCE_REFRESH="false"
           fi
           echo "REFRESH_TASKS=$TASKS" >> "$GITHUB_ENV"
           echo "SEND_NOTIFICATIONS=$SEND_NOTIFICATIONS" >> "$GITHUB_ENV"
           echo "WEB_REFRESH_PUBLISH_AT=$PUBLISH_AT" >> "$GITHUB_ENV"
           echo "FORCE_REFRESH=$FORCE_REFRESH" >> "$GITHUB_ENV"
-          echo "MA_SUPPORT_SCAN_FORCE=$MA_SUPPORT_SCAN_FORCE" >> "$GITHUB_ENV"
-          echo "MA_SUPPORT_SCAN_SLOT=$MA_SUPPORT_SCAN_SLOT" >> "$GITHUB_ENV"
           echo "REFRESH_TICKERS=${{ inputs.refresh_tickers || '' }}" >> "$GITHUB_ENV"
           echo "Resolved refresh tasks: $TASKS"
           echo "Send notifications: $SEND_NOTIFICATIONS"
@@ -185,7 +146,7 @@ jobs:
           if os.environ.get("FORCE_REFRESH") == "true":
               with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
                   env_file.write("SKIP_REFRESH=false\n")
-              print("Scheduled refresh forced for morning MA support notification.")
+              print("Scheduled refresh forced by FORCE_REFRESH.")
               raise SystemExit(0)
 
           # Only skip when every analysis cache scheduled to refresh this run is
@@ -265,10 +226,6 @@ jobs:
       - name: Send Nasdaq warn emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         run: python scripts/web_refresh_notifications.py nasdaq-warn
-
-      - name: Send moving average support candidate emails
-        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
-        run: python scripts/web_refresh_notifications.py ma-support
 
       - name: Send earnings D-1 emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'valuation') }}

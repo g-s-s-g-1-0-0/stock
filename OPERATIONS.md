@@ -4,9 +4,9 @@
 
 - Workflow: `.github/workflows/web-data-refresh.yml`
 - Trigger in repository: manual `workflow_dispatch`
-- Scheduled trigger: external `cron-job.org` jobs call the GitHub Actions workflow/API.
-- Keep GitHub's native `schedule:` block disabled to avoid duplicate refreshes with the external scheduler.
-- Do not assume a missing `schedule:` block means refresh is unscheduled. The schedule is managed outside this repository.
+- Two-hour analysis refresh: external `cron-job.org` jobs call `/api/admin/trigger-refresh`, which dispatches the workflow. Those jobs live outside this repository, so a short `schedule:` block does not mean the refresh is unscheduled.
+- Keep GitHub's native `schedule:` block minimal to avoid duplicate refreshes with the external scheduler. It holds only `0 15 * * *` (daily valuation + earnings D-1) and `0 15 * * 0` (weekly market trends + universe report).
+- GitHub queues scheduled runs at low priority and regularly delays them by tens of minutes to a few hours. Do not put time-sensitive notifications on `schedule:`. A delayed run that refreshes analysis caches also republishes them off the two-hour cadence, so `meta.updatedAt` will not always land on the hour.
 
 ## Scale Checks
 
@@ -73,6 +73,53 @@ One-click unsubscribe links require these Vercel environment variables on the de
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `WEB_APP_URL`
 - `NOTIFICATION_UNSUBSCRIBE_SECRET` if it is set in GitHub Secrets
+
+## Removed Features
+
+### Moving-average support notification (removed 2026-07-29)
+
+Admin-only email that scanned watchlist tickers for 20/200-day moving-average support or breakout and was meant to send at 08:00 and 09:30 KST on weekdays.
+
+Why it was removed: no recipient had `maSupportEmail` enabled, so the feature sent nothing while its two GitHub `schedule:` crons kept force-refreshing the technical cache. GitHub delivered those runs hours late (12:46–13:12 KST on 7/27–7/29 for the 09:30 slot), and because they ran with `FORCE_REFRESH=true` they bypassed the 90-minute freshness skip and republished `technical.json` off the two-hour cadence for no benefit.
+
+What was removed:
+
+- `.github/workflows/web-data-refresh.yml`: crons `0,10,20,30,40,50 23 * * 0-4` and `30,40,50 0 * * 1-5`, the `ma_support_scan_slot` input, the `MA_SUPPORT_SCAN_FORCE` / `MA_SUPPORT_SCAN_SLOT` env vars, and the `Send moving average support candidate emails` step
+- `scripts/web_refresh_notifications.py`: the `ma-support` subcommand and every `ma_support_*` / `ma_signal_for_period` / `moving_average` helper, plus `technical_market_state`, `latest_ohlcv_date`, `format_ohlcv_date`, `resolve_market_from_ticker`, and the `fetch_ohlcv` import that only this feature used
+- `web/api/admin/trigger-refresh.js`: slot parsing (`normalizeMaSupportSlot`, `readMaSupportScanSlot`, `seoulDateParts`, `isSeoulWeekday`) and the slot pass-through to the workflow
+- `web/src/App.tsx` plus the notification defaults in `web/api/notifications/unsubscribe.js`, `web/api/slack/integration.js`, and `web/api/slack/oauth/callback.js`: the `maSupportEmail` preference
+- `tests/test_web_refresh_notifications.py`: 9 `test_ma_support_*` tests, replaced by `assertNotIn` guards in the workflow structure test
+
+Left in place on purpose:
+
+- `supabase/migrations/016_ma_support_notification_preference.sql` remains as applied history, so `maSupportEmail` still sits in the `notification_preferences` default and in existing rows. This matches how `regimeShiftEmail` and `bbPullbackEmail` were retired — the key is simply ignored because the web client no longer reads it.
+- `maSupportSignals` in `data/cache/web-notification-state.json` keeps the old dedup keys, so a restored feature would not resend past signals.
+
+Also removed outside this repository: the `GSSG MA Support Refresh` and `GSSG MA Support Refresh (9:30 AM)` jobs in cron-job.org, deleted 2026-07-29. They had already been inactive since 2026-07-16, which is why the feature ran on GitHub `schedule:` crons and arrived hours late.
+
+### Restoring it
+
+Step 1 — restore the code. The last commit that still contains the feature is `188bd99`:
+
+```bash
+git checkout 188bd99 -- \
+  .github/workflows/web-data-refresh.yml \
+  scripts/web_refresh_notifications.py \
+  web/api/admin/trigger-refresh.js \
+  web/src/App.tsx \
+  web/api/notifications/unsubscribe.js \
+  web/api/slack/integration.js \
+  web/api/slack/oauth/callback.js \
+  tests/test_web_refresh_notifications.py
+```
+
+That restores the listed files wholesale, so review the diff for unrelated work that landed after the removal. Once other changes have touched those files, reverting the removal commit is the safer path.
+
+Step 2 — recreate the cron-job.org jobs. Code alone brings back the GitHub `schedule:` crons, which do fire but arrive tens of minutes to hours late, so morning emails would again be labelled `1차 08:00` / `2차 09:30` while landing near noon. Punctual delivery needs the external scheduler, which fires on time. Create two jobs calling `/api/admin/trigger-refresh` a few minutes before each slot, on weekdays, passing `secret=$CRON_SECRET`, `scope=technical`, and `ma_support_scan_slot=08` or `0930`. Mirror the existing `GSSG Technical Refresh` job for the URL shape and secret.
+
+Note that Step 1 also restores the slot handling in `trigger-refresh.js`, where a request carrying a slot is forced to `scope=technical` and publishes immediately instead of waiting for the top of the hour. Until Step 1 is done, a job that sends only a slot and no `scope` falls back to `scope=all` and runs a full refresh.
+
+Step 3 — enable a recipient. The email only goes to admins who have `maSupportEmail` turned on. Nobody had it enabled at removal time, so verify the toggle in notification settings before expecting mail.
 
 ## GitHub Push Permission
 
