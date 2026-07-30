@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-07-30T13:50:27Z",
+    "updatedAt": "2026-07-30T14:09:50Z",
     "rowCount": 3
   },
   "rows": [
@@ -10,42 +10,12 @@
       "scope": "operator",
       "ownerId": null,
       "tickers": [
-        "000150",
         "000660",
-        "005380",
-        "005930",
-        "009150",
-        "011070",
-        "039030",
-        "042700",
-        "277810",
-        "278470",
-        "AEHR",
-        "AMD",
-        "ASTS",
-        "ASX",
-        "BE",
-        "CIFR",
-        "CRDO",
-        "HOOG",
-        "INTC",
-        "IONQ",
-        "IREN",
-        "LITE",
-        "LPTH",
-        "MU",
         "NBIS",
         "PL",
-        "RKLB",
-        "SNDK",
-        "SOXL",
-        "STX",
-        "COHR",
-        "GLW",
-        "ALAB",
-        "VRT",
-        "079550",
-        "WULF"
+        "AAPL",
+        "GOOGL",
+        "BE"
       ],
       "tickersByType": {
         "swing": [
@@ -88,19 +58,18 @@
         ],
         "long_term": [
           "000660",
-          "CRDO",
           "NBIS",
           "PL",
-          "ALAB",
           "AAPL",
-          "GOOGL"
+          "GOOGL",
+          "BE"
         ]
       },
       "watchlistSort": {
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-29T15:08:16.557748+00:00"
+      "remoteUpdatedAt": "2026-07-30T14:09:29.867473+00:00"
     },
     {
       "id": "ba154314-49f0-4fcd-9801-25e19eee2adb",
@@ -134,7 +103,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-29T15:08:16.629259+00:00"
+      "remoteUpdatedAt": "2026-07-30T14:08:42.657891+00:00"
     }
   ]
 }
