@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-07-31T13:50:52+00:00",
-    "lastSuccessfulRun": "2026-07-31T13:50:52+00:00",
+    "updatedAt": "2026-07-31T14:56:15+00:00",
+    "lastSuccessfulRun": "2026-07-31T14:56:15+00:00",
     "failedReason": null
   },
   "rows": [
@@ -59,7 +59,7 @@
       "ticker": "AAPL",
       "name": "Apple",
       "market": "US",
-      "fairPrice": "$124.05 ~ $206.75",
+      "fairPrice": "$130.80 ~ $218.00",
       "fairPriceReason": null,
       "currentPrice": "$305.40",
       "valuation": "고평가",
@@ -91,7 +91,7 @@
       "ticker": "BE",
       "name": "Bloom Energy Class A",
       "market": "US",
-      "fairPrice": "$37.50 ~ $52.50",
+      "fairPrice": "$36.50 ~ $51.10",
       "fairPriceReason": null,
       "currentPrice": "$213.32",
       "valuation": "고평가",
