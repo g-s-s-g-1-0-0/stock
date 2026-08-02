@@ -199,6 +199,19 @@ jobs:
         continue-on-error: true
         run: python scripts/report_operational_scale.py
 
+      - name: Notify admins if market trend analysis fell back
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
+        continue-on-error: true
+        run: |
+          # A Groq failure is swallowed into a signal-only fallback, so the run stays green.
+          REASON="$(python -c 'import json; print((json.load(open("web/public/api/market-trends.json")).get("meta") or {}).get("failedReason") or "")')"
+          if [ -z "$REASON" ]; then
+            echo "Market trend LLM analysis succeeded."
+            exit 0
+          fi
+          echo "Market trend LLM analysis failed: $REASON"
+          python scripts/web_refresh_notifications.py admin-failure --message "주간 시장 트렌드 LLM 분석이 실패해 내부 가격·기술 모멘텀 신호로 대체됐습니다. GROQ_API_KEY가 만료·폐기되지 않았는지 확인해 주세요. 사유: $REASON"
+
       - name: Wait until scheduled publish time
         if: ${{ env.SKIP_REFRESH != 'true' && env.WEB_REFRESH_PUBLISH_AT != '' }}
         run: |
