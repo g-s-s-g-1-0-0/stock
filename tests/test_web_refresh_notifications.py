@@ -89,7 +89,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertNotIn("python scripts/web_refresh_notifications.py bb-pullback", workflow)
         self.assertNotIn("python scripts/web_refresh_notifications.py ma-support", workflow)
         self.assertIn("python scripts/record_web_api_logs.py --skip-trade-log-update $REFRESH_TASKS", workflow)
-        self.assertIn("git diff --quiet -- data/cache data/history data/search_universe.json web/public/api", workflow)
+        self.assertIn("git diff --cached --quiet -- data/cache data/history data/search_universe.json web/public/api", workflow)
         self.assertIn("git add data/cache data/history data/search_universe.json web/public/api", workflow)
         self.assertIn('git commit -m "Update scheduled web data caches"', workflow)
         self.assertIn("python scripts/verify_web_auth_config.py", workflow)

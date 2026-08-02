@@ -85,7 +85,7 @@ class SignalSnapshotsTest(unittest.TestCase):
                 self.assertEqual(1, self.snapshots.record_daily_signal_snapshots())
                 self.assertEqual(1, self.snapshots.record_daily_signal_snapshots())
 
-                lines = (history_dir / "daily-signal-snapshots-2026-05.jsonl").read_text(encoding="utf-8").splitlines()
+                lines = (history_dir / "daily-signal-snapshots-2026-05-12.jsonl").read_text(encoding="utf-8").splitlines()
                 self.assertEqual(1, len(lines))
                 row = json.loads(lines[0])
                 self.assertEqual("MU", row["ticker"])

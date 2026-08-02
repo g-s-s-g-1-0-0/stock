@@ -40,7 +40,9 @@ def captured_at(now: datetime | None = None) -> str:
 
 
 def history_path(date_value: str) -> Path:
-    return HISTORY_DIR / f"daily-signal-snapshots-{date_value[:7]}.jsonl"
+    # One file per day: a month-sized file gets rewritten on every refresh, so each
+    # run committed a full copy of it and the git object store grew by megabytes.
+    return HISTORY_DIR / f"daily-signal-snapshots-{date_value}.jsonl"
 
 
 def parse_number(value: Any) -> float | None:

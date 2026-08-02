@@ -259,13 +259,15 @@ jobs:
       - name: Commit refreshed caches and notification state
         if: ${{ env.SKIP_REFRESH != 'true' }}
         run: |
-          if git diff --quiet -- data/cache data/history data/search_universe.json web/public/api; then
+          # Stage first: each day starts a brand new snapshot file, and plain
+          # `git diff` cannot see files that are not tracked yet.
+          git add data/cache data/history data/search_universe.json web/public/api
+          if git diff --cached --quiet -- data/cache data/history data/search_universe.json web/public/api; then
             echo "No cache changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/cache data/history data/search_universe.json web/public/api
           git commit -m "Update scheduled web data caches"
           BRANCH="${GITHUB_REF_NAME:-main}"
           for attempt in 1 2 3; do
