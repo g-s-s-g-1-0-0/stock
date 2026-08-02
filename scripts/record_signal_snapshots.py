@@ -17,6 +17,7 @@ VALUATION_CACHE_PATH = ROOT_DIR / "data" / "cache" / "valuation.json"
 STOCKS_CACHE_PATH = ROOT_DIR / "data" / "cache" / "stocks.json"
 HISTORY_DIR = Path(os.environ.get("SIGNAL_HISTORY_DIR", str(ROOT_DIR / "data" / "history")))
 KST = ZoneInfo("Asia/Seoul")
+SIGNAL_EVENT_FIELDS = ("opinion", "entryStrategy", "entrySignalCodes")
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -43,6 +44,12 @@ def history_path(date_value: str) -> Path:
     # One file per day: a month-sized file gets rewritten on every refresh, so each
     # run committed a full copy of it and the git object store grew by megabytes.
     return HISTORY_DIR / f"daily-signal-snapshots-{date_value}.jsonl"
+
+
+def events_path(date_value: str) -> Path:
+    # Kept in a subdirectory so the research scripts, which read
+    # `data/history/*.jsonl` as snapshots, never pick these rows up.
+    return HISTORY_DIR / "events" / f"signal-events-{date_value}.jsonl"
 
 
 def parse_number(value: Any) -> float | None:
@@ -190,11 +197,72 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     path.write_text(payload + ("\n" if payload else ""), encoding="utf-8")
 
 
+def append_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
+    if not rows:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = "".join(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n" for row in rows)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(payload)
+
+
 def display_path(path: Path) -> str:
     try:
         return str(path.relative_to(ROOT_DIR))
     except ValueError:
         return str(path)
+
+
+def signal_state(row: dict[str, Any]) -> dict[str, Any]:
+    return {field: row.get(field) for field in SIGNAL_EVENT_FIELDS}
+
+
+def previous_signal_state(date_value: str, same_day_rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Signal state from the run right before this one, across a day boundary."""
+    rows = same_day_rows
+    if not rows:
+        current_name = history_path(date_value).name
+        earlier = sorted(
+            path for path in HISTORY_DIR.glob("daily-signal-snapshots-*.jsonl")
+            if path.name < current_name
+        )
+        rows = read_jsonl(earlier[-1]) if earlier else []
+    return {str(row["ticker"]): signal_state(row) for row in rows if row.get("ticker")}
+
+
+def record_signal_events(
+    new_rows: list[dict[str, Any]],
+    previous_by_ticker: dict[str, dict[str, Any]],
+    date_value: str,
+    captured_value: str,
+) -> int:
+    """Log intraday signal transitions that the once-a-day snapshot cannot show."""
+    events = []
+    for row in new_rows:
+        previous = previous_by_ticker.get(str(row.get("ticker")))
+        if previous is None:
+            continue
+        current = signal_state(row)
+        changed = sorted(field for field in SIGNAL_EVENT_FIELDS if previous.get(field) != current.get(field))
+        if not changed:
+            continue
+        events.append({
+            "capturedAt": captured_value,
+            "snapshotDate": date_value,
+            "ticker": row.get("ticker"),
+            "name": row.get("name"),
+            "market": row.get("market"),
+            "currentPrice": row.get("currentPrice"),
+            "changed": changed,
+            "previous": previous,
+            "current": current,
+        })
+
+    path = events_path(date_value)
+    append_jsonl(path, events)
+    if events:
+        print(f"[signal_snapshots] logged {len(events)} signal events to {display_path(path)}")
+    return len(events)
 
 
 def record_daily_signal_snapshots(now: datetime | None = None) -> int:
@@ -227,13 +295,18 @@ def record_daily_signal_snapshots(now: datetime | None = None) -> int:
     ]
 
     path = history_path(date_value)
-    existing_rows = [
-        row
-        for row in read_jsonl(path)
-        if str(row.get("snapshotDate") or "") != date_value
-    ]
+    stored_rows = read_jsonl(path)
+    same_day_rows = [row for row in stored_rows if str(row.get("snapshotDate") or "") == date_value]
+    existing_rows = [row for row in stored_rows if str(row.get("snapshotDate") or "") != date_value]
+    previous_by_ticker = previous_signal_state(date_value, same_day_rows)
     write_jsonl(path, [*existing_rows, *new_rows])
     print(f"[signal_snapshots] wrote {len(new_rows)} rows to {display_path(path)}")
+
+    try:
+        record_signal_events(new_rows, previous_by_ticker, date_value, captured_value)
+    except OSError as error:
+        # The event log is research-only; never let it cost us the snapshot.
+        print(f"[signal_snapshots] signal event logging skipped: {error}")
     return len(new_rows)
 
 

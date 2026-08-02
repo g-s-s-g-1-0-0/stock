@@ -105,5 +105,85 @@ class SignalSnapshotsTest(unittest.TestCase):
                 os.environ["SIGNAL_SNAPSHOT_DATE"] = original_snapshot_date
 
 
+class SignalEventsTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.snapshots = importlib.import_module("scripts.record_signal_snapshots")
+
+    def test_signal_events_are_logged_only_when_the_signal_changes(self) -> None:
+        originals = (
+            self.snapshots.TECHNICAL_CACHE_PATH,
+            self.snapshots.VALUATION_CACHE_PATH,
+            self.snapshots.STOCKS_CACHE_PATH,
+            self.snapshots.HISTORY_DIR,
+        )
+        original_snapshot_date = os.environ.get("SIGNAL_SNAPSHOT_DATE")
+
+        def technical_payload(opinion: str, entry_strategy: str) -> str:
+            return json.dumps({
+                "qqqMarketState": {"regimeLabel": "정상장", "peakTriggered": False},
+                "rows": {
+                    "MU": {
+                        "ticker": "MU",
+                        "name": "Micron",
+                        "market": "US",
+                        "opinion": opinion,
+                        "entrySignalCodes": "",
+                        "entryStrategy": entry_strategy,
+                        "현재가": "$100.00",
+                    }
+                },
+            })
+
+        try:
+            with TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir)
+                technical_path = root / "technical.json"
+                history_dir = root / "history"
+                (root / "valuation.json").write_text(json.dumps({"rows": {}}), encoding="utf-8")
+                (root / "stocks.json").write_text(json.dumps({"rows": []}), encoding="utf-8")
+
+                self.snapshots.TECHNICAL_CACHE_PATH = technical_path
+                self.snapshots.VALUATION_CACHE_PATH = root / "valuation.json"
+                self.snapshots.STOCKS_CACHE_PATH = root / "stocks.json"
+                self.snapshots.HISTORY_DIR = history_dir
+                os.environ["SIGNAL_SNAPSHOT_DATE"] = "2026-05-12"
+                events_file = history_dir / "events" / "signal-events-2026-05-12.jsonl"
+
+                technical_path.write_text(technical_payload("관망", "-"), encoding="utf-8")
+                self.snapshots.record_daily_signal_snapshots()
+                self.assertFalse(events_file.exists(), "첫 기록은 비교 대상이 없어 이벤트가 없어야 한다")
+
+                self.snapshots.record_daily_signal_snapshots()
+                self.assertFalse(events_file.exists(), "변화가 없으면 이벤트를 남기지 않아야 한다")
+
+                technical_path.write_text(technical_payload("매수", "V1"), encoding="utf-8")
+                self.snapshots.record_daily_signal_snapshots()
+
+                lines = events_file.read_text(encoding="utf-8").splitlines()
+                self.assertEqual(1, len(lines))
+                event = json.loads(lines[0])
+                self.assertEqual("MU", event["ticker"])
+                self.assertEqual(["entryStrategy", "opinion"], event["changed"])
+                self.assertEqual("관망", event["previous"]["opinion"])
+                self.assertEqual("매수", event["current"]["opinion"])
+
+                # 스냅샷은 여전히 하루 한 줄만 유지한다.
+                snapshot_lines = (history_dir / "daily-signal-snapshots-2026-05-12.jsonl").read_text(
+                    encoding="utf-8"
+                ).splitlines()
+                self.assertEqual(1, len(snapshot_lines))
+        finally:
+            (
+                self.snapshots.TECHNICAL_CACHE_PATH,
+                self.snapshots.VALUATION_CACHE_PATH,
+                self.snapshots.STOCKS_CACHE_PATH,
+                self.snapshots.HISTORY_DIR,
+            ) = originals
+            if original_snapshot_date is None:
+                os.environ.pop("SIGNAL_SNAPSHOT_DATE", None)
+            else:
+                os.environ["SIGNAL_SNAPSHOT_DATE"] = original_snapshot_date
+
+
 if __name__ == "__main__":
     unittest.main()
