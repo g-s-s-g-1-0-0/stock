@@ -1,8 +1,8 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-08-03T15:00:37Z",
-    "rowCount": 3
+    "updatedAt": "2026-08-03T16:55:30Z",
+    "rowCount": 2
   },
   "rows": [
     {
@@ -69,26 +69,7 @@
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-30T14:10:01.1245+00:00"
-    },
-    {
-      "id": "ba154314-49f0-4fcd-9801-25e19eee2adb",
-      "scope": "personal",
-      "ownerId": "e1050013-38e6-4994-aee6-9edfa60df002",
-      "tickers": [
-        "005930"
-      ],
-      "tickersByType": {
-        "swing": [],
-        "long_term": [
-          "005930"
-        ]
-      },
-      "watchlistSort": {
-        "primary": "registered",
-        "secondary": "registered"
-      },
-      "remoteUpdatedAt": "2026-07-23T15:04:38.274847+00:00"
+      "remoteUpdatedAt": "2026-08-03T15:56:24.279001+00:00"
     },
     {
       "id": "026d7675-fa4f-44d9-8792-88cb35fe276a",
@@ -103,7 +84,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-07-30T14:09:55.620324+00:00"
+      "remoteUpdatedAt": "2026-08-03T15:56:24.281064+00:00"
     }
   ]
 }
