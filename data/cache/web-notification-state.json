@@ -1,9 +1,10 @@
 {
   "earnings": {
     "sentKeys": [
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-30:AAPL"
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-30:AAPL",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-08-04:ALAB"
     ],
-    "updatedAt": "2026-07-30T14:10:34.500114+00:00"
+    "updatedAt": "2026-08-04T13:34:18.244422+00:00"
   },
   "maSupportSignals": {
     "sentDailyKeys": [
@@ -78,11 +79,11 @@
     "updatedAt": "2026-07-15T04:59:59.592963+00:00"
   },
   "strategySeason": {
-    "open": false,
-    "sawRecovery": false,
     "nonRecoveryStreak": 0,
+    "open": false,
     "openedAt": null,
     "openedByTicker": null,
+    "sawRecovery": false,
     "updatedAt": "2026-07-14T07:40:00.492847Z"
   },
   "weeklyTrend": {

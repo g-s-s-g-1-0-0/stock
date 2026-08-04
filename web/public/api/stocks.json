@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-08-04T12:56:02+00:00",
-    "lastSuccessfulRun": "2026-08-04T12:56:02+00:00",
+    "updatedAt": "2026-08-04T13:34:13+00:00",
+    "lastSuccessfulRun": "2026-08-04T13:34:13+00:00",
     "failedReason": null
   },
   "rows": [
@@ -102,6 +102,22 @@
       "category": "성장주",
       "industry": "AI 인프라, 에너지, 연료전지·수소, 데이터센터 전력",
       "updatedAt": "2026-08-04T12:55:49+00:00"
+    },
+    {
+      "ticker": "ALAB",
+      "name": "Astera Labs",
+      "market": "US",
+      "fairPrice": "$74.00 ~ $103.60",
+      "fairPriceReason": null,
+      "currentPrice": "$350.04",
+      "valuation": "고평가",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "성장주",
+      "industry": "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머",
+      "updatedAt": "2026-08-04T12:56:00+00:00"
     },
     {
       "ticker": "000150",
@@ -549,22 +565,6 @@
       "strategies": [],
       "category": "성장주",
       "industry": "광통신 인프라, 특수유리, 광케이블, AI 데이터센터 광섬유",
-      "updatedAt": "2026-08-04T12:56:00+00:00"
-    },
-    {
-      "ticker": "ALAB",
-      "name": "Astera Labs",
-      "market": "US",
-      "fairPrice": "$74.00 ~ $103.60",
-      "fairPriceReason": null,
-      "currentPrice": "$350.04",
-      "valuation": "고평가",
-      "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
-      "strategies": [],
-      "category": "성장주",
-      "industry": "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머",
       "updatedAt": "2026-08-04T12:56:00+00:00"
     },
     {
