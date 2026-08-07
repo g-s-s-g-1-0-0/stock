@@ -313,3 +313,85 @@ jobs:
         if: failure()
         continue-on-error: true
         run: python scripts/web_refresh_notifications.py admin-failure --message "Web data refresh workflow failed. Check the latest GitHub Actions run."
+
+  # The step above only fires once the refresh job is running. A job that never
+  # gets a runner is cancelled before any step starts, so repeated outages of
+  # that kind would otherwise go unreported.
+  alert-repeated-failure:
+    needs: refresh
+    if: ${{ always() && needs.refresh.result != 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      SMTP_FROM: ${{ secrets.SMTP_FROM }}
+      SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
+      EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+      WEB_APP_URL: ${{ secrets.WEB_APP_URL }}
+      NOTIFICATION_UNSUBSCRIBE_SECRET: ${{ secrets.NOTIFICATION_UNSUBSCRIBE_SECRET }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Count consecutive failures
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          current_run_id = int(os.environ["GITHUB_RUN_ID"])
+          request = urllib.request.Request(
+              f"https://api.github.com/repos/{repository}/actions/workflows"
+              "/web-data-refresh.yml/runs?status=completed&per_page=40",
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+              },
+          )
+          with urllib.request.urlopen(request, timeout=30) as response:
+              runs = json.load(response)["workflow_runs"]
+
+          # This run is still in progress, so it is absent from the list above.
+          streak = 1
+          for run in runs:
+              if run["id"] == current_run_id:
+                  continue
+              if run["conclusion"] == "success":
+                  break
+              streak += 1
+
+          # One mail when the streak reaches three, then roughly once a day
+          # (the refresh runs every two hours) while it stays broken.
+          notify = streak == 3 or (streak > 3 and streak % 12 == 0)
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
+              env_file.write(f"FAILURE_STREAK={streak}\n")
+              env_file.write(f"NOTIFY_ADMINS={'true' if notify else 'false'}\n")
+          print(f"Consecutive non-success runs: {streak} (notify={notify})")
+          PY
+
+      - name: Notify admins about repeated failures
+        if: ${{ env.NOTIFY_ADMINS == 'true' }}
+        continue-on-error: true
+        run: >
+          python scripts/web_refresh_notifications.py admin-failure
+          --message "웹 데이터 갱신 워크플로가 연속 ${{ env.FAILURE_STREAK }}회 실패했습니다.
+          한두 번은 GitHub 러너 배정 지연으로 저절로 복구되지만, 연속 실패가 이어지면 사이트 데이터가 낡은 채로 남습니다.
+          실행 로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
