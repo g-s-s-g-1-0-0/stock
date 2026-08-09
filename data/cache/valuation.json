@@ -2,8 +2,8 @@
   "meta": {
     "kind": "valuation",
     "schedule": "0 15 * * *",
-    "updatedAt": "2026-08-08T15:00:00+00:00",
-    "lastSuccessfulRun": "2026-08-08T15:00:00+00:00",
+    "updatedAt": "2026-08-09T15:00:00+00:00",
+    "lastSuccessfulRun": "2026-08-09T15:00:00+00:00",
     "failedReason": null,
     "successfulRows": 38
   },
@@ -76,7 +76,7 @@
       "epsTtm": "-1.15",
       "epsNextYear": "-0.01",
       "epsQoq": "-854.63%",
-      "earningsDate": "2026-06-05 (D+65)",
+      "earningsDate": "2026-09-04 (D-26)",
       "industry": "우주 산업, 위성 지구관측 데이터, 위성 이미지",
       "ruleOf40": "4.29%"
     },
