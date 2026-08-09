@@ -80,11 +80,11 @@
     "updatedAt": "2026-07-15T04:59:59.592963+00:00"
   },
   "strategySeason": {
-    "nonRecoveryStreak": 0,
     "open": false,
+    "sawRecovery": false,
+    "nonRecoveryStreak": 0,
     "openedAt": null,
     "openedByTicker": null,
-    "sawRecovery": false,
     "updatedAt": "2026-07-14T07:40:00.492847Z"
   },
   "weeklyTrend": {
