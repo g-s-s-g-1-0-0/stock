@@ -929,6 +929,7 @@ def strategy_code(value: Any) -> str:
 STRATEGY_LABELS = {
     "1": "1. 시장 공포 저점 진입",
     "2": "2. 상승 추세 이평선 눌림목",
+    "3": "3. 정상장 볼린저 워시아웃",
 }
 
 
@@ -1036,10 +1037,13 @@ def buy_reason_detail(code: str, stock: dict[str, Any], technical_row: dict[str,
     ma60 = tech_text(technical_row, "60일 이동평균선", "MA60", "ma60")
     lr_trendline = tech_text(technical_row, "120일 저가 회귀 추세선", "LR추세선", "lrTrendline")
 
+    pct_b_low = tech_text(technical_row, "볼린저밴드 %B (저가)", "저가%B", "pctBLow")
     if code == "1":
         return f"현재가 {price} / MA200 {ma200} | RSI {rsi} / CCI {cci} | LR추세선 {lr_trendline}"
     if code == "2":
         return f"현재가 {price} / MA20 {ma20} / MA60 {ma60} / MA200 {ma200} | RSI {rsi}"
+    if code == "3":
+        return f"현재가 {price} / MA200 {ma200} | RSI {rsi} | 저가%B {pct_b_low} (스윙 전용)"
     return f"현재가 {price} / MA200 {ma200}"
 
 
@@ -1145,6 +1149,11 @@ def watch_release_detail(strategy: str, current_stock: dict[str, Any], technical
         if ma20_num is not None and price_num is not None and price_num < ma20_num * float(s.get("MA_RECLAIM_RATIO", 0.995)):
             return f"이평선 회복 실패 (현재가 {c['price']} / MA20 {c['ma20']})"
         return f"전략 2 조건 이탈 (현재가 {c['price']} / MA20 {c['ma20']} / MA200 {c['ma200']})"
+
+    if code == "3":
+        if ma200_num is not None and price_num is not None and price_num <= ma200_num:
+            return f"MA200 아래로 이탈 (현재가 {c['price']} / MA200 {c['ma200']})"
+        return f"전략 3 조건 이탈 (현재가 {c['price']} / MA200 {c['ma200']} / RSI {c['rsi']} / 저가%B {c['pct_b_low']})"
 
     return f"매수 조건 이탈 (현재가 {c['price']} / MA200 {c['ma200']})"
 
@@ -2238,11 +2247,21 @@ def send_opinion_notifications(
         if recipient.investment_type == "long_term":
             # 가치투자(long_term)는 청산 조건 자체를 인식하지 않으므로 의견이 '매도'로 가는 일이 없다.
             # 따라서 매수 신호와 매수→관망(매수 의견 해제)만 알리고, 매도 전환·청산은 제외한다.
-            my_changes = [
-                change
-                for change in my_opinion_changes
-                if change.get("to") == "매수" or (change.get("to") == "관망" and change.get("from") == "매수")
-            ]
+            # 전략 3은 스윙 전용이므로 가치투자 알림에서도 제외한다.
+            my_changes = []
+            for change in my_opinion_changes:
+                if not (
+                    change.get("to") == "매수"
+                    or (change.get("to") == "관망" and change.get("from") == "매수")
+                ):
+                    continue
+                codes = [strategy_code(value) for value in strategy_values(change.get("strategies"))]
+                codes = [code for code in codes if code]
+                if change.get("to") == "매수" and codes and set(codes) <= {"3"}:
+                    continue
+                if change.get("to") == "관망" and STRATEGY_LABELS["3"] in str(change.get("reason") or ""):
+                    continue
+                my_changes.append(change)
             if not my_changes:
                 continue
             buy_opinions, watch_holding_opinions, _ = opinion_groups_for_tickers(

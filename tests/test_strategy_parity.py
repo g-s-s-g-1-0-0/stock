@@ -141,6 +141,96 @@ def test_exit_no_profit_target_or_time():
     assert result["shouldExit"] is False
 
 
+def test_strategy_3_triggers_on_normal_market_bb_washout():
+    row = IndicatorRow(
+        stock_name="NVDA",
+        current_price=120,
+        ma200=100,
+        rsi=40,
+        pct_b_low=8,
+    )
+    result = evaluate_buy_condition(
+        row,
+        vix=15,
+        ixic_dist=5,
+        ixic_filter_active=False,
+        is_recovery_market=False,
+    )
+    assert result["strategyType"] == "3"
+    assert result["conditions"]["3"] == [True, True, True, True]
+
+
+def test_strategy_3_requires_normal_regime_and_above_ma200():
+    row = IndicatorRow(
+        stock_name="NVDA",
+        current_price=120,
+        ma200=100,
+        rsi=40,
+        pct_b_low=8,
+    )
+    recovery = evaluate_buy_condition(
+        row,
+        vix=15,
+        ixic_dist=5,
+        ixic_filter_active=False,
+        is_recovery_market=True,
+        season_open=True,
+        nasdaq_buy_block_max=18,
+    )
+    # Recovery + MA touch would be strategy 2 if season open; without MA touch, no S3 either.
+    assert recovery["strategyType"] != "3"
+
+    below = evaluate_buy_condition(
+        IndicatorRow(stock_name="NVDA", current_price=90, ma200=100, rsi=40, pct_b_low=8),
+        vix=15,
+        ixic_dist=5,
+        ixic_filter_active=False,
+        is_recovery_market=False,
+    )
+    assert below["strategyType"] is None
+
+
+def test_strategy_3_exit_uses_tp_sl_time_and_sideways_peak():
+    base = IndicatorRow(stock_name="NVDA", current_price=112, entry_price=100)
+    tp = evaluate_exit_condition(base, strategy_type="3")
+    assert tp["shouldExit"] is True
+    assert "익절" in tp["reason"]
+
+    sl = evaluate_exit_condition(
+        IndicatorRow(stock_name="NVDA", current_price=87, entry_price=100),
+        strategy_type="3",
+    )
+    assert sl["shouldExit"] is True
+    assert "손절" in sl["reason"]
+
+    extended = evaluate_exit_condition(
+        IndicatorRow(stock_name="NVDA", current_price=105, entry_price=100),
+        strategy_type="3",
+        regime_label="횡보장 고점",
+    )
+    assert extended["shouldExit"] is True
+    assert "횡보장 고점" in extended["reason"]
+
+    time_stop = evaluate_exit_condition(
+        IndicatorRow(stock_name="NVDA", current_price=105, entry_price=100),
+        strategy_type="3",
+        trading_days=20,
+    )
+    assert time_stop["shouldExit"] is True
+    assert "보유기간" in time_stop["reason"]
+
+    # Recovery-end / peakTriggered must not force S3 out when own rules are unmet.
+    hold = evaluate_exit_condition(
+        IndicatorRow(stock_name="NVDA", current_price=105, entry_price=100),
+        strategy_type="3",
+        recovery_ended=True,
+        nasdaq_peak_alert=True,
+        trading_days=5,
+        regime_label="정상장",
+    )
+    assert hold["shouldExit"] is False
+
+
 def test_qqq_regime_label_uses_four_simple_market_states():
     assert qqq_regime_label(-4, False) == "하락장"
     assert qqq_regime_label(5, False) == "정상장"

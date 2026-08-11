@@ -1435,7 +1435,10 @@ function resolveStockForTicker(ticker: string, primaryStocks: Stock[], fallbackS
 const initialWatchlist: string[] = []
 
 const operatorTickers: string[] = []
-const strategyFilters = ['1', '2']
+const strategyFiltersByInvestmentType: Record<InvestmentType, string[]> = {
+  swing: ['1', '2', '3'],
+  long_term: ['1', '2'],
+}
 const personalTrades: TradeLog[] = []
 const localTestWatchlist = ['AVGO', 'NVDA', 'MSFT', '005930']
 const localTestPersonalTrades: TradeLog[] = [
@@ -1985,10 +1988,11 @@ function tradeReturnClass(value: number) {
 const STRATEGY_LABELS: Record<string, string> = {
   '1': '시장 공포 저점 진입',
   '2': '상승 추세 이평선 눌림목',
+  '3': '정상장 볼린저 워시아웃',
 }
 
 function strategyCode(strategy: string) {
-  const match = String(strategy || '').trim().match(/^([12])\b/)
+  const match = String(strategy || '').trim().match(/^([123])\b/)
   if (match) return match[1]
   const legacy = String(strategy || '').trim().match(/^([A-H])\b/i)
   if (legacy && legacy[1].toUpperCase() === 'B') return '1'
@@ -2022,6 +2026,7 @@ function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing'
     swing: {
       '1': '시장 공포 저점 진입은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 첫 매수 기회를 찾는 전략입니다. 시장이 충분히 눌렸는지, 종목도 과하게 팔렸는지, 저점에서 버티는 힘이 있는지를 함께 확인합니다.',
       '2': '상승 추세 이평선 눌림목은 시장 공포 저점 진입으로 매수 시즌이 열린 뒤 회복장에서 추가 매수 자리를 찾는 전략입니다. 계속 오른 종목을 따라 사지 않고, 상승 흐름 안에서 평균 가격선 근처까지 쉬어 갈 때만 봅니다.',
+      '3': '정상장 볼린저 워시아웃은 공포/회복 시즌이 아닐 때, 장기 평균 위에 있는 종목이 볼린저 하단까지 짧게 씻긴 자리를 노리는 스윙 전용 전략입니다. 짧게 먹고 나오는 규칙(+12/−12/20일/횡보장 고점)을 씁니다.',
     },
     long_term: {
       '1': '시장 공포 저점 진입은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 장기 보유 후보를 처음 편입하는 전략입니다. 단기 반등보다 좋은 종목을 무리하지 않은 가격에 담는 데 초점을 둡니다.',
@@ -2129,6 +2134,62 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         value: [
           '보유 중 유지 조건이 깨지면 매수 → 관망으로 바뀝니다. 자동으로 파는 신호가 아닙니다.',
           '이미 산 뒤에는 이평선에 다시 닿았는지는 안 봅니다. 시즌이 열려 있고, 회복장이고, QQQ가 과열 차단선 아래인지만 보면 매수 의견을 유지합니다.',
+        ],
+      },
+      {
+        label: '재진입',
+        value: [
+          '완전히 판 뒤: 직전 매도가보다 3% 더 싸지면 다시 살 후보입니다. (매도 직후 이틀은 대기, 이후 10거래일 안 기준)',
+          '보유 중 관망이 된 뒤: 진입가보다 10% 더 빠지고 10거래일이 지나야 추가 매수 후보입니다.',
+        ],
+      },
+    ],
+    '3': [
+      {
+        label: '진입',
+        value: [
+          'QQQ 국면 = 정상장',
+          '종목 현재가 > MA200',
+          '저가 기준 볼린저 %B ≤ 10',
+          'RSI ≤ 45',
+          '같은 날 전략 1·2 미충족',
+        ],
+      },
+      {
+        label: '설명',
+        value: [
+          '정상장은 회복장·하락장·횡보장 고점이 아닌 구간입니다. 공포/회복 시즌 밖에서 짧게 씻긴 자리를 봅니다.',
+          'MA200 위에 있어야 장기 추세가 무너지지 않은 종목으로 봅니다.',
+          '저가 %B ≤ 10은 당일 저가가 볼린저 하단 근처까지 내려왔다는 뜻입니다.',
+          'RSI ≤ 45는 단기 과열이 아닌 눌림 상태를 뜻합니다.',
+          '전략 1·2와 겹치지 않게, 그날 1·2가 안 나온 종목만 봅니다.',
+        ],
+      },
+      {
+        label: '대상',
+        value: '스윙투자 관심종목 전용입니다. 가치투자 로그에는 자동 진입하지 않습니다.',
+      },
+      {
+        label: '익절',
+        value: '매수가 대비 +12%에 도달하면 익절합니다.',
+      },
+      {
+        label: '손절',
+        value: '매수가 대비 -12%까지 떨어지면 손절합니다.',
+      },
+      {
+        label: '청산',
+        value: [
+          'QQQ가 횡보장 고점이 되면 종가 기준으로 청산합니다.',
+          '최대 20거래일까지 보유하고, 그때까지 남아 있으면 시간 청산합니다.',
+          '전략 1·2의 회복장 종료 전량매도·나스닥 peakTriggered 청산은 적용하지 않습니다.',
+        ],
+      },
+      {
+        label: '관망',
+        value: [
+          '보유 중에는 정상장과 현재가 > MA200만 보면 매수 의견을 유지합니다.',
+          '워시아웃 조건(저가 %B, RSI)이 풀려도 바로 관망으로 바꾸지 않습니다.',
         ],
       },
       {
@@ -2249,6 +2310,9 @@ function tradeCriteriaInfo(strategy: string) {
   const code = strategyCode(strategy)
   if (code === '1' || code === '2') {
     return `전략 ${code} 기준: 회복장 종료(2거래일 확정) 시 전량매도하며, 그때 수익률이 +면 성공(익절), −면 실패(손절)입니다. -30% 하드 손절도 유지합니다. 목표가·시간 청산은 없습니다.`
+  }
+  if (code === '3') {
+    return '전략 3 기준: +12% 익절, -12% 손절, 최대 20거래일, QQQ 횡보장 고점 종가 청산. 스윙 전용이며 회복장 종료 전량매도는 적용하지 않습니다.'
   }
   return '전략별 성공/실패 기준 정보가 준비 중입니다.'
 }
@@ -2389,8 +2453,9 @@ function formatTradePrice(trade: TradeLog, value: number | null, fallback: strin
 }
 
 function strategyTargetReturnPct(strategy: string) {
-  // Strategy 1/2 have no profit target; recovery-end exit decides success/fail.
-  void strategy
+  // Strategy 1/2 have no profit target; strategy 3 uses +12%.
+  const code = strategyCode(strategy)
+  if (code === '3') return 0.12
   return 0
 }
 
@@ -2408,6 +2473,9 @@ function recommendedSellPriceNote(strategy: string) {
   const code = strategyCode(strategy)
   if (code === '1' || code === '2') {
     return '목표가 익절 없음. 회복장 종료 전량매도 또는 -30% 손절.'
+  }
+  if (code === '3') {
+    return '권장 매도가 = 매수가 +12%. -12% 손절 · 20거래일 · 횡보장 고점 청산도 함께 적용.'
   }
   return '권장 매도가 참고 정보가 준비 중입니다.'
 }
@@ -2529,6 +2597,7 @@ function strategyCriteriaLabelTone(label: string) {
 
 function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentType }) {
   const strategyCriteriaRows = strategyCriteriaRowsByInvestmentType[investmentType]
+  const filters = strategyFiltersByInvestmentType[investmentType]
 
   return (
     <div className="strategy-criteria-modal-table-wrap">
@@ -2542,7 +2611,7 @@ function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentT
             </tr>
           </thead>
           <tbody>
-            {strategyFilters.map((code) => (
+            {filters.map((code) => (
               <tr key={code}>
                 <th scope="row">
                   <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{strategyDisplayName(code)}</span>
@@ -6997,14 +7066,15 @@ function App() {
     trade,
     rowNumber: index + 1,
   }))
+  const activeStrategyFilters = strategyFiltersByInvestmentType[displayedInvestmentType]
   const visibleWinRates = [
     formatWinRate('통합', scopedTrades),
-    ...strategyFilters
+    ...activeStrategyFilters
       .map((code) => formatWinRate(code, scopedTrades.filter((trade) => strategyCode(trade.strategy) === code))),
   ].join(', ')
   const strategyCriteriaLine = isLongTermInvestor
     ? '가치투자형은 청산된 거래가 슬롯을 비우고, 현재 보유 중인 거래만 투자금 슬롯을 차지합니다.'
-    : '청산 기준: 전략 1&2 회복장 종료 전량매도(+성공/−실패) · 하드손절 -30%'
+    : '청산 기준: 전략 1&2 회복장 종료 전량매도(+성공/−실패)·하드손절 -30% · 전략 3 +12/−12/20일/횡보장 고점'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,
@@ -9005,7 +9075,7 @@ function App() {
               <h2>트레이딩 로그</h2>
               <div className="strategy-filter" aria-label="전략 필터">
                 <StrategyCriteriaLauncher investmentType={displayedInvestmentType} />
-                {['전체', ...strategyFilters].map((code) => (
+                {['전체', ...activeStrategyFilters].map((code) => (
                   <button
                     className={selectedStrategy === code ? 'active' : ''}
                     key={code}
@@ -10466,7 +10536,7 @@ function App() {
                   <CustomSelect
                     ariaLabel="적용할 전략 선택"
                     options={[
-                      ...strategyFilters.map((code) => ({ value: code, label: strategyDisplayName(code) })),
+                      ...activeStrategyFilters.map((code) => ({ value: code, label: strategyDisplayName(code) })),
                       { value: STRATEGY_FREE_SELECT_VALUE, label: '전략과 무관' },
                     ]}
                     value={manualHoldingDraft.strategy}

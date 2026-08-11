@@ -57,8 +57,9 @@ HOLD_RESTORE_MIN_TRADING_DAYS = 10
 HOLD_RESTORE_SIGNAL_CONFIRMATIONS = 2
 MAX_OPEN_PER_STRATEGY = 2
 RESTORE_FAMILY_STRATEGIES: set[str] = set()
-ACTIVE_STRATEGIES = {"1", "2"}
+ACTIVE_STRATEGIES = {"1", "2", "3"}
 REMOVED_STRATEGIES = {"A", "C", "D", "E", "F", "G", "H"}
+SWING_ONLY_STRATEGIES = {"3"}
 INVESTMENT_TYPES = ("long_term", "swing")
 VALUATION_LOG_FIELDS = [
     ("marketCap", "시가총액"),
@@ -1045,6 +1046,7 @@ def update_trade_logs(
     today_date = parse_trade_date(today) or datetime.now(timezone.utc).astimezone(KST).date()
     nasdaq_peak_alert = bool((qqq_market_state or {}).get("peakTriggered"))
     is_recovery_market = bool((qqq_market_state or {}).get("isRecoveryMarket"))
+    regime_label = str((qqq_market_state or {}).get("regimeLabel") or "") or None
     season = load_strategy_season_state()
     confirm_days = int(STRATEGY_RULES.get("RECOVERY_EXIT_CONFIRM_DAYS", 2))
     if is_recovery_market:
@@ -1093,6 +1095,7 @@ def update_trade_logs(
         "deferred_tickers": deferred_tickers,
         "nasdaq_peak_alert": nasdaq_peak_alert,
         "recovery_ended": recovery_ended,
+        "regime_label": regime_label,
         "now": now,
         "today": today,
         "today_date": today_date,
@@ -1159,6 +1162,7 @@ def run_trade_engine(
     today_date: date,
     mutate_public_state: bool,
     signal_tickers: set[str] | None = None,
+    regime_label: str | None = None,
 ) -> dict[str, Any]:
     """매수 진입/청산 엔진. 운영자 공용 로그와 개인 로그에 같은 규칙을 적용한다.
 
@@ -1186,6 +1190,9 @@ def run_trade_engine(
             continue
         if first == "2":
             season["open"] = True
+            continue
+        if first == "3":
+            trade["strategy"] = strategy_display_name("3")
             continue
         if first in REMOVED_STRATEGIES:
             sell_price = trade.get("currentPrice") or trade.get("buyPrice") or "-"
@@ -1233,6 +1240,7 @@ def run_trade_engine(
             continue
         entry_codes = set(entry_signal_codes(row)) if isinstance(row, dict) else set()
         exit_price = sell_price
+        held_trading_days = trading_days_since(trade.get("buyDate"), today_date)
         if recovery_ended:
             exit_result = evaluate_exit_condition(
                 IndicatorRow(
@@ -1242,6 +1250,8 @@ def run_trade_engine(
                 ),
                 strategy_type=strategy,
                 recovery_ended=True,
+                trading_days=held_trading_days,
+                regime_label=regime_label,
             )
         elif nasdaq_peak_alert:
             exit_result = evaluate_exit_condition(
@@ -1252,12 +1262,16 @@ def run_trade_engine(
                 ),
                 strategy_type=strategy,
                 nasdaq_peak_alert=True,
+                trading_days=held_trading_days,
+                regime_label=regime_label,
             )
         elif daily_ind is not None and isinstance(row, dict) and has_new_daily_price(row, previous_row if isinstance(previous_row, dict) else None):
             exit_result = evaluate_exit_condition(
                 daily_ind,
                 strategy_type=strategy,
                 nasdaq_peak_alert=False,
+                trading_days=held_trading_days,
+                regime_label=regime_label,
             )
             exit_price = daily_sell_price
         elif live_ind is not None:
@@ -1265,6 +1279,8 @@ def run_trade_engine(
                 live_ind,
                 strategy_type=strategy,
                 nasdaq_peak_alert=False,
+                trading_days=held_trading_days,
+                regime_label=regime_label,
             )
         else:
             exit_result = {"shouldExit": False, "reason": None}
@@ -1358,6 +1374,8 @@ def run_trade_engine(
             for code in entry_signal_codes(row):
                 if code not in ACTIVE_STRATEGIES:
                     continue
+                if code in SWING_ONLY_STRATEGIES and investment_type != "swing":
+                    continue
                 slot_key = (investment_type, ticker, code)
                 open_count = current_open_counts.get(slot_key, 0)
                 restore_source_trades: list[dict[str, Any]] = []
@@ -1411,7 +1429,7 @@ def run_trade_engine(
         if open_for_ticker_all and not ticker_appended and mutate_public_state:
             signal_state_changed = block_held_public_buy_signal(stock, row) or signal_state_changed
 
-    # Drop retired A/C/D/E/F/G/H rows from the live log; keep 1/2 (+ migrated B).
+    # Drop retired A/C/D/E/F/G/H rows from the live log; keep 1/2/3 (+ migrated B).
     cleaned: list[dict[str, Any]] = []
     for trade in trades:
         raw = str(trade.get("strategy") or "")
@@ -1423,6 +1441,8 @@ def run_trade_engine(
             trade["strategy"] = strategy_display_name("1")
         elif code == "2":
             trade["strategy"] = strategy_display_name("2")
+        elif code == "3":
+            trade["strategy"] = strategy_display_name("3")
         cleaned.append(trade)
     trades = cleaned
 

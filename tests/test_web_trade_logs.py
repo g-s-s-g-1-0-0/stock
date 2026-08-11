@@ -87,6 +87,84 @@ def test_long_term_trade_does_not_auto_exit_on_target(monkeypatch, tmp_path):
     assert row["sellPrice"] == "-"
 
 
+def test_strategy_3_enters_swing_only_and_exits_on_sideways_peak(monkeypatch, tmp_path):
+    cache_path, _ = patch_log_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {
+        "long_term": ["NVDA"],
+        "swing": ["NVDA"],
+    })
+    # Force seed path so previous-opinion continuity gate does not block first entry.
+    monkeypatch.setattr(logs, "runtime_reset_requested", lambda: True)
+
+    logs.update_trade_logs(
+        [{"ticker": "NVDA", "name": "NVIDIA", "market": "US", "currentPrice": "$100.00", "opinion": "매수"}],
+        {},
+        {"NVDA": {"entrySignalCodes": "3", "현재가": "$100.00"}},
+        {"peakTriggered": False, "regimeLabel": "정상장"},
+    )
+    opened = logs.load_json(cache_path, {})["rows"]
+    assert len(opened) == 1
+    assert opened[0]["investmentType"] == "swing"
+    assert opened[0]["strategy"].startswith("3.")
+
+    # Rewrite open trade with today's buy date/price, then hit 횡보장 고점.
+    today = logs.kst_trade_date()
+    public_path = logs.TRADE_LOG_PUBLIC_PATH
+    public_path.write_text(logs.json.dumps({
+        "rows": [{
+            **opened[0],
+            "buyDate": today,
+            "buyPrice": "$100.00",
+            "currentPrice": "$105.00",
+        }]
+    }), encoding="utf-8")
+    logs.update_trade_logs(
+        [{"ticker": "NVDA", "name": "NVIDIA", "market": "US", "currentPrice": "$105.00", "opinion": "매수"}],
+        {},
+        {"NVDA": {"entrySignalCodes": "3", "현재가": "$105.00", "C - Close": "$105.00", "dailyPriceDate": today}},
+        {"peakTriggered": True, "regimeLabel": "횡보장 고점"},
+    )
+    closed = logs.load_json(cache_path, {})["rows"][0]
+    assert closed["status"] == "실패 익절"
+    assert "횡보장 고점" in str(closed.get("exitReason") or "")
+
+
+def test_strategy_3_ignores_recovery_end_and_peak_without_sideways(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    today = logs.kst_trade_date()
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [{
+            "slotId": f"NVDA_swing_3_{today.replace('.', '')}_1",
+            "investmentType": "swing",
+            "ticker": "NVDA",
+            "strategy": "3. 정상장 볼린저 워시아웃",
+            "buyDate": today,
+            "buyPrice": "$100.00",
+            "currentPrice": "$105.00",
+            "sellDate": "보유 중",
+            "sellPrice": "-",
+            "returnPct": 0,
+            "holdingDays": "-",
+            "status": "보유 중",
+        }]
+    }), encoding="utf-8")
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {
+        "long_term": [],
+        "swing": ["NVDA"],
+    })
+
+    logs.update_trade_logs(
+        [{"ticker": "NVDA", "name": "NVIDIA", "market": "US", "currentPrice": "$105.00", "opinion": "매수"}],
+        {},
+        {"NVDA": {"현재가": "$105.00"}},
+        {"peakTriggered": True, "regimeLabel": "정상장", "isRecoveryMarket": False},
+    )
+    # Peak alone must not close S3 unless own rules (TP/SL/time/횡보장 고점) fire.
+    row = logs.load_json(cache_path, {})["rows"][0]
+    assert row["status"] == "보유 중"
+
+
 def patch_log_paths(monkeypatch, tmp_path):
     cache_path = tmp_path / "data" / "cache" / "trade-logs.json"
     public_path = tmp_path / "web" / "public" / "api" / "trade-logs.json"

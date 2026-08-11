@@ -1,7 +1,8 @@
-"""Conservative Strategy 1/2 rules for the web service.
+"""Conservative Strategy 1/2/3 rules for the web service.
 
 Strategy 1: panic bottom (former B entry).
 Strategy 2: MA pullback buys while the season is open and the market is in recovery.
+Strategy 3: normal-market BB washout (swing only) — Close>MA200, pctBLow≤10, RSI≤45.
 """
 
 from __future__ import annotations
@@ -9,6 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from typing import Any
+
+from .market_regime import qqq_regime_label
 
 
 STRATEGY_RULES: dict[str, float | int] = {
@@ -19,9 +22,14 @@ STRATEGY_RULES: dict[str, float | int] = {
     "LR_TOUCH_RATIO": 1.05,
     "CIRCUIT_PCT_1": 0.30,
     "CIRCUIT_PCT_2": 0.30,
-    # Success/fail is judged at recovery-end exit; no profit target.
+    "CIRCUIT_PCT_3": 0.12,
+    # Success/fail is judged at recovery-end exit; no profit target for 1/2.
     "TARGET_PCT_1": 0.0,
     "TARGET_PCT_2": 0.0,
+    "TARGET_PCT_3": 0.12,
+    "MAX_HOLD_DAYS_3": 20,
+    "S3_PCT_B_LOW_MAX": 10,
+    "S3_RSI_MAX": 45,
     "MA_TOUCH_RATIO": 1.003,
     "MA_RECLAIM_RATIO": 0.995,
     "RECOVERY_EXIT_CONFIRM_DAYS": 2,
@@ -35,6 +43,7 @@ STRATEGY_RULES: dict[str, float | int] = {
 STRATEGY_LABELS = {
     "1": "시장 공포 저점 진입",
     "2": "상승 추세 이평선 눌림목",
+    "3": "정상장 볼린저 워시아웃",
 }
 
 # Legacy A–H codes map to nothing active; B maps to 1 for migration.
@@ -42,8 +51,9 @@ LEGACY_STRATEGY_MAP = {
     "B": "1",
 }
 
-ACTIVE_STRATEGY_CODES = ("1", "2")
-NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES: set[str] = set()
+ACTIVE_STRATEGY_CODES = ("1", "2", "3")
+# Strategy 3 uses its own 횡보장 고점 regime exit, not S1/S2 peakTriggered.
+NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES: set[str] = {"3"}
 
 
 @dataclass(frozen=True)
@@ -166,10 +176,10 @@ def evaluate_buy_condition(
     season_open: bool = False,
     warn_triggered: bool = False,
 ) -> dict[str, Any]:
-    """Evaluate Strategy 1/2 entry and hold conditions.
+    """Evaluate Strategy 1/2/3 entry and hold conditions.
 
     recovery_momentum_exception, ixic_filter_active, and warn_triggered are unused by
-    1/2 entry but kept so existing call sites do not break. Warn-line gating was
+    active entry rules but kept so existing call sites do not break. Warn-line gating was
     removed because the QQQ buy-block already covers the same overheat zone.
     """
 
@@ -180,6 +190,7 @@ def evaluate_buy_condition(
     buy_block_max = float(nasdaq_buy_block_max if nasdaq_buy_block_max is not None else s["NASDAQ_BUY_BLOCK_MAX"])
     nasdaq_below_buy_block = ixic_dist is not None and ixic_dist <= buy_block_max
     nasdaq_downtrend = ixic_dist is not None and ixic_dist < float(s["NASDAQ_DIST_UPPER"])
+    regime = qqq_regime_label(ixic_dist, is_recovery_market)
 
     rsi_ok = _lt(ind.rsi, float(s["RSI_MAX"]))
     cci_ok = _lt(ind.cci, float(s["CCI_MIN"]))
@@ -206,7 +217,13 @@ def evaluate_buy_condition(
     s2_cond4 = touch_20 or touch_60 or touch_144 or touch_200
     entry_2 = s2_cond1 and s2_cond2 and s2_cond3 and s2_cond4 and not entry_1
 
-    entry_strategy = "1" if entry_1 else "2" if entry_2 else None
+    s3_cond1 = regime == "정상장"
+    s3_cond2 = _gt(ind.current_price, ind.ma200)
+    s3_cond3 = ind.pct_b_low is not None and ind.pct_b_low <= float(s["S3_PCT_B_LOW_MAX"])
+    s3_cond4 = ind.rsi is not None and ind.rsi <= float(s["S3_RSI_MAX"])
+    entry_3 = s3_cond1 and s3_cond2 and s3_cond3 and s3_cond4 and not entry_1 and not entry_2
+
+    entry_strategy = "1" if entry_1 else "2" if entry_2 else "3" if entry_3 else None
     triggered = entry_strategy is not None
 
     holding_code = normalize_strategy_code(holding_strategy_type)
@@ -215,6 +232,9 @@ def evaluate_buy_condition(
             triggered = s1_cond1 and s1_cond2 and s1_cond3 and s1_cond4 and s1_cond5 and s1_cond6
         elif holding_code == "2":
             triggered = s2_cond1 and s2_cond2 and s2_cond3
+        elif holding_code == "3":
+            # Once in, drop washout-only filters; keep regime + MA200 structure.
+            triggered = s3_cond1 and s3_cond2
 
     return {
         "triggered": triggered,
@@ -225,6 +245,7 @@ def evaluate_buy_condition(
         "conditions": {
             "1": [s1_cond1, s1_cond2, s1_cond3, s1_cond4, s1_cond5, s1_cond6],
             "2": [s2_cond1, s2_cond2, s2_cond3, s2_cond4],
+            "3": [s3_cond1, s3_cond2, s3_cond3, s3_cond4],
         },
         "maTouches": {
             "20": touch_20,
@@ -245,6 +266,9 @@ def format_return_pct(return_pct: float, *, signed: bool = True) -> str:
 def strategy_target_criterion_label(strategy_type: str) -> str:
     code = normalize_strategy_code(strategy_type) or strategy_type
     base = STRATEGY_LABELS.get(code, code)
+    if code == "3":
+        target = float(STRATEGY_RULES.get("TARGET_PCT_3", 0.12))
+        return f"{base} 기준 +{int(round(target * 100))}%"
     return f"{base} 기준 회복장 종료 청산"
 
 
@@ -280,6 +304,9 @@ def enrich_profit_exit_reason(
 
     if text == "손절 기준 도달":
         return f"손절 기준 도달 {signed} [{stop_label}]".strip()
+    if text == "익절 기준 도달":
+        target_label = strategy_target_criterion_label(strategy_type)
+        return f"익절 기준 도달 {signed} [{target_label}]".strip()
     if "회복장 종료" in text:
         return text if "[" in text else f"{text} {signed}".strip()
     return text
@@ -293,8 +320,9 @@ def evaluate_exit_condition(
     trading_days: int = 0,
     upper_exit_wait_days: int | None = None,
     recovery_ended: bool = False,
+    regime_label: str | None = None,
 ) -> dict[str, Any]:
-    del trading_days, upper_exit_wait_days
+    del upper_exit_wait_days
 
     if not ind.entry_price or ind.entry_price <= 0:
         return {"shouldExit": False, "reason": None}
@@ -303,6 +331,25 @@ def evaluate_exit_condition(
     return_pct = (ind.current_price - ind.entry_price) / ind.entry_price
     return_signed = format_return_pct(return_pct)
     stop_label = strategy_stop_criterion_label(code)
+
+    # Strategy 3: fixed TP/SL/time + 횡보장 고점. Not tied to recovery-end or peakTriggered.
+    if code == "3":
+        target_pct = float(STRATEGY_RULES.get("TARGET_PCT_3", 0.12))
+        circuit_pct = float(STRATEGY_RULES.get("CIRCUIT_PCT_3", 0.12))
+        max_hold = int(STRATEGY_RULES.get("MAX_HOLD_DAYS_3", 20))
+        if return_pct <= -circuit_pct:
+            return {"shouldExit": True, "reason": f"손절 기준 도달 {return_signed} [{stop_label}]"}
+        if return_pct >= target_pct:
+            target_label = strategy_target_criterion_label(code)
+            return {"shouldExit": True, "reason": f"익절 기준 도달 {return_signed} [{target_label}]"}
+        if regime_label == "횡보장 고점":
+            return {"shouldExit": True, "reason": f"횡보장 고점 청산 {return_signed}"}
+        if trading_days >= max_hold:
+            return {
+                "shouldExit": True,
+                "reason": f"보유기간 만료 청산 {return_signed} [{max_hold}거래일]",
+            }
+        return {"shouldExit": False, "reason": None}
 
     if recovery_ended:
         outcome = "성공" if return_pct > 0 else "실패"
