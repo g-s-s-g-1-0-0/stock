@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-08-12T13:50:59+00:00",
-    "lastSuccessfulRun": "2026-08-12T13:50:59+00:00",
+    "updatedAt": "2026-08-12T14:56:09+00:00",
+    "lastSuccessfulRun": "2026-08-12T14:56:09+00:00",
     "failedReason": null
   },
   "rows": [
@@ -219,7 +219,7 @@
       "ticker": "ASX",
       "name": "ASE Technology Holding",
       "market": "US",
-      "fairPrice": "$17.20 ~ $25.80",
+      "fairPrice": "$17.00 ~ $25.50",
       "fairPriceReason": null,
       "currentPrice": "$39.52",
       "valuation": "고평가",
@@ -347,10 +347,10 @@
       "ticker": "LITE",
       "name": "Lumentum Holdings",
       "market": "US",
-      "fairPrice": "$269.50 ~ $377.30",
-      "fairPriceReason": null,
+      "fairPrice": "적자 상태라 판단 불가",
+      "fairPriceReason": "loss_making",
       "currentPrice": "$874.00",
-      "valuation": "고평가",
+      "valuation": "판단 불가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
