@@ -1104,7 +1104,9 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
     for stock in source_universe:
         try:
             metric = valuation_rows.get(stock["ticker"], {})
-            earnings_date = metric.get("earningsDate", "-") if isinstance(metric, dict) else "-"
+            earnings_date = refresh_earnings_date_label(
+                metric.get("earningsDate", "-") if isinstance(metric, dict) else "-"
+            )
             row = latest_technical_row(
                 stock,
                 earnings_date=earnings_date,
@@ -1141,7 +1143,11 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 successful_rows += 1
         except Exception as exc:  # noqa: BLE001 - batch should preserve partial success
             if stock["ticker"] in existing_rows:
-                rows[stock["ticker"]] = existing_rows[stock["ticker"]]
+                preserved = dict(existing_rows[stock["ticker"]])
+                preserved["실적발표일 (한국 시간 기준)"] = refresh_earnings_date_label(
+                    preserved.get("실적발표일 (한국 시간 기준)") or "-"
+                )
+                rows[stock["ticker"]] = preserved
             errors.append({"ticker": stock["ticker"], "error": str(exc)})
 
     if season_open and not season.get("open"):

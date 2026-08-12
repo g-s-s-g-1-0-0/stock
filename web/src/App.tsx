@@ -3051,11 +3051,35 @@ function technicalLowBbTone(value: number | null): IndicatorTone | null {
   return 'weak'
 }
 
+function refreshEarningsDateLabel(value: string, now = new Date()): string {
+  // Cache can keep a stale D-N label overnight; recompute from the calendar date in KST.
+  if (typeof value !== 'string') return '-'
+  const text = value.trim()
+  if (!text || text === '-') return text || '-'
+  const match = text.match(/^(\d{4}-\d{2}-\d{2})(?:\s+\(.*\))?$/)
+  if (!match) return text
+
+  const [year, month, day] = match[1].split('-').map(Number)
+  const targetUtc = Date.UTC(year, month - 1, day)
+  const kstToday = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now)
+  const [todayYear, todayMonth, todayDay] = kstToday.split('-').map(Number)
+  const todayUtc = Date.UTC(todayYear, todayMonth - 1, todayDay)
+  const diffDays = Math.round((targetUtc - todayUtc) / (24 * 60 * 60 * 1000))
+  const label = diffDays === 0 ? 'D-0' : `D${diffDays < 0 ? '+' : '-'}${Math.abs(diffDays)}`
+  return `${match[1]} (${label})`
+}
+
 function earningsDateTone(value: string): IndicatorTone | null {
   if (typeof value !== 'string' || value.trim() === '-') return null
-  if (/\bD\s*-\s*0\b/i.test(value)) return 'earnings-today'
+  const refreshed = refreshEarningsDateLabel(value)
+  if (/\bD\s*-\s*0\b/i.test(refreshed)) return 'earnings-today'
 
-  const match = value.match(/\bD\s*-\s*([1-3])\b/i)
+  const match = refreshed.match(/\bD\s*-\s*([1-3])\b/i)
   return match ? 'earnings-near' : null
 }
 
@@ -3949,7 +3973,7 @@ const valueMetricColumns: Array<{ label: string; value: (metric: ValuationMetric
   { label: 'EPS Next Y', value: (metric) => metric.epsNextYear, tooltip: metricTooltip('다음 해에 예상되는 1주당 이익입니다. 현재보다 높으면 성장 기대가 있고, 자주 낮아지면 보수적으로 봅니다.', '긍정: 플러스 흑자 전망 · 일반: 0 · 부정: 적자 전망.') },
   { label: 'EPS Q/Q (%)', value: (metric) => metric.epsQoq, tooltip: metricTooltip('직전 분기보다 1주당 이익이 얼마나 늘었는지 봅니다. 높으면 최근 실적 흐름이 좋다는 뜻입니다.', '긍정: +20%↑ 이익 가속 · 일반: 0%↑ · 부정: 이익 둔화.') },
   { label: 'Rule of 40%', value: (metric) => metric.ruleOf40, tooltip: metricTooltip('성장률과 이익률을 같이 보는 지표입니다. 40% 이상이면 성장과 수익의 균형이 좋다고 봅니다.', '긍정: 40%↑ 성장·수익 균형 · 일반: 20%↑ · 부정: 미만 균형 약함.') },
-  { label: '실적발표일 (한국 시간 기준)', value: (metric) => metric.earningsDate, tooltip: metricTooltip('한국 시간 기준 실적 발표일입니다. 실적 전후에는 가격이 크게 움직일 수 있어 주의합니다.', '당일(D-0) 주의(빨강·변동성 큼), D-1~D-3 임박(주황), 그 외 없음.') },
+  { label: '실적발표일 (한국 시간 기준)', value: (metric) => refreshEarningsDateLabel(metric.earningsDate), tooltip: metricTooltip('한국 시간 기준 실적 발표일입니다. 실적 전후에는 가격이 크게 움직일 수 있어 주의합니다.', '당일(D-0) 주의(빨강·변동성 큼), D-1~D-3 임박(주황), 그 외 없음.') },
 ]
 
 const technicalMarketSnapshot: string[][] = [
@@ -4090,7 +4114,7 @@ function formatTechnicalVolume(stock: Stock, index: number, salt: number) {
 }
 
 function technicalEarningsDate(stock: Stock) {
-  return valuationMetrics[stock.ticker]?.earningsDate ?? '-'
+  return refreshEarningsDateLabel(valuationMetrics[stock.ticker]?.earningsDate ?? '-')
 }
 
 function openTradesForStock(stock: Stock, targetTrades: TradeLog[]) {
@@ -4549,18 +4573,19 @@ function TechnicalAnalysisPage({
                   {technicalMetricColumns.map((column) => {
                     const apiKey = column.key ?? column.label
                     const entryStrategies = apiKey === '진입 전략' ? technicalEntryStrategiesForStock(stock, tradeLogs) : []
-                    const value = apiKey === '진입가'
+                    const rawValue = apiKey === '진입가'
                       ? technicalEntryPrice(stock, tradeLogs)
                       : apiKey === '진입일'
                         ? technicalEntryDate(stock, tradeLogs)
                         : apiKey === '진입 전략'
                           ? (entryStrategies.length > 0 ? entryStrategies.join(', ') : '-')
                           : apiRow?.[apiKey] ?? '-'
+                    const isEarningsDate = apiKey.startsWith('실적발표일')
+                    const value = isEarningsDate ? refreshEarningsDateLabel(rawValue) : rawValue
                     const displayValue = isCandleLengthMetric(column.label)
                       ? candleLengthPercentValue(value, stock, apiRow)
                       : value
                     const isEntryStrategy = apiKey === '진입 전략'
-                    const isEarningsDate = apiKey.startsWith('실적발표일')
                     const cellClassName = displayValue === '-'
                       ? 'dash-cell'
                       : isEntryStrategy
