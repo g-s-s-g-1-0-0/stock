@@ -19,6 +19,15 @@ def test_us_earnings_d_day_uses_kst_and_amc_rollover(monkeypatch):
     assert sheet_sources.process_us_earnings_date("May 20 AMC") == "2026-05-21 (D-11)"
 
 
+def test_refresh_earnings_date_label_recomputes_stale_d_day():
+    today = datetime(2026, 8, 13, 0, 5)
+
+    assert sheet_sources.refresh_earnings_date_label("2026-08-13 (D-1)", today) == "2026-08-13 (D-0)"
+    assert sheet_sources.refresh_earnings_date_label("2026-08-14 (D-2)", today) == "2026-08-14 (D-1)"
+    assert sheet_sources.refresh_earnings_date_label("-", today) == "-"
+    assert sheet_sources.refresh_earnings_date_label("미정", today) == "미정"
+
+
 def test_calc_technical_row_uses_sheet_cci_period_and_volume_ratios(monkeypatch):
     rows = []
     for index in range(220):

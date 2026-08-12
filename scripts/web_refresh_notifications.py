@@ -1975,20 +1975,39 @@ def send_nasdaq_warn_notifications() -> int:
 
 
 
-def earnings_candidates(tickers: set[str], stocks: dict[str, dict[str, Any]], valuations: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+def earnings_candidates(
+    tickers: set[str],
+    stocks: dict[str, dict[str, Any]],
+    valuations: dict[str, dict[str, Any]],
+    now: datetime | None = None,
+) -> list[dict[str, Any]]:
+    """Pick watchlist tickers whose earnings calendar date is tomorrow in KST.
+
+    Do not trust a cached ``(D-1)`` label alone: valuation refresh can preserve a
+    stale label into the earnings day itself (seen with ALAB/COHR), which would
+    otherwise re-send the same D-1 alert on consecutive KST days.
+    """
+
+    current = now or datetime.now().astimezone()
+    tomorrow = current.astimezone(KST).date() + timedelta(days=1)
     candidates: list[dict[str, Any]] = []
     for ticker in sorted(tickers):
         metric = valuations.get(ticker)
         if not metric:
             continue
         earnings_date = str(metric.get("earningsDate") or "").strip()
-        if "(D-1)" not in earnings_date:
+        date_text = earnings_date.split(" ", 1)[0]
+        try:
+            earnings_day = datetime.strptime(date_text, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if earnings_day != tomorrow:
             continue
         stock = stocks.get(ticker, {})
         candidates.append({
             "ticker": ticker,
             "name": stock.get("name") or ticker,
-            "date": earnings_date.split(" ", 1)[0],
+            "date": date_text,
             "industry": stock.get("industry") or metric.get("industry") or "-",
             "opinion": stock.get("opinion") or "관망",
             "price": stock.get("currentPrice") or "-",
@@ -2043,14 +2062,25 @@ def earnings_email_body(candidates: list[dict[str, Any]]) -> str:
     """
 
 
+def earnings_event_key(recipient: Recipient, ticker: str, earnings_date: str) -> str:
+    """Dedup one D-1 alert per owner/ticker/earnings calendar date."""
+
+    return f"{recipient.owner_id}:{ticker}:{earnings_date}"
+
+
 def earnings_send_key(recipient: Recipient, candidates: list[dict[str, Any]], now: datetime | None = None) -> str:
+    # Kept for older tests/callers; send path uses per-event keys instead.
     current = now or datetime.now().astimezone()
     kst_date = current.astimezone(KST).date().isoformat()
     tickers = ",".join(sorted(str(candidate["ticker"]) for candidate in candidates))
     return f"{recipient.owner_id}:{kst_date}:{tickers}"
 
 
-def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuation: Path = DEFAULT_VALUATION) -> int:
+def send_earnings_notifications(
+    current: Path = DEFAULT_CURRENT_STOCKS,
+    valuation: Path = DEFAULT_VALUATION,
+    now: datetime | None = None,
+) -> int:
     stocks = stock_rows_by_ticker(current)
     valuations = valuation_rows_by_ticker(valuation)
     watchlists = load_watchlists()
@@ -2070,17 +2100,25 @@ def send_earnings_notifications(current: Path = DEFAULT_CURRENT_STOCKS, valuatio
     skipped_duplicate = 0
     for recipient in recipients:
         tickers = watchlist_tickers_for_recipient(recipient, watchlists, admin_uses_operator=True)
-        candidates = earnings_candidates(tickers, stocks, valuations)
+        candidates = earnings_candidates(tickers, stocks, valuations, now=now)
+        pending = [
+            candidate
+            for candidate in candidates
+            if earnings_event_key(recipient, str(candidate["ticker"]), str(candidate["date"])) not in sent_keys
+            and earnings_event_key(recipient, str(candidate["ticker"]), str(candidate["date"])) not in newly_sent_keys
+        ]
         if not candidates:
             skipped_empty += 1
             continue
-        key = earnings_send_key(recipient, candidates)
-        if key in sent_keys:
+        if not pending:
             skipped_duplicate += 1
             continue
-        subject = "[실적발표 D-1] " + ", ".join(stock["ticker"] for stock in candidates[:8]) + " — 내일 발표"
-        send_notification(recipient, subject, append_notification_footer(earnings_email_body(candidates), recipient, "earningsDayBefore"))
-        newly_sent_keys.add(key)
+        subject = "[실적발표 D-1] " + ", ".join(stock["ticker"] for stock in pending[:8]) + " — 내일 발표"
+        send_notification(recipient, subject, append_notification_footer(earnings_email_body(pending), recipient, "earningsDayBefore"))
+        newly_sent_keys.update(
+            earnings_event_key(recipient, str(stock["ticker"]), str(stock["date"]))
+            for stock in pending
+        )
         sent += 1
     record_sent_keys("earnings", newly_sent_keys)
     print(

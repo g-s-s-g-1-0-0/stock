@@ -34,7 +34,17 @@ from .rules import (
     normalize_strategy_code,
     strategy_display_name,
 )
-from .sheet_sources import USER_AGENT, calc_rsi, calc_technical_row, fetch_ohlcv, fetch_text, fetch_us_extended_price, fetch_us_ohlcv, fetch_valuation
+from .sheet_sources import (
+    USER_AGENT,
+    calc_rsi,
+    calc_technical_row,
+    fetch_ohlcv,
+    fetch_text,
+    fetch_us_extended_price,
+    fetch_us_ohlcv,
+    fetch_valuation,
+    refresh_earnings_date_label,
+)
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 CACHE_DIR = ROOT_DIR / "data" / "cache"
@@ -1207,12 +1217,14 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
             metric = preserve_existing_values(metric, existing_rows.get(stock["ticker"], {}))
             metric["industry"] = stock_industry(stock, metric)
             metric["ruleOf40"] = rule_of_40(metric)
-            metric["earningsDate"] = metric.get("earningsDate") or "-"
+            metric["earningsDate"] = refresh_earnings_date_label(metric.get("earningsDate") or "-")
             rows[stock["ticker"]] = metric
             successful_rows += 1
         except Exception as exc:  # noqa: BLE001
             if stock["ticker"] in existing_rows:
-                rows[stock["ticker"]] = existing_rows[stock["ticker"]]
+                preserved = dict(existing_rows[stock["ticker"]])
+                preserved["earningsDate"] = refresh_earnings_date_label(preserved.get("earningsDate") or "-")
+                rows[stock["ticker"]] = preserved
             errors.append({"ticker": stock["ticker"], "error": str(exc)})
     return {
         "meta": {

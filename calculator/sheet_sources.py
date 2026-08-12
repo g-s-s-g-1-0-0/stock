@@ -484,6 +484,27 @@ def format_d_day(target: datetime, today: datetime) -> str:
     return f"D{'+' if diff_days < 0 else '-'}{abs(diff_days)}"
 
 
+def refresh_earnings_date_label(value: str, today: datetime | None = None) -> str:
+    """Recompute D-day from a cached YYYY-MM-DD earnings date string.
+
+    Fetch failures can preserve a stale label like ``2026-08-13 (D-1)`` into the
+    next KST day. Refreshing from the calendar date keeps UI and D-1 alerts honest.
+    """
+
+    text = str(value or "").strip()
+    if not text or text == "-":
+        return text or "-"
+    match = re.match(r"^(\d{4}-\d{2}-\d{2})(?:\s+\(.*\))?$", text)
+    if not match:
+        return text
+    try:
+        parsed = datetime.strptime(match.group(1), "%Y-%m-%d")
+    except ValueError:
+        return text
+    current = today or kst_now()
+    return f"{parsed:%Y-%m-%d} ({format_d_day(parsed, current)})"
+
+
 def kst_now() -> datetime:
     return datetime.now(KST)
 

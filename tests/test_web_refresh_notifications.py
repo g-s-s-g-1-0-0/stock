@@ -442,6 +442,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         original_load_watchlists = self.notifications.load_watchlists
         original_send_notification = self.notifications.send_notification
         original_state_path = self.notifications.NOTIFICATION_STATE
+        now = datetime(2026, 7, 28, 0, 5, tzinfo=ZoneInfo("Asia/Seoul"))
 
         try:
             with TemporaryDirectory() as temp_dir:
@@ -469,8 +470,8 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                     lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
                 )
 
-                first_sent = self.notifications.send_earnings_notifications(current, valuation)
-                second_sent = self.notifications.send_earnings_notifications(current, valuation)
+                first_sent = self.notifications.send_earnings_notifications(current, valuation, now=now)
+                second_sent = self.notifications.send_earnings_notifications(current, valuation, now=now)
         finally:
             self.notifications.load_recipients = original_load_recipients
             self.notifications.load_watchlists = original_load_watchlists
@@ -482,12 +483,106 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual(1, len(sent_messages))
         self.assertIn("[실적발표 D-1] BE", sent_messages[0][1])
 
+    def test_earnings_notifications_skip_stale_d1_label_after_earnings_day(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        original_load_recipients = self.notifications.load_recipients
+        original_load_watchlists = self.notifications.load_watchlists
+        original_send_notification = self.notifications.send_notification
+        original_state_path = self.notifications.NOTIFICATION_STATE
+        # Same stale cache COHR/ALAB hit: still labeled D-1 on the earnings KST day.
+        now = datetime(2026, 8, 13, 0, 5, tzinfo=ZoneInfo("Asia/Seoul"))
+
+        try:
+            with TemporaryDirectory() as temp_dir:
+                current = Path(temp_dir) / "stocks.json"
+                valuation = Path(temp_dir) / "valuation.json"
+                current.write_text(
+                    json.dumps({"rows": [{"ticker": "COHR", "name": "Coherent", "opinion": "관망"}]}),
+                    encoding="utf-8",
+                )
+                valuation.write_text(
+                    json.dumps({"rows": {"COHR": {"earningsDate": "2026-08-13 (D-1)"}}}),
+                    encoding="utf-8",
+                )
+                self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
+                self.notifications.load_recipients = lambda: [
+                    self.notifications.Recipient(
+                        owner_id="admin-1",
+                        email="admin@example.com",
+                        is_admin=True,
+                        preferences={"earningsDayBefore": True},
+                    ),
+                ]
+                self.notifications.load_watchlists = lambda: {"": {"COHR"}}
+                self.notifications.send_notification = (
+                    lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
+                )
+
+                sent = self.notifications.send_earnings_notifications(current, valuation, now=now)
+        finally:
+            self.notifications.load_recipients = original_load_recipients
+            self.notifications.load_watchlists = original_load_watchlists
+            self.notifications.send_notification = original_send_notification
+            self.notifications.NOTIFICATION_STATE = original_state_path
+
+        self.assertEqual(0, sent)
+        self.assertEqual([], sent_messages)
+
+    def test_earnings_notifications_skip_same_event_on_next_kst_day(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        original_load_recipients = self.notifications.load_recipients
+        original_load_watchlists = self.notifications.load_watchlists
+        original_send_notification = self.notifications.send_notification
+        original_state_path = self.notifications.NOTIFICATION_STATE
+        day_before = datetime(2026, 8, 4, 0, 5, tzinfo=ZoneInfo("Asia/Seoul"))
+        earnings_day = datetime(2026, 8, 5, 0, 5, tzinfo=ZoneInfo("Asia/Seoul"))
+
+        try:
+            with TemporaryDirectory() as temp_dir:
+                current = Path(temp_dir) / "stocks.json"
+                valuation = Path(temp_dir) / "valuation.json"
+                current.write_text(
+                    json.dumps({"rows": [{"ticker": "ALAB", "name": "Astera Labs", "opinion": "관망"}]}),
+                    encoding="utf-8",
+                )
+                valuation.write_text(
+                    json.dumps({"rows": {"ALAB": {"earningsDate": "2026-08-05 (D-1)"}}}),
+                    encoding="utf-8",
+                )
+                self.notifications.NOTIFICATION_STATE = Path(temp_dir) / "state.json"
+                self.notifications.load_recipients = lambda: [
+                    self.notifications.Recipient(
+                        owner_id="admin-1",
+                        email="admin@example.com",
+                        is_admin=True,
+                        preferences={"earningsDayBefore": True},
+                    ),
+                ]
+                self.notifications.load_watchlists = lambda: {"": {"ALAB"}}
+                self.notifications.send_notification = (
+                    lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
+                )
+
+                first_sent = self.notifications.send_earnings_notifications(current, valuation, now=day_before)
+                # Stale cache still says D-1 on earnings day; calendar check + event dedup both block.
+                second_sent = self.notifications.send_earnings_notifications(current, valuation, now=earnings_day)
+        finally:
+            self.notifications.load_recipients = original_load_recipients
+            self.notifications.load_watchlists = original_load_watchlists
+            self.notifications.send_notification = original_send_notification
+            self.notifications.NOTIFICATION_STATE = original_state_path
+
+        self.assertEqual(1, first_sent)
+        self.assertEqual(0, second_sent)
+        self.assertEqual(1, len(sent_messages))
+
     def test_earnings_notifications_resend_when_candidates_change(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
         original_load_recipients = self.notifications.load_recipients
         original_load_watchlists = self.notifications.load_watchlists
         original_send_notification = self.notifications.send_notification
         original_state_path = self.notifications.NOTIFICATION_STATE
+        now = datetime(2026, 7, 28, 0, 5, tzinfo=ZoneInfo("Asia/Seoul"))
 
         try:
             with TemporaryDirectory() as temp_dir:
@@ -520,7 +615,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                     lambda recipient, subject, body: sent_messages.append((recipient.email, subject, body)) or "email"
                 )
 
-                first_sent = self.notifications.send_earnings_notifications(current, valuation)
+                first_sent = self.notifications.send_earnings_notifications(current, valuation, now=now)
                 valuation.write_text(
                     json.dumps({
                         "rows": {
@@ -530,7 +625,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
                     }),
                     encoding="utf-8",
                 )
-                second_sent = self.notifications.send_earnings_notifications(current, valuation)
+                second_sent = self.notifications.send_earnings_notifications(current, valuation, now=now)
         finally:
             self.notifications.load_recipients = original_load_recipients
             self.notifications.load_watchlists = original_load_watchlists
@@ -539,7 +634,9 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
         self.assertEqual(1, first_sent)
         self.assertEqual(1, second_sent)
-        self.assertIn("[실적발표 D-1] BE, STX", sent_messages[1][1])
+        self.assertIn("[실적발표 D-1] BE", sent_messages[0][1])
+        self.assertIn("[실적발표 D-1] STX", sent_messages[1][1])
+        self.assertNotIn("BE", sent_messages[1][1])
 
     def test_weekly_reports_skip_outside_monday_midnight_window(self) -> None:
         kst = ZoneInfo("Asia/Seoul")
