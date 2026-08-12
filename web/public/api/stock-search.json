@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-08-12T15:01:08+00:00",
-    "lastSuccessfulRun": "2026-08-12T15:01:08+00:00",
+    "updatedAt": "2026-08-12T15:24:42+00:00",
+    "lastSuccessfulRun": "2026-08-12T15:24:42+00:00",
     "failedReason": null
   },
   "rows": [
@@ -37342,8 +37342,8 @@
       "ticker": "CRWV",
       "name": "CoreWeave Class A",
       "market": "US",
-      "category": "혼합주",
-      "industry": "-"
+      "category": "성장주",
+      "industry": "소프트웨어·클라우드, 보안, AI 플랫폼"
     },
     {
       "ticker": "CRWX",
