@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-08-13T13:50:59+00:00",
-    "lastSuccessfulRun": "2026-08-13T13:50:59+00:00",
+    "updatedAt": "2026-08-13T14:56:07+00:00",
+    "lastSuccessfulRun": "2026-08-13T14:56:07+00:00",
     "failedReason": null
   },
   "rows": [
@@ -395,10 +395,10 @@
       "ticker": "NBIS",
       "name": "Nebius Group Class A",
       "market": "US",
-      "fairPrice": "$150.00 ~ $210.00",
-      "fairPriceReason": null,
+      "fairPrice": "적자 상태라 판단 불가",
+      "fairPriceReason": "loss_making",
       "currentPrice": "$271.17",
-      "valuation": "고평가",
+      "valuation": "판단 불가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
@@ -491,7 +491,7 @@
       "ticker": "COHR",
       "name": "Coherent",
       "market": "US",
-      "fairPrice": "$41.80 ~ $62.70",
+      "fairPrice": "$123.30 ~ $164.40",
       "fairPriceReason": null,
       "currentPrice": "$350.75",
       "valuation": "고평가",
