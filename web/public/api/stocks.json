@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-08-15T14:54:03+00:00",
-    "lastSuccessfulRun": "2026-08-15T14:54:03+00:00",
+    "updatedAt": "2026-08-15T14:56:07+00:00",
+    "lastSuccessfulRun": "2026-08-15T14:56:07+00:00",
     "failedReason": null
   },
   "rows": [
@@ -613,7 +613,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체 장비, 식각·증착",
-      "updatedAt": "2026-08-15T14:54:03+00:00"
+      "updatedAt": "2026-08-15T14:56:07+00:00"
     },
     {
       "ticker": "AMAT",
@@ -629,7 +629,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "2차전지, 전기차 배터리, 배터리 소재",
-      "updatedAt": "2026-08-15T14:54:03+00:00"
+      "updatedAt": "2026-08-15T14:56:07+00:00"
     },
     {
       "ticker": "KLAC",
@@ -645,7 +645,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "산업재, 장비·제조, 자동화",
-      "updatedAt": "2026-08-15T14:54:03+00:00"
+      "updatedAt": "2026-08-15T14:56:07+00:00"
     },
     {
       "ticker": "TER",
@@ -661,7 +661,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체 테스트 장비, 자동화 테스트, 협동로봇",
-      "updatedAt": "2026-08-15T14:54:03+00:00"
+      "updatedAt": "2026-08-15T14:56:07+00:00"
     },
     {
       "ticker": "AAPL",
