@@ -5,7 +5,7 @@
     "updatedAt": "2026-08-14T15:00:00+00:00",
     "lastSuccessfulRun": "2026-08-14T15:00:00+00:00",
     "failedReason": null,
-    "successfulRows": 41
+    "successfulRows": 43
   },
   "rows": {
     "000150": {
@@ -943,6 +943,54 @@
       "earningsDate": "2026-08-14 (D+1)",
       "industry": "2차전지, 전기차 배터리, 배터리 소재",
       "ruleOf40": "38.86%"
+    },
+    "KLAC": {
+      "marketCap": "266.17B",
+      "sales": "13.57B",
+      "salesQoq": "15.18%",
+      "salesYoyTtm": "11.72%",
+      "salesPastYears": "9.06% 14.43%",
+      "currentRatio": "2.82",
+      "debtToEquity": "0.97",
+      "priceToFreeCashFlow": "70.66",
+      "priceToSales": "19.61",
+      "per": "55.54",
+      "pbr": "41.93",
+      "roe": "87.50%",
+      "peg": "1.15",
+      "sharesOutstanding": "1.31B",
+      "grossMargin": "60.13%",
+      "operatingMargin": "41.68%",
+      "epsTtm": "3.67",
+      "epsNextYear": "6.66",
+      "epsQoq": "14.39%",
+      "earningsDate": "2026-07-29 (D+17)",
+      "industry": "산업재, 장비·제조, 자동화",
+      "ruleOf40": "53.40%"
+    },
+    "TER": {
+      "marketCap": "65.47B",
+      "sales": "4.46B",
+      "salesQoq": "103.99%",
+      "salesYoyTtm": "57.91%",
+      "salesPastYears": "0.36% 0.43%",
+      "currentRatio": "2.12",
+      "debtToEquity": "0.03",
+      "priceToFreeCashFlow": "81.85",
+      "priceToSales": "14.67",
+      "per": "57.46",
+      "pbr": "19.05",
+      "roe": "36.66%",
+      "peg": "0.62",
+      "sharesOutstanding": "156.38M",
+      "grossMargin": "59.06%",
+      "operatingMargin": "30.88%",
+      "epsTtm": "7.29",
+      "epsNextYear": "11.75",
+      "epsQoq": "385.31%",
+      "earningsDate": "2026-07-29 (D+17)",
+      "industry": "반도체 테스트 장비, 자동화 테스트, 협동로봇",
+      "ruleOf40": "88.79%"
     },
     "AAPL": {
       "marketCap": "4464.80B",

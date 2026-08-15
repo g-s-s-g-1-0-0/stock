@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-08-15T14:52:41+00:00",
-    "lastSuccessfulRun": "2026-08-15T14:52:41+00:00",
+    "updatedAt": "2026-08-15T14:54:04+00:00",
+    "lastSuccessfulRun": "2026-08-15T14:54:04+00:00",
     "failedReason": null
   },
   "rows": [
@@ -63789,7 +63789,7 @@
       "name": "KLA",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "산업재, 장비·제조, 자동화"
     },
     {
       "ticker": "KLAG",

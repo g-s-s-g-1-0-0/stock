@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15320,
-    "industryEnrichedAt": "2026-08-15T14:52:01+00:00",
+    "industryEnrichedAt": "2026-08-15T14:53:28+00:00",
     "industryEnrichedTickers": 2
   },
   "rows": [
@@ -136686,8 +136686,8 @@
       "opinion": "관망",
       "strategies": [],
       "category": "혼합주",
-      "industry": "-",
-      "rawIndustry": "-",
+      "industry": "산업재, 장비·제조, 자동화",
+      "rawIndustry": "Technology | Semiconductor Equipment &amp; Materials",
       "products": "-",
       "updatedAt": "2026-08-09T15:20:59+00:00"
     },
@@ -204067,7 +204067,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체 테스트 장비, 자동화 테스트, 협동로봇",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Semiconductor Equipment &amp; Materials",
       "products": "-",
       "updatedAt": "2026-08-09T15:20:59+00:00"
     },
