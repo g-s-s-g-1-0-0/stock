@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15320,
-    "industryEnrichedAt": "2026-08-12T16:55:31+00:00",
-    "industryEnrichedTickers": 1
+    "industryEnrichedAt": "2026-08-15T14:52:01+00:00",
+    "industryEnrichedTickers": 2
   },
   "rows": [
     {
@@ -48636,8 +48636,8 @@
       "opinion": "관망",
       "strategies": [],
       "category": "성장주",
-      "industry": "원자재, 광산·금속 소재, 배터리 공급망",
-      "rawIndustry": "-",
+      "industry": "2차전지, 전기차 배터리, 배터리 소재",
+      "rawIndustry": "Technology | Semiconductor Equipment &amp; Materials",
       "products": "-",
       "updatedAt": "2026-08-09T15:20:59+00:00"
     },
@@ -143152,7 +143152,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체 장비, 식각·증착",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Semiconductor Equipment &amp; Materials",
       "products": "-",
       "updatedAt": "2026-08-09T15:20:59+00:00"
     },
