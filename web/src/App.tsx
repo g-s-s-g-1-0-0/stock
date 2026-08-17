@@ -2706,9 +2706,9 @@ function StrategyCriteriaSentence({ investmentType }: { investmentType: Investme
 
   return (
     <p className="log-criteria-line">
-      진입/청산 기준 등 전략에 대한 자세한 설명은{' '}
+      진입·청산 기준은{' '}
       <button className="inline-link-button" type="button" onClick={() => setOpen(true)}>여기</button>
-      에서 확인할 수 있습니다.
+      에서 확인
       {open
         ? createPortal(
             <StrategyCriteriaModal investmentType={investmentType} onClose={close} />,
