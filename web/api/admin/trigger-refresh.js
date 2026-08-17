@@ -116,7 +116,7 @@ async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = ''
     throw dispatchError('GITHUB_ACTIONS_TOKEN is missing.')
   }
 
-  const response = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/${workflowId}/dispatches`, {
+  const request = () => fetch(`https://api.github.com/repos/${repo}/actions/workflows/${workflowId}/dispatches`, {
     method: 'POST',
     headers: {
       accept: 'application/vnd.github+json',
@@ -136,10 +136,20 @@ async function triggerWorkflow(scope, sendNotifications, scheduledPublishAt = ''
     }),
   })
 
+  // A dropped dispatch skips a whole two-hour refresh slot, so retry the
+  // failures that are worth retrying: GitHub 5xx and rate limiting. An expired
+  // token (401/403) or a rejected payload (422) will not fix itself, so those
+  // fail immediately with the status in the message.
+  let response = await request()
+  for (let attempt = 0; attempt < 2 && (response.status >= 500 || response.status === 429); attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 1_500 * (attempt + 1)))
+    response = await request()
+  }
+
   if (!response.ok) {
-    const detail = await response.text().catch(() => '')
+    const detail = (await response.text().catch(() => '')).slice(0, 500)
     throw dispatchError(
-      detail || `GitHub workflow dispatch failed with ${response.status}.`,
+      `GitHub workflow dispatch failed with ${response.status}${detail ? `: ${detail}` : '.'}`,
       502
     )
   }
