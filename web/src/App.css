@@ -1166,11 +1166,6 @@
   text-align: center;
 }
 
-.strategy-criteria-modal-table > tbody > tr:nth-child(even) > th,
-.strategy-criteria-modal-table > tbody > tr:nth-child(even) > td {
-  background: rgba(248, 250, 252, 0.72);
-}
-
 .strategy-criteria-modal-table > tbody > tr:last-child > th,
 .strategy-criteria-modal-table > tbody > tr:last-child > td {
   border-bottom: 0;
