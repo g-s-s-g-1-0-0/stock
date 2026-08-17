@@ -2699,6 +2699,26 @@ function StrategyCriteriaLauncher({ investmentType }: { investmentType: Investme
   )
 }
 
+/** Same modal as the 전략 label, opened from the sentence under the log header. */
+function StrategyCriteriaSentence({ investmentType }: { investmentType: InvestmentType }) {
+  const [open, setOpen] = useState(false)
+  const close = useCallback(() => setOpen(false), [])
+
+  return (
+    <p className="log-criteria-line">
+      진입/청산 기준 등 전략에 대한 자세한 설명은{' '}
+      <button className="inline-link-button" type="button" onClick={() => setOpen(true)}>여기</button>
+      에서 확인할 수 있습니다.
+      {open
+        ? createPortal(
+            <StrategyCriteriaModal investmentType={investmentType} onClose={close} />,
+            document.body,
+          )
+        : null}
+    </p>
+  )
+}
+
 function marketFlag(market: Market) {
   return market === 'KR' ? '🇰🇷' : '🇺🇸'
 }
@@ -7100,9 +7120,7 @@ function App() {
     ...activeStrategyFilters
       .map((code) => formatWinRate(code, scopedTrades.filter((trade) => strategyCode(trade.strategy) === code))),
   ].join(', ')
-  const strategyCriteriaLine = isLongTermInvestor
-    ? '가치투자형은 청산된 거래가 슬롯을 비우고, 현재 보유 중인 거래만 투자금 슬롯을 차지합니다.'
-    : '청산 기준: 전략 1&2 회복장 종료 전량매도(+성공/−실패)·하드손절 -30% · 전략 3 +12/−12/20일/횡보장 고점'
+  const longTermCriteriaLine = '가치투자형은 청산된 거래가 슬롯을 비우고, 현재 보유 중인 거래만 투자금 슬롯을 차지합니다.'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
   const portfolioSummary = buildPortfolioSummary(
     visibleProfileTrades,
@@ -9119,7 +9137,9 @@ function App() {
               <div className="log-meta">
                 <p>총 투자 기간 {investingDays}일</p>
                 {!isLongTermInvestor && <p>승률: {visibleWinRates}</p>}
-                <p className="log-criteria-line">{strategyCriteriaLine}</p>
+                {isLongTermInvestor
+                  ? <p className="log-criteria-line">{longTermCriteriaLine}</p>
+                  : <StrategyCriteriaSentence investmentType={displayedInvestmentType} />}
               </div>
               <button
                 className="sort-button"
