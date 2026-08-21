@@ -14,6 +14,7 @@ import json
 import os
 import re
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections import Counter
 from datetime import date, datetime, time, timedelta, timezone
@@ -96,6 +97,10 @@ BLS_RELEASE_SCHEDULE_URLS = {
     "CPI 발표": "https://www.bls.gov/schedule/news_release/cpi.htm",
     "PPI 발표": "https://www.bls.gov/schedule/news_release/ppi.htm",
 }
+# BLS HTML is often blocked by Akamai (HTTP 403) for automated clients.
+# Internet Archive keeps recent official copies we can verify against.
+WAYBACK_AVAILABLE_API = "https://archive.org/wayback/available"
+WAYBACK_CDX_API = "https://web.archive.org/cdx/search/cdx"
 BEA_RELEASE_SCHEDULE_URL = "https://www.bea.gov/news/schedule"
 US_MONTHS = {
     "jan": 1,
@@ -2015,18 +2020,67 @@ def add_unique_market_event_source(
     title: str,
     month: int,
     value: dict[str, str] | None,
+    *,
+    prefer_later: bool = False,
 ) -> None:
     if month < 1 or month > 12 or value is None:
         issues.append(f"{title} 공식 일정의 날짜/시간을 해석하지 못했습니다.")
         return
     previous = target.get(month)
     if previous and previous != value:
+        if prefer_later:
+            previous_date = parse_market_event_date(previous.get("date"))
+            next_date = parse_market_event_date(value.get("date"))
+            if previous_date and next_date and next_date >= previous_date:
+                target[month] = value
+            return
         issues.append(
             f"{title} {month}월 공식 일정이 복수 값으로 충돌합니다: "
             f"{previous['date']} {previous['time']} / {value['date']} {value['time']}"
         )
         return
     target[month] = value
+
+
+def wayback_snapshot_url(url: str) -> str | None:
+    """Resolve a recent archived copy of an official page blocked for live bots."""
+
+    encoded = urllib.parse.quote(url, safe="")
+    try:
+        available = json.loads(fetch_text(f"{WAYBACK_AVAILABLE_API}?url={encoded}", timeout=30))
+        closest = (available.get("archived_snapshots") or {}).get("closest") or {}
+        if closest.get("available") and closest.get("url"):
+            return str(closest["url"])
+    except Exception:
+        pass
+
+    cdx = (
+        f"{WAYBACK_CDX_API}?url={encoded}&output=json&filter=statuscode:200"
+        f"&fl=timestamp,original&from=202601"
+    )
+    try:
+        rows = json.loads(fetch_text(cdx, timeout=40))
+    except Exception:
+        return None
+    if not isinstance(rows, list) or len(rows) < 2:
+        return None
+    timestamp, original = rows[-1][0], rows[-1][1]
+    return f"https://web.archive.org/web/{timestamp}/{original}"
+
+
+def fetch_bls_schedule_html(url: str) -> tuple[str, str]:
+    """Return (html, source_label). Prefer live BLS, then Wayback archive."""
+
+    try:
+        return fetch_text(url, timeout=20), "bls-live"
+    except Exception as live_exc:  # noqa: BLE001
+        snapshot = wayback_snapshot_url(url)
+        if not snapshot:
+            raise RuntimeError(f"live={live_exc}; wayback snapshot unavailable") from live_exc
+        try:
+            return fetch_text(snapshot, timeout=45), f"wayback:{snapshot}"
+        except Exception as archive_exc:  # noqa: BLE001
+            raise RuntimeError(f"live={live_exc}; wayback={archive_exc}") from archive_exc
 
 
 def fetch_fomc_market_events(year: int, issues: list[str]) -> dict[int, dict[str, str]]:
@@ -2077,7 +2131,8 @@ def fetch_fomc_market_events(year: int, issues: list[str]) -> dict[int, dict[str
 def fetch_bls_market_events(title: str, url: str, year: int, issues: list[str]) -> dict[int, dict[str, str]]:
     result: dict[int, dict[str, str]] = {}
     try:
-        rows = html_table_rows(fetch_text(url))
+        html_text, source_label = fetch_bls_schedule_html(url)
+        rows = html_table_rows(html_text)
     except Exception as exc:  # noqa: BLE001 - ambiguous by design when the official page cannot be read
         issues.append(f"BLS {title} 공식 일정 조회 실패: {exc}")
         return result
@@ -2089,10 +2144,20 @@ def fetch_bls_market_events(title: str, url: str, year: int, issues: list[str]) 
         if release_date is None or release_date.year != year:
             continue
         value = market_event_source_value(release_date, row[2])
-        add_unique_market_event_source(result, issues, title, release_date.month, value)
+        # PPI can publish two releases in one calendar month; keep the later official date.
+        add_unique_market_event_source(
+            result,
+            issues,
+            title,
+            release_date.month,
+            value,
+            prefer_later=True,
+        )
 
     if not result:
-        issues.append(f"BLS {title} {year}년 공식 일정에서 검증 가능한 발표일을 찾지 못했습니다.")
+        issues.append(
+            f"BLS {title} {year}년 공식 일정에서 검증 가능한 발표일을 찾지 못했습니다. (source={source_label})"
+        )
     return result
 
 
@@ -2225,6 +2290,7 @@ def build_market_events_cache() -> dict[str, Any]:
                 "sources": {
                     "fomc": FED_FOMC_SCHEDULE_URL,
                     "bls": list(BLS_RELEASE_SCHEDULE_URLS.values()),
+                    "blsFallback": "internet-archive-wayback",
                     "beaPce": BEA_RELEASE_SCHEDULE_URL,
                 },
             },

@@ -23,7 +23,7 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 KST = ZoneInfo("Asia/Seoul")
 
 
-def fetch_text(url: str, *, encoding: str = "utf-8") -> str:
+def fetch_text(url: str, *, encoding: str = "utf-8", timeout: float = 20) -> str:
     request = urllib.request.Request(
         url,
         headers={
@@ -33,7 +33,7 @@ def fetch_text(url: str, *, encoding: str = "utf-8") -> str:
             "Cache-Control": "no-cache",
         },
     )
-    with urllib.request.urlopen(request, timeout=20) as response:
+    with urllib.request.urlopen(request, timeout=timeout) as response:
         return response.read().decode(encoding, errors="ignore")
 
 

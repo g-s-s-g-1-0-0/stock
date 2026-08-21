@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import unittest
+import urllib.error
 from datetime import date, datetime
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
@@ -76,6 +78,66 @@ class MarketEventsTest(unittest.TestCase):
         self.assertEqual(result[1], {"date": "2026. 1. 29", "time": "4:00"})
         self.assertEqual(result[3], {"date": "2026. 3. 19", "time": "3:00"})
         self.assertEqual(issues, [])
+
+    def test_bls_schedule_falls_back_to_wayback_when_live_forbidden(self) -> None:
+        html = """
+        <table>
+          <tr><th>Reference Month</th><th>Release Date</th><th>Release Time</th></tr>
+          <tr><td>July 2026</td><td>Aug. 07, 2026</td><td>08:30 AM</td></tr>
+          <tr><td>August 2026</td><td>Sep. 04, 2026</td><td>08:30 AM</td></tr>
+        </table>
+        """
+        issues: list[str] = []
+
+        def fake_fetch(url: str, *args: object, **kwargs: object) -> str:
+            if "bls.gov/schedule" in url and "web.archive.org" not in url:
+                raise urllib.error.HTTPError(url, 403, "Forbidden", hdrs=None, fp=None)  # type: ignore[arg-type]
+            if "archive.org/wayback/available" in url:
+                return json.dumps({
+                    "archived_snapshots": {
+                        "closest": {
+                            "available": True,
+                            "url": "https://web.archive.org/web/20260819054954/https://www.bls.gov/schedule/news_release/empsit.htm",
+                        }
+                    }
+                })
+            if "web.archive.org/web/" in url:
+                return html
+            raise AssertionError(url)
+
+        with patch("calculator.pipeline.fetch_text", side_effect=fake_fetch):
+            result = pipeline.fetch_bls_market_events(
+                "고용보고서 발표",
+                "https://www.bls.gov/schedule/news_release/empsit.htm",
+                2026,
+                issues,
+            )
+
+        self.assertEqual(issues, [])
+        self.assertIn(8, result)
+        self.assertIn(9, result)
+        self.assertEqual(result[8]["date"], "2026. 8. 7")
+        self.assertEqual(result[9]["date"], "2026. 9. 4")
+
+    def test_bls_prefers_later_release_when_month_has_two_official_dates(self) -> None:
+        html = """
+        <table>
+          <tr><th>Reference Month</th><th>Release Date</th><th>Release Time</th></tr>
+          <tr><td>November 2025</td><td>Jan. 14, 2026</td><td>08:30 AM</td></tr>
+          <tr><td>December 2025</td><td>Jan. 30, 2026</td><td>08:30 AM</td></tr>
+        </table>
+        """
+        issues: list[str] = []
+        with patch("calculator.pipeline.fetch_bls_schedule_html", return_value=(html, "test")):
+            result = pipeline.fetch_bls_market_events(
+                "PPI 발표",
+                "https://www.bls.gov/schedule/news_release/ppi.htm",
+                2026,
+                issues,
+            )
+
+        self.assertEqual(issues, [])
+        self.assertEqual(result[1]["date"], "2026. 1. 30")
 
     def test_current_market_event_label_is_active_before_release_time(self) -> None:
         payload = {
