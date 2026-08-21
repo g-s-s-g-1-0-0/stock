@@ -930,6 +930,7 @@ STRATEGY_LABELS = {
     "1": "1. 시장 공포 저점 진입",
     "2": "2. 상승 추세 이평선 눌림목",
     "3": "3. 정상장 볼린저 워시아웃",
+    "4": "4. MA200 아래 MACD 골든",
 }
 
 
@@ -1044,6 +1045,9 @@ def buy_reason_detail(code: str, stock: dict[str, Any], technical_row: dict[str,
         return f"현재가 {price} / MA20 {ma20} / MA60 {ma60} / MA200 {ma200} | RSI {rsi}"
     if code == "3":
         return f"현재가 {price} / MA200 {ma200} | RSI {rsi} | 저가%B {pct_b_low} (스윙 전용)"
+    if code == "4":
+        macd = tech_text(technical_row, "MACD Hist (D)", "MACD Hist", "macdHist")
+        return f"현재가 {price} / MA200 {ma200} | MACD Hist {macd} (스윙 전용)"
     return f"현재가 {price} / MA200 {ma200}"
 
 
@@ -1154,6 +1158,11 @@ def watch_release_detail(strategy: str, current_stock: dict[str, Any], technical
         if ma200_num is not None and price_num is not None and price_num <= ma200_num:
             return f"MA200 아래로 이탈 (현재가 {c['price']} / MA200 {c['ma200']})"
         return f"전략 3 조건 이탈 (현재가 {c['price']} / MA200 {c['ma200']} / RSI {c['rsi']} / 저가%B {c['pct_b_low']})"
+
+    if code == "4":
+        if ma200_num is not None and price_num is not None and price_num >= ma200_num:
+            return f"주가가 200일선 위로 회복 (현재가 {c['price']} / MA200 {c['ma200']})"
+        return f"전략 4 조건 이탈 (현재가 {c['price']} / MA200 {c['ma200']} / MACD Hist {c['macd']})"
 
     return f"매수 조건 이탈 (현재가 {c['price']} / MA200 {c['ma200']})"
 
@@ -2285,7 +2294,7 @@ def send_opinion_notifications(
         if recipient.investment_type == "long_term":
             # 가치투자(long_term)는 청산 조건 자체를 인식하지 않으므로 의견이 '매도'로 가는 일이 없다.
             # 따라서 매수 신호와 매수→관망(매수 의견 해제)만 알리고, 매도 전환·청산은 제외한다.
-            # 전략 3은 스윙 전용이므로 가치투자 알림에서도 제외한다.
+            # 전략 3·4는 스윙 전용이므로 가치투자 알림에서도 제외한다.
             my_changes = []
             for change in my_opinion_changes:
                 if not (
@@ -2295,9 +2304,12 @@ def send_opinion_notifications(
                     continue
                 codes = [strategy_code(value) for value in strategy_values(change.get("strategies"))]
                 codes = [code for code in codes if code]
-                if change.get("to") == "매수" and codes and set(codes) <= {"3"}:
+                if change.get("to") == "매수" and codes and set(codes) <= {"3", "4"}:
                     continue
-                if change.get("to") == "관망" and STRATEGY_LABELS["3"] in str(change.get("reason") or ""):
+                reason_text = str(change.get("reason") or "")
+                if change.get("to") == "관망" and (
+                    STRATEGY_LABELS["3"] in reason_text or STRATEGY_LABELS["4"] in reason_text
+                ):
                     continue
                 my_changes.append(change)
             if not my_changes:

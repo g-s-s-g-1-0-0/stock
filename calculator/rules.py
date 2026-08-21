@@ -1,8 +1,9 @@
-"""Conservative Strategy 1/2/3 rules for the web service.
+"""Conservative Strategy 1/2/3/4 rules for the web service.
 
 Strategy 1: panic bottom (former B entry).
 Strategy 2: MA pullback buys while the season is open and the market is in recovery.
 Strategy 3: normal-market BB washout (swing only) — Close>MA200, pctBLow≤10, RSI≤45.
+Strategy 4: MA200-below MACD golden (swing only) — QQQ 하락/정상장, stock MA200 dist ≥ -25%.
 """
 
 from __future__ import annotations
@@ -23,13 +24,16 @@ STRATEGY_RULES: dict[str, float | int] = {
     "CIRCUIT_PCT_1": 0.30,
     "CIRCUIT_PCT_2": 0.30,
     "CIRCUIT_PCT_3": 0.12,
-    # Success/fail is judged at recovery-end exit; no profit target for 1/2.
+    "CIRCUIT_PCT_4": 0.30,
+    # Success/fail is judged at recovery-end exit; no profit target for 1/2/4.
     "TARGET_PCT_1": 0.0,
     "TARGET_PCT_2": 0.0,
     "TARGET_PCT_3": 0.12,
+    "TARGET_PCT_4": 0.0,
     "MAX_HOLD_DAYS_3": 20,
     "S3_PCT_B_LOW_MAX": 10,
     "S3_RSI_MAX": 45,
+    "S4_STOCK_MA200_DIST_MIN": -25.0,
     "MA_TOUCH_RATIO": 1.003,
     "MA_RECLAIM_RATIO": 0.995,
     "RECOVERY_EXIT_CONFIRM_DAYS": 2,
@@ -44,6 +48,7 @@ STRATEGY_LABELS = {
     "1": "시장 공포 저점 진입",
     "2": "상승 추세 이평선 눌림목",
     "3": "정상장 볼린저 워시아웃",
+    "4": "MA200 아래 MACD 골든",
 }
 
 # Legacy A–H codes map to nothing active; B maps to 1 for migration.
@@ -51,8 +56,8 @@ LEGACY_STRATEGY_MAP = {
     "B": "1",
 }
 
-ACTIVE_STRATEGY_CODES = ("1", "2", "3")
-# Strategy 3 uses its own 횡보장 고점 regime exit, not S1/S2 peakTriggered.
+ACTIVE_STRATEGY_CODES = ("1", "2", "3", "4")
+# Strategy 3 uses its own 횡보장 고점 regime exit, not S1/S2/S4 peakTriggered.
 NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES: set[str] = {"3"}
 
 
@@ -176,7 +181,7 @@ def evaluate_buy_condition(
     season_open: bool = False,
     warn_triggered: bool = False,
 ) -> dict[str, Any]:
-    """Evaluate Strategy 1/2/3 entry and hold conditions.
+    """Evaluate Strategy 1/2/3/4 entry and hold conditions.
 
     recovery_momentum_exception, ixic_filter_active, and warn_triggered are unused by
     active entry rules but kept so existing call sites do not break. Warn-line gating was
@@ -223,7 +228,31 @@ def evaluate_buy_condition(
     s3_cond4 = ind.rsi is not None and ind.rsi <= float(s["S3_RSI_MAX"])
     entry_3 = s3_cond1 and s3_cond2 and s3_cond3 and s3_cond4 and not entry_1 and not entry_2
 
-    entry_strategy = "1" if entry_1 else "2" if entry_2 else "3" if entry_3 else None
+    stock_ma200_dist = None
+    if ind.ma200 is not None and ind.ma200 > 0 and ind.current_price is not None:
+        stock_ma200_dist = (ind.current_price / ind.ma200 - 1) * 100
+    s4_cond1 = _lt(ind.current_price, ind.ma200)
+    s4_cond2 = (
+        ind.macd_hist_d1 is not None
+        and ind.macd_hist is not None
+        and ind.macd_hist_d1 <= 0
+        and ind.macd_hist > 0
+    )
+    s4_cond3 = regime in {"하락장", "정상장"}
+    s4_cond4 = stock_ma200_dist is not None and stock_ma200_dist >= float(s["S4_STOCK_MA200_DIST_MIN"])
+    entry_4 = (
+        s4_cond1
+        and s4_cond2
+        and s4_cond3
+        and s4_cond4
+        and not entry_1
+        and not entry_2
+        and not entry_3
+    )
+
+    entry_strategy = (
+        "1" if entry_1 else "2" if entry_2 else "3" if entry_3 else "4" if entry_4 else None
+    )
     triggered = entry_strategy is not None
 
     holding_code = normalize_strategy_code(holding_strategy_type)
@@ -235,6 +264,9 @@ def evaluate_buy_condition(
         elif holding_code == "3":
             # Once in, drop washout-only filters; keep regime + MA200 structure.
             triggered = s3_cond1 and s3_cond2
+        elif holding_code == "4":
+            # Once in, drop MACD golden; keep below-MA200 + QQQ lane + depth floor.
+            triggered = s4_cond1 and s4_cond3 and s4_cond4
 
     return {
         "triggered": triggered,
@@ -246,6 +278,7 @@ def evaluate_buy_condition(
             "1": [s1_cond1, s1_cond2, s1_cond3, s1_cond4, s1_cond5, s1_cond6],
             "2": [s2_cond1, s2_cond2, s2_cond3, s2_cond4],
             "3": [s3_cond1, s3_cond2, s3_cond3, s3_cond4],
+            "4": [s4_cond1, s4_cond2, s4_cond3, s4_cond4],
         },
         "maTouches": {
             "20": touch_20,

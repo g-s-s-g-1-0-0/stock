@@ -120,6 +120,9 @@ type TooltipState = {
   x: number
   y: number
   className?: string
+  /** When true, opening the same tooltip again closes it (mobile re-tap). */
+  toggle?: boolean
+  sourceKey?: string
 }
 
 type ActivePage = 'home' | 'value-analysis' | 'technical-analysis' | 'market-events' | 'market-trends' | 'board' | 'admin-logs'
@@ -1436,7 +1439,7 @@ const initialWatchlist: string[] = []
 
 const operatorTickers: string[] = []
 const strategyFiltersByInvestmentType: Record<InvestmentType, string[]> = {
-  swing: ['1', '2', '3'],
+  swing: ['1', '2', '3', '4'],
   long_term: ['1', '2'],
 }
 const personalTrades: TradeLog[] = []
@@ -1989,10 +1992,11 @@ const STRATEGY_LABELS: Record<string, string> = {
   '1': '시장 공포 저점 진입',
   '2': '상승 추세 이평선 눌림목',
   '3': '정상장 볼린저 워시아웃',
+  '4': 'MA200 아래 MACD 골든',
 }
 
 function strategyCode(strategy: string) {
-  const match = String(strategy || '').trim().match(/^([123])\b/)
+  const match = String(strategy || '').trim().match(/^([1-4])\b/)
   if (match) return match[1]
   const legacy = String(strategy || '').trim().match(/^([A-H])\b/i)
   if (legacy && legacy[1].toUpperCase() === 'B') return '1'
@@ -2027,6 +2031,7 @@ function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing'
       '1': '시장 공포 저점 진입은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 첫 매수 기회를 찾는 전략입니다. 시장이 충분히 눌렸는지, 종목도 과하게 팔렸는지, 저점에서 버티는 힘이 있는지를 함께 확인합니다.',
       '2': '상승 추세 이평선 눌림목은 시장 공포 저점 진입으로 매수 시즌이 열린 뒤 회복장에서 추가 매수 자리를 찾는 전략입니다. 계속 오른 종목을 따라 사지 않고, 상승 흐름 안에서 평균 가격선 근처까지 쉬어 갈 때만 봅니다.',
       '3': '정상장 볼린저 워시아웃은 공포/회복 시즌이 아닐 때, 장기 평균 위에 있는 종목이 볼린저 하단까지 짧게 씻긴 자리를 노리는 스윙 전용 전략입니다. 짧게 먹고 나오는 규칙(+12/−12/20일/횡보장 고점)을 씁니다.',
+      '4': 'MA200 아래 MACD 골든은 종가가 200일선 아래에 있을 때 MACD 히스토그램이 골든크로스로 돌아서는 반등 초입을 노리는 스윙 전용 전략입니다. 나스닥이 하락장·정상장일 때만 보고, 종목이 200일선보다 25% 넘게 깨진 자리는 제외합니다.',
     },
     long_term: {
       '1': '시장 공포 저점 진입은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 장기 보유 후보를 처음 편입하는 전략입니다. 단기 반등보다 좋은 종목을 무리하지 않은 가격에 담는 데 초점을 둡니다.',
@@ -2202,6 +2207,58 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         ],
       },
     ],
+    '4': [
+      {
+        label: '진입',
+        value: [
+          '종목 현재가가 200일 평균선(MA200) 아래',
+          'MACD 히스토그램 골든크로스 (어제 ≤0 → 오늘 >0)',
+          'QQQ 국면이 하락장 또는 정상장 (회복장·횡보장 고점 제외)',
+          '종목의 MA200 이격이 -25%보다 깊지 않음',
+          '같은 날 전략 1·2·3 미충족',
+        ],
+      },
+      {
+        label: '설명',
+        value: [
+          'MA200은 최근 약 1년 평균 가격입니다. 현재가가 그 아래에 있어야 “장기 평균보다 싸진” 상태로 봅니다.',
+          'MACD 히스토그램이 마이너스에서 플러스로 돌아설 때(골든크로스)를 단기 매수세 회복 신호로 봅니다.',
+          'QQQ 이격도가 -3%보다 아래면 하락장, -3%~+9%면 정상장입니다. 회복장과 +9%를 넘는 횡보장 고점에서는 이 전략으로 새로 사지 않습니다.',
+          '종목이 200일선보다 25% 넘게 깨진 자리는 너무 깊게 붕괴된 것으로 보고 제외합니다.',
+          '전략 1·2·3과 겹치지 않게, 그날 앞선 전략이 안 나온 종목만 봅니다.',
+        ],
+      },
+      {
+        label: '대상',
+        value: '스윙투자 관심종목 전용입니다. 가치투자 로그에는 자동 진입하지 않습니다.',
+      },
+      {
+        label: '청산',
+        value: [
+          '회복장이 끝났다고 2거래일 연속 확인되면 전량 매도합니다.',
+          '나스닥 고점 알람(peakTriggered)이 켜지면 청산합니다.',
+          '청산 시점 수익률이 플러스면 성공, 마이너스면 실패로 기록합니다.',
+        ],
+      },
+      {
+        label: '손절',
+        value: '매수가 대비 -30%까지 떨어지면 회복장 여부와 관계없이 손절합니다.',
+      },
+      {
+        label: '관망',
+        value: [
+          '보유 중에는 MACD 골든은 다시 보지 않고, 현재가가 MA200 아래이며 QQQ가 하락/정상장이고 이격이 -25%보다 깊지 않은지만 보면 매수 의견을 유지합니다.',
+          '조건이 깨지면 매수 → 관망으로 바뀌며, 자동으로 파는 신호는 아닙니다.',
+        ],
+      },
+      {
+        label: '재진입',
+        value: [
+          '완전히 판 뒤: 직전 매도가보다 3% 더 싸지면 다시 살 후보입니다. (매도 직후 이틀은 대기, 이후 10거래일 안 기준)',
+          '보유 중 관망이 된 뒤: 진입가보다 10% 더 빠지고 10거래일이 지나야 추가 매수 후보입니다.',
+        ],
+      },
+    ],
   },
   long_term: {
     '1': [
@@ -2311,7 +2368,7 @@ function tradeResultLabel(trade: TradeLog) {
 
 function tradeCriteriaInfo(strategy: string) {
   const code = strategyCode(strategy)
-  if (code === '1' || code === '2') {
+  if (code === '1' || code === '2' || code === '4') {
     return `전략 ${code} 기준: 회복장 종료(2거래일 확정) 시 전량매도하며, 그때 수익률이 +면 성공(익절), −면 실패(손절)입니다. -30% 하드 손절도 유지합니다. 목표가·시간 청산은 없습니다.`
   }
   if (code === '3') {
@@ -2474,7 +2531,7 @@ function recommendedSellPriceNote(strategy: string) {
     return '전략과 무관한 직접 기입 항목은 자동 청산 없이 직접 청산으로 정리합니다.'
   }
   const code = strategyCode(strategy)
-  if (code === '1' || code === '2') {
+  if (code === '1' || code === '2' || code === '4') {
     return '목표가 익절 없음. 회복장 종료 전량매도 또는 -30% 손절.'
   }
   if (code === '3') {
@@ -2767,7 +2824,7 @@ function StockNameCell({
     }
   }, [name])
 
-  const openTooltip = (element: HTMLElement) => {
+  const openTooltip = (element: HTMLElement, toggle = false) => {
     const textElement = textRef.current
     if (!textElement || textElement.scrollWidth <= textElement.clientWidth + 1) return
 
@@ -2785,6 +2842,8 @@ function StockNameCell({
       x: Math.min(Math.max(centeredX, minX), maxX),
       y: rect.top - 8,
       className: 'stock-name-floating-tooltip',
+      toggle,
+      sourceKey: `stock-name:${name}`,
     })
   }
 
@@ -2801,14 +2860,14 @@ function StockNameCell({
           onBlur={onTooltipClose}
           onClick={(event) => {
             event.stopPropagation()
-            openTooltip(event.currentTarget)
+            openTooltip(event.currentTarget, true)
           }}
           onFocus={(event) => openTooltip(event.currentTarget)}
           onKeyDown={(event) => {
             if (event.key !== 'Enter' && event.key !== ' ') return
             event.preventDefault()
             event.stopPropagation()
-            openTooltip(event.currentTarget)
+            openTooltip(event.currentTarget, true)
           }}
           onMouseEnter={(event) => openTooltip(event.currentTarget)}
           onMouseLeave={onTooltipClose}
@@ -2856,7 +2915,7 @@ function StrategyTag({
 }) {
   const displayStrategy = strategyDisplayName(strategy)
 
-  const openTooltip = (element: HTMLElement) => {
+  const openTooltip = (element: HTMLElement, toggle = false) => {
     const rect = element.getBoundingClientRect()
     const minX = 280
     const maxX = window.innerWidth - 280
@@ -2866,6 +2925,8 @@ function StrategyTag({
       text: strategyInfo(strategy, investmentType),
       x: Math.min(Math.max(centeredX, minX), maxX),
       y: rect.top - 8,
+      toggle,
+      sourceKey: `strategy-tag:${investmentType}:${displayStrategy}`,
     })
   }
 
@@ -2875,7 +2936,7 @@ function StrategyTag({
       onBlur={onTooltipClose}
       onClick={(event) => {
         event.stopPropagation()
-        openTooltip(event.currentTarget)
+        openTooltip(event.currentTarget, true)
       }}
       onFocus={(event) => openTooltip(event.currentTarget)}
       onMouseEnter={(event) => openTooltip(event.currentTarget)}
@@ -2898,7 +2959,7 @@ function ResultBadge({
   onTooltipOpen: (tooltip: TooltipState) => void
   onTooltipClose: () => void
 }) {
-  const openTooltip = (element: HTMLElement) => {
+  const openTooltip = (element: HTMLElement, toggle = false) => {
     const rect = element.getBoundingClientRect()
     const minX = 280
     const maxX = window.innerWidth - 280
@@ -2908,6 +2969,8 @@ function ResultBadge({
       text: tradeResultInfo(trade),
       x: Math.min(Math.max(centeredX, minX), maxX),
       y: rect.top - 8,
+      toggle,
+      sourceKey: `result-badge:${trade.ticker}:${trade.buyDate}:${trade.strategy}`,
     })
   }
 
@@ -2917,7 +2980,7 @@ function ResultBadge({
       onBlur={onTooltipClose}
       onClick={(event) => {
         event.stopPropagation()
-        openTooltip(event.currentTarget)
+        openTooltip(event.currentTarget, true)
       }}
       onFocus={(event) => openTooltip(event.currentTarget)}
       onMouseEnter={(event) => openTooltip(event.currentTarget)}
@@ -4243,7 +4306,7 @@ const technicalMetricColumns: TechnicalColumn[] = [
   { label: '실적발표일 (한국 시간 기준)', tooltip: metricTooltip('한국 시간 기준 실적 발표일입니다. 실적 전후에는 가격이 크게 움직일 수 있어 주의합니다.', EARNINGS_TONE_GUIDE), value: (stock) => technicalEarningsDate(stock) },
   { label: '진입가', tooltip: metricTooltip('현재 보유 중인 종목을 산 가격입니다. 보유 전이면 빈 값으로 표시합니다.', '없음'), value: (stock) => technicalEntryPrice(stock) },
   { label: '진입일', tooltip: metricTooltip('현재 보유 중인 종목을 산 날짜입니다. 보유 전이면 빈 값으로 표시합니다.', '없음'), value: (stock) => technicalEntryDate(stock) },
-  { label: '진입 전략', tooltip: metricTooltip('매수할 때 사용된 전략명입니다. A~H 전략 설명은 Home의 전략 툴팁과 같은 기준입니다.', '없음'), value: (stock) => technicalEntryStrategy(stock) },
+  { label: '진입 전략', tooltip: metricTooltip('매수할 때 사용된 전략명입니다. 전략 1~4 설명은 Home의 전략 툴팁과 같은 기준입니다.', '없음'), value: (stock) => technicalEntryStrategy(stock) },
 ]
 
 function MetricValue({
@@ -4259,7 +4322,7 @@ function MetricValue({
 }) {
   if (!tooltip) return <>{children}</>
 
-  const openTooltip = (element: HTMLElement) => {
+  const openTooltip = (element: HTMLElement, toggle = false) => {
     const rect = element.getBoundingClientRect()
     const tooltipHalfWidth = Math.min(130, (window.innerWidth - 32) / 2)
     const minX = tooltipHalfWidth + 16
@@ -4270,6 +4333,8 @@ function MetricValue({
       text: tooltip,
       x: Math.min(Math.max(centeredX, minX), maxX),
       y: rect.top - 8,
+      toggle,
+      sourceKey: `metric:${tooltip.slice(0, 80)}`,
     })
   }
 
@@ -4280,7 +4345,7 @@ function MetricValue({
       onBlur={onTooltipClose}
       onClick={(event) => {
         event.stopPropagation()
-        openTooltip(event.currentTarget)
+        openTooltip(event.currentTarget, true)
       }}
       onFocus={(event) => openTooltip(event.currentTarget)}
       onMouseEnter={(event) => openTooltip(event.currentTarget)}
@@ -4927,7 +4992,7 @@ function TruncatedTrendCell({
     }
   }, [text])
 
-  const openTooltip = (element: HTMLElement) => {
+  const openTooltip = (element: HTMLElement, toggle = false) => {
     const cellElement = cellRef.current
     if (
       !cellElement ||
@@ -4947,6 +5012,8 @@ function TruncatedTrendCell({
       text,
       x: Math.min(Math.max(centeredX, minX), maxX),
       y: rect.top - 8,
+      toggle,
+      sourceKey: `truncated-cell:${cellKey}:${text.slice(0, 80)}`,
     })
   }
 
@@ -4970,14 +5037,14 @@ function TruncatedTrendCell({
       onBlur={onTooltipClose}
       onClick={(event) => {
         event.stopPropagation()
-        openTooltip(event.currentTarget)
+        openTooltip(event.currentTarget, true)
       }}
       onFocus={(event) => openTooltip(event.currentTarget)}
       onKeyDown={(event) => {
         if (event.key !== 'Enter' && event.key !== ' ') return
         event.preventDefault()
         event.stopPropagation()
-        openTooltip(event.currentTarget)
+        openTooltip(event.currentTarget, true)
       }}
       onMouseEnter={(event) => openTooltip(event.currentTarget)}
       onMouseLeave={onTooltipClose}
@@ -5796,6 +5863,25 @@ function App() {
   const [selectedStrategy, setSelectedStrategy] = useState('전체')
   const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc')
   const [activeTooltip, setActiveTooltip] = useState<TooltipState | null>(null)
+
+  const openFloatingTooltip = useCallback((tooltip: TooltipState) => {
+    setActiveTooltip((current) => {
+      if (!tooltip.toggle) return tooltip
+      const sameSource = Boolean(
+        tooltip.sourceKey
+        && current?.sourceKey
+        && current.sourceKey === tooltip.sourceKey,
+      )
+      const sameFallback = Boolean(
+        current
+        && current.text === tooltip.text
+        && Math.abs(current.x - tooltip.x) < 2
+        && Math.abs(current.y - tooltip.y) < 2,
+      )
+      if (sameSource || sameFallback) return null
+      return tooltip
+    })
+  }, [])
   const [selectedTickers, setSelectedTickers] = useState<string[]>([])
   const [selectedHoldingTradeKeys, setSelectedHoldingTradeKeys] = useState<string[]>([])
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false)
@@ -9241,7 +9327,7 @@ function App() {
                     <MetricValue
                       tooltip={`매수한 종목의 산업군이 그 주 시장 트렌드 Top ${MEGA_TREND_INVESTMENT_RANK_LIMIT}에 있으면 충족입니다. 아니면 미충족으로 표시합니다.`}
                       onTooltipClose={() => setActiveTooltip(null)}
-                      onTooltipOpen={setActiveTooltip}
+                      onTooltipOpen={openFloatingTooltip}
                     >
                       메가 트렌드
                     </MetricValue>
@@ -9262,7 +9348,7 @@ function App() {
                         market={exampleStock.market}
                         name={exampleStock.name}
                         onTooltipClose={() => setActiveTooltip(null)}
-                        onTooltipOpen={setActiveTooltip}
+                        onTooltipOpen={openFloatingTooltip}
                       />
                     </td>
                     <td className="ticker-cell">{exampleStock.ticker}</td>
@@ -9295,7 +9381,7 @@ function App() {
                           market={tradeMarket(trade)}
                           name={tradeName(trade)}
                           onTooltipClose={() => setActiveTooltip(null)}
-                          onTooltipOpen={setActiveTooltip}
+                          onTooltipOpen={openFloatingTooltip}
                         />
                       </td>
                       <td className="ticker-cell">{trade.ticker}</td>
@@ -9320,7 +9406,7 @@ function App() {
                         <StrategyTag
                           investmentType={displayedInvestmentType}
                           onTooltipClose={() => setActiveTooltip(null)}
-                          onTooltipOpen={setActiveTooltip}
+                          onTooltipOpen={openFloatingTooltip}
                           strategy={trade.strategy}
                         />
                       </td>
@@ -9340,7 +9426,7 @@ function App() {
                       <td>
                         <ResultBadge
                           onTooltipClose={() => setActiveTooltip(null)}
-                          onTooltipOpen={setActiveTooltip}
+                          onTooltipOpen={openFloatingTooltip}
                           trade={trade}
                         />
                       </td>
@@ -9509,7 +9595,7 @@ function App() {
                         <MetricValue
                           tooltip={FAIR_PRICE_RANGE_TOOLTIP}
                           onTooltipClose={() => setActiveTooltip(null)}
-                          onTooltipOpen={setActiveTooltip}
+                          onTooltipOpen={openFloatingTooltip}
                         >
                           적정 주가 범위
                         </MetricValue>
@@ -9548,7 +9634,7 @@ function App() {
                             market={stock.market}
                             name={stock.name}
                             onTooltipClose={() => setActiveTooltip(null)}
-                            onTooltipOpen={setActiveTooltip}
+                            onTooltipOpen={openFloatingTooltip}
                           />
                         </td>
                         <td className="ticker-cell">{stock.ticker}</td>
@@ -9576,7 +9662,7 @@ function App() {
                               investmentType={displayedInvestmentType}
                               key={strategy}
                               onTooltipClose={() => setActiveTooltip(null)}
-                              onTooltipOpen={setActiveTooltip}
+                              onTooltipOpen={openFloatingTooltip}
                               strategy={strategy}
                             />
                           )) : '-'}
@@ -9710,7 +9796,7 @@ function App() {
                           market={exampleStock.market}
                           name={exampleStock.name}
                           onTooltipClose={() => setActiveTooltip(null)}
-                          onTooltipOpen={setActiveTooltip}
+                          onTooltipOpen={openFloatingTooltip}
                         />
                       </td>
                       <td className="ticker-cell">{exampleStock.ticker}</td>
@@ -9746,7 +9832,7 @@ function App() {
                             market={tradeMarket(trade)}
                             name={tradeName(trade)}
                             onTooltipClose={() => setActiveTooltip(null)}
-                            onTooltipOpen={setActiveTooltip}
+                            onTooltipOpen={openFloatingTooltip}
                           />
                         </td>
                         <td className="ticker-cell">{trade.ticker}</td>
@@ -9764,7 +9850,7 @@ function App() {
                           <StrategyTag
                             investmentType={displayedInvestmentType}
                             onTooltipClose={() => setActiveTooltip(null)}
-                            onTooltipOpen={setActiveTooltip}
+                            onTooltipOpen={openFloatingTooltip}
                             strategy={trade.strategy}
                           />
                         </td>
@@ -9808,7 +9894,7 @@ function App() {
           isSaving={isSavingMarketEvents}
           isDirty={isMarketEventsDirty}
           onTooltipClose={() => setActiveTooltip(null)}
-          onTooltipOpen={setActiveTooltip}
+          onTooltipOpen={openFloatingTooltip}
           onYearLabelChange={updateMarketEventYearLabel}
           onMonthChange={updateMarketEventMonth}
           onEventChange={updateMarketEventEntry}
@@ -9824,7 +9910,7 @@ function App() {
           onToggleRow={toggleSelectedMarketTrendRow}
           onDeleteSelected={openMarketTrendDeleteConfirm}
           onTooltipClose={() => setActiveTooltip(null)}
-          onTooltipOpen={setActiveTooltip}
+          onTooltipOpen={openFloatingTooltip}
         />
       ) : currentActivePage === 'admin-logs' && isAdminUser ? (
         <AdminLogsPage logs={apiLogs} isLoading={isLoadingApiLogs} onRefresh={loadApiLogs} />
@@ -9862,7 +9948,7 @@ function App() {
           updateLabel={formatUpdateLabel(apiMetas.valuation)}
           addStockControl={addStockInlineControl}
           onTooltipClose={() => setActiveTooltip(null)}
-          onTooltipOpen={setActiveTooltip}
+          onTooltipOpen={openFloatingTooltip}
           onAddStock={requestAddStock}
         />
       ) : (
@@ -9876,7 +9962,7 @@ function App() {
           updateLabel={formatUpdateLabel(apiMetas.technical)}
           addStockControl={addStockInlineControl}
           onTooltipClose={() => setActiveTooltip(null)}
-          onTooltipOpen={setActiveTooltip}
+          onTooltipOpen={openFloatingTooltip}
           onAddStock={requestAddStock}
         />
       )}

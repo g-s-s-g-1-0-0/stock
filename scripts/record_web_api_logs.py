@@ -57,9 +57,9 @@ HOLD_RESTORE_MIN_TRADING_DAYS = 10
 HOLD_RESTORE_SIGNAL_CONFIRMATIONS = 2
 MAX_OPEN_PER_STRATEGY = 2
 RESTORE_FAMILY_STRATEGIES: set[str] = set()
-ACTIVE_STRATEGIES = {"1", "2", "3"}
+ACTIVE_STRATEGIES = {"1", "2", "3", "4"}
 REMOVED_STRATEGIES = {"A", "C", "D", "E", "F", "G", "H"}
-SWING_ONLY_STRATEGIES = {"3"}
+SWING_ONLY_STRATEGIES = {"3", "4"}
 INVESTMENT_TYPES = ("long_term", "swing")
 VALUATION_LOG_FIELDS = [
     ("marketCap", "시가총액"),
@@ -1194,6 +1194,9 @@ def run_trade_engine(
         if first == "3":
             trade["strategy"] = strategy_display_name("3")
             continue
+        if first == "4":
+            trade["strategy"] = strategy_display_name("4")
+            continue
         if first in REMOVED_STRATEGIES:
             sell_price = trade.get("currentPrice") or trade.get("buyPrice") or "-"
             close_trade(
@@ -1429,7 +1432,7 @@ def run_trade_engine(
         if open_for_ticker_all and not ticker_appended and mutate_public_state:
             signal_state_changed = block_held_public_buy_signal(stock, row) or signal_state_changed
 
-    # Drop retired A/C/D/E/F/G/H rows from the live log; keep 1/2/3 (+ migrated B).
+    # Drop retired A/C/D/E/F/G/H rows from the live log; keep 1/2/3/4 (+ migrated B).
     cleaned: list[dict[str, Any]] = []
     for trade in trades:
         raw = str(trade.get("strategy") or "")
@@ -1443,6 +1446,8 @@ def run_trade_engine(
             trade["strategy"] = strategy_display_name("2")
         elif code == "3":
             trade["strategy"] = strategy_display_name("3")
+        elif code == "4":
+            trade["strategy"] = strategy_display_name("4")
         cleaned.append(trade)
     trades = cleaned
 

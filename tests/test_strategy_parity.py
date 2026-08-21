@@ -236,3 +236,80 @@ def test_qqq_regime_label_uses_four_simple_market_states():
     assert qqq_regime_label(5, False) == "정상장"
     assert qqq_regime_label(12, False) == "횡보장 고점"
     assert qqq_regime_label(12, True) == "회복장"
+
+
+def test_strategy_4_triggers_on_macd_golden_below_ma200_in_allowed_regimes():
+    row = IndicatorRow(
+        stock_name="AMD",
+        current_price=90,
+        ma200=100,
+        macd_hist=-0.1,
+        macd_hist_d1=-0.2,
+    )
+    # Not golden yet.
+    assert evaluate_buy_condition(
+        row, vix=15, ixic_dist=-4, ixic_filter_active=False, is_recovery_market=False
+    )["strategyType"] is None
+
+    golden = IndicatorRow(
+        stock_name="AMD",
+        current_price=90,
+        ma200=100,
+        macd_hist=0.2,
+        macd_hist_d1=-0.1,
+    )
+    downtrend = evaluate_buy_condition(
+        golden, vix=15, ixic_dist=-4, ixic_filter_active=False, is_recovery_market=False
+    )
+    assert downtrend["strategyType"] == "4"
+
+    normal = evaluate_buy_condition(
+        golden, vix=15, ixic_dist=5, ixic_filter_active=False, is_recovery_market=False
+    )
+    assert normal["strategyType"] == "4"
+
+    recovery = evaluate_buy_condition(
+        golden, vix=15, ixic_dist=5, ixic_filter_active=False, is_recovery_market=True
+    )
+    assert recovery["strategyType"] is None
+
+    deep = evaluate_buy_condition(
+        IndicatorRow(
+            stock_name="AMD",
+            current_price=70,
+            ma200=100,
+            macd_hist=0.2,
+            macd_hist_d1=-0.1,
+        ),
+        vix=15,
+        ixic_dist=-4,
+        ixic_filter_active=False,
+        is_recovery_market=False,
+    )
+    assert deep["strategyType"] is None
+
+
+def test_strategy_4_yields_to_strategy_1_and_uses_s1_style_exits():
+    panic = IndicatorRow(
+        stock_name="AMD",
+        current_price=90,
+        ma200=100,
+        rsi=30,
+        cci=-100,
+        lr_slope=1,
+        lr_trendline=88,
+        candle_low=92,
+        macd_hist=0.2,
+        macd_hist_d1=-0.1,
+    )
+    result = evaluate_buy_condition(panic, vix=31, ixic_dist=-4, ixic_filter_active=False)
+    assert result["strategyType"] == "1"
+
+    held = IndicatorRow(stock_name="AMD", current_price=120, entry_price=100)
+    recovery_exit = evaluate_exit_condition(held, strategy_type="4", recovery_ended=True)
+    assert recovery_exit["shouldExit"] is True
+    assert "회복장 종료" in recovery_exit["reason"]
+
+    peak_exit = evaluate_exit_condition(held, strategy_type="4", nasdaq_peak_alert=True)
+    assert peak_exit["shouldExit"] is True
+    assert "고점" in peak_exit["reason"]
