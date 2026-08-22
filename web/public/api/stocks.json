@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-08-22T13:51:06+00:00",
-    "lastSuccessfulRun": "2026-08-22T13:51:06+00:00",
+    "updatedAt": "2026-08-22T14:56:29+00:00",
+    "lastSuccessfulRun": "2026-08-22T14:56:29+00:00",
     "failedReason": null
   },
   "rows": [
@@ -43,7 +43,7 @@
       "ticker": "005380",
       "name": "현대자동차",
       "market": "KR",
-      "fairPrice": "₩324,140 ~ ₩486,210",
+      "fairPrice": "₩306,970 ~ ₩460,455",
       "fairPriceReason": null,
       "currentPrice": "₩415,000",
       "valuation": "보통",
@@ -75,7 +75,7 @@
       "ticker": "009150",
       "name": "삼성전기",
       "market": "KR",
-      "fairPrice": "₩158,805 ~ ₩264,675",
+      "fairPrice": "₩194,745 ~ ₩324,575",
       "fairPriceReason": null,
       "currentPrice": "₩1,316,000",
       "valuation": "고평가",
@@ -123,7 +123,7 @@
       "ticker": "042700",
       "name": "한미반도체",
       "market": "KR",
-      "fairPrice": "₩27,975 ~ ₩37,300",
+      "fairPrice": "₩93,200 ~ ₩116,500",
       "fairPriceReason": null,
       "currentPrice": "₩213,500",
       "valuation": "고평가",
