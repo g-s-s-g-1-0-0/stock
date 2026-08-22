@@ -1992,7 +1992,7 @@ const STRATEGY_LABELS: Record<string, string> = {
   '1': '시장 공포 저점 진입',
   '2': '상승 추세 이평선 눌림목',
   '3': '정상장 볼린저 워시아웃',
-  '4': 'MA200 아래 MACD 골든',
+  '4': '장기선 아래 반등 초입',
 }
 
 function strategyCode(strategy: string) {
@@ -2031,7 +2031,7 @@ function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing'
       '1': '시장 공포 저점 진입은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 첫 매수 기회를 찾는 전략입니다. 시장이 충분히 눌렸는지, 종목도 과하게 팔렸는지, 저점에서 버티는 힘이 있는지를 함께 확인합니다.',
       '2': '상승 추세 이평선 눌림목은 시장 공포 저점 진입으로 매수 시즌이 열린 뒤 회복장에서 추가 매수 자리를 찾는 전략입니다. 계속 오른 종목을 따라 사지 않고, 상승 흐름 안에서 평균 가격선 근처까지 쉬어 갈 때만 봅니다.',
       '3': '정상장 볼린저 워시아웃은 공포/회복 시즌이 아닐 때, 장기 평균 위에 있는 종목이 볼린저 하단까지 짧게 씻긴 자리를 노리는 스윙 전용 전략입니다. 짧게 먹고 나오는 규칙(+12/−12/20일/횡보장 고점)을 씁니다.',
-      '4': 'MA200 아래 MACD 골든은 종가가 200일선 아래에 있을 때 MACD 히스토그램이 골든크로스로 돌아서는 반등 초입을 노리는 스윙 전용 전략입니다. 나스닥이 하락장·정상장일 때만 보고, 종목이 200일선보다 25% 넘게 깨진 자리는 제외합니다.',
+      '4': '장기선 아래 반등 초입은 종가가 200일선 아래에 있을 때 MACD 히스토그램이 골든크로스로 돌아서는 반등 초입을 노리는 스윙 전용 전략입니다. 나스닥이 하락장·정상장일 때만 보고, 종목이 200일선보다 25% 넘게 깨진 자리는 제외합니다.',
     },
     long_term: {
       '1': '시장 공포 저점 진입은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 장기 보유 후보를 처음 편입하는 전략입니다. 단기 반등보다 좋은 종목을 무리하지 않은 가격에 담는 데 초점을 둡니다.',
@@ -2862,7 +2862,6 @@ function StockNameCell({
             event.stopPropagation()
             openTooltip(event.currentTarget, true)
           }}
-          onFocus={(event) => openTooltip(event.currentTarget)}
           onKeyDown={(event) => {
             if (event.key !== 'Enter' && event.key !== ' ') return
             event.preventDefault()
@@ -2938,7 +2937,6 @@ function StrategyTag({
         event.stopPropagation()
         openTooltip(event.currentTarget, true)
       }}
-      onFocus={(event) => openTooltip(event.currentTarget)}
       onMouseEnter={(event) => openTooltip(event.currentTarget)}
       onMouseLeave={onTooltipClose}
       tabIndex={0}
@@ -2982,7 +2980,6 @@ function ResultBadge({
         event.stopPropagation()
         openTooltip(event.currentTarget, true)
       }}
-      onFocus={(event) => openTooltip(event.currentTarget)}
       onMouseEnter={(event) => openTooltip(event.currentTarget)}
       onMouseLeave={onTooltipClose}
       tabIndex={0}
@@ -4347,7 +4344,6 @@ function MetricValue({
         event.stopPropagation()
         openTooltip(event.currentTarget, true)
       }}
-      onFocus={(event) => openTooltip(event.currentTarget)}
       onMouseEnter={(event) => openTooltip(event.currentTarget)}
       onMouseLeave={onTooltipClose}
     >
@@ -5039,7 +5035,6 @@ function TruncatedTrendCell({
         event.stopPropagation()
         openTooltip(event.currentTarget, true)
       }}
-      onFocus={(event) => openTooltip(event.currentTarget)}
       onKeyDown={(event) => {
         if (event.key !== 'Enter' && event.key !== ' ') return
         event.preventDefault()
@@ -5867,13 +5862,15 @@ function App() {
   const openFloatingTooltip = useCallback((tooltip: TooltipState) => {
     setActiveTooltip((current) => {
       if (!tooltip.toggle) return tooltip
+      // Only dismiss on a second click/tap. Hover/focus opens must not count as the first tap.
       const sameSource = Boolean(
         tooltip.sourceKey
         && current?.sourceKey
-        && current.sourceKey === tooltip.sourceKey,
+        && current.sourceKey === tooltip.sourceKey
+        && current.toggle,
       )
       const sameFallback = Boolean(
-        current
+        current?.toggle
         && current.text === tooltip.text
         && Math.abs(current.x - tooltip.x) < 2
         && Math.abs(current.y - tooltip.y) < 2,
@@ -6984,9 +6981,13 @@ function App() {
       if (event.key === 'Escape') setActiveTooltip(null)
     }
 
-    document.addEventListener('click', closeTooltip)
+    // Defer so the opening tap/click does not immediately dismiss the tooltip.
+    const timer = window.setTimeout(() => {
+      document.addEventListener('click', closeTooltip)
+    }, 0)
     document.addEventListener('keydown', closeTooltipOnEscape)
     return () => {
+      window.clearTimeout(timer)
       document.removeEventListener('click', closeTooltip)
       document.removeEventListener('keydown', closeTooltipOnEscape)
     }

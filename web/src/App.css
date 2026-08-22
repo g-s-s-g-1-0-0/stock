@@ -2105,11 +2105,15 @@
 
 .trend-rank-cell.is-truncated {
   cursor: help;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.trend-rank-cell.is-truncated:focus-visible {
+.trend-rank-cell.is-truncated:focus,
+.trend-rank-cell.is-truncated:focus-visible,
+.trend-rank-cell.is-truncated:active {
   outline: none;
-  box-shadow: inset 0 0 0 2px rgba(34, 136, 238, 0.22);
+  box-shadow: none;
+  color: inherit;
 }
 
 .trend-date-cell {
@@ -2844,10 +2848,15 @@
 
 .stock-name-tooltip-trigger.is-truncated {
   cursor: help;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.stock-name-tooltip-trigger.is-truncated:focus-visible {
-  box-shadow: 0 0 0 2px rgba(34, 136, 238, 0.22);
+.stock-name-tooltip-trigger.is-truncated:focus,
+.stock-name-tooltip-trigger.is-truncated:focus-visible,
+.stock-name-tooltip-trigger.is-truncated:active {
+  outline: none;
+  box-shadow: none;
+  color: inherit;
 }
 
 .stock-name-text {
@@ -3229,6 +3238,15 @@
 .result-badge {
   cursor: help;
   outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.result-badge:focus,
+.result-badge:focus-visible,
+.result-badge:active {
+  outline: none;
+  box-shadow: none;
+  color: inherit;
 }
 
 .strategy-pill {
@@ -3270,6 +3288,14 @@
   justify-content: center;
   outline: none;
   vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.strategy-item:focus,
+.strategy-item:focus-visible,
+.strategy-item:active {
+  outline: none;
+  box-shadow: none;
 }
 
 .watchlist-table .strategy-item,
@@ -4359,14 +4385,16 @@
   padding: 0;
   text-align: inherit;
   white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .metric-tooltip-trigger:hover,
-.metric-tooltip-trigger:focus-visible {
-  color: var(--accent);
+.metric-tooltip-trigger:focus,
+.metric-tooltip-trigger:focus-visible,
+.metric-tooltip-trigger:active {
+  color: inherit;
   outline: none;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration: none;
 }
 
 .return-positive {

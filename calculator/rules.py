@@ -48,7 +48,7 @@ STRATEGY_LABELS = {
     "1": "시장 공포 저점 진입",
     "2": "상승 추세 이평선 눌림목",
     "3": "정상장 볼린저 워시아웃",
-    "4": "MA200 아래 MACD 골든",
+    "4": "장기선 아래 반등 초입",
 }
 
 # Legacy A–H codes map to nothing active; B maps to 1 for migration.
