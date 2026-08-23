@@ -8112,7 +8112,10 @@ function App() {
   }
 
   const switchTestSession = (mode: 'admin' | 'user') => {
-    if (!import.meta.env.DEV) return
+    // The controls are only rendered after a test switch has been explicitly enabled.
+    // Use that same runtime guard here: preview builds have DEV=false but can still
+    // expose an already-enabled test session.
+    if (!canUseAccountSwitch) return
     closeLoginModalAfterAccountSwitch()
     setRefreshDataMessage('')
     const adminEmail = configuredAdminEmails()[0] ?? DEFAULT_ADMIN_EMAILS[0]
@@ -8129,7 +8132,7 @@ function App() {
         }
 
     setUserSession(nextSession)
-    storeLocalTestSession(nextSession)
+    storeLocalTestSession(nextSession, { allowProduction: true })
     setCanUseAccountSwitch(true)
     applyLocalTestSessionData(nextSession)
     setSelectedTickers([])

@@ -775,6 +775,37 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("email", channel)
         self.assertEqual([("user@example.com", "테스트", "<p>본문</p>")], sent_email)
 
+    def test_send_notification_adds_notice_when_slack_delivery_fails(self) -> None:
+        sent_email: list[tuple[str, str, str]] = []
+        original_send_slack = self.notifications.send_slack_message
+        original_send_email = self.notifications.send_email
+
+        def fail_slack(*_args: object) -> None:
+            raise RuntimeError("webhook revoked")
+
+        self.notifications.send_slack_message = fail_slack
+        self.notifications.send_email = lambda email, subject, body: sent_email.append((email, subject, body))
+        try:
+            channel = self.notifications.send_notification(
+                self.notifications.Recipient(
+                    owner_id="user-1",
+                    email="user@example.com",
+                    is_admin=False,
+                    preferences={"notificationChannel": "slack", "slackConnected": True},
+                    slack_webhook_url="https://hooks.slack.test/abc",
+                ),
+                "테스트",
+                "<p>본문</p>",
+            )
+        finally:
+            self.notifications.send_slack_message = original_send_slack
+            self.notifications.send_email = original_send_email
+
+        self.assertEqual("email", channel)
+        self.assertEqual(1, len(sent_email))
+        self.assertIn("슬랙으로 연동되어 있었지만 전송에 실패해 이메일로 대신 보냈습니다.", sent_email[0][2])
+        self.assertTrue(sent_email[0][2].endswith("<p>본문</p>"))
+
     def test_opinion_changes_marks_sell_to_buy_without_open_slot_as_new_entry(self) -> None:
         with TemporaryDirectory() as temp_dir:
             previous = Path(temp_dir) / "previous.json"

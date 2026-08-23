@@ -821,6 +821,12 @@ def send_notification(recipient: Recipient, subject: str, html_body: str) -> str
             if not recipient.email:
                 raise
             print(f"Slack send failed for {recipient.owner_id or recipient.email}: {exc}; falling back to email.")
+            html_body = (
+                '<p style="margin:0 0 16px;color:#6b7280;font-size:13px;">'
+                '슬랙으로 연동되어 있었지만 전송에 실패해 이메일로 대신 보냈습니다.'
+                '</p>'
+                + html_body
+            )
 
     if not recipient.email:
         raise RuntimeError("이메일 수신처가 없어 알림을 보낼 수 없습니다.")
