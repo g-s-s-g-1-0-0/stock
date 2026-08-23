@@ -4133,7 +4133,17 @@ function mergeMarketSnapshot(snapshot: string[][]): string[][] {
 }
 
 function technicalSummaryDisplayLabel(label: string) {
-  return label === 'QQQ MACD Histogram (D/D-1/D-2)' ? 'QQQ MACD Histogram' : label
+  const compactLabels: Record<string, string> = {
+    'QQQ MACD Histogram (D/D-1/D-2)': 'QQQ MACD Histogram',
+    'QQQ 60거래일 최저 이격도': 'QQQ 60일 최저 이격',
+    '나스닥 (QQQ, 당일)': 'QQQ 당일',
+    '나스닥 (QQQ, 20일 이동평균선)': 'QQQ 20일선',
+    '나스닥 (QQQ, 60일 이동평균선)': 'QQQ 60일선',
+    '나스닥 (QQQ, 144일 이동평균선)': 'QQQ 144일선',
+    '나스닥 (QQQ, 200일 이동평균선)': 'QQQ 200일선',
+    '나스닥 (QQQ, 200일선 이격도)': 'QQQ 이격 N%',
+  }
+  return compactLabels[label] ?? label
 }
 
 function shouldShowTechnicalSummaryCard(label: string) {
