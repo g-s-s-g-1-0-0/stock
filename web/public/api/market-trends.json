@@ -2,8 +2,8 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-08-23T15:02:21+00:00",
-    "lastSuccessfulRun": "2026-08-23T15:02:21+00:00",
+    "updatedAt": "2026-08-23T15:12:39+00:00",
+    "lastSuccessfulRun": "2026-08-23T15:12:39+00:00",
     "failedReason": "Groq API 호출 실패 후 내부 가격·기술 모멘텀 신호로 대체했습니다: HTTP 404"
   },
   "rows": [
