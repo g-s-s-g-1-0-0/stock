@@ -4480,7 +4480,9 @@
 
 .technical-summary-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(166px, 1fr));
+  /* 16 cards stay in two predictable rows on desktop instead of shrinking only
+     the last row. Each card receives a little more room at normal PC widths. */
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 6px;
   padding: 7px;
 }
@@ -4518,13 +4520,25 @@
 }
 
 .technical-summary-item strong {
-  overflow: hidden;
+  min-width: 0;
   color: var(--text-h);
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 900;
+}
+
+.technical-summary-item strong .metric-tooltip-trigger {
+  display: -webkit-box;
+  overflow: hidden;
+  width: 100%;
+  color: inherit;
+  cursor: pointer;
+  line-height: 1.35;
+  text-align: left;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .admin-event-toolbar {

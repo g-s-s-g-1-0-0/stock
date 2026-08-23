@@ -4590,7 +4590,15 @@ function TechnicalAnalysisPage({
                   {technicalSummaryDisplayLabel(label)}
                 </MetricValue>
               </span>
-              <strong>{value}</strong>
+              <strong>
+                <MetricValue
+                  tooltip={`${technicalSummaryDisplayLabel(label)}\n${value}`}
+                  onTooltipClose={onTooltipClose}
+                  onTooltipOpen={onTooltipOpen}
+                >
+                  {value}
+                </MetricValue>
+              </strong>
             </div>
           ))}
         </div>
