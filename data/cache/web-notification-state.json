@@ -83,20 +83,22 @@
     "updatedAt": "2026-07-15T04:59:59.592963+00:00"
   },
   "strategySeason": {
-    "open": false,
-    "sawRecovery": false,
     "nonRecoveryStreak": 0,
+    "open": false,
     "openedAt": null,
     "openedByTicker": null,
+    "sawRecovery": false,
     "updatedAt": "2026-07-14T07:40:00.492847Z"
   },
   "weeklyTrend": {
     "sentKeys": [
+      "9fb8fefb-1fcb-4ecc-af03-0a2e5e873e52:2026.08.24",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026.08.03",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026.08.10",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026.08.17",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026.08.24",
       "e1050013-38e6-4994-aee6-9edfa60df002:2026.08.03"
     ],
-    "updatedAt": "2026-08-16T15:02:22.593934+00:00"
+    "updatedAt": "2026-08-23T15:02:24.920307+00:00"
   }
 }
