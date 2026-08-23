@@ -740,35 +740,55 @@ def fair_price_unavailable_reason(stock: dict[str, Any], metric: dict[str, str])
 
 
 def fair_price_range(stock: dict[str, Any], metric: dict[str, str]) -> str:
-    category = stock_category(stock)
     eps = parse_amount(metric.get("epsTtm"))
     unavailable_reason = fair_price_unavailable_reason(stock, metric)
     if unavailable_reason == "loss_making":
         return FAIR_PRICE_UNAVAILABLE_LABEL
     if unavailable_reason == "etf":
         return "-"
-    if category not in ("가치주", "혼합주", "성장주") or eps is None:
+    if eps is None:
         return "-"
 
-    if category == "가치주":
-        return f"{fmt_price(eps * 10, stock['market'])} ~ {fmt_price(eps * 15, stock['market'])}"
-    if category == "혼합주":
-        return f"{fmt_price(eps * 15, stock['market'])} ~ {fmt_price(eps * 25, stock['market'])}"
+    forward_eps = parse_amount(metric.get("epsNextYear"))
+    revenue_growth = parse_percent(metric.get("salesYoyTtm"))
+    roe = parse_percent(metric.get("roe"))
+    operating_margin = parse_percent(metric.get("operatingMargin"))
+    debt_to_equity = parse_percent(metric.get("debtToEquity"))
 
-    growth = parse_percent(metric.get("salesYoyTtm"))
-    if growth is None:
+    # 매출 성장만으로 PER을 급격히 높이면 순이익 전환·재무위험을 놓치기 쉽다.
+    # 컨센서스 EPS는 보수적으로 반영하고, 성장·수익성·재무위험을 함께 조정한다.
+    forward_growth = None
+    if forward_eps is not None and forward_eps > 0:
+        forward_growth = max(-20.0, min(50.0, (forward_eps / eps - 1) * 100))
+    normalized_revenue_growth = (
+        max(-10.0, min(35.0, revenue_growth)) if revenue_growth is not None else None
+    )
+    growth_inputs = [value for value in (forward_growth, normalized_revenue_growth) if value is not None]
+    if not growth_inputs:
         return "-"
-    if growth < 10:
-        low_multiple, high_multiple = 15, 20
-    elif growth < 20:
-        low_multiple, high_multiple = 20, 30
-    elif growth < 30:
-        low_multiple, high_multiple = 30, 40
-    elif growth < 50:
-        low_multiple, high_multiple = 40, 50
-    else:
-        low_multiple, high_multiple = 50, 70
-    return f"{fmt_price(eps * low_multiple, stock['market'])} ~ {fmt_price(eps * high_multiple, stock['market'])}"
+    growth = (
+        forward_growth * 0.7 + normalized_revenue_growth * 0.3
+        if forward_growth is not None and normalized_revenue_growth is not None
+        else growth_inputs[0]
+    )
+    growth = max(-10.0, min(35.0, growth))
+
+    multiple = 12.0 + growth * 0.45
+    if roe is not None:
+        multiple += 3.0 if roe >= 25 else 1.5 if roe >= 15 else -2.0 if roe < 8 else 0.0
+    if operating_margin is not None:
+        multiple += 2.0 if operating_margin >= 25 else 1.0 if operating_margin >= 10 else -1.5 if operating_margin < 5 else 0.0
+    if debt_to_equity is not None:
+        multiple -= 2.5 if debt_to_equity > 150 else 1.0 if debt_to_equity > 100 else 0.0
+    multiple = max(8.0, min(35.0, multiple))
+
+    earnings_base = eps
+    if forward_growth is not None:
+        earnings_base *= 1 + max(-20.0, min(40.0, forward_growth)) / 200
+    uncertainty = 0.20 if forward_growth is None or debt_to_equity is None else 0.15
+    low_price = earnings_base * multiple * (1 - uncertainty)
+    high_price = earnings_base * multiple * (1 + uncertainty)
+    return f"{fmt_price(low_price, stock['market'])} ~ {fmt_price(high_price, stock['market'])}"
 
 
 def valuation_from_price_range(current_price: str, fair_price: str) -> str:
@@ -1321,30 +1341,7 @@ def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str
     technical_rows = technical_rows if isinstance(technical_rows, dict) else {}
     valuation_rows = valuation_rows if isinstance(valuation_rows, dict) else {}
     if not source_universe and existing_rows:
-        synced_rows = sync_existing_stock_strategies(existing_rows, technical_rows)
-        normalized_rows = []
-        for row in synced_rows:
-            if not isinstance(row, dict):
-                normalized_rows.append(row)
-                continue
-            ticker = str(row.get("ticker", "")).strip().upper()
-            metric = valuation_rows.get(ticker, {})
-            classified = classify_stock(row)
-            normalized_rows.append({
-                **row,
-                "category": classified["category"],
-                "industry": stock_industry(row, metric if isinstance(metric, dict) else {}),
-            })
-        return {
-            **existing,
-            "meta": {
-                **(existing.get("meta", {}) if isinstance(existing, dict) else {}),
-                "kind": "stocks",
-                "updatedAt": now_iso(),
-                "failedReason": None,
-            },
-            "rows": normalized_rows,
-        }
+        source_universe = [row for row in existing_rows if isinstance(row, dict)]
     search_rows_by_ticker = {
         str(row.get("ticker", "")).strip().upper(): row
         for row in read_search_universe()

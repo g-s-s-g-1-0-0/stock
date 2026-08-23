@@ -320,7 +320,7 @@ const ACTIVE_PAGE_STORAGE_KEY = 'gongsu-active-page'
 const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
 const FAIR_PRICE_UNAVAILABLE_LABEL = '적자 상태라 판단 불가'
 const ETF_FAIR_PRICE_UNAVAILABLE_LABEL = 'ETF라 판단 불가'
-const FAIR_PRICE_RANGE_TOOLTIP = 'EPS(TTM) × 적용 PER 배수로 계산합니다. 가치주는 10~15배, 혼합주는 15~25배를 적용하고, 성장주는 매출 성장률에 따라 15~20배부터 최대 50~70배까지 적용합니다. EPS가 0 이하이면 판단 불가로 표시합니다.'
+const FAIR_PRICE_RANGE_TOOLTIP = 'EPS(TTM)를 기반으로 다음 해 EPS 전망을 보수적으로 반영한 뒤, 성장률·ROE·영업이익률·부채비율로 PER을 조정해 범위를 계산합니다. PER은 8~35배로 제한하며, 전망치 또는 부채 정보가 없으면 범위를 넓게 표시합니다. 매출 성장률만으로 PER을 높이지 않으며, EPS가 0 이하이면 판단 불가로 표시합니다. 투자 판단을 보장하는 가격은 아닙니다.'
 
 function metricTooltip(concept: string, colorGuide: string) {
   if (!colorGuide || colorGuide === '없음') return concept
@@ -4419,7 +4419,7 @@ function ValueAnalysisPage({
       <div className="section-heading value-analysis-heading">
         <div>
           <h2>가치 분석</h2>
-          <p>Home 관심 종목 기준으로 핵심 재무 지표를 확인해 적정 주가 범위를 계산하고, 현재가를 기준으로 저평가/고평가 여부를 판단합니다.</p>
+          <p>Home 관심 종목 기준으로 이익·성장·수익성·부채를 함께 반영해 추정 적정 주가 범위를 계산하고, 현재가를 기준으로 저평가/고평가 여부를 판단합니다.</p>
           <p className="page-update-note">각 지표는 매일 자정에 1회 업데이트됩니다.</p>
         </div>
         <span className="section-heading-meta">총 {visibleStocks.length}개 <b>|</b> {updateLabel}</span>
