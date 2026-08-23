@@ -6081,12 +6081,30 @@
   }
 
   .trading-log-scroll {
-    --trading-log-sheet-height: min(62svh, 560px);
+    --trading-log-sheet-height: auto;
   }
 
+  /* Phone scroll belongs to the page. Tables grow with their rows, while retaining
+     only the horizontal viewport required to inspect their wide columns. */
+  .sheet-wrap.trading-log-scroll,
   .watchlist-sheet,
-  .holding-sheet {
-    max-height: 52svh;
+  .holding-sheet,
+  .value-analysis-sheet,
+  .market-events-sheet,
+  .market-trends-sheet {
+    flex: none;
+    height: auto;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+  }
+
+  .value-analysis-panel {
+    height: auto;
+    min-height: 0;
   }
 
   .sheet-table th,
