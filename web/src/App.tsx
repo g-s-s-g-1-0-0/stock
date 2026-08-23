@@ -8262,7 +8262,7 @@ function App() {
       })
       const payload = await response.json().catch(() => ({}))
       if (!response.ok || !payload?.url) {
-        throw new Error('Slack start failed')
+        throw new Error(typeof payload?.error === 'string' ? payload.error : 'Slack start failed')
       }
       if (oauthWindow) {
         oauthWindow.opener = null
@@ -8270,9 +8270,10 @@ function App() {
       } else {
         window.open(String(payload.url), '_blank', 'noopener,noreferrer')
       }
-    } catch {
+    } catch (error) {
       oauthWindow?.close()
-      setAuthInfoMessage('슬랙 연동을 시작하지 못했습니다.')
+      const detail = error instanceof Error ? error.message : ''
+      setAuthInfoMessage(`슬랙 연동을 시작하지 못했습니다.${detail ? `\n${detail}` : ''}`)
     } finally {
       setConnectingNotificationChannel(null)
     }

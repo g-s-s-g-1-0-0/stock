@@ -48,6 +48,18 @@ Required Vercel environment variables for admin refresh/save APIs:
 - `SUPABASE_ANON_KEY`
 - `ADMIN_EMAILS`
 
+Required Vercel environment variables for Slack notifications:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `WEB_APP_URL`
+- `SLACK_CLIENT_ID`
+- `SLACK_CLIENT_SECRET`
+- `SLACK_SIGNING_SECRET`
+
+In the Slack app's **OAuth & Permissions** settings, add `${WEB_APP_URL}/api/slack/oauth/callback` as a Redirect URL. Set all variables in the Vercel Production environment, then redeploy.
+
 Optional GitHub Secrets:
 
 - `SMTP_HOST` defaults to `smtp.gmail.com` when empty.
