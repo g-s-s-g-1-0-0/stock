@@ -4321,12 +4321,31 @@ function MetricValue({
   tooltip,
   onTooltipOpen,
   onTooltipClose,
+  onlyWhenTruncated = false,
 }: {
   children: string
   tooltip?: string
   onTooltipOpen: (tooltip: TooltipState) => void
   onTooltipClose: () => void
+  onlyWhenTruncated?: boolean
 }) {
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [isTruncated, setIsTruncated] = useState(false)
+
+  const updateTruncation = useCallback(() => {
+    const element = triggerRef.current
+    if (!element) return
+    setIsTruncated(element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!onlyWhenTruncated) return undefined
+    updateTruncation()
+    const observer = new ResizeObserver(updateTruncation)
+    if (triggerRef.current) observer.observe(triggerRef.current)
+    return () => observer.disconnect()
+  }, [onlyWhenTruncated, children, updateTruncation])
+
   if (!tooltip) return <>{children}</>
 
   const openTooltip = (element: HTMLElement, toggle = false) => {
@@ -4347,15 +4366,24 @@ function MetricValue({
 
   return (
     <button
+      ref={triggerRef}
       className="metric-tooltip-trigger"
       type="button"
-      onBlur={onTooltipClose}
+      aria-label={onlyWhenTruncated && isTruncated ? `${children} 전체 보기` : undefined}
+      onBlur={() => {
+        if (!onlyWhenTruncated || isTruncated) onTooltipClose()
+      }}
       onClick={(event) => {
+        if (onlyWhenTruncated && !isTruncated) return
         event.stopPropagation()
         openTooltip(event.currentTarget, true)
       }}
-      onMouseEnter={(event) => openTooltip(event.currentTarget)}
-      onMouseLeave={onTooltipClose}
+      onMouseEnter={(event) => {
+        if (!onlyWhenTruncated || isTruncated) openTooltip(event.currentTarget)
+      }}
+      onMouseLeave={() => {
+        if (!onlyWhenTruncated || isTruncated) onTooltipClose()
+      }}
     >
       {children}
     </button>
@@ -4605,6 +4633,7 @@ function TechnicalAnalysisPage({
                   tooltip={`${technicalSummaryDisplayLabel(label)}\n${value}`}
                   onTooltipClose={onTooltipClose}
                   onTooltipOpen={onTooltipOpen}
+                  onlyWhenTruncated
                 >
                   {value}
                 </MetricValue>

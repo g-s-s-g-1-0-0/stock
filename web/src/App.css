@@ -4483,7 +4483,6 @@
   /* The current market summary can contain 17 cards; nine columns keep it to
      two rows at a standard desktop width. */
   grid-template-columns: repeat(9, minmax(0, 1fr));
-  grid-auto-rows: 82px;
   gap: 6px;
   padding: 7px;
 }
@@ -4504,7 +4503,6 @@
 .technical-summary-item {
   box-sizing: border-box;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   min-width: 0;
   gap: 3px;
   border: 1px solid var(--sheet-border);
