@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15381,
-    "industryEnrichedAt": "2026-08-24T09:30:22+00:00",
-    "industryEnrichedTickers": 32
+    "industryEnrichedAt": "2026-08-24T10:55:38+00:00",
+    "industryEnrichedTickers": 1
   },
   "rows": [
     {
@@ -80181,7 +80181,7 @@
       "opinion": "관망",
       "strategies": [],
       "category": "성장주",
-      "industry": "소프트웨어·클라우드, AI 플랫폼",
+      "industry": "소프트웨어·클라우드, 보안, AI 플랫폼",
       "rawIndustry": "Technology | Software - Infrastructure",
       "products": "-",
       "updatedAt": "2026-08-24T09:30:13+00:00"
