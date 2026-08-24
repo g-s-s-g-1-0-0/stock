@@ -1705,7 +1705,10 @@ def parse_market_trend_analysis(text: str) -> dict[str, Any]:
             ranks.append(f"{rank_match.group(2).strip()} | {rank_match.group(3).strip()}")
             continue
 
-        summary_match = re.match(r"^\s*요약:\s*(.+?)\s*$", line)
+        summary_match = re.match(
+            r"^\s*(?:[-*#]+\s*)?(?:\*\*)?\s*(?:(?:시장|전체\s*시장)\s*)?요약(?:\*\*)?\s*[:：](?:\*\*)?\s*(.+?)\s*$",
+            line,
+        )
         if summary_match:
             summary = summary_match.group(1).strip()
 
