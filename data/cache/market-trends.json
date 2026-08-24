@@ -2,9 +2,9 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-08-24T08:00:13+00:00",
-    "lastSuccessfulRun": "2026-08-24T08:00:13+00:00",
-    "failedReason": "Groq API 호출 실패 후 내부 가격·기술 모멘텀 신호로 대체했습니다: HTTP 404"
+    "updatedAt": "2026-08-24T08:44:41+00:00",
+    "lastSuccessfulRun": "2026-08-24T08:44:41+00:00",
+    "failedReason": "RSS/Groq 분석 실패 후 내부 가격·기술 모멘텀 신호로 대체했습니다: Groq 분석 결과에서 시장요약을 파싱하지 못했습니다."
   },
   "rows": [
     {
@@ -341,7 +341,7 @@
         "암호화폐·핀테크 | 스테이블코인, 비트코인, 블록체인, 이더리움, 디지털 자산",
         "로봇·자동화 | 로봇, 자동화, 휴머노이드, 협동로봇, 로보틱스"
       ],
-      "summary": "관심종목의 가격·기술 모멘텀에서 강하게 확인된 메가트렌드를 우선 반영했습니다. RSS/LLM 분석은 실패해 내부 신호 기준으로 대체했습니다: HTTP 404: {\"error\":{\"message\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}"
+      "summary": "관심종목의 가격·기술 모멘텀에서 강하게 확인된 메가트렌드를 우선 반영했습니다. RSS/LLM 분석은 실패해 내부 신호 기준으로 대체했습니다: Groq 분석 결과에서 시장요약을 파싱하지 못했습니다."
     }
   ]
 }
