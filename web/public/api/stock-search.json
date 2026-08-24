@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-08-24T06:56:03+00:00",
-    "lastSuccessfulRun": "2026-08-24T06:56:03+00:00",
+    "updatedAt": "2026-08-24T08:00:12+00:00",
+    "lastSuccessfulRun": "2026-08-24T08:00:12+00:00",
     "failedReason": null
   },
   "rows": [
@@ -11062,7 +11062,7 @@
     },
     {
       "ticker": "123010",
-      "name": "알엔티엑스",
+      "name": "MSDI",
       "market": "KR",
       "category": "성장주",
       "industry": "이미지센서 패키징"
@@ -17590,6 +17590,13 @@
       "market": "KR",
       "category": "성장주",
       "industry": "2차전지, 전기차 배터리, 배터리 소재"
+    },
+    {
+      "ticker": "417030",
+      "name": "니어스랩",
+      "market": "KR",
+      "category": "성장주",
+      "industry": "전력 인프라, 전기장비, 변압기·배전, 전력망"
     },
     {
       "ticker": "417180",
@@ -27779,13 +27786,6 @@
     {
       "ticker": "BEDY",
       "name": "BNY Mellon Enhanced Dividend and Income ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
-    },
-    {
-      "ticker": "BEDZ",
-      "name": "AdvisorShares Hotel ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -42862,6 +42862,13 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "EDVA",
+      "name": "Endovia Health Sciences",
+      "market": "US",
+      "category": "성장주",
+      "industry": "바이오, 제약·헬스케어"
+    },
+    {
       "ticker": "EDZ",
       "name": "Direxion Emerging Markets Bear 3X ETF",
       "market": "US",
@@ -43353,7 +43360,7 @@
     },
     {
       "ticker": "EICA",
-      "name": "Eagle Point Income Company Inc. 5.00% Term due 2026 Series A Pref",
+      "name": "Eagle Point Income Company 5.00% Term Shares due 2026 Series A Pref",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -72829,13 +72836,6 @@
       "industry": "레버리지·테마 ETF"
     },
     {
-      "ticker": "NCL",
-      "name": "Northann",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
       "ticker": "NCLD",
       "name": "Roundhill Neocloud ETF",
       "market": "US",
@@ -86339,13 +86339,6 @@
       "industry": "AI 인프라, 데이터센터 전력·냉각, 광통신"
     },
     {
-      "ticker": "RNWWW",
-      "name": "ReNew Energy Global plc - Warrant",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
-    },
-    {
       "ticker": "RNXT",
       "name": "RenovoRx",
       "market": "US",
@@ -87933,13 +87926,6 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
-    },
-    {
-      "ticker": "SBEV",
-      "name": "Splash Beverage Group",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "소비재, 식품·유통, 브랜드 커머스"
     },
     {
       "ticker": "SBFG",
@@ -92760,6 +92746,13 @@
     {
       "ticker": "SPYX",
       "name": "State Street SPDR S&P 500 Fossil Fuel Reserves Free ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "SQBA",
+      "name": "FT Vest U.S. Equity Quarterly 15 Buffer ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -101625,13 +101618,6 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
-    },
-    {
-      "ticker": "VICE",
-      "name": "AdvisorShares Vice ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
     },
     {
       "ticker": "VICI",
