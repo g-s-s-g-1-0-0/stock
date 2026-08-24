@@ -81,7 +81,7 @@ GENERIC_TREND_TOKENS = {
 }
 
 GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MARKET_TREND_MODEL = os.environ.get("GROQ_MARKET_TREND_MODEL", "").strip() or "llama-3.3-70b-versatile"
+GROQ_MARKET_TREND_MODEL = os.environ.get("GROQ_MARKET_TREND_MODEL", "").strip() or "openai/gpt-oss-120b"
 CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 FAIR_PRICE_UNAVAILABLE_LABEL = "적자 상태라 판단 불가"
 MAX_REFRESH_UNIVERSE = int(os.environ.get("MAX_REFRESH_UNIVERSE", "200"))

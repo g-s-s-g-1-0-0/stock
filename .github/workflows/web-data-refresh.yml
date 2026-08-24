@@ -210,7 +210,7 @@ jobs:
             exit 0
           fi
           echo "Market trend LLM analysis failed: $REASON"
-          python scripts/web_refresh_notifications.py admin-failure --message "주간 시장 트렌드 LLM 분석이 실패해 내부 가격·기술 모멘텀 신호로 대체됐습니다. GROQ_API_KEY가 만료·폐기되지 않았는지 확인해 주세요. 사유: $REASON"
+          python scripts/web_refresh_notifications.py admin-failure --message "주간 시장 트렌드 LLM 분석이 실패해 내부 가격·기술 모멘텀 신호로 대체됐습니다. GitHub Secrets의 GROQ_API_KEY와 GROQ_MARKET_TREND_MODEL 설정을 확인해 주세요. 사유: $REASON"
 
       - name: Wait until scheduled publish time
         if: ${{ env.SKIP_REFRESH != 'true' && env.WEB_REFRESH_PUBLISH_AT != '' }}

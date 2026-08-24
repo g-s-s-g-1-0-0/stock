@@ -88,7 +88,7 @@ function analyzeWithGroq(newsText) {
 ${newsText.substring(0, 6000)}`;
 
   const payload = {
-    model:       "llama-3.3-70b-versatile",
+    model:       "openai/gpt-oss-120b",
     messages:    [{ role: "user", content: prompt }],
     temperature: 0.3,
     max_tokens:  1024
@@ -115,7 +115,7 @@ ${newsText.substring(0, 6000)}`;
     }
 
     if (httpCode === 404) {
-      return { error: `모델을 찾을 수 없음 (HTTP 404). llama-3.3-70b-versatile 모델이 deprecated 되었을 수 있습니다.`, httpCode };
+      return { error: `모델을 찾을 수 없음 (HTTP 404). Groq Console에서 현재 사용 가능한 모델 ID를 확인해 주세요.`, httpCode };
     }
 
     if (httpCode >= 500) {
