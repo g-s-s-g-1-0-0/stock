@@ -2,15 +2,32 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-08-24T14:00:00Z",
-    "lastSuccessfulRun": "2026-08-24T14:00:00Z",
+    "updatedAt": "2026-08-24T15:00:00Z",
+    "lastSuccessfulRun": "2026-08-24T15:00:00Z",
     "failedReason": null,
-    "appendedOpenTrades": 0,
+    "appendedOpenTrades": 1,
     "closedTrades": 0,
     "correctedClosedStatuses": 0,
     "nasdaqPeakLiquidation": false,
     "recoveryEndedLiquidation": false,
     "strategySeasonOpen": false
   },
-  "rows": []
+  "rows": [
+    {
+      "slotId": "INTC_swing_3_20260825_1",
+      "investmentType": "swing",
+      "ticker": "INTC",
+      "name": "Intel",
+      "market": "US",
+      "currentPrice": "$86.29",
+      "strategy": "3. 정상장 볼린저 워시아웃",
+      "buyDate": "2026.08.25",
+      "buyPrice": "$86.29",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중"
+    }
+  ]
 }
