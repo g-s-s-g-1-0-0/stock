@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-08-25T14:56:11+00:00",
-    "lastSuccessfulRun": "2026-08-25T14:56:11+00:00",
+    "updatedAt": "2026-08-25T15:01:39+00:00",
+    "lastSuccessfulRun": "2026-08-25T15:01:39+00:00",
     "failedReason": null
   },
   "rows": [
@@ -155,10 +155,10 @@
       "ticker": "278470",
       "name": "에이피알",
       "market": "KR",
-      "fairPrice": "₩307,884 ~ ₩416,549",
+      "fairPrice": "₩367,151 ~ ₩496,734",
       "fairPriceReason": null,
       "currentPrice": "₩440,500",
-      "valuation": "고평가",
+      "valuation": "보통",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
