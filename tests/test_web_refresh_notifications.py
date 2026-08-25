@@ -1039,6 +1039,37 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertIn("MA20 $80.00", changes[0]["reason"])
         self.assertNotIn("시장 국면:", changes[0]["reason"])
 
+    def test_dedupe_exit_changes_by_ticker_merges_parallel_slot_exits(self) -> None:
+        changes = [
+            {
+                "ticker": "INTC",
+                "name": "Intel",
+                "from": "보유 중",
+                "to": "매도",
+                "returnPct": 4.13,
+                "buyPrice": "$86.29",
+                "buyDate": "2026.08.25",
+                "reason": "횡보장 고점 청산 +4.13%",
+            },
+            {
+                "ticker": "INTC",
+                "name": "Intel",
+                "from": "보유 중",
+                "to": "매도",
+                "returnPct": 2.73,
+                "buyPrice": "$87.46",
+                "buyDate": "2026.08.25",
+                "reason": "횡보장 고점 청산 +2.73%",
+            },
+        ]
+
+        deduped = self.notifications.dedupe_exit_changes_by_ticker(changes)
+
+        self.assertEqual(1, len(deduped))
+        self.assertEqual("INTC", deduped[0]["ticker"])
+        self.assertAlmostEqual(3.43, deduped[0]["returnPct"], places=2)
+        self.assertIn("2개 슬롯 청산", deduped[0]["entryNote"])
+
     def test_refresh_to_opinion_change_sends_email_end_to_end(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
         original_load_recipients = self.notifications.load_recipients

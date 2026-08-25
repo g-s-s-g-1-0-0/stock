@@ -1386,6 +1386,19 @@ def run_trade_engine(
                     continue
                 if open_for_ticker:
                     restore_source_trades = restore_candidates
+                same_strategy_open = [
+                    trade
+                    for trade in open_for_ticker
+                    if strategy_code(trade.get("strategy")) == code
+                ]
+                if same_strategy_open:
+                    same_strategy_restore = [
+                        trade
+                        for trade in restore_source_trades
+                        if strategy_code(trade.get("strategy")) == code
+                    ]
+                    if not same_strategy_restore:
+                        continue
                 family_restore_sources = [
                     trade
                     for trade in restore_source_trades

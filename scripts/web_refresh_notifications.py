@@ -446,7 +446,76 @@ def opinion_changes(
             change["fromLabel"] = "매수(보유중)"
             change["toLabel"] = "추가 매수"
         changes.append(change)
-    return changes
+    return dedupe_buy_changes_by_ticker(changes)
+
+
+def dedupe_buy_changes_by_ticker(changes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep one buy/add-buy notification per ticker per refresh."""
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    order: list[str] = []
+    for change in changes:
+        if str(change.get("to") or "").strip() != "매수":
+            grouped.setdefault(f"__other__{len(order)}", []).append(change)
+            order.append(f"__other__{len(order) - 1}")
+            continue
+        ticker = str(change.get("ticker") or "").strip().upper()
+        if ticker not in grouped:
+            order.append(ticker)
+            grouped[ticker] = []
+        grouped[ticker].append(change)
+
+    deduped: list[dict[str, Any]] = []
+    for key in order:
+        items = grouped[key]
+        if len(items) == 1:
+            deduped.append(items[0])
+            continue
+        if key.startswith("__other__"):
+            deduped.extend(items)
+            continue
+        primary = dict(items[0])
+        if len(items) > 1:
+            slot_note = f"동시 {len(items)}개 슬롯"
+            existing = str(primary.get("entryNote") or "").strip()
+            primary["entryNote"] = f"{existing} · {slot_note}" if existing else slot_note
+        deduped.append(primary)
+    return deduped
+
+
+def dedupe_exit_changes_by_ticker(changes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep one exit notification per ticker when multiple slots close together."""
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    order: list[str] = []
+    for change in changes:
+        ticker = str(change.get("ticker") or "").strip().upper()
+        if ticker not in grouped:
+            order.append(ticker)
+            grouped[ticker] = []
+        grouped[ticker].append(change)
+
+    deduped: list[dict[str, Any]] = []
+    for ticker in order:
+        items = grouped[ticker]
+        if len(items) == 1:
+            deduped.append(items[0])
+            continue
+        primary = dict(items[0])
+        returns: list[float] = []
+        for item in items:
+            try:
+                returns.append(float(item.get("returnPct", 0)))
+            except (TypeError, ValueError):
+                continue
+        if returns:
+            primary["returnPct"] = sum(returns) / len(returns)
+            result_text = f"{primary['returnPct']:+.2f}%"
+            buy_price = primary.get("buyPrice") or "-"
+            buy_date = primary.get("buyDate") or "-"
+            primary["entryNote"] = f"{len(items)}개 슬롯 청산 · 진입가 {buy_price} ({buy_date}) · 평균 수익률 {result_text}"
+        else:
+            primary["entryNote"] = f"{len(items)}개 슬롯 청산"
+        deduped.append(primary)
+    return deduped
 
 
 def exit_change_from_trade(
@@ -503,7 +572,7 @@ def trade_exit_changes(previous_path: Path, current_path: Path) -> list[dict[str
         if str(current.get("status") or "").strip() == "보유 중":
             continue
         changes.append(exit_change_from_trade(current, previous_trade))
-    return changes
+    return dedupe_exit_changes_by_ticker(changes)
 
 
 def supabase_request(path: str) -> list[dict[str, Any]]:
