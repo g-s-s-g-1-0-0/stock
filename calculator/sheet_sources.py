@@ -599,6 +599,13 @@ def format_billion_won(value: float | None) -> str:
     return f"{rounded:,}억"
 
 
+def format_currency_values(values: list[str], currency: str) -> list[str]:
+    for index in (0, 1, 16, 17):
+        if values[index] != "-" and not values[index].startswith(currency):
+            values[index] = f"{currency} {values[index]}"
+    return values
+
+
 def fetch_korean_valuation(code: str) -> list[str]:
     html = fetch_text(f"https://finance.naver.com/item/main.naver?code={code}", encoding="utf-8")
     table_match = re.search(r"기업실적분석([\s\S]*?)동종업종비교", html)
@@ -673,7 +680,7 @@ def fetch_korean_valuation(code: str) -> list[str]:
         earnings_date = fetch_korean_earnings_date(code)
     except Exception:
         earnings_date = "-"
-    return [market_cap, sales_ttm, sales_qq, sales_yy, sales_past, current_ratio, de, "-", ps, per, pbr, roe, peg, shares, "-", oper_margin, eps_ttm, eps_next, eps_qq, earnings_date, "-"]
+    return format_currency_values([market_cap, sales_ttm, sales_qq, sales_yy, sales_past, current_ratio, de, "-", ps, per, pbr, roe, peg, shares, "-", oper_margin, eps_ttm, eps_next, eps_qq, earnings_date, "-"], "₩")
 
 
 def fetch_us_valuation(symbol: str) -> list[str]:
@@ -692,7 +699,7 @@ def fetch_us_valuation(symbol: str) -> list[str]:
     sector = re.sub(r"<.*?>", "", sector_match.group(1)).strip() if sector_match else "-"
     industry = re.sub(r"<.*?>", "", industry_match.group(1)).strip() if industry_match else "-"
     values.append(" | ".join(value for value in (sector, industry) if value != "-") or "-")
-    return values
+    return format_currency_values(values, "$")
 
 
 def fetch_valuation(ticker: str) -> list[str]:

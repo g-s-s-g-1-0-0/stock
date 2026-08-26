@@ -4663,6 +4663,10 @@
   text-align: center !important;
 }
 
+.value-analysis-table .financial-amount-cell {
+  min-width: 148px;
+}
+
 .technical-analysis-table td.dash-cell {
   text-align: center !important;
 }

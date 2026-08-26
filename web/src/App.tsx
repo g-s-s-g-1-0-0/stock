@@ -3066,6 +3066,12 @@ function parseKoreanAmountMagnitude(value: string) {
   return amount
 }
 
+function formatValuationCurrency(stock: Stock, label: string, value: string) {
+  if (!['Market Cap', 'Sales', 'EPS (TTM)', 'EPS Next Y'].includes(label) || !value || value === '-') return value
+  const currency = stock.market === 'KR' ? '₩' : '$'
+  return value.startsWith(currency) ? value : `${currency} ${value}`
+}
+
 function indicatorToneClass(tone: IndicatorTone | null) {
   return tone ? `indicator-cell indicator-${tone}` : ''
 }
@@ -4514,10 +4520,10 @@ function ValueAnalysisPage({
                   <td className={`number-cell ${valuationClassName}`.trim()}>{displayCurrentPriceText(stock)}</td>
                   <td><span className={`status-badge ${valuationBadgeClass(displayValuation)}`}>{displayValuation}</span></td>
                   {valueMetricColumns.map((column) => {
-                    const value = metric ? column.value(metric) : '-'
+                    const value = formatValuationCurrency(stock, column.label, metric ? column.value(metric) : '-')
                     const indicatorClassName = valueMetricTone(column.label, value)
                     return (
-                      <td className={`number-cell ${column.label.startsWith('실적발표일') ? 'earnings-date-cell' : ''} ${indicatorToneClass(indicatorClassName)}`.trim()} key={column.label}>
+                      <td className={`number-cell ${['Market Cap', 'Sales'].includes(column.label) ? 'financial-amount-cell' : ''} ${column.label.startsWith('실적발표일') ? 'earnings-date-cell' : ''} ${indicatorToneClass(indicatorClassName)}`.trim()} key={column.label}>
                         {value}
                       </td>
                     )
