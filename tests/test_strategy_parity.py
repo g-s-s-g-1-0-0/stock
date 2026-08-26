@@ -190,14 +190,24 @@ def test_strategy_3_requires_normal_regime_and_above_ma200():
     assert below["strategyType"] is None
 
 
-def test_strategy_3_exit_uses_tp_sl_time_and_sideways_peak():
+def test_strategy_3_requires_qqq_buffer_below_seven_percent():
+    row = IndicatorRow(stock_name="NVDA", current_price=120, ma200=100, rsi=40, pct_b_low=8)
+
+    result = evaluate_buy_condition(
+        row, vix=15, ixic_dist=8, ixic_filter_active=False, is_recovery_market=False
+    )
+
+    assert result["strategyType"] is None
+
+
+def test_strategy_3_exit_uses_tp_sl_time_but_not_unconfirmed_sideways_peak():
     base = IndicatorRow(stock_name="NVDA", current_price=112, entry_price=100)
     tp = evaluate_exit_condition(base, strategy_type="3")
     assert tp["shouldExit"] is True
     assert "익절" in tp["reason"]
 
     sl = evaluate_exit_condition(
-        IndicatorRow(stock_name="NVDA", current_price=87, entry_price=100),
+        IndicatorRow(stock_name="NVDA", current_price=74, entry_price=100),
         strategy_type="3",
     )
     assert sl["shouldExit"] is True
@@ -208,8 +218,7 @@ def test_strategy_3_exit_uses_tp_sl_time_and_sideways_peak():
         strategy_type="3",
         regime_label="횡보장 고점",
     )
-    assert extended["shouldExit"] is True
-    assert "횡보장 고점" in extended["reason"]
+    assert extended["shouldExit"] is False
 
     time_stop = evaluate_exit_condition(
         IndicatorRow(stock_name="NVDA", current_price=105, entry_price=100),

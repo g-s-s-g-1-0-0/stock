@@ -17,6 +17,28 @@ def test_parse_log_tasks_ignores_stock_universe_and_keeps_market_trends():
     ]) == {"value-analysis", "technical-analysis", "market-trends"}
 
 
+def test_strategy_3_support_stop_uses_nearest_support_below_entry_with_atr_buffer():
+    stop = logs.strategy_3_support_stop(
+        {
+            "5일 이동평균선": "$103.00",
+            "20일 이동평균선": "$96.00",
+            "60일 이동평균선": "$80.00",
+            "ATR (14, %)": "4.00%",
+        },
+        100.0,
+    )
+
+    assert stop == ("MA20", 94.0)
+
+
+def test_strategy_3_market_exit_requires_three_days_held_and_two_high_days():
+    trade = {}
+
+    assert logs.confirm_strategy_3_market_exit(trade, 10.6, 2, "2026.08.25") is False
+    assert logs.confirm_strategy_3_market_exit(trade, 10.6, 3, "2026.08.25") is False
+    assert logs.confirm_strategy_3_market_exit(trade, 10.7, 4, "2026.08.26") is True
+
+
 def test_load_watchlist_tickers_includes_all_investment_types(monkeypatch):
     monkeypatch.setattr(logs, "supabase_request", lambda path: [{
         "tickers": ["AAPL"],
@@ -87,7 +109,7 @@ def test_long_term_trade_does_not_auto_exit_on_target(monkeypatch, tmp_path):
     assert row["sellPrice"] == "-"
 
 
-def test_strategy_3_enters_swing_only_and_exits_on_sideways_peak(monkeypatch, tmp_path):
+def test_strategy_3_enters_swing_only_and_ignores_unconfirmed_sideways_peak(monkeypatch, tmp_path):
     cache_path, _ = patch_log_paths(monkeypatch, tmp_path)
     monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {
         "long_term": ["NVDA"],
@@ -107,7 +129,7 @@ def test_strategy_3_enters_swing_only_and_exits_on_sideways_peak(monkeypatch, tm
     assert opened[0]["investmentType"] == "swing"
     assert opened[0]["strategy"].startswith("3.")
 
-    # Rewrite open trade with today's buy date/price, then hit 횡보장 고점.
+    # A same-day 횡보장 고점 does not pass the three-day/two-close confirmation gate.
     today = logs.kst_trade_date()
     public_path = logs.TRADE_LOG_PUBLIC_PATH
     public_path.write_text(logs.json.dumps({
@@ -124,9 +146,8 @@ def test_strategy_3_enters_swing_only_and_exits_on_sideways_peak(monkeypatch, tm
         {"NVDA": {"entrySignalCodes": "3", "현재가": "$105.00", "C - Close": "$105.00", "dailyPriceDate": today}},
         {"peakTriggered": True, "regimeLabel": "횡보장 고점"},
     )
-    closed = logs.load_json(cache_path, {})["rows"][0]
-    assert closed["status"] == "실패 익절"
-    assert "횡보장 고점" in str(closed.get("exitReason") or "")
+    held = logs.load_json(cache_path, {})["rows"][0]
+    assert held["status"] == "보유 중"
 
 
 def test_strategy_3_ignores_recovery_end_and_peak_without_sideways(monkeypatch, tmp_path):

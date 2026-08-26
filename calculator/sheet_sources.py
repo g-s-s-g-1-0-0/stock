@@ -222,7 +222,7 @@ def calc_bollinger(rows: list[dict[str, float]]) -> dict[str, float]:
         return (price - lower) / (upper - lower) * 100
 
     latest = rows[-1]
-    _, upper, lower = band(rows[-period:])
+    middle, upper, lower = band(rows[-period:])
     prev = rows[-2]
     _, prev_upper, prev_lower = band(rows[-period - 1 : -1])
     for i in range(len(rows) - 60, len(rows)):
@@ -232,6 +232,8 @@ def calc_bollinger(rows: list[dict[str, float]]) -> dict[str, float]:
     width = (upper - lower) / (sum(row["close"] for row in rows[-period:]) / period) * 100
     prev_width = (prev_upper - prev_lower) / (sum(row["close"] for row in rows[-period - 1 : -1]) / period) * 100
     return {
+        "bbMiddle": middle,
+        "bbLower": lower,
         "pctB": round(pct_b(latest["close"], lower, upper), 2),
         "pctBLow": round(pct_b(latest["low"], lower, upper), 2),
         "pctBPeak": round(pct_b(latest["high"], lower, upper), 2),
@@ -414,6 +416,7 @@ def calc_technical_row(ticker: str) -> dict[str, float]:
         "ma20D1": ma20_d1,
         "ma20Prev5": ma20_prev5,
         "ma60": sum(closes[-60:]) / 60,
+        "ma120": sum(closes[-120:]) / 120,
         "ma144": sum(closes[-144:]) / 144,
         "ma200": sum(closes[-200:]) / 200,
         "closeD1": prev["close"],

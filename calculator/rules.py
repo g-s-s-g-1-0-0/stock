@@ -33,6 +33,8 @@ STRATEGY_RULES: dict[str, float | int] = {
     "MAX_HOLD_DAYS_3": 20,
     "S3_PCT_B_LOW_MAX": 10,
     "S3_RSI_MAX": 45,
+    "S3_ENTRY_QQQ_MAX": 7.0,
+    "S3_HARD_CIRCUIT_PCT": 0.25,
     "S4_STOCK_MA200_DIST_MIN": -25.0,
     "MA_TOUCH_RATIO": 1.003,
     "MA_RECLAIM_RATIO": 0.995,
@@ -222,7 +224,7 @@ def evaluate_buy_condition(
     s2_cond4 = touch_20 or touch_60 or touch_144 or touch_200
     entry_2 = s2_cond1 and s2_cond2 and s2_cond3 and s2_cond4 and not entry_1
 
-    s3_cond1 = regime == "정상장"
+    s3_cond1 = regime == "정상장" and ixic_dist is not None and ixic_dist <= float(s["S3_ENTRY_QQQ_MAX"])
     s3_cond2 = _gt(ind.current_price, ind.ma200)
     s3_cond3 = ind.pct_b_low is not None and ind.pct_b_low <= float(s["S3_PCT_B_LOW_MAX"])
     s3_cond4 = ind.rsi is not None and ind.rsi <= float(s["S3_RSI_MAX"])
@@ -365,18 +367,17 @@ def evaluate_exit_condition(
     return_signed = format_return_pct(return_pct)
     stop_label = strategy_stop_criterion_label(code)
 
-    # Strategy 3: fixed TP/SL/time + 횡보장 고점. Not tied to recovery-end or peakTriggered.
+    # Strategy 3: support stop / fixed target / time cap. Market-regime exits are
+    # confirmed by the trade-log engine so a one-day QQQ boundary move cannot close it.
     if code == "3":
         target_pct = float(STRATEGY_RULES.get("TARGET_PCT_3", 0.12))
-        circuit_pct = float(STRATEGY_RULES.get("CIRCUIT_PCT_3", 0.12))
+        circuit_pct = float(STRATEGY_RULES.get("S3_HARD_CIRCUIT_PCT", 0.25))
         max_hold = int(STRATEGY_RULES.get("MAX_HOLD_DAYS_3", 20))
         if return_pct <= -circuit_pct:
             return {"shouldExit": True, "reason": f"손절 기준 도달 {return_signed} [{stop_label}]"}
         if return_pct >= target_pct:
             target_label = strategy_target_criterion_label(code)
             return {"shouldExit": True, "reason": f"익절 기준 도달 {return_signed} [{target_label}]"}
-        if regime_label == "횡보장 고점":
-            return {"shouldExit": True, "reason": f"횡보장 고점 청산 {return_signed}"}
         if trading_days >= max_hold:
             return {
                 "shouldExit": True,

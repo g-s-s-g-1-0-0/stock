@@ -1486,8 +1486,8 @@
       "updatedAt": "2026-08-26T02:55:56+00:00",
       "dailyPriceDate": "2026-08-25",
       "currentPrice": "$87.58",
-      "opinion": "매도",
-      "opinionReason": "횡보장 고점 청산 +4.13%",
+      "opinion": "관망",
+      "opinionReason": "-",
       "marketEvent": "PCE 발표",
       "entryStrategy": "-",
       "entrySignalCodes": "",
@@ -1553,8 +1553,7 @@
       "실적발표일 (한국 시간 기준)": "2026-07-24 (D+33)",
       "진입가": "-",
       "진입일": "-",
-      "진입 전략": "-",
-      "exitReason": "횡보장 고점 청산 +4.13%"
+      "진입 전략": "-"
     },
     "IONQ": {
       "ticker": "IONQ",
@@ -2551,8 +2550,8 @@
       "updatedAt": "2026-08-26T02:56:04+00:00",
       "dailyPriceDate": "2026-08-25",
       "currentPrice": "$281.00",
-      "opinion": "매도",
-      "opinionReason": "횡보장 고점 청산 +3.69%",
+      "opinion": "관망",
+      "opinionReason": "-",
       "marketEvent": "PCE 발표",
       "entryStrategy": "-",
       "entrySignalCodes": "",
@@ -2618,8 +2617,7 @@
       "실적발표일 (한국 시간 기준)": "2026-08-05 (D+21)",
       "진입가": "-",
       "진입일": "-",
-      "진입 전략": "-",
-      "exitReason": "횡보장 고점 청산 +3.69%"
+      "진입 전략": "-"
     },
     "VRT": {
       "ticker": "VRT",

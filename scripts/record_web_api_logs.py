@@ -429,6 +429,39 @@ def parse_price(value: Any) -> float | None:
         return None
 
 
+def strategy_3_support_stop(row: dict[str, Any], entry_price: float) -> tuple[str, float] | None:
+    candidates = (
+        ("BB하단", "볼린저밴드 하단"),
+        ("BB중단", "볼린저밴드 중단"),
+        ("MA5", "5일 이동평균선"),
+        ("MA20", "20일 이동평균선"),
+        ("MA60", "60일 이동평균선"),
+        ("MA120", "120일 이동평균선"),
+        ("MA144", "144일 이동평균선"),
+        ("MA200", "200일 이동평균선"),
+    )
+    supports = [(name, parse_price(row.get(key))) for name, key in candidates]
+    supports = [(name, value) for name, value in supports if value is not None and value < entry_price]
+    if not supports:
+        return None
+    name, support = max(supports, key=lambda item: item[1])
+    atr_pct = parse_price(row.get("ATR (14, %)")) or 0.0
+    buffer = max(entry_price * atr_pct / 100 * 0.5, entry_price * 0.0075)
+    return name, round(support - buffer, 2)
+
+
+def confirm_strategy_3_market_exit(trade: dict[str, Any], qqq_premium: float | None, held_days: int, today: str) -> bool:
+    if held_days < 3 or qqq_premium is None or qqq_premium < 10.5:
+        if qqq_premium is not None and qqq_premium < 10.5:
+            trade.pop("s3HighRegimeDays", None)
+            trade.pop("s3HighRegimeDate", None)
+        return False
+    if trade.get("s3HighRegimeDate") != today:
+        trade["s3HighRegimeDate"] = today
+        trade["s3HighRegimeDays"] = int(trade.get("s3HighRegimeDays") or 0) + 1
+    return int(trade.get("s3HighRegimeDays") or 0) >= 2
+
+
 def return_pct(buy_price: Any, sell_price: Any) -> float:
     buy = parse_price(buy_price)
     sell = parse_price(sell_price)
@@ -1073,6 +1106,7 @@ def update_trade_logs(
     nasdaq_peak_alert = bool((qqq_market_state or {}).get("peakTriggered"))
     is_recovery_market = bool((qqq_market_state or {}).get("isRecoveryMarket"))
     regime_label = str((qqq_market_state or {}).get("regimeLabel") or "") or None
+    market_premium = parse_price((qqq_market_state or {}).get("premiumPercent"))
     season = load_strategy_season_state()
     confirm_days = int(STRATEGY_RULES.get("RECOVERY_EXIT_CONFIRM_DAYS", 2))
     if is_recovery_market:
@@ -1122,6 +1156,7 @@ def update_trade_logs(
         "nasdaq_peak_alert": nasdaq_peak_alert,
         "recovery_ended": recovery_ended,
         "regime_label": regime_label,
+        "market_premium": market_premium,
         "now": now,
         "today": today,
         "today_date": today_date,
@@ -1189,6 +1224,7 @@ def run_trade_engine(
     mutate_public_state: bool,
     signal_tickers: set[str] | None = None,
     regime_label: str | None = None,
+    market_premium: float | None = None,
 ) -> dict[str, Any]:
     """매수 진입/청산 엔진. 운영자 공용 로그와 개인 로그에 같은 규칙을 적용한다.
 
@@ -1270,7 +1306,9 @@ def run_trade_engine(
         entry_codes = set(entry_signal_codes(row)) if isinstance(row, dict) else set()
         exit_price = sell_price
         held_trading_days = trading_days_since(trade.get("buyDate"), today_date)
-        if recovery_ended:
+        if strategy == "3" and confirm_strategy_3_market_exit(trade, market_premium, held_trading_days, today):
+            exit_result = {"shouldExit": True, "reason": f"횡보장 고점 확인 청산 ({market_premium:+.2f}%)"}
+        elif recovery_ended:
             exit_result = evaluate_exit_condition(
                 IndicatorRow(
                     stock_name=ticker,
@@ -1295,13 +1333,17 @@ def run_trade_engine(
                 regime_label=regime_label,
             )
         elif daily_ind is not None and isinstance(row, dict) and has_new_daily_price(row, previous_row if isinstance(previous_row, dict) else None):
-            exit_result = evaluate_exit_condition(
-                daily_ind,
-                strategy_type=strategy,
-                nasdaq_peak_alert=False,
-                trading_days=held_trading_days,
-                regime_label=regime_label,
-            )
+            support_stop = parse_price(trade.get("supportStopPrice"))
+            if strategy == "3" and support_stop is not None and daily_ind.current_price <= support_stop:
+                exit_result = {"shouldExit": True, "reason": f"진입 지지선 이탈 청산 ({trade.get('supportLevel') or '지지선'} {support_stop:.2f})"}
+            else:
+                exit_result = evaluate_exit_condition(
+                    daily_ind,
+                    strategy_type=strategy,
+                    nasdaq_peak_alert=False,
+                    trading_days=held_trading_days,
+                    regime_label=regime_label,
+                )
             exit_price = daily_sell_price
         elif live_ind is not None:
             exit_result = evaluate_exit_condition(
@@ -1454,6 +1496,11 @@ def run_trade_engine(
                     "holdingDays": "-",
                     "status": "보유 중",
                 }
+                if code == "3":
+                    support_stop = strategy_3_support_stop(row, current_price or 0)
+                    if support_stop is not None:
+                        new_trade["supportLevel"] = support_stop[0]
+                        new_trade["supportStopPrice"] = support_stop[1]
                 if code == "1":
                     season["open"] = True
                     season["openedAt"] = season.get("openedAt") or publish_iso()
