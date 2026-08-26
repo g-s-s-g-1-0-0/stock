@@ -840,6 +840,45 @@ def test_same_strategy_does_not_duplicate_while_signal_never_left(monkeypatch, t
     assert updated["meta"]["appendedOpenTrades"] == 0
 
 
+def test_public_log_removes_duplicate_closed_same_day_strategy_slots(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "slotId": "INTC_swing_3_20260825_1",
+                "investmentType": "swing",
+                "ticker": "INTC",
+                "strategy": "3. 정상장 볼린저 워시아웃",
+                "buyDate": "2026.08.25",
+                "buyPrice": "$86.29",
+                "sellDate": "2026.08.25",
+                "sellPrice": "$89.85",
+                "returnPct": 4.13,
+                "status": "실패 익절",
+            },
+            {
+                "slotId": "INTC_swing_3_20260825_2",
+                "investmentType": "swing",
+                "ticker": "INTC",
+                "strategy": "3. 정상장 볼린저 워시아웃",
+                "buyDate": "2026.08.25",
+                "buyPrice": "$87.46",
+                "sellDate": "2026.08.25",
+                "sellPrice": "$89.85",
+                "returnPct": 2.73,
+                "status": "실패 익절",
+            },
+        ]
+    }), encoding="utf-8")
+
+    logs.update_trade_logs([], {}, {}, {"peakTriggered": False})
+
+    updated = logs.load_json(cache_path, {})
+    assert len(updated["rows"]) == 1
+    assert updated["rows"][0]["slotId"] == "INTC_swing_3_20260825_1"
+
+
 def test_same_strategy_adds_slot_after_ten_percent_drop_and_ten_days(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     today = logs.kst_trade_date()

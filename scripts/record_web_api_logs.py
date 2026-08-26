@@ -327,6 +327,32 @@ def trade_key(trade: dict[str, Any]) -> tuple[str, str, str, str]:
     )
 
 
+def public_trade_identity(trade: dict[str, Any]) -> tuple[str, str, str, str] | None:
+    """Identify one closed automatic entry, independently of its generated slot ID."""
+    if str(trade.get("status") or "").strip() == "보유 중":
+        return None
+    ticker = str(trade.get("ticker") or "").strip().upper()
+    strategy = strategy_code(trade.get("strategy"))
+    buy_date = parse_trade_date(trade.get("buyDate"))
+    if not ticker or not strategy or buy_date is None:
+        return None
+    return (trade_investment_type(trade), ticker, strategy, buy_date.isoformat())
+
+
+def dedupe_public_trades(trades: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep the first recorded automatic trade for a ticker/strategy/day."""
+    seen: set[tuple[str, str, str, str]] = set()
+    deduped: list[dict[str, Any]] = []
+    for trade in trades:
+        identity = public_trade_identity(trade)
+        if identity is not None and identity in seen:
+            continue
+        if identity is not None:
+            seen.add(identity)
+        deduped.append(trade)
+    return deduped
+
+
 def trade_investment_type(trade: dict[str, Any]) -> str:
     value = str(trade.get("investmentType") or "").strip()
     if value in INVESTMENT_TYPES:
@@ -1465,7 +1491,7 @@ def run_trade_engine(
     trades = cleaned
 
     # 중복 제거는 공용 로그 정리용이다. 개인 로그는 사용자 데이터 유실을 막기 위해 그대로 둔다.
-    deduped = list({trade_key(trade): trade for trade in trades}.values()) if mutate_public_state else trades
+    deduped = dedupe_public_trades(trades) if mutate_public_state else trades
     if mutate_public_state and season.get("open") and not recovery_ended:
         save_strategy_season_state(season)
     return {
