@@ -1,0 +1,41 @@
+name: Gap-and-go research collection
+
+on:
+  schedule:
+    # Both DST and standard-time UTC windows. The script itself only records
+    # when New York time is 09:20–09:35, 10:00–10:15, or 16:05–16:20.
+    - cron: "20,25,30 13,14 * * 1-5"
+    - cron: "0,5,10 14,15 * * 1-5"
+    - cron: "5,10,15 20,21 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gap-go-observation
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install collection dependency
+        run: pip install --disable-pip-version-check yfinance
+      - name: Record research-only observations
+        run: python scripts/record_gap_go_observations.py
+      - name: Commit internal research data
+        run: |
+          git add data/history/gap-go
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Collect gap-and-go observations"
+          git pull --rebase origin "${GITHUB_REF_NAME:-main}"
+          git push origin "HEAD:${GITHUB_REF_NAME:-main}"
