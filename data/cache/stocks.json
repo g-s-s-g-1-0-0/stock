@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-08-26T14:55:56+00:00",
-    "lastSuccessfulRun": "2026-08-26T14:55:56+00:00",
+    "updatedAt": "2026-08-26T15:01:29+00:00",
+    "lastSuccessfulRun": "2026-08-26T15:01:29+00:00",
     "failedReason": null
   },
   "rows": [
@@ -45,7 +45,7 @@
       "ticker": "005380",
       "name": "현대자동차",
       "market": "KR",
-      "fairPrice": "₩446,358 ~ ₩603,896",
+      "fairPrice": "₩443,989 ~ ₩600,691",
       "fairPriceReason": null,
       "currentPrice": "₩408,000",
       "valuation": "저평가",
@@ -109,7 +109,7 @@
       "ticker": "039030",
       "name": "이오테크닉스",
       "market": "KR",
-      "fairPrice": "₩176,214 ~ ₩238,407",
+      "fairPrice": "₩163,337 ~ ₩220,985",
       "fairPriceReason": null,
       "currentPrice": "₩400,500",
       "valuation": "고평가",
