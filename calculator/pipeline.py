@@ -987,7 +987,7 @@ def latest_technical_row(
         ],
         "2": ["시즌 열림", "회복장", buy_block_label, "MA20/60/144/200 터치"],
         "3": [
-            "정상장",
+            f"정상장 및 QQQ ≤ +{float(STRATEGY_RULES['S3_ENTRY_QQQ_MAX']):.0f}%",
             "현재가 > MA200",
             f"저가 %B ≤ {float(STRATEGY_RULES['S3_PCT_B_LOW_MAX']):.0f}",
             f"RSI ≤ {float(STRATEGY_RULES['S3_RSI_MAX']):.0f}",
