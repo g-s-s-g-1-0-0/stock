@@ -2,10 +2,10 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-08-27T07:00:00Z",
-    "lastSuccessfulRun": "2026-08-27T07:00:00Z",
+    "updatedAt": "2026-08-27T09:00:00Z",
+    "lastSuccessfulRun": "2026-08-27T09:00:00Z",
     "failedReason": null,
-    "appendedOpenTrades": 1,
+    "appendedOpenTrades": 0,
     "closedTrades": 0,
     "correctedClosedStatuses": 0,
     "nasdaqPeakLiquidation": false,
