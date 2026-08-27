@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-08-27T13:51:13+00:00",
-    "lastSuccessfulRun": "2026-08-27T13:51:13+00:00",
+    "updatedAt": "2026-08-27T14:56:20+00:00",
+    "lastSuccessfulRun": "2026-08-27T14:56:20+00:00",
     "failedReason": null
   },
   "rows": [
@@ -11,7 +11,7 @@
       "ticker": "000150",
       "name": "두산",
       "market": "KR",
-      "fairPrice": "₩100,480 ~ ₩135,944",
+      "fairPrice": "₩361,092 ~ ₩488,537",
       "fairPriceReason": null,
       "currentPrice": "₩1,214,000",
       "valuation": "고평가",
@@ -91,7 +91,7 @@
       "ticker": "011070",
       "name": "LG이노텍",
       "market": "KR",
-      "fairPrice": "₩748,027 ~ ₩1,012,036",
+      "fairPrice": "₩750,236 ~ ₩1,015,024",
       "fairPriceReason": null,
       "currentPrice": "₩597,000",
       "valuation": "저평가",
@@ -146,7 +146,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
       "updatedAt": "2026-08-27T13:50:55+00:00"
@@ -555,7 +557,7 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "fairPrice": "₩259,342 ~ ₩350,875",
+      "fairPrice": "₩267,715 ~ ₩362,202",
       "fairPriceReason": null,
       "currentPrice": "₩745,000",
       "valuation": "고평가",
