@@ -1,8 +1,147 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-08-27T13:50:46Z",
-    "rowCount": 0
+    "updatedAt": "2026-08-28T06:55:29Z",
+    "rowCount": 3
   },
-  "rows": []
+  "rows": [
+    {
+      "id": "3e1e0a64-c586-44db-b6ba-a18e8563dfb7",
+      "scope": "operator",
+      "ownerId": null,
+      "tickers": [
+        "000150",
+        "000660",
+        "005380",
+        "005930",
+        "009150",
+        "011070",
+        "039030",
+        "042700",
+        "277810",
+        "278470",
+        "AEHR",
+        "AMD",
+        "ASTS",
+        "ASX",
+        "BE",
+        "CIFR",
+        "CRDO",
+        "HOOG",
+        "INTC",
+        "IONQ",
+        "IREN",
+        "LITE",
+        "LPTH",
+        "MU",
+        "NBIS",
+        "PL",
+        "RKLB",
+        "SNDK",
+        "SOXL",
+        "STX",
+        "COHR",
+        "GLW",
+        "ALAB",
+        "VRT",
+        "079550",
+        "WULF",
+        "CRWV",
+        "LRCX",
+        "AMAT",
+        "KLAC",
+        "TER"
+      ],
+      "tickersByType": {
+        "swing": [
+          "000150",
+          "000660",
+          "005380",
+          "005930",
+          "009150",
+          "011070",
+          "039030",
+          "042700",
+          "277810",
+          "278470",
+          "AEHR",
+          "AMD",
+          "ASTS",
+          "ASX",
+          "BE",
+          "CIFR",
+          "CRDO",
+          "HOOG",
+          "INTC",
+          "IONQ",
+          "IREN",
+          "LITE",
+          "LPTH",
+          "MU",
+          "NBIS",
+          "PL",
+          "RKLB",
+          "SNDK",
+          "SOXL",
+          "STX",
+          "COHR",
+          "GLW",
+          "ALAB",
+          "VRT",
+          "079550",
+          "WULF",
+          "CRWV",
+          "LRCX",
+          "AMAT",
+          "KLAC",
+          "TER"
+        ],
+        "long_term": [
+          "000660",
+          "NBIS",
+          "PL",
+          "AAPL",
+          "GOOGL",
+          "BE",
+          "ALAB",
+          "CRDO"
+        ]
+      },
+      "watchlistSort": {
+        "primary": "market_kr_first",
+        "secondary": "registered"
+      },
+      "remoteUpdatedAt": "2026-08-27T16:07:26.125208+00:00"
+    },
+    {
+      "id": "6065187b-8e56-4939-aae8-c108e1aae841",
+      "scope": "personal",
+      "ownerId": "9fb8fefb-1fcb-4ecc-af03-0a2e5e873e52",
+      "tickers": [],
+      "tickersByType": {
+        "swing": [],
+        "long_term": []
+      },
+      "watchlistSort": {
+        "primary": "registered",
+        "secondary": "registered"
+      },
+      "remoteUpdatedAt": "2026-08-23T06:09:43.311187+00:00"
+    },
+    {
+      "id": "026d7675-fa4f-44d9-8792-88cb35fe276a",
+      "scope": "personal",
+      "ownerId": "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c",
+      "tickers": [],
+      "tickersByType": {
+        "swing": [],
+        "long_term": []
+      },
+      "watchlistSort": {
+        "primary": "registered",
+        "secondary": "registered"
+      },
+      "remoteUpdatedAt": "2026-08-27T16:07:26.084472+00:00"
+    }
+  ]
 }

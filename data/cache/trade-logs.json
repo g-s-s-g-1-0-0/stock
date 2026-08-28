@@ -2,15 +2,15 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-08-27T23:00:00Z",
-    "lastSuccessfulRun": "2026-08-27T23:00:00Z",
+    "updatedAt": "2026-08-28T07:00:00Z",
+    "lastSuccessfulRun": "2026-08-28T07:00:00Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
     "closedTrades": 0,
     "correctedClosedStatuses": 0,
     "nasdaqPeakLiquidation": false,
     "recoveryEndedLiquidation": false,
-    "strategySeasonOpen": false
+    "strategySeasonOpen": true
   },
   "rows": [
     {
@@ -19,7 +19,7 @@
       "ticker": "277810",
       "name": "레인보우로보틱스",
       "market": "KR",
-      "currentPrice": "₩471,000",
+      "currentPrice": "₩456,000",
       "strategy": "4. 장기선 아래 반등 초입",
       "buyDate": "2026.08.27",
       "buyPrice": "₩471,000",
@@ -27,7 +27,8 @@
       "sellPrice": "-",
       "returnPct": 0,
       "holdingDays": "-",
-      "status": "보유 중"
+      "status": "보유 중",
+      "restoreWatchDate": "2026.08.28"
     }
   ]
 }
