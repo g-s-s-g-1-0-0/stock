@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-08-27T22:56:00+00:00",
-    "lastSuccessfulRun": "2026-08-27T22:56:00+00:00",
+    "updatedAt": "2026-08-28T00:11:03+00:00",
+    "lastSuccessfulRun": "2026-08-28T00:11:03+00:00",
     "failedReason": null
   },
   "rows": [
@@ -43,7 +43,7 @@
       "ticker": "005380",
       "name": "현대자동차",
       "market": "KR",
-      "fairPrice": "₩443,989 ~ ₩600,691",
+      "fairPrice": "₩437,304 ~ ₩591,647",
       "fairPriceReason": null,
       "currentPrice": "₩398,000",
       "valuation": "저평가",
@@ -333,7 +333,7 @@
       "ticker": "IREN",
       "name": "IREN",
       "market": "US",
-      "fairPrice": "$9.89 ~ $14.84",
+      "fairPrice": "$12.61 ~ $17.07",
       "fairPriceReason": null,
       "currentPrice": "$37.76",
       "valuation": "고평가",
