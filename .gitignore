@@ -20,3 +20,9 @@ __pycache__/
 
 # 전략 연구 중간 산출물 (재생성 가능)
 analysis_tmp/
+
+# 인트라데이 시세 저장소 및 백테스트 산출물 (재생성 가능, 용량 큼)
+data/intraday/
+quant/out/
+.sp500_cache/
+quant/cache/

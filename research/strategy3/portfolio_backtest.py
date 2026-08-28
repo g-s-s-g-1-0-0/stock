@@ -26,7 +26,7 @@ for t, d in prices.items():
     px[t] = pd.DataFrame({'open': o.values, 'close': c.values}, index=pd.to_datetime(d.index))
 
 import yfinance as yf
-qqq = yf.download('QQQ', start='2026-05-01', end='2026-07-19', progress=False, auto_adjust=False)
+qqq = yf.download('QQQ', start='2026-05-01', progress=False, auto_adjust=False)
 qqq_c = qqq['Close']
 if isinstance(qqq_c, pd.DataFrame): qqq_c = qqq_c.iloc[:, 0]
 

@@ -1,0 +1,22 @@
+---
+description: Require event-time D+1~D+100 validation for every strategy backtest
+alwaysApply: true
+---
+
+# Event-Time Backtest Standard
+
+When evaluating any trading strategy in this project:
+
+- Never judge validity only from fixed checkpoints such as 20-day or 60-day returns.
+- Define D explicitly as the signal-confirmation close. Use the next session open as the primary executable entry.
+- Produce the complete D+1 through D+100 path when data permits. If later horizons are censored, show the sample count at every D+N.
+- Report daily mean, median, positive-return rate, quartiles, and same-date universe-relative excess return.
+- Include +10% and +15% target hit rates, median days to target, MFE, MAE, and drawdown over the path.
+- Keep signal-close descriptive returns separate from next-open executable returns.
+- Use only information available at D. Label any hindsight-defined bottom separately and never treat it as a tradable signal.
+- De-duplicate persistent signals into episodes and report both raw-event and one-position-per-ticker results.
+- Attach QQQ MA200 distance, regime, QQQ RSI/MACD, VIX, and available market breadth at D.
+- Compare variants and existing strategies under identical entry, cost, holding, and exit assumptions.
+- Include chronological out-of-sample or early/late stability checks and ticker/year concentration.
+- State price source, adjustment method, fees, survivorship bias, and unavailable data.
+- Fixed 20/60-day metrics may be shown as checkpoints, but never as the sole or primary evidence.

@@ -81,6 +81,13 @@ for r in rows:
         rsi=r.get('rsi'),
         volumeRatio=r.get('volumeRatio'), volumeRatio20=r.get('volumeRatio20'),
         price=price, ma200=r.get('ma200'),
+        # ---- 2026-07-19 이후 신규 지표 (top-level 우선, 없으면 라벨 파싱) ----
+        atrPct=r.get('atrPct') if r.get('atrPct') is not None else g('ATR (14, %)'),
+        dist52wHigh=r.get('dist52wHigh') if r.get('dist52wHigh') is not None else g('52주 신고가 대비'),
+        daysSince52wHigh=r.get('daysSince52wHigh') if r.get('daysSince52wHigh') is not None else g('52주 신고가 후 경과일'),
+        rs20=r.get('rs20') if r.get('rs20') is not None else g('QQQ 대비 상대강도 (20일)'),
+        obv20=r.get('obv20') if r.get('obv20') is not None else g('OBV 누적강도 (20일)'),
+        williamsR=r.get('williamsR') if r.get('williamsR') is not None else g('Williams %R (14)'),
         # ---- technicalIndicators 파싱 ----
         ma5=g('5일 이동평균선'), ma20=g('20일 이동평균선'), ma60=g('60일 이동평균선'),
         ma144=g('144일 이동평균선'),

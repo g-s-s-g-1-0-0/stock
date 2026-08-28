@@ -33,7 +33,7 @@ ALL_DATES = sorted(set().union(*[set(p.index) for p in px.values()]))
 ALL_DATES = [d for d in ALL_DATES if d >= pd.Timestamp('2026-05-12')]
 
 # ---- VIX (전략 1 조건) ----
-vix_raw = yf.download('^VIX', start='2026-05-01', end='2026-07-19', progress=False, auto_adjust=False)['Close']
+vix_raw = yf.download('^VIX', start='2026-05-01', progress=False, auto_adjust=False)['Close']
 if isinstance(vix_raw, pd.DataFrame): vix_raw = vix_raw.iloc[:, 0]
 vix_by_date = vix_raw.to_dict()
 def vix_at(date):

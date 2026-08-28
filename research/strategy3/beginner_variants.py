@@ -48,9 +48,9 @@ def atr_at(t, date):
 
 def sig_variant(kind):
     m = BASE.copy()
-    if kind in ('V0', 'V1', 'V2', 'V4', 'V5'):
+    if kind in ('V0', 'V1', 'V1a8', 'V2', 'V4', 'V5'):
         m &= (panel['candleUp'] == 0)
-    if kind in ('V1', 'V2', 'V4', 'V5'):
+    if kind in ('V1', 'V1a8', 'V2', 'V4', 'V5'):
         m &= (panel['qqqPremium'] <= panel['qqqBuyBlockMax'])
     if kind == 'V3':
         # 음봉 대신 전략 2 문법의 MA20 터치+회복
@@ -60,6 +60,9 @@ def sig_variant(kind):
     if kind in ('V2', 'V4', 'V5'):
         sig['atrSig'] = [atr_at(t, d) for t, d in zip(sig['ticker'], sig['date'])]
         sig = sig[sig['atrSig'] <= 6]
+    if kind == 'V1a8':
+        sig['atrSig'] = [atr_at(t, d) for t, d in zip(sig['ticker'], sig['date'])]
+        sig = sig[sig['atrSig'] <= 8]
     return sig
 
 def run(sig, tp, sl, max_hold, max_slots=5, fee=0.001, ma20_exit=False):
@@ -138,6 +141,7 @@ res = []
 specs = [
     ('V0 원안 (+20/-15/40)',               'V0', dict(tp=0.20, sl=-0.15, max_hold=40)),
     ('V1 +QQQ차단선 (+20/-15/40)',          'V1', dict(tp=0.20, sl=-0.15, max_hold=40)),
+    ('V1 +ATR<=8 (+20/-10/40)',            'V1a8', dict(tp=0.20, sl=-0.10, max_hold=40)),
     ('V2 +ATR<=6 (+20/-15/40)',            'V2', dict(tp=0.20, sl=-0.15, max_hold=40)),
     ('V2 +ATR<=6 (+20/-10/40)',            'V2', dict(tp=0.20, sl=-0.10, max_hold=40)),
     ('V3 MA20터치형 (+20/-10/40)',          'V3', dict(tp=0.20, sl=-0.10, max_hold=40)),
