@@ -2,9 +2,9 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-08-30T18:15:04+00:00",
-    "lastSuccessfulRun": "2026-08-30T18:15:04+00:00",
-    "failedReason": "RSS/Groq 분석 실패 후 내부 가격·기술 모멘텀 신호로 대체했습니다: Groq 분석 결과에서 10개 순위를 파싱하지 못했습니다."
+    "updatedAt": "2026-08-30T23:42:51+00:00",
+    "lastSuccessfulRun": "2026-08-30T23:42:51+00:00",
+    "failedReason": null
   },
   "rows": [
     {
@@ -351,10 +351,13 @@
         "전력 인프라 | 전력망, 원전, SMR, 데이터센터 전력, 에너지 저장",
         "글로벌 K-뷰티 | K-뷰티, 뷰티테크, 홈 뷰티 디바이스, 글로벌 소비재, 글로벌",
         "광통신·네트워크 | 광통신, 트랜시버, 광케이블, AI 네트워킹, 이더넷 스위치",
-        "레버리지 | 레버리지",
-        "방산·드론 | 방산, 드론, 무인체계, 유도무기, 레이더"
+        "AI Semiconductor | AI칩, GPU, HBM, ASIC, 첨단패키징",
+        "AI Infrastructure | 데이터센터, 전력·냉각, GPU클러스터, HPC, AI클라우드",
+        "Power Infrastructure | 전력망, 원전, SMR, 에너지저장, 데이터센터전력",
+        "Optical Communications & Network | 광통신, 트랜시버, 광케이블, AI네트워킹, 이더넷스위치",
+        "Defense & Drone | 방산, 드론, 무인체계, 유도무기, 레이더"
       ],
-      "summary": "관심종목의 가격·기술 모멘텀에서 강하게 확인된 메가트렌드를 우선 반영했습니다. RSS/LLM 분석은 실패해 내부 신호 기준으로 대체했습니다: Groq 분석 결과에서 10개 순위를 파싱하지 못했습니다."
+      "summary": "AI‑related capital inflows dominate, driving strong demand for semiconductor, data‑center and power‑grid assets amid heightened market volatility."
     }
   ]
 }
