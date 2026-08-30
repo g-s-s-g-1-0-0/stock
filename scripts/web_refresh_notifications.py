@@ -455,8 +455,9 @@ def dedupe_buy_changes_by_ticker(changes: list[dict[str, Any]]) -> list[dict[str
     order: list[str] = []
     for change in changes:
         if str(change.get("to") or "").strip() != "매수":
-            grouped.setdefault(f"__other__{len(order)}", []).append(change)
-            order.append(f"__other__{len(order) - 1}")
+            key = f"__other__{len(order)}"
+            grouped.setdefault(key, []).append(change)
+            order.append(key)
             continue
         ticker = str(change.get("ticker") or "").strip().upper()
         if ticker not in grouped:
