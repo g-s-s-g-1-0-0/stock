@@ -1722,6 +1722,33 @@ def parse_market_trend_analysis(text: str) -> dict[str, Any]:
     }
 
 
+def parse_market_trend_json(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise ValueError("Groq 분석 결과가 JSON 객체가 아닙니다.")
+
+    raw_ranks = payload.get("ranks")
+    summary = payload.get("summary")
+    if not isinstance(raw_ranks, list) or len(raw_ranks) != 10:
+        raise ValueError("Groq 분석 결과에서 정확히 10개 순위를 받지 못했습니다.")
+    if not isinstance(summary, str) or not summary.strip():
+        raise ValueError("Groq 분석 결과에서 시장요약을 받지 못했습니다.")
+
+    ranks = []
+    for rank in raw_ranks:
+        if not isinstance(rank, str) or "|" not in rank:
+            raise ValueError("Groq 분석 순위 형식이 '섹터 | 키워드'가 아닙니다.")
+        sector, keywords = (part.strip() for part in rank.split("|", 1))
+        if not sector or not keywords:
+            raise ValueError("Groq 분석 순위에 섹터 또는 키워드가 없습니다.")
+        ranks.append(f"{sector} | {keywords}")
+
+    return {
+        "date": market_trend_week_date(),
+        "ranks": ranks,
+        "summary": summary.strip(),
+    }
+
+
 def analyze_market_trends_with_groq(news_text: str, api_key: str, signal_rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     signal_rows = signal_rows or []
     signal_evidence = market_trend_signal_evidence_text(signal_rows)
@@ -1737,12 +1764,9 @@ def analyze_market_trends_with_groq(news_text: str, api_key: str, signal_rows: l
   예) "AI인프라 | 광통신, 트랜시버" / "AI인프라 | 전력인프라, 데이터센터냉각"
 - 각 순위마다 섹터명과 핵심 키워드 3~5개
 
-[출력 형식 — 반드시 이 형식으로만 출력, 다른 설명 없이]
-1위: 섹터명 | 키워드1, 키워드2, 키워드3
-2위: 섹터명 | 키워드1, 키워드2, 키워드3
-...
-10위: 섹터명 | 키워드1, 키워드2, 키워드3
-요약: 이번 주 전체 시장 분위기 한 줄
+[출력 형식]
+JSON만 출력합니다. ranks는 정확히 10개이며, 각 항목은 "섹터명 | 키워드1, 키워드2, 키워드3" 형식입니다.
+summary는 이번 주 전체 시장 분위기를 한 줄로 적습니다.
 
 [관심종목 가격·기술 모멘텀 신호]
 {signal_evidence}
@@ -1750,37 +1774,61 @@ def analyze_market_trends_with_groq(news_text: str, api_key: str, signal_rows: l
 [뉴스 헤드라인]
 {news_text[:6000]}"""
 
-    request = urllib.request.Request(
-        GROQ_CHAT_COMPLETIONS_URL,
-        data=json.dumps({
-            "model": GROQ_MARKET_TREND_MODEL,
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.3,
-            "max_tokens": 1024,
-        }).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-            "User-Agent": USER_AGENT,
+    request_body = {
+        "model": GROQ_MARKET_TREND_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.3,
+        "max_tokens": 1024,
+        "include_reasoning": False,
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "market_trend_analysis",
+                "strict": True,
+                "schema": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["ranks", "summary"],
+                    "properties": {
+                        "ranks": {
+                            "type": "array",
+                            "minItems": 10,
+                            "maxItems": 10,
+                            "items": {"type": "string"},
+                        },
+                        "summary": {"type": "string"},
+                    },
+                },
+            },
         },
-        method="POST",
-    )
+    }
+    last_error: Exception | None = None
+    for _ in range(2):
+        request = urllib.request.Request(
+            GROQ_CHAT_COMPLETIONS_URL,
+            data=json.dumps(request_body).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "User-Agent": USER_AGENT,
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=40) as response:
+            payload = json.loads(response.read().decode("utf-8"))
 
-    with urllib.request.urlopen(request, timeout=40) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+        content = payload.get("choices", [{}])[0].get("message", {}).get("content", "")
+        try:
+            if not isinstance(content, str) or not content.strip():
+                raise ValueError("Groq 응답에 분석 텍스트가 없습니다.")
+            parsed = parse_market_trend_json(json.loads(content))
+            parsed["ranks"] = merge_market_trend_ranks(parsed["ranks"], signal_rows)
+            return parsed
+        except (ValueError, json.JSONDecodeError) as exc:
+            last_error = exc
 
-    content = payload.get("choices", [{}])[0].get("message", {}).get("content", "")
-    if not content:
-        raise RuntimeError("Groq 응답에 분석 텍스트가 없습니다.")
-
-    parsed = parse_market_trend_analysis(content)
-    if len(parsed["ranks"]) < 10:
-        raise RuntimeError("Groq 분석 결과에서 10개 순위를 파싱하지 못했습니다.")
-    if not parsed["summary"]:
-        raise RuntimeError("Groq 분석 결과에서 시장요약을 파싱하지 못했습니다.")
-    parsed["ranks"] = merge_market_trend_ranks(parsed["ranks"], signal_rows)
-    return parsed
+    raise RuntimeError(f"Groq 구조화 응답을 처리하지 못했습니다: {last_error}")
 
 
 def http_error_detail(exc: urllib.error.HTTPError) -> str:

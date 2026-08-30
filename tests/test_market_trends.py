@@ -1,5 +1,7 @@
 import importlib
+import json
 import unittest
+from unittest.mock import MagicMock, patch
 
 
 class MarketTrendsTest(unittest.TestCase):
@@ -114,6 +116,49 @@ class MarketTrendsTest(unittest.TestCase):
         self.assertEqual([row["date"] for row in sanitized], ["2026.07.13", "2026.07.20"])
         self.assertEqual(sanitized[0]["summary"], "mid week")
         self.assertEqual(sanitized[-1]["summary"], "latest sunday")
+
+    def test_parse_market_trend_json_requires_exactly_ten_ranked_items(self) -> None:
+        payload = {
+            "ranks": [f"테마 {index} | 키워드A, 키워드B, 키워드C" for index in range(1, 11)],
+            "summary": "시장 분위기는 선택적 위험선호가 이어지고 있습니다.",
+        }
+
+        parsed = self.pipeline.parse_market_trend_json(payload)
+
+        self.assertEqual(10, len(parsed["ranks"]))
+        self.assertEqual("테마 1 | 키워드A, 키워드B, 키워드C", parsed["ranks"][0])
+        self.assertEqual(payload["summary"], parsed["summary"])
+
+    def test_parse_market_trend_json_rejects_incomplete_rankings(self) -> None:
+        payload = {
+            "ranks": [f"테마 {index} | 키워드A, 키워드B" for index in range(1, 10)],
+            "summary": "시장 요약입니다.",
+        }
+
+        with self.assertRaisesRegex(ValueError, "10개"):
+            self.pipeline.parse_market_trend_json(payload)
+
+    def test_groq_analysis_retries_invalid_output_with_structured_response(self) -> None:
+        invalid = MagicMock()
+        invalid.__enter__.return_value.read.return_value = json.dumps({
+            "choices": [{"message": {"content": "순위 목록"}}],
+        }).encode()
+        valid = MagicMock()
+        valid.__enter__.return_value.read.return_value = json.dumps({
+            "choices": [{"message": {"content": json.dumps({
+                "ranks": [f"테마 {index} | 키워드A, 키워드B" for index in range(1, 11)],
+                "summary": "시장 요약입니다.",
+            })}}],
+        }).encode()
+
+        with patch("calculator.pipeline.urllib.request.urlopen", side_effect=[invalid, valid]) as urlopen:
+            result = self.pipeline.analyze_market_trends_with_groq("뉴스", "test-key")
+
+        self.assertEqual(2, urlopen.call_count)
+        self.assertEqual(10, len(result["ranks"]))
+        request_payload = json.loads(urlopen.call_args_list[0].args[0].data.decode())
+        self.assertFalse(request_payload["include_reasoning"])
+        self.assertTrue(request_payload["response_format"]["json_schema"]["strict"])
 
 
 if __name__ == "__main__":
