@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-08-30T16:55:57+00:00",
-    "lastSuccessfulRun": "2026-08-30T16:55:57+00:00",
+    "updatedAt": "2026-08-30T18:15:01+00:00",
+    "lastSuccessfulRun": "2026-08-30T18:15:01+00:00",
     "failedReason": null
   },
   "rows": [
@@ -8938,13 +8938,6 @@
       "market": "KR",
       "category": "성장주",
       "industry": "소프트웨어·클라우드, 보안, AI 플랫폼"
-    },
-    {
-      "ticker": "082640",
-      "name": "동양생명",
-      "market": "KR",
-      "category": "가치주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
       "ticker": "082660",
