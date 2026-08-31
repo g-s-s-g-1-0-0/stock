@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-08-31T18:55:52+00:00",
-    "lastSuccessfulRun": "2026-08-31T18:55:52+00:00",
+    "updatedAt": "2026-08-31T20:32:07+00:00",
+    "lastSuccessfulRun": "2026-08-31T20:32:07+00:00",
     "failedReason": null
   },
   "rows": [
@@ -146,7 +146,9 @@
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
       "updatedAt": "2026-08-31T18:55:41+00:00"
