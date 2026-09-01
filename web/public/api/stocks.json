@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-01T13:50:56+00:00",
-    "lastSuccessfulRun": "2026-09-01T13:50:56+00:00",
+    "updatedAt": "2026-09-01T14:56:14+00:00",
+    "lastSuccessfulRun": "2026-09-01T14:56:14+00:00",
     "failedReason": null
   },
   "rows": [
@@ -139,14 +139,16 @@
       "ticker": "277810",
       "name": "레인보우로보틱스",
       "market": "KR",
-      "fairPrice": "₩1,583 ~ ₩2,142",
+      "fairPrice": "₩2,152 ~ ₩2,911",
       "fairPriceReason": null,
       "currentPrice": "₩449,500",
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
       "updatedAt": "2026-09-01T13:50:48+00:00"
@@ -667,7 +669,7 @@
       "ticker": "AAPL",
       "name": "Apple",
       "market": "US",
-      "fairPrice": "$169.09 ~ $228.77",
+      "fairPrice": "$169.46 ~ $229.27",
       "fairPriceReason": null,
       "currentPrice": "$320.75",
       "valuation": "고평가",
