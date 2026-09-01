@@ -753,29 +753,29 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual([("https://hooks.slack.test/abc", "테스트", "<p>본문<br>내용</p>")], sent_slack)
         self.assertEqual([], sent_email)
 
-    def test_send_notification_falls_back_to_email_without_slack_webhook(self) -> None:
+    def test_send_notification_does_not_fall_back_to_email_when_slack_is_selected(self) -> None:
         sent_email: list[tuple[str, str, str]] = []
         original_send_email = self.notifications.send_email
         self.notifications.send_email = lambda email, subject, body: sent_email.append((email, subject, body))
 
         try:
-            channel = self.notifications.send_notification(
-                self.notifications.Recipient(
-                    owner_id="user-1",
-                    email="user@example.com",
-                    is_admin=False,
-                    preferences={"notificationChannel": "slack", "slackConnected": True},
-                ),
-                "테스트",
-                "<p>본문</p>",
-            )
+            with self.assertRaisesRegex(RuntimeError, "Slack webhook"):
+                self.notifications.send_notification(
+                    self.notifications.Recipient(
+                        owner_id="user-1",
+                        email="user@example.com",
+                        is_admin=False,
+                        preferences={"notificationChannel": "slack", "slackConnected": True},
+                    ),
+                    "테스트",
+                    "<p>본문</p>",
+                )
         finally:
             self.notifications.send_email = original_send_email
 
-        self.assertEqual("email", channel)
-        self.assertEqual([("user@example.com", "테스트", "<p>본문</p>")], sent_email)
+        self.assertEqual([], sent_email)
 
-    def test_send_notification_adds_notice_when_slack_delivery_fails(self) -> None:
+    def test_send_notification_does_not_fall_back_to_email_when_slack_delivery_fails(self) -> None:
         sent_email: list[tuple[str, str, str]] = []
         original_send_slack = self.notifications.send_slack_message
         original_send_email = self.notifications.send_email
@@ -786,25 +786,40 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.notifications.send_slack_message = fail_slack
         self.notifications.send_email = lambda email, subject, body: sent_email.append((email, subject, body))
         try:
-            channel = self.notifications.send_notification(
-                self.notifications.Recipient(
-                    owner_id="user-1",
-                    email="user@example.com",
-                    is_admin=False,
-                    preferences={"notificationChannel": "slack", "slackConnected": True},
-                    slack_webhook_url="https://hooks.slack.test/abc",
-                ),
-                "테스트",
-                "<p>본문</p>",
-            )
+            with self.assertRaisesRegex(RuntimeError, "webhook revoked"):
+                self.notifications.send_notification(
+                    self.notifications.Recipient(
+                        owner_id="user-1",
+                        email="user@example.com",
+                        is_admin=False,
+                        preferences={"notificationChannel": "slack", "slackConnected": True},
+                        slack_webhook_url="https://hooks.slack.test/abc",
+                    ),
+                    "테스트",
+                    "<p>본문</p>",
+                )
         finally:
             self.notifications.send_slack_message = original_send_slack
             self.notifications.send_email = original_send_email
 
-        self.assertEqual("email", channel)
-        self.assertEqual(1, len(sent_email))
-        self.assertIn("슬랙으로 연동되어 있었지만 전송에 실패해 이메일로 대신 보냈습니다.", sent_email[0][2])
-        self.assertTrue(sent_email[0][2].endswith("<p>본문</p>"))
+        self.assertEqual([], sent_email)
+
+    def test_slack_payload_includes_clickable_notification_actions(self) -> None:
+        payload = self.notifications.slack_message_payload(
+            "테스트",
+            '<p>본문</p><a href="https://example.com/unsubscribe">주간 트렌드 리포트 끄기</a> · '
+            '<a href="https://example.com/settings">알림 설정 열기</a>',
+        )
+
+        self.assertEqual("*테스트", payload["blocks"][0]["text"]["text"])
+        self.assertEqual(
+            ["주간 트렌드 리포트 끄기", "알림 설정 열기"],
+            [button["text"]["text"] for button in payload["blocks"][2]["elements"]],
+        )
+        self.assertEqual(
+            ["https://example.com/unsubscribe", "https://example.com/settings"],
+            [button["url"] for button in payload["blocks"][2]["elements"]],
+        )
 
     def test_opinion_changes_marks_sell_to_buy_without_open_slot_as_new_entry(self) -> None:
         with TemporaryDirectory() as temp_dir:

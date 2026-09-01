@@ -711,9 +711,7 @@ def enabled(recipient: Recipient, key: str, *, default: bool = True) -> bool:
 
 def delivery_channel(recipient: Recipient) -> str:
     requested = str(recipient.preferences.get("notificationChannel") or "email").strip()
-    if requested == "slack" and recipient.preferences.get("slackConnected") is True and recipient.slack_webhook_url:
-        return "slack"
-    return "email"
+    return "slack" if requested == "slack" else "email"
 
 
 def smtp_port() -> int:
@@ -831,15 +829,34 @@ def html_to_text(html_body: str) -> str:
     return "\n".join(compact_lines).strip()
 
 
-def send_slack_message(webhook_url: str, subject: str, html_body: str) -> None:
-    if not webhook_url:
-        raise RuntimeError("Slack webhook URL이 설정되지 않았습니다.")
+def slack_message_payload(subject: str, html_body: str) -> dict[str, Any]:
     text = f"*{subject}*\n{html_to_text(html_body)}".strip()
     if len(text) > 3500:
         text = text[:3490].rstrip() + "\n..."
+
+    body_text = html_to_text(html_body)
+    if len(body_text) > 2900:
+        body_text = body_text[:2890].rstrip() + "\n..."
+    blocks: list[dict[str, Any]] = [
+        {"type": "section", "text": {"type": "mrkdwn", "text": f"*{subject}"}},
+        {"type": "section", "text": {"type": "mrkdwn", "text": body_text or "내용이 없습니다."}},
+    ]
+    actions = []
+    for href, label in re.findall(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', html_body, flags=re.IGNORECASE | re.DOTALL):
+        label_text = html.unescape(re.sub(r"<[^>]+>", "", label)).strip()
+        if href and label_text:
+            actions.append({"type": "button", "text": {"type": "plain_text", "text": label_text[:75]}, "url": html.unescape(href)})
+    if actions:
+        blocks.append({"type": "actions", "elements": actions[:5]})
+    return {"text": text, "blocks": blocks}
+
+
+def send_slack_message(webhook_url: str, subject: str, html_body: str) -> None:
+    if not webhook_url:
+        raise RuntimeError("Slack webhook URL이 설정되지 않았습니다.")
     request = urllib.request.Request(
         webhook_url,
-        data=json.dumps({"text": text}).encode("utf-8"),
+        data=json.dumps(slack_message_payload(subject, html_body), ensure_ascii=False).encode("utf-8"),
         headers={"content-type": "application/json"},
         method="POST",
     )
@@ -883,20 +900,9 @@ def send_email(to_email: str, subject: str, html_body: str) -> str:
 
 def send_notification(recipient: Recipient, subject: str, html_body: str) -> str:
     if delivery_channel(recipient) == "slack":
-        try:
-            send_slack_message(recipient.slack_webhook_url, subject, html_body)
-            print(f"Notification sent via slack to owner={recipient.owner_id or '-'} channel={recipient.slack_channel_name or '-'}")
-            return "slack"
-        except Exception as exc:
-            if not recipient.email:
-                raise
-            print(f"Slack send failed for {recipient.owner_id or recipient.email}: {exc}; falling back to email.")
-            html_body = (
-                '<p style="margin:0 0 16px;color:#6b7280;font-size:13px;">'
-                '슬랙으로 연동되어 있었지만 전송에 실패해 이메일로 대신 보냈습니다.'
-                '</p>'
-                + html_body
-            )
+        send_slack_message(recipient.slack_webhook_url, subject, html_body)
+        print(f"Notification sent via slack to owner={recipient.owner_id or '-'} channel={recipient.slack_channel_name or '-'}")
+        return "slack"
 
     if not recipient.email:
         raise RuntimeError("이메일 수신처가 없어 알림을 보낼 수 없습니다.")
