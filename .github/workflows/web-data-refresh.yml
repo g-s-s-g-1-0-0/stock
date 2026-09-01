@@ -42,7 +42,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: web-data-refresh-main
+  group: main-writers
   cancel-in-progress: false
 
 jobs:

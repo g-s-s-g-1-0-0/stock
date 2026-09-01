@@ -12,9 +12,25 @@ from zoneinfo import ZoneInfo
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = ROOT_DIR / ".github" / "workflows" / "web-data-refresh.yml"
+GAP_GO_WORKFLOW_PATH = ROOT_DIR / ".github" / "workflows" / "gap-go-observation.yml"
 
 
 class WebRefreshWorkflowTest(unittest.TestCase):
+    def test_main_writing_workflows_share_one_concurrency_group(self) -> None:
+        refresh_workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+        gap_go_workflow = GAP_GO_WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("group: main-writers", refresh_workflow)
+        self.assertIn("group: main-writers", gap_go_workflow)
+
+    def test_gap_go_workflow_retries_non_fast_forward_pushes(self) -> None:
+        workflow = GAP_GO_WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("for attempt in 1 2 3; do", workflow)
+        self.assertIn('git fetch origin "$BRANCH"', workflow)
+        self.assertIn('git rebase "origin/$BRANCH"', workflow)
+        self.assertIn('git push origin "HEAD:$BRANCH"', workflow)
+
     def test_workflow_preserves_previous_snapshot_outside_commit_paths(self) -> None:
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 

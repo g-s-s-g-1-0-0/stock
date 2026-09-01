@@ -13,7 +13,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: gap-go-observation
+  group: main-writers
   cancel-in-progress: false
 
 jobs:
@@ -37,5 +37,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Collect gap-and-go observations"
-          git pull --rebase origin "${GITHUB_REF_NAME:-main}"
-          git push origin "HEAD:${GITHUB_REF_NAME:-main}"
+          BRANCH="${GITHUB_REF_NAME:-main}"
+          for attempt in 1 2 3; do
+            git fetch origin "$BRANCH"
+            git rebase "origin/$BRANCH"
+            if git push origin "HEAD:$BRANCH"; then
+              exit 0
+            fi
+            echo "Push failed; retrying after syncing remote changes (attempt $attempt/3)."
+            sleep $((attempt * 5))
+          done
+          echo "Failed to push gap-and-go observations after retries."
+          exit 1
