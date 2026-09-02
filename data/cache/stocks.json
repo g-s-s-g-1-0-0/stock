@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-02T13:51:03+00:00",
-    "lastSuccessfulRun": "2026-09-02T13:51:03+00:00",
+    "updatedAt": "2026-09-02T14:56:19+00:00",
+    "lastSuccessfulRun": "2026-09-02T14:56:19+00:00",
     "failedReason": null
   },
   "rows": [
@@ -146,7 +146,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
       "updatedAt": "2026-09-02T13:50:50+00:00"
@@ -267,7 +269,7 @@
       "ticker": "CRDO",
       "name": "Credo Technology Group Holding",
       "market": "US",
-      "fairPrice": "$82.84 ~ $112.08",
+      "fairPrice": "$93.87 ~ $127.00",
       "fairPriceReason": null,
       "currentPrice": "$174.01",
       "valuation": "고평가",
