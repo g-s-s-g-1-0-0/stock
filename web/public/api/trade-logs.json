@@ -2,10 +2,10 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-09-03T13:00:00Z",
-    "lastSuccessfulRun": "2026-09-03T13:00:00Z",
+    "updatedAt": "2026-09-03T14:00:00Z",
+    "lastSuccessfulRun": "2026-09-03T14:00:00Z",
     "failedReason": null,
-    "appendedOpenTrades": 0,
+    "appendedOpenTrades": 1,
     "closedTrades": 0,
     "correctedClosedStatuses": 0,
     "nasdaqPeakLiquidation": false,
@@ -29,6 +29,22 @@
       "holdingDays": "-",
       "status": "보유 중",
       "restoreWatchDate": "2026.08.28"
+    },
+    {
+      "slotId": "CIFR_swing_4_20260903_1",
+      "investmentType": "swing",
+      "ticker": "CIFR",
+      "name": "Cipher Digital",
+      "market": "US",
+      "currentPrice": "$15.72",
+      "strategy": "4. 장기선 아래 반등 초입",
+      "buyDate": "2026.09.03",
+      "buyPrice": "$15.72",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중"
     }
   ]
 }
