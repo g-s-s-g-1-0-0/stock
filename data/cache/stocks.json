@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-03T15:01:43+00:00",
-    "lastSuccessfulRun": "2026-09-03T15:01:43+00:00",
+    "updatedAt": "2026-09-03T16:55:47+00:00",
+    "lastSuccessfulRun": "2026-09-03T16:55:47+00:00",
     "failedReason": null
   },
   "rows": [
@@ -17,11 +17,11 @@
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 전자소재 CCL, 데이터센터 전력, 피지컬 AI·로보틱스, 연료전지",
-      "updatedAt": "2026-09-03T14:55:43+00:00"
+      "updatedAt": "2026-09-03T16:55:32+00:00"
     },
     {
       "ticker": "000660",
@@ -33,11 +33,11 @@
       "valuation": "저평가",
       "opinion": "관망",
       "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 메모리, HBM, AI 메모리, DRAM",
-      "updatedAt": "2026-09-03T14:55:44+00:00"
+      "updatedAt": "2026-09-03T16:55:33+00:00"
     },
     {
       "ticker": "005380",
@@ -49,11 +49,11 @@
       "valuation": "저평가",
       "opinion": "관망",
       "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "가치주",
       "industry": "자동차, 피지컬 AI, 자율주행·SDV, 로보틱스, 전기차",
-      "updatedAt": "2026-09-03T14:55:44+00:00"
+      "updatedAt": "2026-09-03T16:55:34+00:00"
     },
     {
       "ticker": "005930",
@@ -65,11 +65,11 @@
       "valuation": "저평가",
       "opinion": "관망",
       "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체, 메모리·파운드리, 스마트폰, 소비자 가전",
-      "updatedAt": "2026-09-03T14:55:45+00:00"
+      "updatedAt": "2026-09-03T16:55:35+00:00"
     },
     {
       "ticker": "009150",
@@ -81,11 +81,11 @@
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "AI 반도체 기판, MLCC, FC-BGA, 글라스 기판, AI 서버 부품",
-      "updatedAt": "2026-09-03T14:55:46+00:00"
+      "updatedAt": "2026-09-03T16:55:36+00:00"
     },
     {
       "ticker": "011070",
@@ -97,11 +97,11 @@
       "valuation": "저평가",
       "opinion": "관망",
       "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 반도체 기판, FC-BGA, 카메라 모듈, 자동차 전장, RF-SiP",
-      "updatedAt": "2026-09-03T14:55:46+00:00"
+      "updatedAt": "2026-09-03T16:55:37+00:00"
     },
     {
       "ticker": "039030",
@@ -113,11 +113,11 @@
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 레이저 장비, HBM·AI 반도체, 레이저 어닐링, 그루빙·다이싱",
-      "updatedAt": "2026-09-03T14:55:47+00:00"
+      "updatedAt": "2026-09-03T16:55:38+00:00"
     },
     {
       "ticker": "042700",
@@ -129,11 +129,11 @@
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 장비, HBM 패키징, TC본더, 열압착 본딩",
-      "updatedAt": "2026-09-03T14:55:48+00:00"
+      "updatedAt": "2026-09-03T16:55:39+00:00"
     },
     {
       "ticker": "277810",
@@ -145,13 +145,13 @@
       "valuation": "고평가",
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
-      "marketEvent": "당분간 없음",
+      "marketEvent": "고용보고서 발표",
       "strategies": [
         "4. 장기선 아래 반등 초입"
       ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
-      "updatedAt": "2026-09-03T14:55:48+00:00"
+      "updatedAt": "2026-09-03T16:55:40+00:00"
     },
     {
       "ticker": "278470",
@@ -163,11 +163,11 @@
       "valuation": "보통",
       "opinion": "관망",
       "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "글로벌 K-뷰티, 뷰티테크, 홈 뷰티 디바이스, D2C·소셜커머스",
-      "updatedAt": "2026-09-03T14:55:49+00:00"
+      "updatedAt": "2026-09-03T16:55:41+00:00"
     },
     {
       "ticker": "AEHR",
@@ -175,15 +175,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$78.15",
+      "currentPrice": "$78.01",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 반도체 테스트 장비, 후공정 검사",
-      "updatedAt": "2026-09-03T14:55:49+00:00"
+      "updatedAt": "2026-09-03T16:55:41+00:00"
     },
     {
       "ticker": "AMD",
@@ -191,15 +191,15 @@
       "market": "US",
       "fairPrice": "$114.37 ~ $154.73",
       "fairPriceReason": null,
-      "currentPrice": "$451.73",
+      "currentPrice": "$458.86",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
-      "updatedAt": "2026-09-03T14:55:50+00:00"
+      "updatedAt": "2026-09-03T16:55:41+00:00"
     },
     {
       "ticker": "ASTS",
@@ -207,15 +207,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$62.05",
+      "currentPrice": "$61.78",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 위성통신, LEO 위성, D2D 통신",
-      "updatedAt": "2026-09-03T14:55:50+00:00"
+      "updatedAt": "2026-09-03T16:55:41+00:00"
     },
     {
       "ticker": "ASX",
@@ -223,15 +223,15 @@
       "market": "US",
       "fairPrice": "$25.36 ~ $34.31",
       "fairPriceReason": null,
-      "currentPrice": "$36.80",
+      "currentPrice": "$37.27",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
-      "updatedAt": "2026-09-03T14:55:50+00:00"
+      "updatedAt": "2026-09-03T16:55:41+00:00"
     },
     {
       "ticker": "BE",
@@ -239,15 +239,15 @@
       "market": "US",
       "fairPrice": "$22.52 ~ $30.47",
       "fairPriceReason": null,
-      "currentPrice": "$220.13",
+      "currentPrice": "$235.68",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 에너지, 연료전지·수소, 데이터센터 전력",
-      "updatedAt": "2026-09-03T14:55:51+00:00"
+      "updatedAt": "2026-09-03T16:55:42+00:00"
     },
     {
       "ticker": "CIFR",
@@ -255,17 +255,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$16.69",
+      "currentPrice": "$16.83",
       "valuation": "판단 불가",
-      "opinion": "매수",
-      "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
-      "marketEvent": "당분간 없음",
-      "strategies": [
-        "4. 장기선 아래 반등 초입"
-      ],
+      "opinion": "관망",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
+      "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, HPC",
-      "updatedAt": "2026-09-03T14:55:51+00:00"
+      "updatedAt": "2026-09-03T16:55:42+00:00"
     },
     {
       "ticker": "CRDO",
@@ -273,15 +271,15 @@
       "market": "US",
       "fairPrice": "$93.87 ~ $127.00",
       "fairPriceReason": null,
-      "currentPrice": "$166.58",
+      "currentPrice": "$165.24",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "데이터센터, AI 인프라, 고속 인터커넥트",
-      "updatedAt": "2026-09-03T14:55:51+00:00"
+      "updatedAt": "2026-09-03T16:55:42+00:00"
     },
     {
       "ticker": "HOOG",
@@ -289,15 +287,15 @@
       "market": "US",
       "fairPrice": "-",
       "fairPriceReason": "etf",
-      "currentPrice": "$39.67",
+      "currentPrice": "$39.79",
       "valuation": "보통",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "스윙주",
       "industry": "레버리지·테마 ETF",
-      "updatedAt": "2026-09-03T14:55:52+00:00"
+      "updatedAt": "2026-09-03T16:55:42+00:00"
     },
     {
       "ticker": "INTC",
@@ -305,15 +303,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$89.78",
+      "currentPrice": "$91.07",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 데이터센터·AI 서버 칩, 파운드리, 네트워크·5G",
-      "updatedAt": "2026-09-03T14:55:52+00:00"
+      "updatedAt": "2026-09-03T16:55:42+00:00"
     },
     {
       "ticker": "IONQ",
@@ -321,15 +319,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$39.52",
+      "currentPrice": "$39.12",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "양자컴퓨팅, 이온트랩, 양자 네트워크",
-      "updatedAt": "2026-09-03T14:55:52+00:00"
+      "updatedAt": "2026-09-03T16:55:42+00:00"
     },
     {
       "ticker": "IREN",
@@ -337,15 +335,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$40.52",
+      "currentPrice": "$40.99",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, GPU 클라우드, HPC",
-      "updatedAt": "2026-09-03T14:55:53+00:00"
+      "updatedAt": "2026-09-03T16:55:43+00:00"
     },
     {
       "ticker": "LITE",
@@ -353,15 +351,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$839.00",
+      "currentPrice": "$856.99",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
-      "updatedAt": "2026-09-03T14:55:53+00:00"
+      "updatedAt": "2026-09-03T16:55:43+00:00"
     },
     {
       "ticker": "LPTH",
@@ -369,15 +367,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$9.48",
+      "currentPrice": "$9.52",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "광학·포토닉스, 적외선·열화상 부품, 방산 광학",
-      "updatedAt": "2026-09-03T14:55:53+00:00"
+      "updatedAt": "2026-09-03T16:55:43+00:00"
     },
     {
       "ticker": "MU",
@@ -385,15 +383,15 @@
       "market": "US",
       "fairPrice": "$1,475.50 ~ $1,996.26",
       "fairPriceReason": null,
-      "currentPrice": "$938.24",
+      "currentPrice": "$949.40",
       "valuation": "저평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체, 메모리, DRAM, NAND, HBM",
-      "updatedAt": "2026-09-03T14:55:54+00:00"
+      "updatedAt": "2026-09-03T16:55:43+00:00"
     },
     {
       "ticker": "NBIS",
@@ -401,15 +399,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$205.07",
+      "currentPrice": "$207.94",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, AI 클라우드, GPU 클러스터, 데이터센터",
-      "updatedAt": "2026-09-03T14:55:54+00:00"
+      "updatedAt": "2026-09-03T16:55:43+00:00"
     },
     {
       "ticker": "PL",
@@ -417,15 +415,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$18.45",
+      "currentPrice": "$18.23",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 위성 지구관측 데이터, 위성 이미지",
-      "updatedAt": "2026-09-03T14:55:54+00:00"
+      "updatedAt": "2026-09-03T16:55:43+00:00"
     },
     {
       "ticker": "RKLB",
@@ -433,15 +431,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$62.77",
+      "currentPrice": "$63.62",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 소형 발사체, 위성 배포",
-      "updatedAt": "2026-09-03T14:55:55+00:00"
+      "updatedAt": "2026-09-03T16:55:44+00:00"
     },
     {
       "ticker": "SNDK",
@@ -449,15 +447,15 @@
       "market": "US",
       "fairPrice": "$2,434.89 ~ $3,294.26",
       "fairPriceReason": null,
-      "currentPrice": "$1,520.99",
+      "currentPrice": "$1,561.35",
       "valuation": "저평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
-      "updatedAt": "2026-09-03T14:55:55+00:00"
+      "updatedAt": "2026-09-03T16:55:44+00:00"
     },
     {
       "ticker": "SOXL",
@@ -465,15 +463,15 @@
       "market": "US",
       "fairPrice": "-",
       "fairPriceReason": "etf",
-      "currentPrice": "$102.53",
+      "currentPrice": "$106.15",
       "valuation": "보통",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 레버리지 ETF",
-      "updatedAt": "2026-09-03T14:55:55+00:00"
+      "updatedAt": "2026-09-03T16:55:44+00:00"
     },
     {
       "ticker": "STX",
@@ -481,15 +479,15 @@
       "market": "US",
       "fairPrice": "$463.33 ~ $626.85",
       "fairPriceReason": null,
-      "currentPrice": "$785.58",
+      "currentPrice": "$804.00",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
-      "updatedAt": "2026-09-03T14:55:56+00:00"
+      "updatedAt": "2026-09-03T16:55:44+00:00"
     },
     {
       "ticker": "COHR",
@@ -497,15 +495,15 @@
       "market": "US",
       "fairPrice": "$120.53 ~ $163.06",
       "fairPriceReason": null,
-      "currentPrice": "$262.95",
+      "currentPrice": "$266.52",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "광학·레이저, 광인터커넥트, AI 데이터센터 부품",
-      "updatedAt": "2026-09-03T14:55:56+00:00"
+      "updatedAt": "2026-09-03T16:55:44+00:00"
     },
     {
       "ticker": "GLW",
@@ -513,15 +511,15 @@
       "market": "US",
       "fairPrice": "$67.26 ~ $91.00",
       "fairPriceReason": null,
-      "currentPrice": "$143.57",
+      "currentPrice": "$144.91",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "광통신 인프라, 특수유리, 광케이블, AI 데이터센터 광섬유",
-      "updatedAt": "2026-09-03T14:55:56+00:00"
+      "updatedAt": "2026-09-03T16:55:45+00:00"
     },
     {
       "ticker": "ALAB",
@@ -529,15 +527,15 @@
       "market": "US",
       "fairPrice": "$65.74 ~ $88.94",
       "fairPriceReason": null,
-      "currentPrice": "$278.09",
+      "currentPrice": "$280.28",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머",
-      "updatedAt": "2026-09-03T14:55:57+00:00"
+      "updatedAt": "2026-09-03T16:55:45+00:00"
     },
     {
       "ticker": "VRT",
@@ -545,15 +543,15 @@
       "market": "US",
       "fairPrice": "$143.14 ~ $193.66",
       "fairPriceReason": null,
-      "currentPrice": "$264.11",
+      "currentPrice": "$269.70",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 데이터센터 전력·냉각, 액침냉각, UPS",
-      "updatedAt": "2026-09-03T14:55:57+00:00"
+      "updatedAt": "2026-09-03T16:55:45+00:00"
     },
     {
       "ticker": "079550",
@@ -565,11 +563,11 @@
       "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 방산, 유도무기, 레이더, 무인체계·드론, 우주·위성",
-      "updatedAt": "2026-09-03T14:55:58+00:00"
+      "updatedAt": "2026-09-03T16:55:46+00:00"
     },
     {
       "ticker": "WULF",
@@ -577,15 +575,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$15.69",
+      "currentPrice": "$15.93",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
-      "updatedAt": "2026-09-03T14:55:58+00:00"
+      "updatedAt": "2026-09-03T16:55:46+00:00"
     },
     {
       "ticker": "CRWV",
@@ -593,15 +591,15 @@
       "market": "US",
       "fairPrice": "적자 상태라 판단 불가",
       "fairPriceReason": "loss_making",
-      "currentPrice": "$81.54",
+      "currentPrice": "$83.60",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, 보안, AI 플랫폼",
-      "updatedAt": "2026-09-03T14:55:58+00:00"
+      "updatedAt": "2026-09-03T16:55:46+00:00"
     },
     {
       "ticker": "LRCX",
@@ -609,15 +607,15 @@
       "market": "US",
       "fairPrice": "$192.41 ~ $260.32",
       "fairPriceReason": null,
-      "currentPrice": "$283.96",
+      "currentPrice": "$287.11",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체 장비, 식각·증착",
-      "updatedAt": "2026-09-03T14:55:59+00:00"
+      "updatedAt": "2026-09-03T16:55:46+00:00"
     },
     {
       "ticker": "AMAT",
@@ -625,15 +623,15 @@
       "market": "US",
       "fairPrice": "$387.50 ~ $524.26",
       "fairPriceReason": null,
-      "currentPrice": "$430.96",
+      "currentPrice": "$435.87",
       "valuation": "보통",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "성장주",
       "industry": "2차전지, 전기차 배터리, 배터리 소재",
-      "updatedAt": "2026-09-03T14:55:59+00:00"
+      "updatedAt": "2026-09-03T16:55:47+00:00"
     },
     {
       "ticker": "KLAC",
@@ -641,15 +639,15 @@
       "market": "US",
       "fairPrice": "$122.60 ~ $165.87",
       "fairPriceReason": null,
-      "currentPrice": "$169.74",
+      "currentPrice": "$171.76",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "산업재, 장비·제조, 자동화",
-      "updatedAt": "2026-09-03T14:55:59+00:00"
+      "updatedAt": "2026-09-03T16:55:47+00:00"
     },
     {
       "ticker": "TER",
@@ -657,15 +655,15 @@
       "market": "US",
       "fairPrice": "$243.52 ~ $329.47",
       "fairPriceReason": null,
-      "currentPrice": "$337.10",
+      "currentPrice": "$339.42",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체 테스트 장비, 자동화 테스트, 협동로봇",
-      "updatedAt": "2026-09-03T14:56:00+00:00"
+      "updatedAt": "2026-09-03T16:55:47+00:00"
     },
     {
       "ticker": "AAPL",
@@ -673,15 +671,15 @@
       "market": "US",
       "fairPrice": "$169.84 ~ $229.78",
       "fairPriceReason": null,
-      "currentPrice": "$328.33",
+      "currentPrice": "$329.21",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "스마트폰, 소비자 전자, 서비스, 자체 반도체",
-      "updatedAt": "2026-09-03T14:56:00+00:00"
+      "updatedAt": "2026-09-03T16:55:47+00:00"
     },
     {
       "ticker": "GOOGL",
@@ -689,15 +687,15 @@
       "market": "US",
       "fairPrice": "$204.57 ~ $276.77",
       "fairPriceReason": null,
-      "currentPrice": "$341.89",
+      "currentPrice": "$341.63",
       "valuation": "고평가",
       "opinion": "관망",
-      "opinionReason": "-",
-      "marketEvent": "당분간 없음",
+      "opinionReason": "이벤트 기간 관망 (고용보고서 발표)",
+      "marketEvent": "고용보고서 발표",
       "strategies": [],
       "category": "혼합주",
       "industry": "AI, 광고, 클라우드, Waymo, TPU",
-      "updatedAt": "2026-09-03T14:56:00+00:00"
+      "updatedAt": "2026-09-03T16:55:47+00:00"
     }
   ]
 }
