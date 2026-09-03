@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-03T14:56:00+00:00",
-    "lastSuccessfulRun": "2026-09-03T14:56:00+00:00",
+    "updatedAt": "2026-09-03T15:01:43+00:00",
+    "lastSuccessfulRun": "2026-09-03T15:01:43+00:00",
     "failedReason": null
   },
   "rows": [
@@ -43,7 +43,7 @@
       "ticker": "005380",
       "name": "현대자동차",
       "market": "KR",
-      "fairPrice": "₩441,661 ~ ₩597,541",
+      "fairPrice": "₩440,498 ~ ₩595,968",
       "fairPriceReason": null,
       "currentPrice": "₩383,500",
       "valuation": "저평가",
@@ -146,7 +146,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
       "updatedAt": "2026-09-03T14:55:48+00:00"
@@ -258,7 +260,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, HPC",
       "updatedAt": "2026-09-03T14:55:51+00:00"
@@ -667,7 +671,7 @@
       "ticker": "AAPL",
       "name": "Apple",
       "market": "US",
-      "fairPrice": "$169.46 ~ $229.27",
+      "fairPrice": "$169.84 ~ $229.78",
       "fairPriceReason": null,
       "currentPrice": "$328.33",
       "valuation": "고평가",
