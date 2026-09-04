@@ -2235,8 +2235,8 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
       {
         label: '청산',
         value: [
-          '회복장이 끝났다고 2거래일 연속 확인되면 전량 매도합니다.',
-          '나스닥 고점 알람(peakTriggered)이 켜지면 청산합니다.',
+          '처음엔 회복장에서 사지 않지만, 산 뒤에 시장이 회복장으로 들어갔다가 그 회복장이 끝났다고 2거래일 연속 확인되면 전량 매도합니다. (전략 1·2와 같은 시장 사이클 청산)',
+          '나스닥 고점 알람(peakTriggered)이 켜지면 청산합니다. 과열로 보이는 구간에서 더 들고 가지 않기 위한 안전장치입니다.',
           '청산 시점 수익률이 플러스면 성공, 마이너스면 실패로 기록합니다.',
         ],
       },
@@ -2248,7 +2248,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         label: '관망',
         value: [
           '보유 중에는 MACD 골든은 다시 보지 않고, 현재가가 MA200 아래이며 QQQ가 하락/정상장이고 이격이 -25%보다 깊지 않은지만 보면 매수 의견을 유지합니다.',
-          '조건이 깨지면 매수 → 관망으로 바뀌며, 자동으로 파는 신호는 아닙니다.',
+          '조건이 깨지면 매수 → 관망으로 바뀌며, 자동으로 파는 신호는 아닙니다. 실제 매도는 위의 청산·손절 조건이 충족될 때입니다.',
         ],
       },
       {
