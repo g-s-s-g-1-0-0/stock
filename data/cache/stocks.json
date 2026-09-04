@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-04T14:56:00+00:00",
-    "lastSuccessfulRun": "2026-09-04T14:56:00+00:00",
+    "updatedAt": "2026-09-04T15:01:32+00:00",
+    "lastSuccessfulRun": "2026-09-04T15:01:32+00:00",
     "failedReason": null
   },
   "rows": [
@@ -267,7 +267,7 @@
       "ticker": "CRDO",
       "name": "Credo Technology Group Holding",
       "market": "US",
-      "fairPrice": "$93.87 ~ $127.00",
+      "fairPrice": "$93.53 ~ $126.55",
       "fairPriceReason": null,
       "currentPrice": "$170.17",
       "valuation": "고평가",
