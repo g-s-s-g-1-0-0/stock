@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-05T13:50:49+00:00",
-    "lastSuccessfulRun": "2026-09-05T13:50:49+00:00",
+    "updatedAt": "2026-09-05T14:56:16+00:00",
+    "lastSuccessfulRun": "2026-09-05T14:56:16+00:00",
     "failedReason": null
   },
   "rows": [
@@ -555,7 +555,7 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "fairPrice": "₩267,715 ~ ₩362,202",
+      "fairPrice": "₩271,855 ~ ₩367,803",
       "fairPriceReason": null,
       "currentPrice": "₩652,000",
       "valuation": "고평가",
@@ -667,7 +667,7 @@
       "ticker": "AAPL",
       "name": "Apple",
       "market": "US",
-      "fairPrice": "$169.84 ~ $229.78",
+      "fairPrice": "$170.96 ~ $231.29",
       "fairPriceReason": null,
       "currentPrice": "$320.01",
       "valuation": "고평가",
