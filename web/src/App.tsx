@@ -4807,6 +4807,7 @@ function TrendChartPreview({ stock, data, onOpen }: { stock: Stock; data: TrendC
 
 function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: TrendChartData; onClose: () => void }) {
   const phase = chart.phase
+  const currentPrice = formatTechnicalPrice(stock, chart.candles.at(-1)?.close ?? 0)
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
@@ -4818,7 +4819,7 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
     <div className="trend-chart-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section className="trend-chart-modal" role="dialog" aria-modal="true" aria-label={`${stock.name} 추세 차트`} onMouseDown={(event) => event.stopPropagation()}>
         <header>
-          <div><strong>{stock.name}</strong><span>{stock.ticker} · 최근 120거래일 일봉</span></div>
+          <div><strong>{stock.name}</strong><span>{stock.ticker} · 최근 120거래일 일봉 · 현재가 {currentPrice}</span></div>
           <button type="button" onClick={onClose} aria-label="추세 차트 닫기">×</button>
         </header>
         <TrendChartSvg chart={chart} stock={stock} />
