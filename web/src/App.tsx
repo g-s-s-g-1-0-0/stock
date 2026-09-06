@@ -4862,7 +4862,7 @@ function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartDat
   const closes = candles.map((candle) => candle.close)
   const width = compact ? 176 : 760
   const height = compact ? 88 : 280
-  const leftPad = compact ? 7 : 126
+  const leftPad = compact ? 7 : 158
   const rightPad = compact ? 7 : 18
   const padY = compact ? 8 : 26
   const min = Math.min(...candles.map((candle) => candle.low), chart.support) * 0.985

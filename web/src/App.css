@@ -4687,7 +4687,7 @@
 .trend-chart-svg.compact { height: 88px; }
 .trend-grid { stroke: #d7e2ee; stroke-dasharray: 3 4; stroke-width: 1; }
 .trend-resistance-line { stroke: #d84949; stroke-width: 1.6; stroke-dasharray: 5 4; }
-.trend-support-line { stroke: #16835a; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.trend-support-line { stroke: #2563eb; stroke-width: 1.8; stroke-dasharray: 5 4; }
 .trend-desc-line { stroke: #326fd1; stroke-width: 2.5; }
 .trend-asc-line { stroke: #159b63; stroke-width: 2.5; }
 .candle-up { stroke: #16a34a; fill: #16a34a; }
@@ -4698,8 +4698,8 @@
 .trend-chart-svg .chart-axis-label { fill: #7a899c; font-size: 11px; font-weight: 700; }
 .trend-chart-svg .chart-phase-label { fill: #334155; font-size: 14px; }
 .trend-chart-svg .chart-level-label { font-size: 13px; paint-order: stroke; stroke: #f3f7fb; stroke-width: 5px; stroke-linejoin: round; }
-.trend-chart-svg .chart-level-label.resistance { fill: #c43c3c; }
-.trend-chart-svg .chart-level-label.support { fill: #08734a; }
+.trend-chart-svg .chart-level-label.resistance { fill: #dc2626 !important; }
+.trend-chart-svg .chart-level-label.support { fill: #2563eb !important; }
 
 .trend-chart-modal-backdrop {
   position: fixed;
@@ -4736,7 +4736,7 @@
 
 .trend-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; color: #475569; font-size: 12px; }
 .legend-line::before { display: inline-block; width: 16px; height: 0; margin-right: 5px; border-top: 2px solid currentColor; content: ''; vertical-align: middle; }
-.legend-line.down { color: #2563eb; }.legend-line.up { color: #16a34a; }.legend-line.support { color: #167c54; }.legend-line.resistance { color: #dc4c4c; }
+.legend-line.down { color: #2563eb; }.legend-line.up { color: #16a34a; }.legend-line.support { color: #2563eb; }.legend-line.resistance { color: #dc2626; }
 
 @media (max-width: 640px) {
   .trend-chart-modal-backdrop { display: block; padding: 8px; }
