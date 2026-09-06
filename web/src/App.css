@@ -4664,13 +4664,6 @@
   transform: translateY(-1px);
 }
 
-.trend-chart-preview small {
-  margin-top: 3px;
-  color: var(--muted);
-  font-size: 9px;
-  text-align: right;
-}
-
 .trend-chart-unavailable { color: var(--muted); font-size: 11px; }
 
 .trend-phase {

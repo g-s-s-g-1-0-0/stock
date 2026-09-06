@@ -4799,7 +4799,6 @@ function TrendChartPreview({ stock, data, onOpen }: { stock: Stock; data: TrendC
   return (
     <button className="trend-chart-preview" type="button" onClick={() => onOpen(data)} aria-label={`${stock.name} 추세 차트 크게 보기`}>
       <TrendChartSvg chart={data} stock={stock} compact />
-      <small>실제 데이터 · 확대</small>
     </button>
   )
 }
