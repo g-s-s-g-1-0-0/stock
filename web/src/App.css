@@ -4713,11 +4713,12 @@
 .trend-asc-line { stroke: #159b63; stroke-width: 2.5; }
 .candle-up { stroke: #16a34a; fill: #16a34a; }
 .candle-down { stroke: #dc4c4c; fill: #dc4c4c; }
-.trend-breakout circle { fill: #f5e8ff; stroke: #7e22ce; stroke-width: 2; }
-.trend-breakout path { fill: none; stroke: #7e22ce; stroke-width: 2.5; }
 .trend-chart-svg text { fill: #64748b; font-size: 15px; font-weight: 800; }
 .trend-chart-svg .chart-axis-label { fill: #7a899c; font-size: 11px; font-weight: 700; }
 .trend-chart-svg .chart-phase-label { fill: #334155; font-size: 14px; }
+.trend-chart-svg .chart-phase-label.up { fill: #15803d; }
+.trend-chart-svg .chart-phase-label.down { fill: #b91c1c; }
+.trend-chart-svg .chart-phase-label.watch { fill: #b45309; }
 .trend-chart-svg .chart-level-label { font-size: 13px; paint-order: stroke; stroke: #f3f7fb; stroke-width: 5px; stroke-linejoin: round; }
 .trend-chart-svg .chart-level-label.resistance { fill: #dc2626 !important; }
 .trend-chart-svg .chart-level-label.support { fill: #2563eb !important; }
