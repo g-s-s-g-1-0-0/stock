@@ -4703,7 +4703,10 @@
 .trend-breakout path { fill: none; stroke: #7e22ce; stroke-width: 2.5; }
 .trend-chart-svg text { fill: #64748b; font-size: 15px; font-weight: 800; }
 .trend-chart-svg .chart-axis-label { fill: #7a899c; font-size: 11px; font-weight: 700; }
-.trend-chart-svg .chart-phase-label { fill: #334155; font-size: 15px; }
+.trend-chart-svg .chart-phase-label { fill: #334155; font-size: 14px; }
+.trend-chart-svg .chart-level-label { font-size: 13px; paint-order: stroke; stroke: #f3f7fb; stroke-width: 5px; stroke-linejoin: round; }
+.trend-chart-svg .chart-level-label.resistance { fill: #c43c3c; }
+.trend-chart-svg .chart-level-label.support { fill: #08734a; }
 
 .trend-chart-modal-backdrop {
   position: fixed;
@@ -4712,11 +4715,15 @@
   display: grid;
   place-items: center;
   padding: 24px;
+  overflow-y: auto;
   background: rgba(15, 23, 42, .58);
 }
 
 .trend-chart-modal {
-  width: min(900px, 100%);
+  width: min(820px, 100%);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 22px;
   border: 1px solid #cedcea;
   border-radius: 18px;
@@ -4724,7 +4731,7 @@
   box-shadow: 0 24px 70px rgba(15, 23, 42, .35);
 }
 
-.trend-chart-modal header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.trend-chart-modal header { position: sticky; z-index: 1; top: -22px; display: flex; align-items: center; justify-content: space-between; margin: -22px -22px 14px; padding: 22px 22px 12px; background: #fff; border-bottom: 1px solid #edf1f5; }
 .trend-chart-modal header div { display: grid; gap: 3px; }
 .trend-chart-modal header strong { color: var(--text-h); font-size: 19px; }
 .trend-chart-modal header span, .trend-chart-note { color: var(--muted); font-size: 12px; }
@@ -4734,15 +4741,23 @@
 .trend-criteria { display: grid; gap: 7px; margin: 10px 0 5px; padding: 0; list-style: none; color: #526277; font-size: 12px; line-height: 1.55; }
 .trend-criteria li { position: relative; padding-left: 15px; }.trend-criteria li::before { position: absolute; left: 0; color: #3b82f6; content: '•'; font-weight: 900; }
 
-.trend-levels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 13px; }
-.trend-level { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; padding: 11px 13px; border: 1px solid #dce5ef; border-left: 4px solid; border-radius: 10px; background: #fff; }
-.trend-level span { font-size: 12px; font-weight: 800; }.trend-level strong { font-family: var(--mono); font-size: 16px; text-align: right; }.trend-level small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; }.trend-level.support { border-left-color: #16835a; }.trend-level.support span { color: #08734a; }.trend-level.resistance { border-left-color: #d84949; }.trend-level.resistance span { color: #bd3030; }
-
 .trend-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; color: #475569; font-size: 12px; }
 .legend-line::before { display: inline-block; width: 16px; height: 0; margin-right: 5px; border-top: 2px solid currentColor; content: ''; vertical-align: middle; }
 .legend-line.down { color: #2563eb; }.legend-line.up { color: #16a34a; }.legend-line.support { color: #167c54; }.legend-line.resistance { color: #dc4c4c; }
 
-@media (max-width: 640px) { .trend-chart-modal { padding: 16px; }.trend-levels { grid-template-columns: 1fr; }.trend-chart-modal-backdrop { padding: 10px; } }
+@media (max-width: 640px) {
+  .trend-chart-modal-backdrop { display: block; padding: 8px; }
+  .trend-chart-modal { width: 100%; max-height: calc(100dvh - 16px); padding: 14px; border-radius: 14px; }
+  .trend-chart-modal header { top: -14px; margin: -14px -14px 12px; padding: 14px 14px 10px; }
+  .trend-chart-modal header strong { font-size: 16px; }
+  .trend-chart-modal header span, .trend-chart-note { font-size: 11px; }
+  .trend-chart-svg:not(.compact) { min-height: 148px; }
+  .trend-chart-svg .chart-axis-label { font-size: 10px; }
+  .trend-chart-svg .chart-level-label { font-size: 11px; }
+  .trend-chart-svg .chart-phase-label { display: none; }
+  .trend-chart-legend { gap: 8px; font-size: 11px; }
+  .trend-chart-modal > p { margin-top: 12px; font-size: 12px; }
+}
 
 .technical-analysis-table th:nth-child(46),
 .technical-analysis-table td:nth-child(46),
