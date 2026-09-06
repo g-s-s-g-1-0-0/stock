@@ -4805,12 +4805,11 @@ function TrendChartPreview({ stock, data, onOpen }: { stock: Stock; data: TrendC
 
 function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: TrendChartData; onClose: () => void }) {
   const phase = chart.phase
-  const trendTone = phase.includes('상승') ? 'up' : 'down'
   return createPortal(
     <div className="trend-chart-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section className="trend-chart-modal" role="dialog" aria-modal="true" aria-label={`${stock.name} 추세 차트`} onMouseDown={(event) => event.stopPropagation()}>
         <header>
-          <div><strong>{stock.name}</strong><span>{stock.ticker} · 최근 60거래일 일봉 <b className={`trend-phase trend-phase-${trendTone} ${phase.includes('전환') ? 'turn' : ''}`}>{phase}</b></span></div>
+          <div><strong>{stock.name}</strong><span>{stock.ticker} · 최근 120거래일 일봉</span></div>
           <button type="button" onClick={onClose} aria-label="추세 차트 닫기">×</button>
         </header>
         <TrendChartSvg chart={chart} stock={stock} />
@@ -4821,7 +4820,7 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
         <ol className="trend-criteria">
           {trendCriteria(phase, stock, chart).map((criterion) => <li key={criterion}>{criterion}</li>)}
         </ol>
-        <small className="trend-chart-note">최근 60거래일 실제 OHLC 기준 · 기술 분석 데이터와 함께 2시간마다 갱신됩니다.</small>
+        <small className="trend-chart-note">최근 120거래일 실제 OHLC 기준 · 기술 분석 데이터와 함께 2시간마다 갱신됩니다.</small>
       </section>
     </div>,
     document.body,
@@ -4869,7 +4868,7 @@ function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartDat
   const max = Math.max(...candles.map((candle) => candle.high), chart.resistance) * 1.015
   const x = (i: number) => leftPad + i * ((width - leftPad - rightPad) / (closes.length - 1))
   const y = (value: number) => height - padY - ((value - min) / (max - min)) * (height - padY * 2)
-  const trendWindow = closes.slice(-20)
+  const trendWindow = closes.slice(-60)
   const meanX = (trendWindow.length - 1) / 2
   const meanY = trendWindow.reduce((sum, value) => sum + value, 0) / trendWindow.length
   const slope = trendWindow.reduce((sum, value, i) => sum + (i - meanX) * (value - meanY), 0) / trendWindow.reduce((sum, _, i) => sum + (i - meanX) ** 2, 0)
@@ -4885,14 +4884,14 @@ function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartDat
     })}
     <line className="trend-resistance-line" x1={leftPad} x2={width - rightPad} y1={y(resistance)} y2={y(resistance)} />
     <line className="trend-support-line" x1={leftPad} x2={width - rightPad} y1={y(support)} y2={y(support)} />
-    <line className={descending ? 'trend-desc-line' : 'trend-asc-line'} x1={x(Math.max(0, closes.length - 20))} y1={y(trendStart)} x2={x(closes.length - 1)} y2={y(trendEnd)} />
+    <line className={descending ? 'trend-desc-line' : 'trend-asc-line'} x1={x(Math.max(0, closes.length - trendWindow.length))} y1={y(trendStart)} x2={x(closes.length - 1)} y2={y(trendEnd)} />
     {closes.map((close, i) => {
       const { open, high, low } = candles[i]
       const up = close >= open
       return <g key={i}><line className={up ? 'candle-up' : 'candle-down'} x1={x(i)} x2={x(i)} y1={y(high)} y2={y(low)} /><rect className={up ? 'candle-up' : 'candle-down'} x={x(i) - candleWidth / 2} y={y(Math.max(open, close))} width={candleWidth} height={Math.max(2, Math.abs(y(open) - y(close)))} /></g>
     })}
     {turning && <g className="trend-breakout"><circle cx={x(closes.length - 1)} cy={y(closes[closes.length - 1])} r={compact ? 5 : 11} /><path d={`M ${x(closes.length - 1) + (compact ? 8 : 18)} ${y(closes[closes.length - 1]) - (compact ? 8 : 20)} L ${x(closes.length - 1) + (compact ? 2 : 5)} ${y(closes[closes.length - 1]) - (compact ? 1 : 3)}`} /></g>}
-    {!compact && <><text className="chart-level-label resistance" x={leftPad + 8} y={y(resistance) - 8}>저항 {formatChartPrice(stock, resistance)}</text><text className="chart-level-label support" x={leftPad + 8} y={y(support) - 8}>지지 {formatChartPrice(stock, support)}</text><text className="chart-phase-label" x={width - rightPad} y={21} textAnchor="end">{phase}</text>{[0, 20, 40, closes.length - 1].map((index) => <text className="chart-axis-label" key={index} x={x(index)} y={height - 7} textAnchor={index === 0 ? 'start' : index === closes.length - 1 ? 'end' : 'middle'}>{formatChartDate(candles[index]?.date)}</text>)}</>}
+    {!compact && <><text className="chart-level-label resistance" x={leftPad + 8} y={y(resistance) - 8}>저항 {formatChartPrice(stock, resistance)}</text><text className="chart-level-label support" x={leftPad + 8} y={y(support) - 8}>지지 {formatChartPrice(stock, support)}</text><text className="chart-phase-label" x={width - rightPad} y={21} textAnchor="end">{phase}</text>{[0, Math.floor((closes.length - 1) / 3), Math.floor((closes.length - 1) * 2 / 3), closes.length - 1].map((index) => <text className="chart-axis-label" key={index} x={x(index)} y={height - 7} textAnchor={index === 0 ? 'start' : index === closes.length - 1 ? 'end' : 'middle'}>{formatChartDate(candles[index]?.date)}</text>)}</>}
   </svg>
 }
 

@@ -1147,7 +1147,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
             if row:
                 # The table stores an intentionally compact, render-ready daily OHLC series.
                 # It is refreshed with the rest of the technical cache, not fabricated in the UI.
-                candles = fetch_ohlcv(stock["ticker"], count=120)[-60:]
+                candles = fetch_ohlcv(stock["ticker"], count=160)[-120:]
                 if len(candles) >= 30:
                     closes = [float(candle["close"]) for candle in candles]
                     highs = [float(candle["high"]) for candle in candles]
