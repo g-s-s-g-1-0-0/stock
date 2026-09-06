@@ -4857,6 +4857,7 @@ function trendCriteria(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
 function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartData; stock: Stock; compact?: boolean }) {
   const { phase, candles } = chart
   const descending = phase.includes('하락')
+  const trendTone = phase.includes('상승') ? 'up' : 'down'
   const turning = phase.includes('전환')
   const closes = candles.map((candle) => candle.close)
   const width = compact ? 176 : 760
@@ -4891,6 +4892,7 @@ function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartDat
       return <g key={i}><line className={up ? 'candle-up' : 'candle-down'} x1={x(i)} x2={x(i)} y1={y(high)} y2={y(low)} /><rect className={up ? 'candle-up' : 'candle-down'} x={x(i) - candleWidth / 2} y={y(Math.max(open, close))} width={candleWidth} height={Math.max(2, Math.abs(y(open) - y(close)))} /></g>
     })}
     {turning && <g className="trend-breakout"><circle cx={x(closes.length - 1)} cy={y(closes[closes.length - 1])} r={compact ? 5 : 11} /><path d={`M ${x(closes.length - 1) + (compact ? 8 : 18)} ${y(closes[closes.length - 1]) - (compact ? 8 : 20)} L ${x(closes.length - 1) + (compact ? 2 : 5)} ${y(closes[closes.length - 1]) - (compact ? 1 : 3)}`} /></g>}
+    {compact && <g className={`chart-phase-pill ${trendTone}`}><rect x={width - 73} y={4} width={69} height={15} rx={5} /><text x={width - 8} y={14} textAnchor="end">{phase}</text></g>}
     {!compact && <><text className="chart-level-label resistance" x={leftPad + 8} y={y(resistance) - 8}>저항 {formatChartPrice(stock, resistance)}</text><text className="chart-level-label support" x={leftPad + 8} y={y(support) - 8}>지지 {formatChartPrice(stock, support)}</text><text className="chart-phase-label" x={width - rightPad} y={21} textAnchor="end">{phase}</text>{[0, Math.floor((closes.length - 1) / 3), Math.floor((closes.length - 1) * 2 / 3), closes.length - 1].map((index) => <text className="chart-axis-label" key={index} x={x(index)} y={height - 7} textAnchor={index === 0 ? 'start' : index === closes.length - 1 ? 'end' : 'middle'}>{formatChartDate(candles[index]?.date)}</text>)}</>}
   </svg>
 }
