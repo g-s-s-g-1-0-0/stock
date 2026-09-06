@@ -4783,7 +4783,7 @@ function TechnicalAnalysisPage({
   )
 }
 
-type TrendPhase = '상승 추세 유지' | '하락 추세 유지' | '상승 전환 초입' | '하락 전환 초입'
+type TrendPhase = '상승 추세 유지' | '하락 추세 유지' | '상승 전환 초입' | '하락 전환 초입' | '하락 추세 이탈 시도' | '상승 전환 대기'
 
 type TrendChartData = { phase: TrendPhase; support: number; resistance: number; candles: Array<{ date: string; open: number; high: number; low: number; close: number }> }
 
@@ -4837,10 +4837,12 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
 function trendExplanation(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
   const support = formatTechnicalPrice(stock, chart.support)
   const resistance = formatTechnicalPrice(stock, chart.resistance)
-  if (phase === '상승 추세 유지') return `최근 저점과 가격 흐름이 올라가는 쪽입니다. ${support} 지지선 위를 지키면 상승 흐름을 유지하는 것으로 보고, ${resistance} 저항선을 넘으면 상승 힘이 더 강해졌다고 봅니다.`
-  if (phase === '하락 추세 유지') return `최근 고점과 가격 흐름이 내려가는 쪽입니다. ${resistance} 저항선을 다시 넘기 전까지는 하락 흐름으로 보고, ${support} 지지선 아래에서 마감하면 약세가 더 강해질 수 있습니다.`
-  if (phase === '상승 전환 초입') return `최근 약세 흐름에서 반등을 시도하는 구간입니다. ${resistance} 저항선을 넘고 ${support} 지지선 위를 지키면 상승 전환 신뢰도가 높아집니다.`
-  return `최근 강세 흐름이 약해지는 구간입니다. ${support} 지지선 아래에서 마감하면 하락 전환 신호가 강해지고, ${resistance} 저항선을 다시 넘으면 전환 신호는 약해집니다.`
+  if (phase === '상승 추세 유지') return `60거래일 추세선 위에서 가격이 유지되고 있습니다. ${support} 지지선을 지키는 한 상승 흐름으로 보며, ${resistance} 저항선 돌파는 상승 힘이 강해졌다는 추가 확인입니다.`
+  if (phase === '하락 추세 유지') return `60거래일 추세선 아래에서 저점·고점이 낮아지는 흐름입니다. ${resistance} 저항선과 하락 추세선을 함께 넘기 전까지는 하락 흐름으로 보고, ${support} 아래 마감은 약세 확인으로 봅니다.`
+  if (phase === '하락 추세 이탈 시도') return `가격이 장기 하락 추세선 위로 올라왔지만 ${resistance} 저항선 아래에 있습니다. 하락 흐름이 약해진 신호이지만, 아직 상승 전환이 확인된 단계는 아닙니다.`
+  if (phase === '상승 전환 대기') return `하락 추세선 위에서 반등이 이어지고 있으나 ${resistance} 저항선을 아직 넘지 못했습니다. 저항 돌파 후 그 위에서 유지되면 상승 전환 초입으로 바뀝니다.`
+  if (phase === '상승 전환 초입') return `하락 추세선 이탈 뒤 ${resistance} 저항선을 종가 기준으로 돌파한 구간입니다. 돌파 가격 위에서 유지하고 저점이 높아지면 상승 추세 유지로 확인됩니다.`
+  return `기존 상승 흐름이 약해져 지지·추세선 아래로 내려온 구간입니다. ${support} 지지선 회복 여부를 확인하고, 이 아래에서 마감하면 하락 전환 신호가 강해집니다.`
 }
 
 function trendCriteria(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
@@ -4850,21 +4852,31 @@ function trendCriteria(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
   const current = formatTechnicalPrice(stock, closes.at(-1)!)
   const support = formatTechnicalPrice(stock, chart.support)
   const resistance = formatTechnicalPrice(stock, chart.resistance)
+  const trendWindow = closes.slice(-60)
+  const meanX = (trendWindow.length - 1) / 2
+  const meanY = trendWindow.reduce((sum, value) => sum + value, 0) / trendWindow.length
+  const slope = trendWindow.reduce((sum, value, index) => sum + (index - meanX) * (value - meanY), 0) / trendWindow.reduce((sum, _, index) => sum + (index - meanX) ** 2, 0)
+  const trendLineNow = meanY + slope * meanX
+  const linePosition = closes.at(-1)! > trendLineNow ? '위' : '아래'
   const direction = recentChange >= 0 ? '올랐습니다' : '내렸습니다'
-  const transition = phase.includes('전환')
-    ? `전환 판단: 직전 20일 ${priorChange >= 0 ? '+' : ''}${priorChange.toFixed(1)}%와 최근 20일 ${recentChange >= 0 ? '+' : ''}${recentChange.toFixed(1)}%의 방향이 바뀌고, 현재가가 핵심 가격대에 닿았습니다.`
-    : `추세 판단: 직전 20일 ${priorChange >= 0 ? '+' : ''}${priorChange.toFixed(1)}%, 최근 20일 ${recentChange >= 0 ? '+' : ''}${recentChange.toFixed(1)}%로 최근 흐름이 ${direction}`
+  const statusReason: Record<TrendPhase, string> = {
+    '하락 추세 유지': '하락 추세선 아래이거나, 최근 흐름이 약세여서 하락 추세 유지로 분류했습니다.',
+    '하락 추세 이탈 시도': '하락 추세선 위로 종가가 올라왔지만 저항선은 돌파하지 못해 이탈 시도로 분류했습니다.',
+    '상승 전환 대기': '하락 추세선 위에서 최근 20일 +5% 이상 반등했지만 저항선 아래여서 전환 대기로 분류했습니다.',
+    '상승 전환 초입': '하락 추세선 위에서 저항선을 0.5% 이상 종가 돌파해 상승 전환 초입으로 분류했습니다.',
+    '상승 추세 유지': '60거래일 추세선 위에서 가격이 유지되어 상승 추세 유지로 분류했습니다.',
+    '하락 전환 초입': '상승 추세선 또는 지지선 아래로 내려와 하락 전환 초입으로 분류했습니다.',
+  }
   return [
+    `장기 추세선: 최근 60거래일 종가의 회귀선 ${linePosition}에 종가 ${current}가 있습니다.`,
     `지지·저항: 오늘을 제외한 직전 20거래일의 최저가 ${support}, 최고가 ${resistance}를 기준으로 잡았습니다.`,
-    transition,
-    `현재 위치: 종가 ${current}입니다. 지지선 아래 마감은 약세 확인, 저항선 위 돌파는 강세 확인으로 봅니다.`,
+    `상태 판정: ${statusReason[phase]} 직전 20일 ${priorChange >= 0 ? '+' : ''}${priorChange.toFixed(1)}%, 최근 20일 ${recentChange >= 0 ? '+' : ''}${recentChange.toFixed(1)}%로 최근 흐름이 ${direction}`,
   ]
 }
 
 function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartData; stock: Stock; compact?: boolean }) {
   const { phase, candles } = chart
-  const descending = phase.includes('하락')
-  const trendTone = phase.includes('상승') ? 'up' : 'down'
+  const trendTone = phase.includes('상승') ? 'up' : phase.includes('이탈 시도') ? 'watch' : 'down'
   const turning = phase.includes('전환')
   const closes = candles.map((candle) => candle.close)
   const width = compact ? 176 : 760
@@ -4880,6 +4892,7 @@ function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartDat
   const meanX = (trendWindow.length - 1) / 2
   const meanY = trendWindow.reduce((sum, value) => sum + value, 0) / trendWindow.length
   const slope = trendWindow.reduce((sum, value, i) => sum + (i - meanX) * (value - meanY), 0) / trendWindow.reduce((sum, _, i) => sum + (i - meanX) ** 2, 0)
+  const descending = slope < 0
   const trendStart = meanY - slope * meanX
   const trendEnd = meanY + slope * meanX
   const support = chart.support

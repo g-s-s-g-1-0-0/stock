@@ -4701,6 +4701,7 @@
 .trend-chart-svg .chart-phase-pill text { font-size: 8px; font-weight: 900; }
 .trend-chart-svg .chart-phase-pill.up rect { stroke: #16a34a; }.trend-chart-svg .chart-phase-pill.up text { fill: #15803d; }
 .trend-chart-svg .chart-phase-pill.down rect { stroke: #dc2626; }.trend-chart-svg .chart-phase-pill.down text { fill: #b91c1c; }
+.trend-chart-svg .chart-phase-pill.watch rect { stroke: #d97706; }.trend-chart-svg .chart-phase-pill.watch text { fill: #b45309; }
 .trend-chart-svg .chart-level-label { font-size: 13px; paint-order: stroke; stroke: #f3f7fb; stroke-width: 5px; stroke-linejoin: round; }
 .trend-chart-svg .chart-level-label.resistance { fill: #dc2626 !important; }
 .trend-chart-svg .chart-level-label.support { fill: #2563eb !important; }

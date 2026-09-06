@@ -1159,11 +1159,25 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                     support = min(lows[-21:-1])
                     resistance = max(highs[-21:-1])
                     close = closes[-1]
-                    if close > resistance * 0.995 and prior_change <= 0 and recent_change > 0:
+                    trend_window = closes[-60:]
+                    mean_x = (len(trend_window) - 1) / 2
+                    mean_y = sum(trend_window) / len(trend_window)
+                    slope = sum((index - mean_x) * (value - mean_y) for index, value in enumerate(trend_window)) / sum((index - mean_x) ** 2 for index in range(len(trend_window)))
+                    trend_line_now = mean_y + slope * mean_x
+                    long_trend_down = slope < 0
+                    above_trend_line = close > trend_line_now
+                    resistance_break = close > resistance * 1.005
+                    support_break = close < support * 0.995
+
+                    if long_trend_down and resistance_break and recent_change > 0:
                         phase = "상승 전환 초입"
-                    elif close < support * 1.005 and prior_change >= 0 and recent_change < 0:
+                    elif long_trend_down and above_trend_line and recent_change >= 0.05:
+                        phase = "상승 전환 대기"
+                    elif long_trend_down and above_trend_line:
+                        phase = "하락 추세 이탈 시도"
+                    elif not long_trend_down and (support_break or (close < trend_line_now and recent_change < 0)):
                         phase = "하락 전환 초입"
-                    elif recent_change >= 0:
+                    elif not long_trend_down and close >= trend_line_now:
                         phase = "상승 추세 유지"
                     else:
                         phase = "하락 추세 유지"
