@@ -4805,6 +4805,13 @@ function TrendChartPreview({ stock, data, onOpen }: { stock: Stock; data: TrendC
 
 function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: TrendChartData; onClose: () => void }) {
   const phase = chart.phase
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [onClose])
   return createPortal(
     <div className="trend-chart-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section className="trend-chart-modal" role="dialog" aria-modal="true" aria-label={`${stock.name} 추세 차트`} onMouseDown={(event) => event.stopPropagation()}>

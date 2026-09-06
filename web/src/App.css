@@ -4707,9 +4707,11 @@
 
 .trend-chart-modal-backdrop {
   position: fixed;
-  z-index: 80;
+  z-index: 1000;
   inset: 0;
   display: grid;
+  align-items: center;
+  justify-items: center;
   place-items: center;
   padding: 24px;
   overflow-y: auto;
@@ -4718,6 +4720,7 @@
 
 .trend-chart-modal {
   width: min(820px, 100%);
+  margin: auto;
   max-height: calc(100dvh - 48px);
   overflow-y: auto;
   overscroll-behavior: contain;
