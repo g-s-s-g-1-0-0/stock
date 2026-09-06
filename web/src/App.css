@@ -4737,7 +4737,7 @@
 }
 
 .trend-chart-modal {
-  width: min(820px, 100%);
+  width: min(900px, 100%);
   margin: auto;
   max-height: calc(100dvh - 48px);
   overflow-y: auto;
