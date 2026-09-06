@@ -1145,6 +1145,34 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 season_open=season_open,
             )
             if row:
+                # The table stores an intentionally compact, render-ready daily OHLC series.
+                # It is refreshed with the rest of the technical cache, not fabricated in the UI.
+                candles = fetch_ohlcv(stock["ticker"], count=120)[-60:]
+                if len(candles) >= 30:
+                    closes = [float(candle["close"]) for candle in candles]
+                    highs = [float(candle["high"]) for candle in candles]
+                    lows = [float(candle["low"]) for candle in candles]
+                    recent = closes[-20:]
+                    prior = closes[-40:-20]
+                    recent_change = recent[-1] / recent[0] - 1
+                    prior_change = prior[-1] / prior[0] - 1
+                    support = min(lows[-21:-1])
+                    resistance = max(highs[-21:-1])
+                    close = closes[-1]
+                    if close > resistance * 0.995 and prior_change <= 0 and recent_change > 0:
+                        phase = "상승 전환 초입"
+                    elif close < support * 1.005 and prior_change >= 0 and recent_change < 0:
+                        phase = "하락 전환 초입"
+                    elif recent_change >= 0:
+                        phase = "상승 추세 유지"
+                    else:
+                        phase = "하락 추세 유지"
+                    row["추세 차트 데이터"] = json.dumps({
+                        "phase": phase,
+                        "support": support,
+                        "resistance": resistance,
+                        "candles": [{key: candle[key] for key in ("date", "open", "high", "low", "close")} for candle in candles],
+                    }, ensure_ascii=False, separators=(",", ":"))
                 existing_row = existing_rows.get(stock["ticker"], {})
                 ticker_key = str(stock["ticker"]).strip().upper()
                 # Only keep 매도/exitReason while that ticker still has an open holding.

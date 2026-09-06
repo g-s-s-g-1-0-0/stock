@@ -4637,6 +4637,113 @@
   min-width: 116px;
 }
 
+.technical-analysis-table th:nth-child(4),
+.technical-analysis-table td:nth-child(4) {
+  min-width: 196px;
+}
+
+.trend-chart-cell {
+  padding: 5px !important;
+}
+
+.trend-chart-preview {
+  display: grid;
+  width: 184px;
+  padding: 5px;
+  border: 1px solid #d8e2ef;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #ffffff, #f5f8fc);
+  color: var(--text-h);
+  cursor: pointer;
+  text-align: left;
+}
+
+.trend-chart-preview:hover {
+  border-color: #6f96c4;
+  box-shadow: 0 5px 14px rgba(48, 82, 122, .16);
+  transform: translateY(-1px);
+}
+
+.trend-chart-preview small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+  text-align: right;
+}
+
+.trend-chart-unavailable { color: var(--muted); font-size: 11px; }
+
+.trend-phase {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.trend-phase-up { color: #15803d; }
+.trend-phase-down { color: #b91c1c; }
+.trend-phase.turn { color: #6d28d9; }
+
+.trend-chart-svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #f8fbff, #eef4fa);
+}
+
+.trend-chart-svg.compact { height: 88px; }
+.trend-grid { stroke: #d7e2ee; stroke-dasharray: 3 4; stroke-width: 1; }
+.trend-resistance-line { stroke: #d84949; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.trend-support-line { stroke: #16835a; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.trend-desc-line { stroke: #326fd1; stroke-width: 2.5; }
+.trend-asc-line { stroke: #159b63; stroke-width: 2.5; }
+.candle-up { stroke: #16a34a; fill: #16a34a; }
+.candle-down { stroke: #dc4c4c; fill: #dc4c4c; }
+.trend-breakout circle { fill: #f5e8ff; stroke: #7e22ce; stroke-width: 2; }
+.trend-breakout path { fill: none; stroke: #7e22ce; stroke-width: 2.5; }
+.trend-chart-svg text { fill: #64748b; font-size: 15px; font-weight: 800; }
+.trend-chart-svg .chart-axis-label { fill: #7a899c; font-size: 11px; font-weight: 700; }
+.trend-chart-svg .chart-phase-label { fill: #334155; font-size: 15px; }
+
+.trend-chart-modal-backdrop {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, .58);
+}
+
+.trend-chart-modal {
+  width: min(900px, 100%);
+  padding: 22px;
+  border: 1px solid #cedcea;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .35);
+}
+
+.trend-chart-modal header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.trend-chart-modal header div { display: grid; gap: 3px; }
+.trend-chart-modal header strong { color: var(--text-h); font-size: 19px; }
+.trend-chart-modal header span, .trend-chart-note { color: var(--muted); font-size: 12px; }
+.trend-chart-modal header button { width: 32px; height: 32px; border: 0; border-radius: 50%; background: #eef2f7; color: #475569; font-size: 23px; cursor: pointer; }
+.trend-chart-modal > p { margin: 15px 0 5px; padding: 12px 14px; border-radius: 10px; background: #f5f8fc; color: #3f5067; font-size: 13px; line-height: 1.7; }
+
+.trend-criteria { display: grid; gap: 7px; margin: 10px 0 5px; padding: 0; list-style: none; color: #526277; font-size: 12px; line-height: 1.55; }
+.trend-criteria li { position: relative; padding-left: 15px; }.trend-criteria li::before { position: absolute; left: 0; color: #3b82f6; content: '•'; font-weight: 900; }
+
+.trend-levels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 13px; }
+.trend-level { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; padding: 11px 13px; border: 1px solid #dce5ef; border-left: 4px solid; border-radius: 10px; background: #fff; }
+.trend-level span { font-size: 12px; font-weight: 800; }.trend-level strong { font-family: var(--mono); font-size: 16px; text-align: right; }.trend-level small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; }.trend-level.support { border-left-color: #16835a; }.trend-level.support span { color: #08734a; }.trend-level.resistance { border-left-color: #d84949; }.trend-level.resistance span { color: #bd3030; }
+
+.trend-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; color: #475569; font-size: 12px; }
+.legend-line::before { display: inline-block; width: 16px; height: 0; margin-right: 5px; border-top: 2px solid currentColor; content: ''; vertical-align: middle; }
+.legend-line.down { color: #2563eb; }.legend-line.up { color: #16a34a; }.legend-line.support { color: #167c54; }.legend-line.resistance { color: #dc4c4c; }
+
+@media (max-width: 640px) { .trend-chart-modal { padding: 16px; }.trend-levels { grid-template-columns: 1fr; }.trend-chart-modal-backdrop { padding: 10px; } }
+
 .technical-analysis-table th:nth-child(46),
 .technical-analysis-table td:nth-child(46),
 .technical-analysis-table th:nth-child(47),

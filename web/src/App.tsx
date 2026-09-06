@@ -4572,6 +4572,7 @@ function TechnicalAnalysisPage({
   onTooltipClose: () => void
 }) {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
+  const [selectedTrendChart, setSelectedTrendChart] = useState<{ stock: Stock; chart: TrendChartData } | null>(null)
   const visibleStocks = stocks.slice(0, MAX_WATCHLIST_ITEMS)
   const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleStocks.length, 0)
   const isEmpty = stocks.length === 0
@@ -4682,6 +4683,15 @@ function TechnicalAnalysisPage({
                     투자의견
                   </MetricValue>
                 </th>
+                <th>
+                  <MetricValue
+                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 클릭하면 크게 볼 수 있습니다.', '초록: 상승 추세 · 파랑: 하락 추세 · 보라: 전환 감지 · 빨강: 이탈 위험.')}
+                    onTooltipClose={onTooltipClose}
+                    onTooltipOpen={onTooltipOpen}
+                  >
+                    추세 차트
+                  </MetricValue>
+                </th>
                 {technicalMetricColumns.map((column) => (
                   <th className={column.label.startsWith('실적발표일') ? 'earnings-date-cell' : undefined} key={column.label}>
                     <MetricValue
@@ -4696,7 +4706,7 @@ function TechnicalAnalysisPage({
               </tr>
             </thead>
             <tbody>
-              {visibleStocks.map((stock) => {
+            {visibleStocks.map((stock) => {
                 const apiRow = technicalRows[stock.ticker]
                 const displayedOpinion = hideSellSignals && stock.opinion === '매도' ? '관망' : displayStockOpinion(stock)
 
@@ -4707,6 +4717,9 @@ function TechnicalAnalysisPage({
                   </td>
                   <td className="ticker-cell">{stock.ticker}</td>
                   <td><span className={`status-badge ${statusClass(displayedOpinion)}`}>{displayedOpinion}</span></td>
+                  <td className="trend-chart-cell">
+                    <TrendChartPreview stock={stock} data={parseTrendChart(apiRow?.['추세 차트 데이터'])} onOpen={(chart) => setSelectedTrendChart({ stock, chart })} />
+                  </td>
                   {technicalMetricColumns.map((column) => {
                     const apiKey = column.key ?? column.label
                     const entryStrategies = apiKey === '진입 전략' ? technicalEntryStrategiesForStock(stock, tradeLogs) : []
@@ -4750,7 +4763,7 @@ function TechnicalAnalysisPage({
               })}
               {Array.from({ length: blankRowCount }).map((_, index) => (
                 <tr className="blank-row" key={`technical-analysis-blank-${index}`}>
-                  {Array.from({ length: 3 + technicalMetricColumns.length }).map((__, cellIndex) => (
+                  {Array.from({ length: 4 + technicalMetricColumns.length }).map((__, cellIndex) => (
                     <td key={`technical-analysis-blank-${index}-${cellIndex}`}>&nbsp;</td>
                   ))}
                 </tr>
@@ -4759,8 +4772,144 @@ function TechnicalAnalysisPage({
           </table>
         </div>
       )}
+      {selectedTrendChart && (
+        <TrendChartModal
+          stock={selectedTrendChart.stock}
+          chart={selectedTrendChart.chart}
+          onClose={() => setSelectedTrendChart(null)}
+        />
+      )}
     </section>
   )
+}
+
+type TrendPhase = '상승 추세 유지' | '하락 추세 유지' | '상승 전환 초입' | '하락 전환 초입'
+
+type TrendChartData = { phase: TrendPhase; support: number; resistance: number; candles: Array<{ date: string; open: number; high: number; low: number; close: number }> }
+
+function parseTrendChart(raw?: string): TrendChartData | null {
+  try {
+    const data = JSON.parse(raw ?? '') as TrendChartData
+    return Array.isArray(data.candles) && data.candles.length >= 30 ? data : null
+  } catch { return null }
+}
+
+function TrendChartPreview({ stock, data, onOpen }: { stock: Stock; data: TrendChartData | null; onOpen: (chart: TrendChartData) => void }) {
+  if (!data) return <span className="trend-chart-unavailable">데이터 갱신 중</span>
+  return (
+    <button className="trend-chart-preview" type="button" onClick={() => onOpen(data)} aria-label={`${stock.name} 추세 차트 크게 보기`}>
+      <TrendChartSvg chart={data} stock={stock} compact />
+      <small>실제 데이터 · 확대</small>
+    </button>
+  )
+}
+
+function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: TrendChartData; onClose: () => void }) {
+  const phase = chart.phase
+  const trendTone = phase.includes('상승') ? 'up' : 'down'
+  return createPortal(
+    <div className="trend-chart-modal-backdrop" role="presentation" onMouseDown={onClose}>
+      <section className="trend-chart-modal" role="dialog" aria-modal="true" aria-label={`${stock.name} 추세 차트`} onMouseDown={(event) => event.stopPropagation()}>
+        <header>
+          <div><strong>{stock.name}</strong><span>{stock.ticker} · 최근 60거래일 일봉 <b className={`trend-phase trend-phase-${trendTone} ${phase.includes('전환') ? 'turn' : ''}`}>{phase}</b></span></div>
+          <button type="button" onClick={onClose} aria-label="추세 차트 닫기">×</button>
+        </header>
+        <TrendChartSvg chart={chart} stock={stock} />
+        <div className="trend-levels" aria-label="핵심 가격 구간">
+          <div className="trend-level support"><span>지지선</span><strong>{formatTechnicalPrice(stock, chart.support)}</strong><small>이 가격 위에서 마감하면 흐름 유지</small></div>
+          <div className="trend-level resistance"><span>저항선</span><strong>{formatTechnicalPrice(stock, chart.resistance)}</strong><small>이 가격을 넘으면 상승 힘 확인</small></div>
+        </div>
+        <div className="trend-chart-legend">
+          <span className="legend-line down">하락 추세선</span><span className="legend-line up">상승 추세선</span><span className="legend-line support">지지선</span><span className="legend-line resistance">저항선</span>
+        </div>
+        <p>{trendExplanation(phase, stock, chart)}</p>
+        <ol className="trend-criteria">
+          {trendCriteria(phase, stock, chart).map((criterion) => <li key={criterion}>{criterion}</li>)}
+        </ol>
+        <small className="trend-chart-note">최근 60거래일 실제 OHLC 기준 · 기술 분석 데이터와 함께 2시간마다 갱신됩니다.</small>
+      </section>
+    </div>,
+    document.body,
+  )
+}
+
+function trendExplanation(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
+  const support = formatTechnicalPrice(stock, chart.support)
+  const resistance = formatTechnicalPrice(stock, chart.resistance)
+  if (phase === '상승 추세 유지') return `최근 저점과 가격 흐름이 올라가는 쪽입니다. ${support} 지지선 위를 지키면 상승 흐름을 유지하는 것으로 보고, ${resistance} 저항선을 넘으면 상승 힘이 더 강해졌다고 봅니다.`
+  if (phase === '하락 추세 유지') return `최근 고점과 가격 흐름이 내려가는 쪽입니다. ${resistance} 저항선을 다시 넘기 전까지는 하락 흐름으로 보고, ${support} 지지선 아래에서 마감하면 약세가 더 강해질 수 있습니다.`
+  if (phase === '상승 전환 초입') return `최근 약세 흐름에서 반등을 시도하는 구간입니다. ${resistance} 저항선을 넘고 ${support} 지지선 위를 지키면 상승 전환 신뢰도가 높아집니다.`
+  return `최근 강세 흐름이 약해지는 구간입니다. ${support} 지지선 아래에서 마감하면 하락 전환 신호가 강해지고, ${resistance} 저항선을 다시 넘으면 전환 신호는 약해집니다.`
+}
+
+function trendCriteria(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
+  const closes = chart.candles.map((candle) => candle.close)
+  const recentChange = (closes.at(-1)! / closes.at(-20)! - 1) * 100
+  const priorChange = (closes.at(-21)! / closes.at(-40)! - 1) * 100
+  const current = formatTechnicalPrice(stock, closes.at(-1)!)
+  const support = formatTechnicalPrice(stock, chart.support)
+  const resistance = formatTechnicalPrice(stock, chart.resistance)
+  const direction = recentChange >= 0 ? '올랐습니다' : '내렸습니다'
+  const transition = phase.includes('전환')
+    ? `전환 판단: 직전 20일 ${priorChange >= 0 ? '+' : ''}${priorChange.toFixed(1)}%와 최근 20일 ${recentChange >= 0 ? '+' : ''}${recentChange.toFixed(1)}%의 방향이 바뀌고, 현재가가 핵심 가격대에 닿았습니다.`
+    : `추세 판단: 직전 20일 ${priorChange >= 0 ? '+' : ''}${priorChange.toFixed(1)}%, 최근 20일 ${recentChange >= 0 ? '+' : ''}${recentChange.toFixed(1)}%로 최근 흐름이 ${direction}`
+  return [
+    `지지·저항: 오늘을 제외한 직전 20거래일의 최저가 ${support}, 최고가 ${resistance}를 기준으로 잡았습니다.`,
+    transition,
+    `현재 위치: 종가 ${current}입니다. 지지선 아래 마감은 약세 확인, 저항선 위 돌파는 강세 확인으로 봅니다.`,
+  ]
+}
+
+function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartData; stock: Stock; compact?: boolean }) {
+  const { phase, candles } = chart
+  const descending = phase.includes('하락')
+  const turning = phase.includes('전환')
+  const closes = candles.map((candle) => candle.close)
+  const width = compact ? 176 : 720
+  const height = compact ? 88 : 360
+  const padX = compact ? 7 : 58
+  const padY = compact ? 8 : 30
+  const min = Math.min(...candles.map((candle) => candle.low), chart.support) * 0.985
+  const max = Math.max(...candles.map((candle) => candle.high), chart.resistance) * 1.015
+  const x = (i: number) => padX + i * ((width - padX * 2) / (closes.length - 1))
+  const y = (value: number) => height - padY - ((value - min) / (max - min)) * (height - padY * 2)
+  const trendWindow = closes.slice(-20)
+  const meanX = (trendWindow.length - 1) / 2
+  const meanY = trendWindow.reduce((sum, value) => sum + value, 0) / trendWindow.length
+  const slope = trendWindow.reduce((sum, value, i) => sum + (i - meanX) * (value - meanY), 0) / trendWindow.reduce((sum, _, i) => sum + (i - meanX) ** 2, 0)
+  const trendStart = meanY - slope * meanX
+  const trendEnd = meanY + slope * meanX
+  const support = chart.support
+  const resistance = chart.resistance
+  const candleWidth = compact ? 7 : 20
+  return <svg className={`trend-chart-svg ${compact ? 'compact' : ''}`} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+    {[0.15, 0.4, 0.65, 0.9].map((ratio) => {
+      const value = min + (max - min) * ratio
+      return <g key={ratio}><line className="trend-grid" x1={padX} x2={width - padX} y1={y(value)} y2={y(value)} />{!compact && <text className="chart-axis-label" x={4} y={y(value) + 4}>{formatChartPrice(stock, value)}</text>}</g>
+    })}
+    <line className="trend-resistance-line" x1={padX} x2={width - padX} y1={y(resistance)} y2={y(resistance)} />
+    <line className="trend-support-line" x1={padX} x2={width - padX} y1={y(support)} y2={y(support)} />
+    <line className={descending ? 'trend-desc-line' : 'trend-asc-line'} x1={x(Math.max(0, closes.length - 20))} y1={y(trendStart)} x2={x(closes.length - 1)} y2={y(trendEnd)} />
+    {closes.map((close, i) => {
+      const { open, high, low } = candles[i]
+      const up = close >= open
+      return <g key={i}><line className={up ? 'candle-up' : 'candle-down'} x1={x(i)} x2={x(i)} y1={y(high)} y2={y(low)} /><rect className={up ? 'candle-up' : 'candle-down'} x={x(i) - candleWidth / 2} y={y(Math.max(open, close))} width={candleWidth} height={Math.max(2, Math.abs(y(open) - y(close)))} /></g>
+    })}
+    {turning && <g className="trend-breakout"><circle cx={x(closes.length - 1)} cy={y(closes[closes.length - 1])} r={compact ? 5 : 11} /><path d={`M ${x(closes.length - 1) + (compact ? 8 : 18)} ${y(closes[closes.length - 1]) - (compact ? 8 : 20)} L ${x(closes.length - 1) + (compact ? 2 : 5)} ${y(closes[closes.length - 1]) - (compact ? 1 : 3)}`} /></g>}
+    {!compact && <><text x={padX + 6} y={y(resistance) - 8}>저항 {formatChartPrice(stock, resistance)}</text><text x={padX + 6} y={y(support) - 8}>지지 {formatChartPrice(stock, support)}</text><text className="chart-phase-label" x={width - 180} y={28}>{phase}</text>{[0, 20, 40, closes.length - 1].map((index) => <text className="chart-axis-label" key={index} x={x(index)} y={height - 8} textAnchor={index === 0 ? 'start' : index === closes.length - 1 ? 'end' : 'middle'}>{formatChartDate(candles[index]?.date)}</text>)}</>}
+  </svg>
+}
+
+function formatChartPrice(stock: Stock, value: number) {
+  if (stock.market === 'KR') return `₩${Math.round(value).toLocaleString('ko-KR')}`
+  return `$${value.toLocaleString('en-US', { minimumFractionDigits: value < 100 ? 2 : 0, maximumFractionDigits: 2 })}`
+}
+
+function formatChartDate(raw?: string) {
+  if (!raw) return ''
+  if (/^\d{8}$/.test(raw)) return `${Number(raw.slice(4, 6))}/${Number(raw.slice(6, 8))}`
+  const date = new Date(Number(raw) * 1000)
+  return Number.isNaN(date.getTime()) ? '' : `${date.getMonth() + 1}/${date.getDate()}`
 }
 
 function parseMarketEventDate(date: string) {
