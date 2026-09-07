@@ -4816,7 +4816,7 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [onClose])
   return createPortal(
-    <div className="trend-chart-modal-backdrop" role="presentation" onMouseDown={onClose}>
+    <div className="trend-chart-modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, onClose)}>
       <section className="trend-chart-modal" role="dialog" aria-modal="true" aria-label={`${stock.name} 추세 차트`} onMouseDown={(event) => event.stopPropagation()}>
         <header>
           <div><strong>{stock.name}</strong><span>{stock.ticker} · 최근 120거래일 일봉 · 현재가 {currentPrice}</span></div>

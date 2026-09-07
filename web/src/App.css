@@ -4737,6 +4737,7 @@
 }
 
 .trend-chart-modal {
+  box-sizing: border-box;
   width: min(900px, 100%);
   margin: auto;
   max-height: calc(100dvh - 48px);
@@ -4764,7 +4765,7 @@
 .legend-line.down { color: #2563eb; }.legend-line.up { color: #16a34a; }.legend-line.support { color: #2563eb; }.legend-line.resistance { color: #dc2626; }
 
 @media (max-width: 640px) {
-  .trend-chart-modal-backdrop { display: block; padding: 8px; }
+  .trend-chart-modal-backdrop { padding: 8px; }
   .trend-chart-modal { width: 100%; max-height: calc(100dvh - 16px); padding: 14px; border-radius: 14px; }
   .trend-chart-modal header { top: -14px; margin: -14px -14px 12px; padding: 14px 14px 10px; }
   .trend-chart-modal header strong { font-size: 16px; }
