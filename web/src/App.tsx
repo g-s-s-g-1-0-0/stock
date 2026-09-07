@@ -4809,11 +4809,22 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
   const phase = chart.phase
   const currentPrice = formatTechnicalPrice(stock, chart.candles.at(-1)?.close ?? 0)
   useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow
+    const previousHtmlOverflow = document.documentElement.style.overflow
+    const previousBodyOverscroll = document.body.style.overscrollBehavior
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.overscrollBehavior = 'none'
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
     }
-    window.addEventListener('keydown', closeOnEscape)
-    return () => window.removeEventListener('keydown', closeOnEscape)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousBodyOverflow
+      document.documentElement.style.overflow = previousHtmlOverflow
+      document.body.style.overscrollBehavior = previousBodyOverscroll
+      document.removeEventListener('keydown', closeOnEscape)
+    }
   }, [onClose])
   return createPortal(
     <div className="trend-chart-modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, onClose)}>
@@ -4830,7 +4841,6 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
         <ol className="trend-criteria">
           {trendCriteria(phase, stock, chart).map((criterion) => <li key={criterion}>{criterion}</li>)}
         </ol>
-        <small className="trend-chart-note">최근 120거래일 실제 OHLC 기준 · 기술 분석 데이터와 함께 2시간마다 갱신됩니다.</small>
       </section>
     </div>,
     document.body,
