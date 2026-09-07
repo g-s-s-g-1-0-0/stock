@@ -4727,10 +4727,9 @@
   position: fixed;
   z-index: 1000;
   inset: 0;
-  display: grid;
+  display: flex;
   align-items: center;
-  justify-items: center;
-  place-items: center;
+  justify-content: center;
   padding: 24px;
   overflow-y: auto;
   background: rgba(15, 23, 42, .58);
@@ -4739,7 +4738,7 @@
 .trend-chart-modal {
   box-sizing: border-box;
   width: min(900px, 100%);
-  margin: auto;
+  margin: 0;
   max-height: calc(100dvh - 48px);
   overflow-y: auto;
   overscroll-behavior: contain;
