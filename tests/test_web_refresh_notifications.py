@@ -23,6 +23,11 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn("group: main-writers", refresh_workflow)
         self.assertIn("group: main-writers", gap_go_workflow)
 
+    def test_workflow_does_not_override_the_supported_market_trend_model_with_a_secret(self) -> None:
+        workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertNotIn("GROQ_MARKET_TREND_MODEL: ${{ secrets.GROQ_MARKET_TREND_MODEL }}", workflow)
+
     def test_gap_go_workflow_retries_non_fast_forward_pushes(self) -> None:
         workflow = GAP_GO_WORKFLOW_PATH.read_text(encoding="utf-8")
 
@@ -116,6 +121,33 @@ class WebRefreshWorkflowTest(unittest.TestCase):
 class WebRefreshNotificationsTest(unittest.TestCase):
     def setUp(self) -> None:
         self.notifications = importlib.import_module("scripts.web_refresh_notifications")
+
+    def test_admin_failure_uses_the_admin_selected_slack_channel(self) -> None:
+        recipient = self.notifications.Recipient(
+            owner_id="admin-1",
+            email="admin@example.com",
+            is_admin=True,
+            preferences={"notificationChannel": "slack", "adminAutoUpdateFailureEmail": True},
+            slack_webhook_url="https://hooks.slack.test/admin",
+        )
+        deliveries: list[str] = []
+
+        with (
+            unittest.mock.patch.object(self.notifications, "load_recipients", return_value=[recipient]),
+            unittest.mock.patch.object(self.notifications, "send_notification", side_effect=lambda target, *_: deliveries.append(self.notifications.delivery_channel(target))),
+        ):
+            self.assertEqual(1, self.notifications.send_admin_failure("실패"))
+
+        self.assertEqual(["slack"], deliveries)
+
+    def test_admin_failure_does_not_bypass_account_delivery_preferences(self) -> None:
+        with (
+            unittest.mock.patch.object(self.notifications, "load_recipients", return_value=[]),
+            unittest.mock.patch.object(self.notifications, "fallback_admin_recipients") as fallback,
+        ):
+            self.assertEqual(0, self.notifications.send_admin_failure("실패"))
+
+        fallback.assert_not_called()
 
     def test_opinion_changes_detects_buy_signal_with_explicit_previous_snapshot(self) -> None:
         with TemporaryDirectory() as temp_dir:

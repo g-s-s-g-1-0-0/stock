@@ -157,8 +157,15 @@ class MarketTrendsTest(unittest.TestCase):
         self.assertEqual(2, urlopen.call_count)
         self.assertEqual(10, len(result["ranks"]))
         request_payload = json.loads(urlopen.call_args_list[0].args[0].data.decode())
+        self.assertEqual("openai/gpt-oss-20b", request_payload["model"])
+        self.assertEqual(1024, request_payload["max_completion_tokens"])
+        self.assertNotIn("max_tokens", request_payload)
         self.assertFalse(request_payload["include_reasoning"])
         self.assertTrue(request_payload["response_format"]["json_schema"]["strict"])
+
+    def test_market_trend_model_ignores_retired_or_unsupported_override(self) -> None:
+        with patch.dict("os.environ", {"GROQ_MARKET_TREND_MODEL": "llama-3.3-70b-versatile"}):
+            self.assertEqual("openai/gpt-oss-20b", self.pipeline.market_trend_model())
 
 
 if __name__ == "__main__":

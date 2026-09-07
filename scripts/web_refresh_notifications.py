@@ -1937,7 +1937,7 @@ def send_nasdaq_peak_notifications() -> int:
         recipient
         for recipient in load_recipients()
         if enabled(recipient, "nasdaqPeakEmail")
-    ] or fallback_admin_recipients()
+    ]
     recipients = dedupe_recipients(recipients)
     if not recipients:
         print("No recipients for nasdaq peak notification.")
@@ -2041,7 +2041,7 @@ def send_nasdaq_warn_notifications() -> int:
         recipient
         for recipient in load_recipients()
         if enabled(recipient, "nasdaqWarnEmail")
-    ] or fallback_admin_recipients()
+    ]
     recipients = dedupe_recipients(recipients)
     if not recipients:
         print("No recipients for nasdaq warn notification.")
@@ -2473,7 +2473,7 @@ def send_admin_failure(message: str) -> int:
         recipient
         for recipient in load_recipients()
         if recipient.is_admin and enabled(recipient, "adminAutoUpdateFailureEmail")
-    ] or fallback_admin_recipients()
+    ]
 
     recipients = dedupe_recipients(recipients)
     if not recipients:
@@ -2504,7 +2504,7 @@ def send_market_events_review_notification(path: Path = DEFAULT_MARKET_EVENTS) -
         recipient
         for recipient in load_recipients()
         if recipient.is_admin and enabled(recipient, "adminAutoUpdateFailureEmail")
-    ] or fallback_admin_recipients()
+    ]
 
     recipients = dedupe_recipients(recipients)
     if not recipients:

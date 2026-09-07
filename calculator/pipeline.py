@@ -81,7 +81,8 @@ GENERIC_TREND_TOKENS = {
 }
 
 GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MARKET_TREND_MODEL = os.environ.get("GROQ_MARKET_TREND_MODEL", "").strip() or "openai/gpt-oss-120b"
+GROQ_MARKET_TREND_DEFAULT_MODEL = "openai/gpt-oss-20b"
+GROQ_MARKET_TREND_SUPPORTED_MODELS = {"openai/gpt-oss-20b", "openai/gpt-oss-120b"}
 CNN_FEAR_GREED_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 FAIR_PRICE_UNAVAILABLE_LABEL = "적자 상태라 판단 불가"
 MAX_REFRESH_UNIVERSE = int(os.environ.get("MAX_REFRESH_UNIVERSE", "200"))
@@ -1791,6 +1792,13 @@ def parse_market_trend_json(payload: Any) -> dict[str, Any]:
     }
 
 
+def market_trend_model() -> str:
+    configured = os.environ.get("GROQ_MARKET_TREND_MODEL", "").strip()
+    if configured in GROQ_MARKET_TREND_SUPPORTED_MODELS:
+        return configured
+    return GROQ_MARKET_TREND_DEFAULT_MODEL
+
+
 def analyze_market_trends_with_groq(news_text: str, api_key: str, signal_rows: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     signal_rows = signal_rows or []
     signal_evidence = market_trend_signal_evidence_text(signal_rows)
@@ -1817,10 +1825,10 @@ summary는 이번 주 전체 시장 분위기를 한 줄로 적습니다.
 {news_text[:6000]}"""
 
     request_body = {
-        "model": GROQ_MARKET_TREND_MODEL,
+        "model": market_trend_model(),
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.3,
-        "max_tokens": 1024,
+        "max_completion_tokens": 1024,
         "include_reasoning": False,
         "response_format": {
             "type": "json_schema",
