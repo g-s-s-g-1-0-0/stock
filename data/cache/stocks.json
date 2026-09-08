@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-08T13:51:27+00:00",
-    "lastSuccessfulRun": "2026-09-08T13:51:27+00:00",
+    "updatedAt": "2026-09-08T14:56:09+00:00",
+    "lastSuccessfulRun": "2026-09-08T14:56:09+00:00",
     "failedReason": null
   },
   "rows": [
@@ -43,7 +43,7 @@
       "ticker": "005380",
       "name": "현대자동차",
       "market": "KR",
-      "fairPrice": "₩440,498 ~ ₩595,968",
+      "fairPrice": "₩438,392 ~ ₩593,119",
       "fairPriceReason": null,
       "currentPrice": "₩385,000",
       "valuation": "저평가",
@@ -155,7 +155,7 @@
       "ticker": "278470",
       "name": "에이피알",
       "market": "KR",
-      "fairPrice": "₩368,136 ~ ₩498,067",
+      "fairPrice": "₩368,083 ~ ₩497,994",
       "fairPriceReason": null,
       "currentPrice": "₩377,000",
       "valuation": "보통",
@@ -667,7 +667,7 @@
       "ticker": "AAPL",
       "name": "Apple",
       "market": "US",
-      "fairPrice": "$170.96 ~ $231.29",
+      "fairPrice": "$171.33 ~ $231.80",
       "fairPriceReason": null,
       "currentPrice": "$316.19",
       "valuation": "고평가",
