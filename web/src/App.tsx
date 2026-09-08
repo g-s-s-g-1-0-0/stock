@@ -5058,6 +5058,21 @@ function MarketEventsPage({
   onEventChange: (groupIndex: number, entryIndex: number, field: keyof MarketEventEntry, value: string) => void
   onSave: () => void
 }) {
+  const [isMobileViewport, setIsMobileViewport] = useState(() => (
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches
+  ))
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 760px)')
+    const syncViewport = () => setIsMobileViewport(mediaQuery.matches)
+
+    syncViewport()
+    mediaQuery.addEventListener('change', syncViewport)
+    return () => mediaQuery.removeEventListener('change', syncViewport)
+  }, [])
+
+  const canEdit = isAdmin && !isMobileViewport
+
   return (
     <section className="panel value-analysis-panel market-events-panel">
       <div className="section-heading value-analysis-heading">
@@ -5068,7 +5083,7 @@ function MarketEventsPage({
         </div>
         <span className="section-heading-meta">{formatCurrentDateLabel()}</span>
       </div>
-      {isAdmin && (
+      {canEdit && (
         <div className="admin-event-toolbar">
           <span>어드민 모드: 연도, 월, 발표일, 발표 시간을 직접 수정할 수 있습니다. D-day는 현재 날짜 기준으로 자동 계산됩니다.</span>
           {isDirty && (
@@ -5112,7 +5127,7 @@ function MarketEventsPage({
               <tr key={`market-event-month-${index}`}>
                 {index === 0 && (
                   <td className="event-year-cell" rowSpan={months.length}>
-                    {isAdmin ? (
+                    {canEdit ? (
                       <input
                         aria-label="시장 이벤트 연도"
                         className="event-edit-input event-edit-input-label"
@@ -5123,7 +5138,7 @@ function MarketEventsPage({
                   </td>
                 )}
                 <td className="event-month-cell">
-                  {isAdmin ? (
+                  {canEdit ? (
                     <input
                       aria-label={`${month} 표시`}
                       className="event-edit-input event-edit-input-label event-edit-input-short"
@@ -5139,7 +5154,7 @@ function MarketEventsPage({
                   return (
                     <Fragment key={`${group.title}-${index}`}>
                       <td className={marketEventDateClass(entry, isGroupStart)}>
-                        {isAdmin ? (
+                        {canEdit ? (
                           <input
                             aria-label={`${group.title} ${month} 발표일`}
                             className="event-edit-input"
@@ -5153,7 +5168,7 @@ function MarketEventsPage({
                         {marketEventDday(entry)}
                       </td>
                       <td className={marketEventTimeClass(entry)}>
-                        {isAdmin ? (
+                        {canEdit ? (
                           <input
                             aria-label={`${group.title} ${month} 발표 시간`}
                             className="event-edit-input"
