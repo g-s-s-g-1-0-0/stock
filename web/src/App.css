@@ -4683,7 +4683,11 @@
 }
 .trend-chart-preview-phase.up { color: #15803d; }
 .trend-chart-preview-phase.down { color: #b91c1c; }
-.trend-chart-preview-phase.watch { color: #b45309; }
+.trend-chart-preview-phase.watch {
+  border-color: #6d28d9;
+  background: #6d28d9;
+  color: #ffffff;
+}
 
 .trend-chart-unavailable { color: var(--muted); font-size: 11px; }
 
@@ -4718,7 +4722,7 @@
 .trend-chart-svg .chart-phase-label { fill: #334155; font-size: 14px; }
 .trend-chart-svg .chart-phase-label.up { fill: #15803d; }
 .trend-chart-svg .chart-phase-label.down { fill: #b91c1c; }
-.trend-chart-svg .chart-phase-label.watch { fill: #b45309; }
+.trend-chart-svg .chart-phase-label.watch { fill: #6d28d9; }
 .trend-chart-svg .chart-level-label { font-size: 13px; paint-order: stroke; stroke: #f3f7fb; stroke-width: 5px; stroke-linejoin: round; }
 .trend-chart-svg .chart-level-label.resistance { fill: #dc2626 !important; }
 .trend-chart-svg .chart-level-label.support { fill: #2563eb !important; }
