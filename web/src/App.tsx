@@ -4785,6 +4785,15 @@ function TechnicalAnalysisPage({
 
 type TrendPhase = '상승 추세 유지' | '하락 추세 유지' | '상승 전환 초입' | '하락 전환 초입' | '하락 추세 이탈 시도' | '상승 전환 대기'
 
+const trendPhaseTones: Record<TrendPhase, string> = {
+  '상승 전환 초입': 'breakout',
+  '상승 전환 대기': 'ready',
+  '하락 추세 이탈 시도': 'watch',
+  '상승 추세 유지': 'sustained',
+  '하락 전환 초입': 'warning',
+  '하락 추세 유지': 'declining',
+}
+
 type TrendChartData = { phase: TrendPhase; support: number; resistance: number; candles: Array<{ date: string; open: number; high: number; low: number; close: number }> }
 
 function parseTrendChart(raw?: string): TrendChartData | null {
@@ -4796,7 +4805,7 @@ function parseTrendChart(raw?: string): TrendChartData | null {
 
 function TrendChartPreview({ stock, data, onOpen }: { stock: Stock; data: TrendChartData | null; onOpen: (chart: TrendChartData) => void }) {
   if (!data) return <span className="trend-chart-unavailable">데이터 갱신 중</span>
-  const phaseTone = data.phase.includes('상승') ? 'up' : data.phase.includes('이탈 시도') ? 'watch' : 'down'
+  const phaseTone = trendPhaseTones[data.phase]
   return (
     <button className="trend-chart-preview" type="button" onClick={() => onOpen(data)} aria-label={`${stock.name} 추세 차트 크게 보기`}>
       <TrendChartSvg chart={data} stock={stock} compact />
@@ -4889,7 +4898,7 @@ function trendCriteria(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
 
 function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartData; stock: Stock; compact?: boolean }) {
   const { phase, candles } = chart
-  const phaseTone = phase.includes('상승') ? 'up' : phase.includes('이탈 시도') ? 'watch' : 'down'
+  const phaseTone = trendPhaseTones[phase]
   const closes = candles.map((candle) => candle.close)
   const width = compact ? 176 : 760
   const height = compact ? 88 : 280
