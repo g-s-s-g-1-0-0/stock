@@ -2060,7 +2060,7 @@ function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing'
   return descriptions[investmentType][strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
 }
 
-const NASDAQ_PEAK_EXIT_DESCRIPTION = '나스닥 고점 알람에 청산합니다. QQQ의 200일선 대비 이격도가 회복장에서는 +22%를 초과하면 해당합니다. 비회복장에서는 주봉·일봉 RSI 모두 65 이상이고 일봉 RSI가 전날보다 하락하면서, 이격도 +16% 초과이거나 +14% 초과에 MACD 히스토그램 2일 연속 감소가 동반되면 해당합니다.'
+const NASDAQ_PEAK_EXIT_DESCRIPTION = '나스닥 고점 신호가 나오면 청산합니다. QQQ의 200일선 대비 이격도 기준으로, 회복장은 +22% 초과, 비회복장은 +14~16% 초과 구간에서 과열과 상승세 둔화가 함께 확인될 때입니다.'
 
 type StrategyCriteriaRow = { label: string; value: string | string[] }
 
