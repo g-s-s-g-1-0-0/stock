@@ -26,6 +26,19 @@ def buy(signal, **kwargs):
         trend_signal={'signalClose': 100, 'stopPrice': 94, **signal}, **kwargs)
 
 
+def test_chart_resistance_freezes_on_close_above_without_half_percent():
+    data = bars()
+    resistance = max(r['high'] for r in data[-20:])
+    data.append(dict(date='bare', open=resistance, low=resistance * .99, high=resistance * 1.05, close=resistance * 1.0006, volume=1000000))
+    first = build_trend_chart(data)
+    assert first['resistance'] == resistance
+    assert first['resistanceFrozen']
+    data.append(dict(date='next', open=resistance * 1.03, low=resistance * 1.02, high=resistance * 1.08, close=resistance * 1.04, volume=1000000))
+    second = build_trend_chart(data)
+    assert second['resistance'] == resistance
+    assert second['resistance'] < max(r['high'] for r in data[-21:-1])
+
+
 def test_chart_resistance_stays_at_breakout_level_after_new_high():
     data = bars()
     resistance = max(r['high'] for r in data[-20:])

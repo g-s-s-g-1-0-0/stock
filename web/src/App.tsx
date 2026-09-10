@@ -4726,7 +4726,7 @@ function TechnicalAnalysisPage({
                 </th>
                 <th>
                   <MetricValue
-                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 지지·저항은 돌파한 가격에 고정됩니다. 클릭하면 크게 볼 수 있습니다.', '초록: 상승 추세 · 파랑: 하락 추세 · 보라: 전환 감지 · 빨강: 이탈 위험.')}
+                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 클릭하면 크게 볼 수 있습니다.', '초록: 상승 추세 · 파랑: 하락 추세 · 보라: 전환 감지 · 빨강: 이탈 위험.')}
                     onTooltipClose={onTooltipClose}
                     onTooltipOpen={onTooltipOpen}
                   >
@@ -4898,11 +4898,11 @@ function resolveFrozenChartLevels(candles: TrendCandle[]) {
       support = roll.support
       supportIndex = roll.supportIndex
     }
-    if (!resistanceFrozen && close > resistance * 1.005) {
+    if (!resistanceFrozen && close > resistance) {
       resistanceFrozen = true
       resistanceBreakAt = i
     }
-    if (!supportFrozen && close < support * .995) {
+    if (!supportFrozen && close < support) {
       supportFrozen = true
       supportBreakAt = i
     }
@@ -5017,7 +5017,7 @@ function trendCriteria(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
   }
   return [
     `장기 추세선: 최근 60거래일 종가의 회귀선 ${linePosition}에 종가 ${current}가 있습니다.`,
-    `지지·저항: 지지는 ${chart.supportFrozen ? `이탈 후 ${support}에 고정` : `직전 20거래일 최저가 ${support}`}이고, 저항은 ${chart.resistanceFrozen ? `종가 돌파 후 ${resistance}에 고정` : `직전 20거래일 최고가 ${resistance}`}입니다. 돌파한 가격은 이후 고점이 높아져도 올리지 않습니다.`,
+    `지지·저항: 지지 ${support}${chart.supportFrozen ? ', 종가 이탈 후 고정' : ''}. 저항 ${resistance}${chart.resistanceFrozen ? ', 종가 돌파 후 고정' : ''}.`,
     `상태 판정: ${statusReason[phase]} 직전 20일 ${priorChange >= 0 ? '+' : ''}${priorChange.toFixed(1)}%, 최근 20일 ${recentChange >= 0 ? '+' : ''}${recentChange.toFixed(1)}%로 최근 흐름이 ${direction}`,
   ]
 }

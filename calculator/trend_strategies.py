@@ -30,10 +30,10 @@ def resolve_chart_levels(rows: list[dict[str, Any]], end_index: int) -> tuple[fl
             resistance, resistance_i = roll_r, roll_ri
         if not sup_broken:
             support, support_i = roll_s, roll_si
-        if not res_broken and close > resistance * 1.005:
+        if not res_broken and close > resistance:
             res_broken = True
             res_break_i = i
-        if not sup_broken and close < support * .995:
+        if not sup_broken and close < support:
             sup_broken = True
             sup_break_i = i
     return support, support_i, resistance, resistance_i, sup_broken, res_broken
