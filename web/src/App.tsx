@@ -4726,7 +4726,7 @@ function TechnicalAnalysisPage({
                 </th>
                 <th>
                   <MetricValue
-                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 클릭하면 크게 볼 수 있습니다.', '초록: 상승 추세 · 파랑: 하락 추세 · 보라: 전환 감지 · 빨강: 이탈 위험.')}
+                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 지지·저항은 돌파한 가격에 고정됩니다. 클릭하면 크게 볼 수 있습니다.', '초록: 상승 추세 · 파랑: 하락 추세 · 보라: 전환 감지 · 빨강: 이탈 위험.')}
                     onTooltipClose={onTooltipClose}
                     onTooltipOpen={onTooltipOpen}
                   >
@@ -4835,12 +4835,95 @@ const trendPhaseTones: Record<TrendPhase, string> = {
   '하락 추세 유지': 'declining',
 }
 
-type TrendChartData = { phase: TrendPhase; support: number; resistance: number; candles: Array<{ date: string; open: number; high: number; low: number; close: number }> }
+type TrendCandle = { date: string; open: number; high: number; low: number; close: number }
+type TrendChartData = {
+  phase: TrendPhase
+  support: number
+  resistance: number
+  supportIndex: number
+  resistanceIndex: number
+  supportFrozen: boolean
+  resistanceFrozen: boolean
+  candles: TrendCandle[]
+}
+
+function priorChartExtrema(candles: TrendCandle[], index: number) {
+  const start = index - 20
+  let supportIndex = start
+  let resistanceIndex = start
+  for (let j = start + 1; j < index; j += 1) {
+    if (candles[j].low < candles[supportIndex].low) supportIndex = j
+    if (candles[j].high > candles[resistanceIndex].high) resistanceIndex = j
+  }
+  return { support: candles[supportIndex].low, supportIndex, resistance: candles[resistanceIndex].high, resistanceIndex }
+}
+
+function chartPhaseAt(candles: TrendCandle[], index: number, support: number, resistance: number): TrendPhase {
+  const window = candles.slice(Math.max(0, index - 59), index + 1)
+  const closes = window.map((candle) => candle.close)
+  const meanX = (closes.length - 1) / 2
+  const meanY = closes.reduce((sum, value) => sum + value, 0) / closes.length
+  const denominator = closes.reduce((sum, _, i) => sum + (i - meanX) ** 2, 0)
+  const slope = closes.reduce((sum, value, i) => sum + (i - meanX) * (value - meanY), 0) / denominator
+  const line = meanY + slope * meanX
+  const close = closes[closes.length - 1]
+  const change = close / candles[index - 19].close - 1
+  if (slope < 0 && close > resistance * 1.005 && change > 0) return '상승 전환 초입'
+  if (slope < 0 && close > line && change >= .05) return '상승 전환 대기'
+  if (slope < 0 && close > line) return '하락 추세 이탈 시도'
+  if (slope >= 0 && (close < support * .995 || (close < line && change < 0))) return '하락 전환 초입'
+  if (slope >= 0 && close >= line) return '상승 추세 유지'
+  return '하락 추세 유지'
+}
+
+function resolveFrozenChartLevels(candles: TrendCandle[]) {
+  if (candles.length < 30) return null
+  const end = candles.length - 1
+  const start = Math.max(20, end - 39)
+  let { support, supportIndex, resistance, resistanceIndex } = priorChartExtrema(candles, start)
+  let resistanceFrozen = false
+  let supportFrozen = false
+  let resistanceBreakAt = 0
+  let supportBreakAt = 0
+  for (let i = start; i < candles.length; i += 1) {
+    const close = candles[i].close
+    const roll = priorChartExtrema(candles, i)
+    if (resistanceFrozen && (close < resistance * .97 || i - resistanceBreakAt > 20)) resistanceFrozen = false
+    if (supportFrozen && (close > support * 1.03 || i - supportBreakAt > 20)) supportFrozen = false
+    if (!resistanceFrozen) {
+      resistance = roll.resistance
+      resistanceIndex = roll.resistanceIndex
+    }
+    if (!supportFrozen) {
+      support = roll.support
+      supportIndex = roll.supportIndex
+    }
+    if (!resistanceFrozen && close > resistance * 1.005) {
+      resistanceFrozen = true
+      resistanceBreakAt = i
+    }
+    if (!supportFrozen && close < support * .995) {
+      supportFrozen = true
+      supportBreakAt = i
+    }
+  }
+  return {
+    phase: chartPhaseAt(candles, end, support, resistance),
+    support,
+    resistance,
+    supportIndex,
+    resistanceIndex,
+    supportFrozen,
+    resistanceFrozen,
+  }
+}
 
 function parseTrendChart(raw?: string): TrendChartData | null {
   try {
     const data = JSON.parse(raw ?? '') as TrendChartData
-    return Array.isArray(data.candles) && data.candles.length >= 30 ? data : null
+    if (!Array.isArray(data.candles) || data.candles.length < 30) return null
+    const resolved = resolveFrozenChartLevels(data.candles)
+    return resolved ? { ...data, ...resolved } : data
   } catch { return null }
 }
 
@@ -4900,11 +4983,13 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
 function trendExplanation(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
   const support = formatTechnicalPrice(stock, chart.support)
   const resistance = formatTechnicalPrice(stock, chart.resistance)
-  if (phase === '상승 추세 유지') return `60거래일 추세선 위에서 가격이 유지되고 있습니다. ${support} 지지선을 지키는 한 상승 흐름으로 보며, ${resistance} 저항선 돌파는 상승 힘이 강해졌다는 추가 확인입니다.`
+  if (phase === '상승 추세 유지') return chart.resistanceFrozen
+    ? `60거래일 추세선 위에서 가격이 유지되고 있습니다. 돌파한 ${resistance} 저항선은 고정되어 있고, ${support} 지지선을 지키는 한 상승 흐름으로 봅니다.`
+    : `60거래일 추세선 위에서 가격이 유지되고 있습니다. ${support} 지지선을 지키는 한 상승 흐름으로 보며, ${resistance} 저항선 돌파는 상승 힘이 강해졌다는 추가 확인입니다.`
   if (phase === '하락 추세 유지') return `60거래일 추세선 아래에서 저점·고점이 낮아지는 흐름입니다. ${resistance} 저항선과 하락 추세선을 함께 넘기 전까지는 하락 흐름으로 보고, ${support} 아래 마감은 약세 확인으로 봅니다.`
   if (phase === '하락 추세 이탈 시도') return `가격이 장기 하락 추세선 위로 올라왔지만 ${resistance} 저항선 아래에 있습니다. 하락 흐름이 약해진 신호이지만, 아직 상승 전환이 확인된 단계는 아닙니다.`
   if (phase === '상승 전환 대기') return `하락 추세선 위에서 반등이 이어지고 있으나 ${resistance} 저항선을 아직 넘지 못했습니다. 저항 돌파 후 그 위에서 유지되면 상승 전환 초입으로 바뀝니다.`
-  if (phase === '상승 전환 초입') return `하락 추세선 이탈 뒤 ${resistance} 저항선을 종가 기준으로 돌파한 구간입니다. 돌파 가격 위에서 유지하고 저점이 높아지면 상승 추세 유지로 확인됩니다.`
+  if (phase === '상승 전환 초입') return `하락 추세선 이탈 뒤 ${resistance} 저항선을 종가 기준으로 돌파한 구간입니다. 이 가격은 고정되며, 그 위에서 유지하고 저점이 높아지면 상승 추세 유지로 확인됩니다.`
   return `기존 상승 흐름이 약해져 지지·추세선 아래로 내려온 구간입니다. ${support} 지지선 회복 여부를 확인하고, 이 아래에서 마감하면 하락 전환 신호가 강해집니다.`
 }
 
@@ -4932,7 +5017,8 @@ function trendCriteria(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
   }
   return [
     `장기 추세선: 최근 60거래일 종가의 회귀선 ${linePosition}에 종가 ${current}가 있습니다.`,
-    `지지·저항: 오늘을 제외한 직전 20거래일의 최저가 ${support}, 최고가 ${resistance}를 기준으로 잡았습니다.`,
+    `지지·저항: 지지는 ${chart.supportFrozen ? `이탈 후 ${support}에 고정` : `직전 20거래일 최저가 ${support}`}이고, 저항은 ${chart.resistanceFrozen ? `종가 돌파 후 ${resistance}에 고정` : `직전 20거래일 최고가 ${resistance}`}입니다. 돌파한 가격은 이후 고점이 높아져도 올리지 않습니다.`,
+    `상태 판정: ${statusReason[phase]} 직전 20일 ${priorChange >= 0 ? '+' : ''}${priorChange.toFixed(1)}%, 최근 20일 ${recentChange >= 0 ? '+' : ''}${recentChange.toFixed(1)}%로 최근 흐름이 ${direction}`,
     `상태 판정: ${statusReason[phase]} 직전 20일 ${priorChange >= 0 ? '+' : ''}${priorChange.toFixed(1)}%, 최근 20일 ${recentChange >= 0 ? '+' : ''}${recentChange.toFixed(1)}%로 최근 흐름이 ${direction}`,
   ]
 }
@@ -4959,21 +5045,24 @@ function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartDat
   const trendEnd = meanY + slope * meanX
   const support = chart.support
   const resistance = chart.resistance
+  const supportFrom = Math.min(Math.max(chart.supportIndex, 0), closes.length - 1)
+  const resistanceFrom = Math.min(Math.max(chart.resistanceIndex, 0), closes.length - 1)
+  const lastX = x(closes.length - 1)
   const candleWidth = compact ? 7 : Math.max(4, Math.min(8, (width - leftPad - rightPad) / closes.length * .72))
   return <svg className={`trend-chart-svg ${compact ? 'compact' : ''}`} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
     {[0.15, 0.4, 0.65, 0.9].map((ratio) => {
       const value = min + (max - min) * ratio
       return <g key={ratio}><line className="trend-grid" x1={leftPad} x2={width - rightPad} y1={y(value)} y2={y(value)} />{!compact && <text className="chart-axis-label" x={8} y={y(value) + 4}>{formatChartPrice(stock, value)}</text>}</g>
     })}
-    <line className="trend-resistance-line" x1={leftPad} x2={width - rightPad} y1={y(resistance)} y2={y(resistance)} />
-    <line className="trend-support-line" x1={leftPad} x2={width - rightPad} y1={y(support)} y2={y(support)} />
+    <line className="trend-resistance-line" x1={x(resistanceFrom)} x2={lastX} y1={y(resistance)} y2={y(resistance)} />
+    <line className="trend-support-line" x1={x(supportFrom)} x2={lastX} y1={y(support)} y2={y(support)} />
     <line className={descending ? 'trend-desc-line' : 'trend-asc-line'} x1={x(Math.max(0, closes.length - trendWindow.length))} y1={y(trendStart)} x2={x(closes.length - 1)} y2={y(trendEnd)} />
     {closes.map((close, i) => {
       const { open, high, low } = candles[i]
       const up = close >= open
       return <g key={i}><line className={up ? 'candle-up' : 'candle-down'} x1={x(i)} x2={x(i)} y1={y(high)} y2={y(low)} /><rect className={up ? 'candle-up' : 'candle-down'} x={x(i) - candleWidth / 2} y={y(Math.max(open, close))} width={candleWidth} height={Math.max(2, Math.abs(y(open) - y(close)))} /></g>
     })}
-    {!compact && <><text className="chart-level-label resistance" x={leftPad + 8} y={y(resistance) - 8}>저항 {formatChartPrice(stock, resistance)}</text><text className="chart-level-label support" x={leftPad + 8} y={y(support) - 8}>지지 {formatChartPrice(stock, support)}</text><text className={`chart-phase-label ${phaseTone}`} x={width - rightPad} y={21} textAnchor="end">{phase}</text>{[0, Math.floor((closes.length - 1) / 3), Math.floor((closes.length - 1) * 2 / 3), closes.length - 1].map((index) => <text className="chart-axis-label" key={index} x={x(index)} y={height - 7} textAnchor={index === 0 ? 'start' : index === closes.length - 1 ? 'end' : 'middle'}>{formatChartDate(candles[index]?.date)}</text>)}</>}
+    {!compact && <><text className="chart-level-label resistance" x={x(resistanceFrom) + 8} y={y(resistance) - 8}>저항 {formatChartPrice(stock, resistance)}</text><text className="chart-level-label support" x={x(supportFrom) + 8} y={y(support) - 8}>지지 {formatChartPrice(stock, support)}</text><text className={`chart-phase-label ${phaseTone}`} x={width - rightPad} y={21} textAnchor="end">{phase}</text>{[0, Math.floor((closes.length - 1) / 3), Math.floor((closes.length - 1) * 2 / 3), closes.length - 1].map((index) => <text className="chart-axis-label" key={index} x={x(index)} y={height - 7} textAnchor={index === 0 ? 'start' : index === closes.length - 1 ? 'end' : 'middle'}>{formatChartDate(candles[index]?.date)}</text>)}</>}
   </svg>
 }
 

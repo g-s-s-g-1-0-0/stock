@@ -8,7 +8,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from calculator import pipeline, sheet_sources
 from calculator.rules import IndicatorRow, evaluate_buy_condition, evaluate_exit_condition
-from calculator.trend_strategies import build_trend_signal, chart_phase, trend_market_blocked
+from calculator.trend_strategies import build_trend_chart, build_trend_signal, chart_phase, trend_market_blocked
 from scripts import record_web_api_logs as logs
 from scripts import web_refresh_notifications as notifications
 
@@ -24,6 +24,47 @@ def buy(signal, **kwargs):
         vix=15, ixic_dist=kwargs.pop('ixic_dist', -2.5), ixic_filter_active=False,
         trend_market_allowed=kwargs.pop('trend_market_allowed', True),
         trend_signal={'signalClose': 100, 'stopPrice': 94, **signal}, **kwargs)
+
+
+def test_chart_resistance_stays_at_breakout_level_after_new_high():
+    data = bars()
+    resistance = max(r['high'] for r in data[-20:])
+    origin = next(i for i, row in enumerate(data[-20:]) if row['high'] == resistance) + len(data) - 20
+    data.append(dict(date='breakout', open=resistance*1.006, low=resistance*1.004, high=resistance*1.02, close=resistance*1.01, volume=1000000))
+    first = build_trend_chart(data)
+    assert first['resistance'] == resistance
+    assert first['resistanceIndex'] == origin
+    assert first['resistanceFrozen']
+    data.append(dict(date='follow', open=resistance*1.03, low=resistance*1.02, high=resistance*1.08, close=resistance*1.05, volume=1000000))
+    second = build_trend_chart(data)
+    assert second['resistance'] == resistance
+    assert second['resistanceIndex'] == origin
+    assert second['resistance'] < max(r['high'] for r in data[-21:-1])
+    assert second['phase'] == '상승 전환 초입'
+
+
+def test_chart_resistance_unfreezes_after_failed_hold():
+    data = bars()
+    resistance = max(r['high'] for r in data[-20:])
+    data.append(dict(date='breakout', open=resistance*1.006, low=resistance*1.004, high=resistance*1.02, close=resistance*1.01, volume=1000000))
+    data.append(dict(date='fail', open=resistance*.96, low=resistance*.95, high=resistance*.97, close=resistance*.96, volume=1000000))
+    chart = build_trend_chart(data)
+    rolling = max(r['high'] for r in data[-21:-1])
+    assert chart['resistance'] == rolling
+    assert not chart['resistanceFrozen']
+
+
+def test_chart_resistance_expires_after_hold_window():
+    data = bars()
+    resistance = max(r['high'] for r in data[-20:])
+    data.append(dict(date='breakout', open=resistance*1.006, low=resistance*1.004, high=resistance*1.02, close=resistance*1.01, volume=1000000))
+    for i in range(21):
+        price = resistance * 1.04
+        data.append(dict(date=str(i), open=price, high=price * 1.02, low=price * .99, close=price, volume=1000000))
+    chart = build_trend_chart(data)
+    rolling = max(r['high'] for r in data[-21:-1])
+    assert chart['resistance'] == rolling
+    assert not chart['resistanceFrozen']
 
 
 def test_retest_is_after_breakout_and_consumed_once():

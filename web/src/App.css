@@ -4800,6 +4800,7 @@
 .trend-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; color: #475569; font-size: 12px; }
 .legend-line::before { display: inline-block; width: 16px; height: 0; margin-right: 5px; border-top: 2px solid currentColor; content: ''; vertical-align: middle; }
 .legend-line.down { color: #2563eb; }.legend-line.up { color: #16a34a; }.legend-line.support { color: #2563eb; }.legend-line.resistance { color: #dc2626; }
+.legend-line.support::before, .legend-line.resistance::before { width: 18px; border-top-style: dashed; }
 
 @media (max-width: 640px) {
   .trend-chart-modal-backdrop { padding: 8px; }

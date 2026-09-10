@@ -26,7 +26,7 @@ from zoneinfo import ZoneInfo
 
 from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
-from .trend_strategies import chart_phase, trend_market_blocked
+from .trend_strategies import build_trend_chart, trend_market_blocked
 from .rules import (
     ACTIVE_STRATEGY_CODES,
     STRATEGY_RULES,
@@ -1160,14 +1160,9 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 # The table stores an intentionally compact, render-ready daily OHLC series.
                 # It is refreshed with the rest of the technical cache, not fabricated in the UI.
                 candles = fetch_ohlcv(stock["ticker"], count=160)[-120:]
-                if len(candles) >= 30:
-                    phase, support, resistance = chart_phase(candles, len(candles) - 1)
-                    row["추세 차트 데이터"] = json.dumps({
-                        "phase": phase,
-                        "support": support,
-                        "resistance": resistance,
-                        "candles": [{key: candle[key] for key in ("date", "open", "high", "low", "close")} for candle in candles],
-                    }, ensure_ascii=False, separators=(",", ":"))
+                chart = build_trend_chart(candles)
+                if chart:
+                    row["추세 차트 데이터"] = json.dumps(chart, ensure_ascii=False, separators=(",", ":"))
                 existing_row = existing_rows.get(stock["ticker"], {})
                 ticker_key = str(stock["ticker"]).strip().upper()
                 # Only keep 매도/exitReason while that ticker still has an open holding.

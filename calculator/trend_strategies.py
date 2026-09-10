@@ -5,7 +5,46 @@ from math import isfinite
 from typing import Any
 
 
-def chart_phase(rows: list[dict[str, Any]], index: int) -> tuple[str, float, float]:
+def _prior_extrema(rows: list[dict[str, Any]], index: int) -> tuple[float, int, float, int]:
+    start = index - 20
+    support_i = min(range(start, index), key=lambda j: float(rows[j]['low']))
+    resistance_i = max(range(start, index), key=lambda j: float(rows[j]['high']))
+    return float(rows[support_i]['low']), support_i, float(rows[resistance_i]['high']), resistance_i
+
+
+def resolve_chart_levels(rows: list[dict[str, Any]], end_index: int) -> tuple[float, int, float, int, bool, bool]:
+    start = max(20, end_index - 39)
+    support, support_i, resistance, resistance_i = _prior_extrema(rows, start)
+    res_broken = False
+    sup_broken = False
+    res_break_i = 0
+    sup_break_i = 0
+    for i in range(start, end_index + 1):
+        close = float(rows[i]['close'])
+        roll_s, roll_si, roll_r, roll_ri = _prior_extrema(rows, i)
+        if res_broken and (close < resistance * .97 or i - res_break_i > 20):
+            res_broken = False
+        if sup_broken and (close > support * 1.03 or i - sup_break_i > 20):
+            sup_broken = False
+        if not res_broken:
+            resistance, resistance_i = roll_r, roll_ri
+        if not sup_broken:
+            support, support_i = roll_s, roll_si
+        if not res_broken and close > resistance * 1.005:
+            res_broken = True
+            res_break_i = i
+        if not sup_broken and close < support * .995:
+            sup_broken = True
+            sup_break_i = i
+    return support, support_i, resistance, resistance_i, sup_broken, res_broken
+
+
+def chart_phase(
+    rows: list[dict[str, Any]],
+    index: int,
+    support: float | None = None,
+    resistance: float | None = None,
+) -> tuple[str, float, float]:
     window = rows[max(0, index - 59):index + 1]
     closes = [float(row['close']) for row in window]
     mean_x = (len(closes) - 1) / 2
@@ -13,9 +52,8 @@ def chart_phase(rows: list[dict[str, Any]], index: int) -> tuple[str, float, flo
     denominator = sum((i - mean_x) ** 2 for i in range(len(closes)))
     slope = sum((i - mean_x) * (c - mean_y) for i, c in enumerate(closes)) / denominator
     line = mean_y + slope * mean_x
-    prior = rows[index - 20:index]
-    support = min(float(row['low']) for row in prior)
-    resistance = max(float(row['high']) for row in prior)
+    if support is None or resistance is None:
+        support, _, resistance, _ = _prior_extrema(rows, index)
     close = closes[-1]
     change = close / float(rows[index - 19]['close']) - 1
     if slope < 0 and close > resistance * 1.005 and change > 0:
@@ -31,6 +69,24 @@ def chart_phase(rows: list[dict[str, Any]], index: int) -> tuple[str, float, flo
     else:
         phase = '하락 추세 유지'
     return phase, support, resistance
+
+
+def build_trend_chart(rows: list[dict[str, Any]]) -> dict[str, Any] | None:
+    if len(rows) < 30:
+        return None
+    end = len(rows) - 1
+    support, support_i, resistance, resistance_i, support_frozen, resistance_frozen = resolve_chart_levels(rows, end)
+    phase, _, _ = chart_phase(rows, end, support, resistance)
+    return {
+        'phase': phase,
+        'support': support,
+        'resistance': resistance,
+        'supportIndex': support_i,
+        'resistanceIndex': resistance_i,
+        'supportFrozen': support_frozen,
+        'resistanceFrozen': resistance_frozen,
+        'candles': [{key: row[key] for key in ('date', 'open', 'high', 'low', 'close')} for row in rows],
+    }
 
 
 def build_trend_signal(rows: list[dict[str, Any]]) -> dict[str, Any]:
