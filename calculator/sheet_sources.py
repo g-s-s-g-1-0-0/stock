@@ -19,6 +19,8 @@ from html import unescape
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from .trend_strategies import build_trend_signal
+
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 KST = ZoneInfo("Asia/Seoul")
 
@@ -378,7 +380,7 @@ def calc_lr(rows: list[dict[str, float]], period: int = 120) -> dict[str, float]
     return {"lrTrendline": round(value, 2), "lrSlope": round(slope, 6)}
 
 
-def calc_technical_row(ticker: str) -> dict[str, float]:
+def calc_technical_row(ticker: str) -> dict[str, Any]:
     rows = fetch_ohlcv(ticker)
     closes = [row["close"] for row in rows]
     rsi_values = calc_rsi(closes)
@@ -415,6 +417,8 @@ def calc_technical_row(ticker: str) -> dict[str, float]:
         "ma20": ma20,
         "ma20D1": ma20_d1,
         "ma20Prev5": ma20_prev5,
+        "trendSignal": build_trend_signal(rows),
+        "tradingDates": [row.get("date") for row in rows],
         "ma60": sum(closes[-60:]) / 60,
         "ma120": sum(closes[-120:]) / 120,
         "ma144": sum(closes[-144:]) / 144,

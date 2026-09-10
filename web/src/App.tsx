@@ -113,6 +113,13 @@ type TradeLog = {
   restoreWatchDate?: string
   restoreSignalCounts?: Record<string, number>
   upperExitArmedDate?: string
+  supportStopPrice?: number
+  supportLevel?: string
+  trendSignalDate?: string
+  trendSignalClose?: number
+  breakoutLevel?: number
+  entrySessionDate?: string
+  heldTradingSessions?: number
 }
 
 type TooltipState = {
@@ -150,6 +157,7 @@ type HoldingLiquidationDraft = {
 }
 
 type ManualHoldingDraft = {
+  supportStopPrice?: string
   ticker: string
   buyDate: string
   buyPrice: string
@@ -987,6 +995,13 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     restoreWatchDate: typeof candidate.restoreWatchDate === 'string' ? candidate.restoreWatchDate : undefined,
     restoreSignalCounts: candidate.restoreSignalCounts && typeof candidate.restoreSignalCounts === 'object' ? candidate.restoreSignalCounts : undefined,
     upperExitArmedDate: typeof candidate.upperExitArmedDate === 'string' ? candidate.upperExitArmedDate : undefined,
+    supportStopPrice: typeof candidate.supportStopPrice === 'number' && Number.isFinite(candidate.supportStopPrice) ? candidate.supportStopPrice : undefined,
+    trendSignalClose: typeof candidate.trendSignalClose === 'number' && Number.isFinite(candidate.trendSignalClose) ? candidate.trendSignalClose : undefined,
+    breakoutLevel: typeof candidate.breakoutLevel === 'number' && Number.isFinite(candidate.breakoutLevel) ? candidate.breakoutLevel : undefined,
+    heldTradingSessions: typeof candidate.heldTradingSessions === 'number' && Number.isFinite(candidate.heldTradingSessions) ? candidate.heldTradingSessions : undefined,
+    supportLevel: typeof candidate.supportLevel === 'string' ? candidate.supportLevel : undefined,
+    trendSignalDate: typeof candidate.trendSignalDate === 'string' ? candidate.trendSignalDate : undefined,
+    entrySessionDate: typeof candidate.entrySessionDate === 'string' ? candidate.entrySessionDate : undefined,
   }
 }
 
@@ -1439,7 +1454,7 @@ const initialWatchlist: string[] = []
 
 const operatorTickers: string[] = []
 const strategyFiltersByInvestmentType: Record<InvestmentType, string[]> = {
-  swing: ['1', '2', '3', '4'],
+  swing: ['1', '2', '3', '4', '5', '6'],
   long_term: ['1', '2'],
 }
 const personalTrades: TradeLog[] = []
@@ -1993,10 +2008,12 @@ const STRATEGY_LABELS: Record<string, string> = {
   '2': '상승 추세 이평선 눌림목',
   '3': '정상장 볼린저 워시아웃',
   '4': '장기선 아래 반등 초입',
+  '5': '저항선 돌파 후 눌림',
+  '6': '하락 추세 이탈 시도',
 }
 
 function strategyCode(strategy: string) {
-  const match = String(strategy || '').trim().match(/^([1-4])\b/)
+  const match = String(strategy || '').trim().match(/^([1-6])\b/)
   if (match) return match[1]
   const legacy = String(strategy || '').trim().match(/^([A-H])\b/i)
   if (legacy && legacy[1].toUpperCase() === 'B') return '1'
@@ -2031,6 +2048,8 @@ function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing'
       '1': '시장 공포 저점 진입은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 첫 매수 기회를 찾는 전략입니다. 시장이 충분히 눌렸는지, 종목도 과하게 팔렸는지, 저점에서 버티는 힘이 있는지를 함께 확인합니다.',
       '2': '상승 추세 이평선 눌림목은 시장 공포 저점 진입으로 매수 시즌이 열린 뒤 회복장에서 추가 매수 자리를 찾는 전략입니다. 계속 오른 종목을 따라 사지 않고, 상승 흐름 안에서 평균 가격선 근처까지 쉬어 갈 때만 봅니다.',
       '3': '정상장 볼린저 워시아웃은 QQQ 과열 전 완충 구간에서, 장기 평균 위 종목이 볼린저 하단까지 눌린 반등을 노리는 스윙 전용 전략입니다. +12% 익절·20거래일 만기를 쓰고, 진입 때 정한 지지선 이탈로 위험을 관리합니다.',
+      '5': '저항선을 돌파한 뒤 다시 눌렸을 때, 돌파 가격을 지지하는지 확인하고 매수하는 스윙 전략입니다. 고정 익절 없이 시장 청산·최대 60거래일 보유·매수가 대비 -8% 손절을 적용합니다.',
+      '6': '하락 추세선을 처음 넘어서는 이탈 시도를 매수하는 스윙 전략입니다. 손절까지의 거리가 8% 이내인 자리만 보고, +12% 익절과 진입 시 고정한 지지선 손절을 적용합니다.',
       '4': '장기선 아래 반등 초입은 종가가 200일선 아래에 있을 때 MACD 히스토그램이 골든크로스로 돌아서는 반등 초입을 노리는 스윙 전용 전략입니다. 나스닥이 하락장·정상장일 때만 보고, 종목이 200일선보다 25% 넘게 깨진 자리는 제외합니다.',
     },
     long_term: {
@@ -2040,6 +2059,8 @@ function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing'
   }
   return descriptions[investmentType][strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
 }
+
+const NASDAQ_PEAK_EXIT_DESCRIPTION = '나스닥 고점 알람에 청산합니다. QQQ의 200일선 대비 이격도가 회복장에서는 +22%를 초과하면 해당합니다. 비회복장에서는 주봉·일봉 RSI 모두 65 이상이고 일봉 RSI가 전날보다 하락하면서, 이격도 +16% 초과이거나 +14% 초과에 MACD 히스토그램 2일 연속 감소가 동반되면 해당합니다.'
 
 type StrategyCriteriaRow = { label: string; value: string | string[] }
 
@@ -2078,6 +2099,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         label: '청산',
         value: [
           '회복장이 끝났다고 2거래일 연속 확인되면 전략 1&2 보유분을 모두 팝니다.',
+          NASDAQ_PEAK_EXIT_DESCRIPTION,
           '청산 시점 수익률이 플러스면 성공, 마이너스면 실패로 기록합니다.',
         ],
       },
@@ -2128,6 +2150,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         label: '청산',
         value: [
           '회복장이 끝났다고 2거래일 연속 확인되면 전략 1&2 보유분을 모두 팝니다.',
+          NASDAQ_PEAK_EXIT_DESCRIPTION,
           '청산 시점 수익률이 플러스면 성공, 마이너스면 실패로 기록합니다.',
         ],
       },
@@ -2189,7 +2212,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         value: [
           '진입 뒤 3거래일이 지난 후, QQQ 이격도 +10.5% 이상이 2거래일 연속 확인되면 횡보장 고점으로 청산합니다.',
           '최대 20거래일까지 보유하고, 그때까지 남아 있으면 시간 청산합니다.',
-          '전략 1·2의 회복장 종료 전량매도·나스닥 peakTriggered 청산은 적용하지 않습니다.',
+          '전략 1·2의 회복장 종료 전량매도·나스닥 고점 알람 청산은 적용하지 않습니다.',
         ],
       },
       {
@@ -2236,7 +2259,7 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
         label: '청산',
         value: [
           '처음엔 회복장에서 사지 않지만, 산 뒤에 시장이 회복장으로 들어갔다가 그 회복장이 끝났다고 2거래일 연속 확인되면 전량 매도합니다. (전략 1·2와 같은 시장 사이클 청산)',
-          '나스닥 고점 알람(peakTriggered)이 켜지면 청산합니다. 과열로 보이는 구간에서 더 들고 가지 않기 위한 안전장치입니다.',
+          NASDAQ_PEAK_EXIT_DESCRIPTION,
           '청산 시점 수익률이 플러스면 성공, 마이너스면 실패로 기록합니다.',
         ],
       },
@@ -2258,6 +2281,20 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
           '보유 중 관망이 된 뒤: 진입가보다 10% 더 빠지고 10거래일이 지나야 추가 매수 후보입니다.',
         ],
       },
+    ],
+    '5': [
+      { label: '시장', value: ['QQQ 이격도 -3% 미만이면 신규 매수 중단, -2.5% 이상 회복 시 재개합니다.', '일반장 +9% 이하, 회복장 +18% 이하에서만 매수합니다. 고점 알람·이벤트 관망 기간에는 매수하지 않습니다.', '회복장: 최근 60거래일 안에 QQQ 이격도가 -5% 이하였고 현재 0% 이상으로 회복한 상태입니다.'] },
+      { label: '진입', value: ['60거래일 종가 추세선이 하락 중인 종목이 직전 20거래일 고점을 0.5% 넘게 돌파하고, 종가가 19거래일 전보다 높아지면 눌림을 기다립니다.', '돌파 다음 거래일부터 10거래일 안에 저가가 돌파 가격의 -3%~+1%, 종가가 돌파 가격의 0%~+3%에 있고, 종가가 당일 시가의 99.5% 이상이면 매수 후보입니다.', '종가가 돌파 가격보다 3% 넘게 낮아지거나 10거래일을 넘기면 대기를 취소합니다. 돌파 한 번당 눌림 신호는 한 번만 사용합니다.', '신호 가격보다 3% 넘게 오른 가격은 추격하지 않습니다. 같은 날 전략 1~4가 나오면 해당 전략을 우선합니다.'] },
+      { label: '청산', value: ['고정 목표 수익률은 없습니다. 회복장 종료가 2거래일 연속 확인되거나, 최대 60거래일을 보유하면 청산합니다.', NASDAQ_PEAK_EXIT_DESCRIPTION] },
+      { label: '손절', value: '매수가 대비 -8%에 도달하면 손절합니다.' },
+      { label: '대상', value: '스윙투자 전용입니다. 보유 중에는 추가 매수하거나 다른 전략으로 바꾸지 않습니다. 청산 뒤에는 기존 재진입 대기·가격 조건을 적용합니다.' },
+    ],
+    '6': [
+      { label: '시장', value: ['QQQ 이격도 -3% 미만이면 신규 매수 중단, -2.5% 이상 회복 시 재개합니다.', '일반장 +9% 이하, 회복장 +18% 이하에서만 매수합니다. 고점 알람·이벤트 관망 기간에는 매수하지 않습니다.', '회복장: 최근 60거래일 안에 QQQ 이격도가 -5% 이하였고 현재 0% 이상으로 회복한 상태입니다.'] },
+      { label: '진입', value: ['60거래일 종가 추세선이 하락 중이고, 주가가 그 추세선 위로 올라서면서 차트 상태가 하락 추세 이탈 시도로 처음 바뀌면 매수 후보입니다.', '상승 전환 초입·상승 전환 대기는 제외합니다. 최근 19거래일 상승률이 5% 미만인 이탈 시도를 봅니다.', '직전 20거래일 최저가보다 3% 낮은 가격을 손절가로 정하고, 매수가에서 손절가까지의 거리가 8% 이내일 때만 매수합니다.', '신호 가격보다 3% 넘게 오른 가격은 추격하지 않습니다. 같은 날 전략 1~5가 나오면 해당 전략을 우선합니다.'] },
+      { label: '청산', value: ['매수가 대비 +12%에서 익절합니다. 그전에 회복장 종료가 2거래일 연속 확인되거나, 최대 60거래일을 보유하면 청산합니다.', NASDAQ_PEAK_EXIT_DESCRIPTION] },
+      { label: '손절', value: '신호 당시 직전 20거래일 최저가보다 3% 낮은 가격에 도달하면 손절합니다. 이 손절가는 진입 때 고정하며 이후 낮추지 않습니다.' },
+      { label: '대상', value: '스윙투자 전용입니다. 보유 중에는 추가 매수하거나 다른 전략으로 바꾸지 않습니다. 청산 뒤에는 기존 재진입 대기·가격 조건을 적용합니다.' },
     ],
   },
   long_term: {
@@ -2374,6 +2411,8 @@ function tradeCriteriaInfo(strategy: string) {
   if (code === '3') {
     return '전략 3 기준: +12% 익절, 진입 지지선 이탈 손절(-25% 하드 손절), 최대 20거래일, QQQ +10.5% 2거래일 확인 후 횡보장 고점 청산(보유 3일 이후). 스윙 전용이며 회복장 종료 전량매도는 적용하지 않습니다.'
   }
+  if (code === '5') return '전략 5 기준: 고정 익절 없음, 매수가 -8% 손절, 회복장 종료·나스닥 고점 알람·최대 60거래일 보유 시 청산.'
+  if (code === '6') return '전략 6 기준: +12% 익절, 신호 당시 20거래일 최저가의 -3% 고정 손절, 회복장 종료·나스닥 고점 알람·최대 60거래일 보유 시 청산.'
   return '전략별 성공/실패 기준 정보가 준비 중입니다.'
 }
 
@@ -2515,7 +2554,7 @@ function formatTradePrice(trade: TradeLog, value: number | null, fallback: strin
 function strategyTargetReturnPct(strategy: string) {
   // Strategy 1/2 have no profit target; strategy 3 uses +12%.
   const code = strategyCode(strategy)
-  if (code === '3') return 0.12
+  if (code === '3' || code === '6') return 0.12
   return 0
 }
 
@@ -2537,6 +2576,8 @@ function recommendedSellPriceNote(strategy: string) {
   if (code === '3') {
     return '권장 매도가 = 매수가 +12%. 손절은 진입 지지선 이탈(-25% 하드), 20거래일·QQQ +10.5% 2일 확인 청산도 함께 적용.'
   }
+  if (code === '5') return '고정 익절 없음. 매수가 -8% 손절, 회복장 종료·나스닥 고점 알람·최대 60거래일 청산.'
+  if (code === '6') return '권장 매도가 = 매수가 +12%. 신호 당시 20거래일 최저가의 -3% 고정 손절, 회복장 종료·나스닥 고점 알람·최대 60거래일 청산.'
   return '권장 매도가 참고 정보가 준비 중입니다.'
 }
 
@@ -4319,7 +4360,7 @@ const technicalMetricColumns: TechnicalColumn[] = [
   { label: '실적발표일 (한국 시간 기준)', tooltip: metricTooltip('한국 시간 기준 실적 발표일입니다. 실적 전후에는 가격이 크게 움직일 수 있어 주의합니다.', EARNINGS_TONE_GUIDE), value: (stock) => technicalEarningsDate(stock) },
   { label: '진입가', tooltip: metricTooltip('현재 보유 중인 종목을 산 가격입니다. 보유 전이면 빈 값으로 표시합니다.', '없음'), value: (stock) => technicalEntryPrice(stock) },
   { label: '진입일', tooltip: metricTooltip('현재 보유 중인 종목을 산 날짜입니다. 보유 전이면 빈 값으로 표시합니다.', '없음'), value: (stock) => technicalEntryDate(stock) },
-  { label: '진입 전략', tooltip: metricTooltip('매수할 때 사용된 전략명입니다. 전략 1~4 설명은 Home의 전략 툴팁과 같은 기준입니다.', '없음'), value: (stock) => technicalEntryStrategy(stock) },
+  { label: '진입 전략', tooltip: metricTooltip('매수할 때 사용된 전략명입니다. 전략 1~6 설명은 Home의 전략 툴팁과 같은 기준입니다.', '없음'), value: (stock) => technicalEntryStrategy(stock) },
 ]
 
 function MetricValue({
@@ -7901,6 +7942,7 @@ function App() {
     && manualHoldingDraft.ticker.trim().length > 0
     && (parsePriceValue(manualHoldingDraft.buyPrice) ?? 0) > 0
     && !Number.isNaN(parseTradeDate(manualHoldingDraft.buyDate))
+    && (manualHoldingDraft.strategy !== '6' || ((parsePriceValue(manualHoldingDraft.supportStopPrice ?? '') ?? 0) >= (parsePriceValue(manualHoldingDraft.buyPrice) ?? 0) * 0.92 && (parsePriceValue(manualHoldingDraft.supportStopPrice ?? '') ?? 0) < (parsePriceValue(manualHoldingDraft.buyPrice) ?? 0)))
 
   const confirmManualHoldingAdd = async () => {
     if (!manualHoldingDraft || !isManualHoldingReady || isSavingTradeLogs) return
@@ -7928,6 +7970,11 @@ function App() {
       manualEntry: true,
     }
     newTrade.buyPrice = formatTradePrice(newTrade, buyPriceValue, manualHoldingDraft.buyPrice)
+    if (manualHoldingDraft.strategy === '5' || manualHoldingDraft.strategy === '6') {
+      newTrade.supportStopPrice = manualHoldingDraft.strategy === '5' ? buyPriceValue * .92 : parsePriceValue(manualHoldingDraft.supportStopPrice ?? '') ?? undefined
+      newTrade.supportLevel = manualHoldingDraft.strategy === '5' ? '매수가 -8%' : '직접 입력한 진입 시 고정 손절가'
+      newTrade.entrySessionDate = newTrade.buyDate
+    }
 
     try {
       await commitManagedHoldingTradeLogs((current) => [...current, newTrade])
@@ -10923,6 +10970,12 @@ function App() {
                     onChange={(event) => updateManualHoldingDraft('buyPrice', event.target.value)}
                   />
                 </label>
+                {manualHoldingDraft.strategy === '6' && (
+                  <label>
+                    <span>고정 손절가 (매수 신호 당시 20거래일 최저가의 97%)</span>
+                    <input inputMode="decimal" disabled={isSavingTradeLogs} value={manualHoldingDraft.supportStopPrice ?? ''} onChange={(event) => updateManualHoldingDraft('supportStopPrice', event.target.value)} placeholder="매수가의 92% 이상, 매수가 미만" />
+                  </label>
+                )}
                 <label>
                   <span>적용할 전략</span>
                   <CustomSelect

@@ -1013,6 +1013,8 @@ STRATEGY_LABELS = {
     "2": "2. 상승 추세 이평선 눌림목",
     "3": "3. 정상장 볼린저 워시아웃",
     "4": "4. 장기선 아래 반등 초입",
+    "5": "5. 저항선 돌파 후 눌림",
+    "6": "6. 하락 추세 이탈 시도",
 }
 
 
@@ -1130,6 +1132,10 @@ def buy_reason_detail(code: str, stock: dict[str, Any], technical_row: dict[str,
     if code == "4":
         macd = tech_text(technical_row, "MACD Hist (D)", "MACD Hist", "macdHist")
         return f"현재가 {price} / MA200 {ma200} | MACD Hist {macd} (스윙 전용)"
+    if code == "5":
+        return f"현재가 {price} | 저항선 돌파 후 10거래일 내 눌림 지지 확인 / -8% 손절 / 최대 60거래일 (스윙 전용)"
+    if code == "6":
+        return f"현재가 {price} | 하락 추세 이탈 시도 / 지지선 손절까지 8% 이내 / +12% 익절 (스윙 전용)"
     return f"현재가 {price} / MA200 {ma200}"
 
 
@@ -1246,6 +1252,8 @@ def watch_release_detail(strategy: str, current_stock: dict[str, Any], technical
             return f"주가가 200일선 위로 회복 (현재가 {c['price']} / MA200 {c['ma200']})"
         return f"전략 4 조건 이탈 (현재가 {c['price']} / MA200 {c['ma200']} / MACD Hist {c['macd']})"
 
+    if code in {"5", "6"}:
+        return f"전략 {code} 신규 진입 신호 종료. 보유분은 고정된 손절·익절·시장 청산·보유 기한으로 관리합니다."
     return f"매수 조건 이탈 (현재가 {c['price']} / MA200 {c['ma200']})"
 
 
@@ -2386,11 +2394,11 @@ def send_opinion_notifications(
                     continue
                 codes = [strategy_code(value) for value in strategy_values(change.get("strategies"))]
                 codes = [code for code in codes if code]
-                if change.get("to") == "매수" and codes and set(codes) <= {"3", "4"}:
+                if change.get("to") == "매수" and codes and set(codes) <= {"3", "4", "5", "6"}:
                     continue
                 reason_text = str(change.get("reason") or "")
                 if change.get("to") == "관망" and (
-                    STRATEGY_LABELS["3"] in reason_text or STRATEGY_LABELS["4"] in reason_text
+                    any(STRATEGY_LABELS[code] in reason_text for code in ("3", "4", "5", "6"))
                 ):
                     continue
                 my_changes.append(change)

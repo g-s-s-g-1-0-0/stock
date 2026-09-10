@@ -20,6 +20,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from calculator.pipeline import load_strategy_season_state, save_strategy_season_state
 from calculator.rules import (
+    ACTIVE_STRATEGY_CODES,
     STRATEGY_RULES,
     IndicatorRow,
     evaluate_exit_condition,
@@ -57,9 +58,9 @@ HOLD_RESTORE_MIN_TRADING_DAYS = 10
 HOLD_RESTORE_SIGNAL_CONFIRMATIONS = 2
 MAX_OPEN_PER_STRATEGY = 2
 RESTORE_FAMILY_STRATEGIES: set[str] = set()
-ACTIVE_STRATEGIES = {"1", "2", "3", "4"}
+ACTIVE_STRATEGIES = set(ACTIVE_STRATEGY_CODES)
 REMOVED_STRATEGIES = {"A", "C", "D", "E", "F", "G", "H"}
-SWING_ONLY_STRATEGIES = {"3", "4"}
+SWING_ONLY_STRATEGIES = {"3", "4", "5", "6"}
 INVESTMENT_TYPES = ("long_term", "swing")
 VALUATION_LOG_FIELDS = [
     ("marketCap", "시가총액"),
@@ -517,6 +518,8 @@ def entry_signal_codes(row: dict[str, Any]) -> list[str]:
         code = strategy_code(value)
         if code and code not in codes:
             codes.append(code)
+    if any(code in {"5", "6"} for code in codes):
+        return sorted(codes, key=int)[:1]
     return codes
 
 
@@ -759,7 +762,38 @@ def indicator_from_trade(row: dict[str, Any], trade: dict[str, Any], current_pri
         adx=parse_price(row.get("ADX (14, D)")),
         adx_d1=parse_price(row.get("ADX (14, D-1)")),
         entry_price=entry_price,
+        support_stop_price=parse_price(trade.get("supportStopPrice")),
     )
+
+
+def trend_held_sessions(trade: dict[str, Any], row: dict[str, Any]) -> int:
+    entry = parse_trade_date(trade.get("entrySessionDate") or trade.get("buyDate"))
+    dates = {parse_trade_date(value) for value in row.get("tradingDates", [])}
+    observed = sum(1 for value in dates if value is not None and entry is not None and value > entry)
+    count = max(int(trade.get("heldTradingSessions") or 0), observed)
+    trade["heldTradingSessions"] = count
+    return count
+
+
+def trend_entry_levels(code: str, row: dict[str, Any], price: float | None) -> dict[str, Any] | None:
+    signal = row.get("trendSignal")
+    if not isinstance(signal, dict) or not price or price <= 0:
+        return None
+    close = parse_price(signal.get("signalClose"))
+    if close is None or price > close * 1.03:
+        return None
+    stop = price * .92 if code == "5" else parse_price(signal.get("stopPrice"))
+    if stop is None or not 0 < stop < price or (price - stop) / price > .08 + 1e-12:
+        return None
+    return {
+        "supportStopPrice": stop,
+        "supportLevel": "매수가 -8%" if code == "5" else "신호 당시 20거래일 최저가 -3%",
+        "trendSignalDate": str(signal.get("signalDate") or ""),
+        "trendSignalClose": close,
+        "breakoutLevel": signal.get("resistance"),
+        "entrySessionDate": row.get("dailyPriceDate"),
+        "heldTradingSessions": 0,
+    }
 
 
 def daily_price_date(row: dict[str, Any]) -> date | None:
@@ -1306,7 +1340,18 @@ def run_trade_engine(
         entry_codes = set(entry_signal_codes(row)) if isinstance(row, dict) else set()
         exit_price = sell_price
         held_trading_days = trading_days_since(trade.get("buyDate"), today_date)
-        if strategy == "3" and confirm_strategy_3_market_exit(trade, market_premium, held_trading_days, today):
+        if strategy in {"5", "6"}:
+            trend_ind = live_ind or daily_ind
+            exit_result = evaluate_exit_condition(
+                trend_ind or IndicatorRow(stock_name=ticker, current_price=parse_price(trade.get("buyPrice")) or 0,
+                                          entry_price=parse_price(trade.get("buyPrice")),
+                                          support_stop_price=parse_price(trade.get("supportStopPrice"))),
+                strategy_type=strategy,
+                nasdaq_peak_alert=nasdaq_peak_alert,
+                recovery_ended=recovery_ended,
+                trading_days=trend_held_sessions(trade, row),
+            )
+        elif strategy == "3" and confirm_strategy_3_market_exit(trade, market_premium, held_trading_days, today):
             exit_result = {"shouldExit": True, "reason": f"횡보장 고점 확인 청산 ({market_premium:+.2f}%)"}
         elif recovery_ended:
             exit_result = evaluate_exit_condition(
@@ -1447,6 +1492,11 @@ def run_trade_engine(
                     continue
                 if code in SWING_ONLY_STRATEGIES and investment_type != "swing":
                     continue
+                if open_for_ticker and (code in {"5", "6"} or any(strategy_code(t.get("strategy")) in {"5", "6"} for t in open_for_ticker)):
+                    continue
+                trend_levels = trend_entry_levels(code, row, current_price) if code in {"5", "6"} else None
+                if code in {"5", "6"} and trend_levels is None:
+                    continue
                 slot_key = (investment_type, ticker, code)
                 open_count = current_open_counts.get(slot_key, 0)
                 restore_source_trades: list[dict[str, Any]] = []
@@ -1476,7 +1526,11 @@ def run_trade_engine(
                 if family_restore_sources and not any(confirm_restore_signal(trade, code) for trade in family_restore_sources):
                     continue
                 closed_trade = latest_closed_trade(trades, ticker, code, investment_type)
-                if not seed_after_reset and open_count == 0 and closed_trade is None and previous_opinion == "매수" and not restore_source_trades:
+                if code in {"5", "6"}:
+                    closed_for_ticker = [t for t in trades if str(t.get("ticker") or "").upper() == ticker
+                                         and trade_investment_type(t) == investment_type and t.get("status") != "보유 중"]
+                    closed_trade = max(closed_for_ticker, key=lambda t: parse_trade_date(t.get("sellDate")) or date.min, default=None)
+                if code not in {"5", "6"} and not seed_after_reset and open_count == 0 and closed_trade is None and previous_opinion == "매수" and not restore_source_trades:
                     continue
                 if investment_type == "swing" and not sell_reentry_allowed(closed_trade, current_price, today_date):
                     continue
@@ -1501,6 +1555,11 @@ def run_trade_engine(
                     if support_stop is not None:
                         new_trade["supportLevel"] = support_stop[0]
                         new_trade["supportStopPrice"] = support_stop[1]
+                if trend_levels is not None:
+                    if any(str(t.get("trendSignalDate")) == trend_levels["trendSignalDate"] and str(t.get("ticker") or "").upper() == ticker
+                           and strategy_code(t.get("strategy")) == code and trade_investment_type(t) == investment_type for t in trades):
+                        continue
+                    new_trade.update(trend_levels)
                 if code == "1":
                     season["open"] = True
                     season["openedAt"] = season.get("openedAt") or publish_iso()
@@ -1534,6 +1593,8 @@ def run_trade_engine(
             trade["strategy"] = strategy_display_name("3")
         elif code == "4":
             trade["strategy"] = strategy_display_name("4")
+        elif code in {"5", "6"}:
+            trade["strategy"] = strategy_display_name(code)
         cleaned.append(trade)
     trades = cleaned
 
@@ -1664,6 +1725,10 @@ def tech_value(row: dict[str, Any], *candidates: str) -> Any:
 TECHNICAL_GROUP_TITLES = {
     "1": "시장 공포 저점 진입 (시즌 오픈)",
     "2": "상승 추세 이평선 눌림목 (시즌 중)",
+    "3": "정상장 볼린저 워시아웃",
+    "4": "장기선 아래 반등 초입",
+    "5": "저항선 돌파 후 눌림",
+    "6": "하락 추세 이탈 시도",
 }
 CIRCLED_NUMBERS = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨"]
 
@@ -1687,7 +1752,7 @@ def formatted_technical_decision(decision: str, signal_codes: list[str]) -> list
             lines.extend(["[시장]", f"  {line.removeprefix('시장 국면:').strip()}"])
             continue
 
-        group_match = re.match(r"^전략([12])\s+([0-9]+/[0-9]+)\s+-\s+(.+)$", line)
+        group_match = re.match(r"^전략([1-6])\s+([0-9]+/[0-9]+)\s+-\s+(.+)$", line)
         if group_match:
             group, _score, details = group_match.groups()
             title = TECHNICAL_GROUP_TITLES.get(group, "전략 조건")

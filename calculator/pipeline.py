@@ -26,6 +26,7 @@ from zoneinfo import ZoneInfo
 
 from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
+from .trend_strategies import chart_phase, trend_market_blocked
 from .rules import (
     ACTIVE_STRATEGY_CODES,
     STRATEGY_RULES,
@@ -561,6 +562,7 @@ def qqq_market_state_snapshot() -> dict[str, Any]:
     if qqq.get("closeD1"):
         daily_return = (float(qqq["close"]) / float(qqq["closeD1"]) - 1) * 100
     state.update({
+        "trendEntryBlocked": trend_market_blocked(qqq_rows),
         "ma20": qqq.get("ma20"),
         "ma60": qqq.get("ma60"),
         "ma144": qqq.get("ma144"),
@@ -940,6 +942,8 @@ def latest_technical_row(
     ixic_filter_active = compute_nasdaq_filter_active(ixic_dist)
     is_holding = holding_strategy_type is not None
     warn_triggered = bool(qqq_market_state.get("warnTriggered")) if qqq_market_state else False
+    trend_signal = {**(row.get("trendSignal") or {}), "candidatePrice": display_price}
+    trend_market_allowed = bool(qqq_market_state) and not qqq_market_state.get("trendEntryBlocked", True) and not qqq_market_state.get("peakTriggered", False)
     buy = evaluate_buy_condition(
         ind,
         vix=vix,
@@ -951,6 +955,8 @@ def latest_technical_row(
         is_recovery_market=bool(qqq_market_state.get("isRecoveryMarket")) if qqq_market_state else False,
         season_open=season_open,
         warn_triggered=warn_triggered,
+        trend_signal=trend_signal,
+        trend_market_allowed=trend_market_allowed,
     )
     event_watch_active = market_event != "당분간 없음"
     if event_watch_active:
@@ -993,6 +999,9 @@ def latest_technical_row(
             f"저가 %B ≤ {float(STRATEGY_RULES['S3_PCT_B_LOW_MAX']):.0f}",
             f"RSI ≤ {float(STRATEGY_RULES['S3_RSI_MAX']):.0f}",
         ],
+        "4": ["현재가 < MA200", "MACD 히스토그램 양수 전환", "QQQ 하락/정상장", "MA200 대비 -25% 이상"],
+        "5": ["QQQ 매수 허용 구간", "돌파 후 10거래일 내 눌림 지지", "신호 가격 대비 +3% 이내"],
+        "6": ["QQQ 매수 허용 구간", "하락 추세 이탈 시도 첫 신호", "신호 가격 대비 +3% 이내", "지지선 손절까지 8% 이내"],
     }
     condition_summaries = []
     for group, labels in strategy_labels.items():
@@ -1028,6 +1037,8 @@ def latest_technical_row(
         "entryStrategy": strategy,
         "entrySignalCodes": ",".join(str(code) for code in entry_signal_codes if code),
         "entrySignals": ", ".join(strategy_display_name(code) for code in entry_signal_codes if code),
+        "trendSignal": trend_signal,
+        "tradingDates": [daily_price_date_label(value, stock["market"]) for value in row.get("tradingDates", [])],
         "decisionLog": decision_log,
         "conditionSummary": " | ".join(condition_summaries),
         "RSI (D)": fmt_number(row["rsi"]),
@@ -1150,38 +1161,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 # It is refreshed with the rest of the technical cache, not fabricated in the UI.
                 candles = fetch_ohlcv(stock["ticker"], count=160)[-120:]
                 if len(candles) >= 30:
-                    closes = [float(candle["close"]) for candle in candles]
-                    highs = [float(candle["high"]) for candle in candles]
-                    lows = [float(candle["low"]) for candle in candles]
-                    recent = closes[-20:]
-                    prior = closes[-40:-20]
-                    recent_change = recent[-1] / recent[0] - 1
-                    prior_change = prior[-1] / prior[0] - 1
-                    support = min(lows[-21:-1])
-                    resistance = max(highs[-21:-1])
-                    close = closes[-1]
-                    trend_window = closes[-60:]
-                    mean_x = (len(trend_window) - 1) / 2
-                    mean_y = sum(trend_window) / len(trend_window)
-                    slope = sum((index - mean_x) * (value - mean_y) for index, value in enumerate(trend_window)) / sum((index - mean_x) ** 2 for index in range(len(trend_window)))
-                    trend_line_now = mean_y + slope * mean_x
-                    long_trend_down = slope < 0
-                    above_trend_line = close > trend_line_now
-                    resistance_break = close > resistance * 1.005
-                    support_break = close < support * 0.995
-
-                    if long_trend_down and resistance_break and recent_change > 0:
-                        phase = "상승 전환 초입"
-                    elif long_trend_down and above_trend_line and recent_change >= 0.05:
-                        phase = "상승 전환 대기"
-                    elif long_trend_down and above_trend_line:
-                        phase = "하락 추세 이탈 시도"
-                    elif not long_trend_down and (support_break or (close < trend_line_now and recent_change < 0)):
-                        phase = "하락 전환 초입"
-                    elif not long_trend_down and close >= trend_line_now:
-                        phase = "상승 추세 유지"
-                    else:
-                        phase = "하락 추세 유지"
+                    phase, support, resistance = chart_phase(candles, len(candles) - 1)
                     row["추세 차트 데이터"] = json.dumps({
                         "phase": phase,
                         "support": support,
