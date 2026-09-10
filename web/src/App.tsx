@@ -4974,6 +4974,11 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
         <ol className="trend-criteria">
           {trendCriteria(phase, stock, chart).map((criterion, index) => <li key={index}>{criterion}</li>)}
         </ol>
+        <div className="trend-chart-guide">
+          <strong>차트 보는 법</strong>
+          <p>실선은 최근 60일 추세, 점선은 지지·저항입니다. 저항은 직전 20일 최고가, 지지는 직전 20일 최저가입니다. 아직 안 뚫린 선은 20일 창이 밀리면 가격이 바뀝니다.</p>
+          <p>종가가 저항 위로 마감하면 돌파로 보고, 그 가격을 최대 20거래일 붙잡아 둡니다. 그 위에서 버티면 상승, 다시 3% 아래로 마감하면 돌파 실패입니다. 지지선은 반대로, 종가가 아래로 마감하면 이탈이고 그 아래면 약세, 3% 위로 회복하면 이탈은 취소됩니다.</p>
+        </div>
       </section>
     </div>,
     document.body,

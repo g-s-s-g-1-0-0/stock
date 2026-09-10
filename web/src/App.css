@@ -4797,6 +4797,18 @@
 .trend-criteria { display: grid; gap: 7px; margin: 10px 0 5px; padding: 0; list-style: none; color: #526277; font-size: 12px; line-height: 1.55; }
 .trend-criteria li { position: relative; padding-left: 15px; }.trend-criteria li::before { position: absolute; left: 0; color: #3b82f6; content: '•'; font-weight: 900; }
 
+.trend-chart-guide {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-top: 1px solid #edf1f5;
+  color: #526277;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.trend-chart-guide strong { display: block; margin-bottom: 6px; color: #334155; font-size: 12px; }
+.trend-chart-guide p { margin: 0; }
+.trend-chart-guide p + p { margin-top: 8px; }
+
 .trend-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; color: #475569; font-size: 12px; }
 .legend-line::before { display: inline-block; width: 16px; height: 0; margin-right: 5px; border-top: 2px solid currentColor; content: ''; vertical-align: middle; }
 .legend-line.down { color: #2563eb; }.legend-line.up { color: #16a34a; }.legend-line.support { color: #2563eb; }.legend-line.resistance { color: #dc2626; }
@@ -4813,6 +4825,7 @@
   .trend-chart-svg .chart-level-label { font-size: 11px; }
   .trend-chart-legend { gap: 8px; font-size: 11px; }
   .trend-chart-modal > p { margin-top: 12px; font-size: 12px; }
+  .trend-chart-guide { margin-top: 12px; padding: 10px 0 0; font-size: 11px; }
 }
 
 .technical-analysis-table th:nth-child(46),
