@@ -2,10 +2,10 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-09-11T13:00:00Z",
-    "lastSuccessfulRun": "2026-09-11T13:00:00Z",
+    "updatedAt": "2026-09-11T14:00:00Z",
+    "lastSuccessfulRun": "2026-09-11T14:00:00Z",
     "failedReason": null,
-    "appendedOpenTrades": 0,
+    "appendedOpenTrades": 1,
     "closedTrades": 0,
     "correctedClosedStatuses": 0,
     "nasdaqPeakLiquidation": false,
@@ -36,7 +36,7 @@
       "ticker": "CIFR",
       "name": "Cipher Digital",
       "market": "US",
-      "currentPrice": "$16.42",
+      "currentPrice": "$16.45",
       "strategy": "4. 장기선 아래 반등 초입",
       "buyDate": "2026.09.03",
       "buyPrice": "$15.72",
@@ -46,6 +46,29 @@
       "holdingDays": "-",
       "status": "보유 중",
       "restoreWatchDate": "2026.09.04"
+    },
+    {
+      "slotId": "VRT_swing_6_20260911_1",
+      "investmentType": "swing",
+      "ticker": "VRT",
+      "name": "Vertiv Holdings, LLC Class A",
+      "market": "US",
+      "currentPrice": "$256.37",
+      "strategy": "6. 하락 추세 이탈 시도",
+      "buyDate": "2026.09.11",
+      "buyPrice": "$256.37",
+      "sellDate": "보유 중",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "보유 중",
+      "supportStopPrice": 237.4269041442871,
+      "supportLevel": "신호 당시 20거래일 최저가 -3%",
+      "trendSignalDate": "1789133400",
+      "trendSignalClose": 256.3699951171875,
+      "breakoutLevel": null,
+      "entrySessionDate": "2026-09-11",
+      "heldTradingSessions": 0
     }
   ]
 }
