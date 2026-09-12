@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15397,
-    "industryEnrichedAt": "2026-09-06T17:26:03+00:00",
+    "industryEnrichedAt": "2026-09-12T16:16:14+00:00",
     "industryEnrichedTickers": 1
   },
   "rows": [
@@ -220042,7 +220042,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "전력 발전, 원전·가스, AI 데이터센터 전력수요, AI 인프라",
-      "rawIndustry": "-",
+      "rawIndustry": "Utilities | Utilities - Independent Power Producers",
       "products": "-",
       "updatedAt": "2026-09-06T17:24:24+00:00"
     },

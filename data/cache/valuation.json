@@ -5,7 +5,7 @@
     "updatedAt": "2026-09-12T15:00:00+00:00",
     "lastSuccessfulRun": "2026-09-12T15:00:00+00:00",
     "failedReason": "000150: 기업실적분석 없음; 000660: 기업실적분석 없음; 005380: 기업실적분석 없음; 005930: 기업실적분석 없음; 009150: 기업실적분석 없음; 011070: 기업실적분석 없음; 039030: 기업실적분석 없음; 042700: 기업실적분석 없음; 277810: 기업실적분석 없음; 278470: 기업실적분석 없음; 079550: 기업실적분석 없음",
-    "successfulRows": 32
+    "successfulRows": 33
   },
   "rows": {
     "000150": {
@@ -991,6 +991,30 @@
       "earningsDate": "2026-07-29 (D+46)",
       "industry": "반도체 테스트 장비, 자동화 테스트, 협동로봇",
       "ruleOf40": "88.79%"
+    },
+    "VST": {
+      "marketCap": "$ 49.80B",
+      "sales": "$ 17.60B",
+      "salesQoq": "27.96%",
+      "salesYoyTtm": "-20.55%",
+      "salesPastYears": "-1.64% 8.94%",
+      "currentRatio": "0.97",
+      "debtToEquity": "3.63",
+      "priceToFreeCashFlow": "22.08",
+      "priceToSales": "2.83",
+      "per": "25.05",
+      "pbr": "16.58",
+      "roe": "43.07%",
+      "peg": "0.19",
+      "sharesOutstanding": "335.96M",
+      "grossMargin": "20.18%",
+      "operatingMargin": "10.73%",
+      "epsTtm": "$ 5.92",
+      "epsNextYear": "$ 10.22",
+      "epsQoq": "-7.82%",
+      "earningsDate": "2026-08-07 (D+37)",
+      "industry": "전력 발전, 원전·가스, AI 데이터센터 전력수요, AI 인프라",
+      "ruleOf40": "-9.82%"
     },
     "AAPL": {
       "marketCap": "$ 4849.21B",
