@@ -70,7 +70,6 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         commit_state_index = workflow.index("- name: Commit refreshed caches and notification state")
         record_logs_index = workflow.index("- name: Record stock-level operation logs")
         verify_auth_index = workflow.index("- name: Verify production auth config")
-        failure_index = workflow.index("- name: Notify admins on failure")
 
         self.assertLess(update_trade_logs_index, wait_index)
         self.assertLess(wait_index, send_opinion_index)
@@ -82,7 +81,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertLess(send_stock_universe_index, commit_state_index)
         self.assertLess(commit_state_index, record_logs_index)
         self.assertLess(record_logs_index, verify_auth_index)
-        self.assertLess(commit_state_index, failure_index)
+        self.assertNotIn("- name: Notify admins on failure", workflow)
         self.assertIn('workflow_dispatch:', workflow)
         self.assertIn('  schedule:', workflow)
         self.assertIn('- cron: "0 15 * * *"', workflow)
@@ -117,6 +116,13 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn("프로덕션 웹 번들에 Supabase 로그인 설정이 없습니다.", workflow)
         self.assertNotIn("npx --yes vercel@latest deploy --prod", workflow)
         self.assertNotIn("- name: Deploy refreshed web", workflow)
+
+    def test_refresh_failure_alert_waits_for_three_consecutive_failures(self) -> None:
+        workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("failure_alert_threshold = 3", workflow)
+        self.assertIn("notify = streak == failure_alert_threshold", workflow)
+        self.assertNotIn("if failure()", workflow)
 
 class WebRefreshNotificationsTest(unittest.TestCase):
     def setUp(self) -> None:

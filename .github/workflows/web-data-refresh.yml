@@ -308,14 +308,9 @@ jobs:
           VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY가 Production에 있는지 확인해 주세요.
           site=${{ secrets.WEB_APP_URL }}"
 
-      - name: Notify admins on failure
-        if: failure()
-        continue-on-error: true
-        run: python scripts/web_refresh_notifications.py admin-failure --message "Web data refresh workflow failed. Check the latest GitHub Actions run."
-
-  # The step above only fires once the refresh job is running. A job that never
-  # gets a runner is cancelled before any step starts, so repeated outages of
-  # that kind would otherwise go unreported.
+  # This job also covers runs that never get a runner. Those runs are cancelled
+  # before refresh steps start, so repeated outages of that kind need a job-level
+  # failure check.
   alert-repeated-failure:
     needs: refresh
     if: ${{ always() && needs.refresh.result != 'success' }}
@@ -377,9 +372,10 @@ jobs:
                   break
               streak += 1
 
-          # One mail when the streak reaches three, then roughly once a day
-          # (the refresh runs every two hours) while it stays broken.
-          notify = streak == 3 or (streak > 3 and streak % 12 == 0)
+          # Ignore transient failures. Notify when the third consecutive run
+          # fails, then roughly once a day while the outage continues.
+          failure_alert_threshold = 3
+          notify = streak == failure_alert_threshold or (streak > failure_alert_threshold and streak % 12 == 0)
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
               env_file.write(f"FAILURE_STREAK={streak}\n")
               env_file.write(f"NOTIFY_ADMINS={'true' if notify else 'false'}\n")

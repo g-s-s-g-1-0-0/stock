@@ -19,6 +19,8 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
+    env:
+      GAP_GO_SCHEDULE: ${{ github.event.schedule }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

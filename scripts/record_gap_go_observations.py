@@ -21,6 +21,11 @@ STOCKS_PATH = ROOT / "data" / "cache" / "stocks.json"
 HISTORY_DIR = ROOT / "data" / "history" / "gap-go"
 NEW_YORK = ZoneInfo("America/New_York")
 MAX_TICKERS = 200
+SCHEDULE_STAGE = {
+    "20,25,30 13,14 * * 1-5": "premarket",
+    "0,5,10 14,15 * * 1-5": "ten_am",
+    "5,10,15 20,21 * * 1-5": "close",
+}
 
 
 def stage_at(now: datetime) -> str | None:
@@ -36,6 +41,11 @@ def stage_at(now: datetime) -> str | None:
     if 16 * 60 + 5 <= minute <= 16 * 60 + 20:
         return "close"
     return None
+
+
+def observation_stage(now: datetime, scheduled_expression: str = "") -> str | None:
+    """Use the intended slot when GitHub starts a scheduled job late."""
+    return SCHEDULE_STAGE.get(scheduled_expression.strip()) or stage_at(now)
 
 
 def load_us_tickers(path: Path = STOCKS_PATH) -> list[str]:
@@ -132,7 +142,7 @@ def upsert(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def record(now: datetime | None = None) -> int:
     current = now or datetime.now(timezone.utc)
-    stage = stage_at(current)
+    stage = observation_stage(current, os.environ.get("GAP_GO_SCHEDULE", ""))
     if stage is None:
         print("[gap-go] outside observation window; skipped")
         return 0
