@@ -4,6 +4,7 @@ import importlib
 import json
 import os
 import unittest
+from unittest import mock
 from datetime import date, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -127,6 +128,19 @@ class WebRefreshWorkflowTest(unittest.TestCase):
 class WebRefreshNotificationsTest(unittest.TestCase):
     def setUp(self) -> None:
         self.notifications = importlib.import_module("scripts.web_refresh_notifications")
+
+    def test_supabase_request_retries_transient_gateway_timeout(self) -> None:
+        response = mock.MagicMock()
+        response.__enter__.return_value = response
+        response.read.return_value = b"[]"
+        timeout = self.notifications.urllib.error.HTTPError("https://example.supabase.co", 504, "Gateway Timeout", {}, None)
+
+        with mock.patch.dict(os.environ, {"SUPABASE_URL": "https://example.supabase.co", "SUPABASE_SERVICE_ROLE_KEY": "test-key"}), \
+            mock.patch.object(self.notifications.urllib.request, "urlopen", side_effect=[timeout, response]) as urlopen, \
+            mock.patch.object(self.notifications.time, "sleep"):
+            self.assertEqual([], self.notifications.supabase_request("/rest/v1/profiles"))
+
+        self.assertEqual(2, urlopen.call_count)
 
     def test_admin_failure_uses_the_admin_selected_slack_channel(self) -> None:
         recipient = self.notifications.Recipient(
