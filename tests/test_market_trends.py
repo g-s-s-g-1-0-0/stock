@@ -139,6 +139,19 @@ class MarketTrendsTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "10개"):
             self.pipeline.parse_market_trend_json(payload)
 
+    def test_parse_market_trend_json_rejects_duplicate_sector_names(self) -> None:
+        payload = {
+            "ranks": [
+                "AI 반도체 | GPU, HBM, ASIC",
+                "AI반도체 | 첨단패키징, 파운드리, 메모리",
+                *[f"테마 {index} | 키워드A, 키워드B" for index in range(3, 11)],
+            ],
+            "summary": "시장 요약입니다.",
+        }
+
+        with self.assertRaisesRegex(ValueError, "중복"):
+            self.pipeline.parse_market_trend_json(payload)
+
     def test_groq_analysis_retries_invalid_output_with_structured_response(self) -> None:
         invalid = MagicMock()
         invalid.__enter__.return_value.read.return_value = json.dumps({

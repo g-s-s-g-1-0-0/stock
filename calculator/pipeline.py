@@ -1752,12 +1752,17 @@ def parse_market_trend_json(payload: Any) -> dict[str, Any]:
         raise ValueError("Groq 분석 결과에서 시장요약을 받지 못했습니다.")
 
     ranks = []
+    sector_keys: set[str] = set()
     for rank in raw_ranks:
         if not isinstance(rank, str) or "|" not in rank:
             raise ValueError("Groq 분석 순위 형식이 '섹터 | 키워드'가 아닙니다.")
         sector, keywords = (part.strip() for part in rank.split("|", 1))
         if not sector or not keywords:
             raise ValueError("Groq 분석 순위에 섹터 또는 키워드가 없습니다.")
+        sector_key = market_trend_sector_key(sanitize_market_trend_text(sector))
+        if not sector_key or sector_key in sector_keys:
+            raise ValueError("Groq 분석 결과에 중복된 섹터명이 있습니다.")
+        sector_keys.add(sector_key)
         ranks.append(f"{sector} | {keywords}")
 
     return {
@@ -1791,6 +1796,7 @@ def analyze_market_trends_with_groq(news_text: str, api_key: str, signal_rows: l
 
 [출력 형식]
 JSON만 출력합니다. ranks는 정확히 10개이며, 각 항목은 "섹터명 | 키워드1, 키워드2, 키워드3" 형식입니다.
+10개 섹터명은 띄어쓰기 차이를 포함해 서로 중복되면 안 됩니다.
 summary는 이번 주 전체 시장 분위기를 한 줄로 적습니다.
 
 [관심종목 가격·기술 모멘텀 신호]
