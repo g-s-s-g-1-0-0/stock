@@ -1803,7 +1803,8 @@ summary는 이번 주 전체 시장 분위기를 한 줄로 적습니다.
         "model": market_trend_model(),
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.3,
-        "max_completion_tokens": 1024,
+        "max_completion_tokens": 4096,
+        "reasoning_effort": "low",
         "include_reasoning": False,
         "response_format": {
             "type": "json_schema",
@@ -1828,7 +1829,7 @@ summary는 이번 주 전체 시장 분위기를 한 줄로 적습니다.
         },
     }
     last_error: Exception | None = None
-    for _ in range(2):
+    for attempt in range(2):
         request = urllib.request.Request(
             GROQ_CHAT_COMPLETIONS_URL,
             data=json.dumps(request_body).encode("utf-8"),
@@ -1840,8 +1841,15 @@ summary는 이번 주 전체 시장 분위기를 한 줄로 적습니다.
             },
             method="POST",
         )
-        with urllib.request.urlopen(request, timeout=40) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(request, timeout=40) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = http_error_detail(exc)
+            if attempt == 0 and exc.code == 400 and "json_validate_failed" in detail:
+                request_body["response_format"] = {"type": "json_object"}
+                continue
+            raise
 
         content = payload.get("choices", [{}])[0].get("message", {}).get("content", "")
         try:
@@ -1857,10 +1865,13 @@ summary는 이번 주 전체 시장 분위기를 한 줄로 적습니다.
 
 
 def http_error_detail(exc: urllib.error.HTTPError) -> str:
+    cached = getattr(exc, "_gssg_http_error_detail", "")
+    if cached:
+        return str(cached)
     detail = exc.read().decode("utf-8", errors="replace").strip()
-    if not detail:
-        return f"HTTP {exc.code}"
-    return f"HTTP {exc.code}: {detail[:500]}"
+    result = f"HTTP {exc.code}: {detail[:500]}" if detail else f"HTTP {exc.code}"
+    setattr(exc, "_gssg_http_error_detail", result)
+    return result
 
 
 def upsert_market_trend_row(rows: list[Any], new_row: dict[str, Any]) -> list[Any]:
@@ -1920,8 +1931,9 @@ def build_market_trends_cache() -> dict[str, Any]:
         new_row = analyze_market_trends_with_groq(news_text, api_key, signal_rows)
         rows = upsert_market_trend_row(rows, new_row)
     except urllib.error.HTTPError as exc:
+        detail = http_error_detail(exc)
         if signal_rows:
-            new_row = market_trend_row_from_signals(signal_rows, http_error_detail(exc))
+            new_row = market_trend_row_from_signals(signal_rows, detail)
             rows = upsert_market_trend_row(rows, new_row)
             return {
                 "meta": {
@@ -1930,7 +1942,7 @@ def build_market_trends_cache() -> dict[str, Any]:
                     "schedule": MARKET_TRENDS_WEEKLY_SCHEDULE,
                     "updatedAt": now_iso(),
                     "lastSuccessfulRun": now_iso(),
-                    "failedReason": f"Groq API 호출 실패 후 내부 가격·기술 모멘텀 신호로 대체했습니다: {http_error_detail(exc)}",
+                    "failedReason": f"Groq API 호출 실패 후 내부 가격·기술 모멘텀 신호로 대체했습니다: {detail}",
                 },
                 "rows": rows,
             }
@@ -1941,7 +1953,7 @@ def build_market_trends_cache() -> dict[str, Any]:
                 "schedule": MARKET_TRENDS_WEEKLY_SCHEDULE,
                 "updatedAt": now_iso(),
                 "lastSuccessfulRun": existing.get("meta", {}).get("lastSuccessfulRun"),
-                "failedReason": f"Groq API 호출 실패: {http_error_detail(exc)}",
+                "failedReason": f"Groq API 호출 실패: {detail}",
             },
             "rows": rows,
         }

@@ -4,11 +4,34 @@ import os
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
 
 
 class RefreshWebCachesTest(unittest.TestCase):
     def setUp(self) -> None:
         self.refresh = importlib.import_module("scripts.refresh_web_caches")
+
+    def test_supabase_request_retries_transient_gateway_timeout(self) -> None:
+        response = mock.MagicMock()
+        response.__enter__.return_value = response
+        response.read.return_value = b"[]"
+        timeout = self.refresh.urllib.error.HTTPError(
+            "https://example.supabase.co",
+            504,
+            "Gateway Timeout",
+            {},
+            None,
+        )
+
+        with (
+            mock.patch.dict(os.environ, {
+                "SUPABASE_URL": "https://example.supabase.co",
+                "SUPABASE_SERVICE_ROLE_KEY": "test-key",
+            }),
+            mock.patch.object(self.refresh.urllib.request, "urlopen", side_effect=[timeout, response]),
+            mock.patch("time.sleep"),
+        ):
+            self.assertEqual([], self.refresh.supabase_request("/rest/v1/watchlists"))
 
     def test_load_watchlist_tickers_includes_all_investment_types(self) -> None:
         original_supabase_request = self.refresh.supabase_request

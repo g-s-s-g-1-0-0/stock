@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,6 +26,8 @@ TRADE_LOG_PATHS = [
     ROOT_DIR / "data" / "cache" / "trade-logs.json",
 ]
 WATCHLIST_CACHE_PATH = ROOT_DIR / "data" / "cache" / "watchlists.json"
+SUPABASE_RETRY_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
+SUPABASE_MAX_ATTEMPTS = 3
 
 
 def supabase_request(path: str) -> list[dict]:
@@ -40,9 +44,25 @@ def supabase_request(path: str) -> list[dict]:
             "Accept": "application/json",
         },
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-    return payload if isinstance(payload, list) else []
+    for attempt in range(1, SUPABASE_MAX_ATTEMPTS + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            return payload if isinstance(payload, list) else []
+        except urllib.error.HTTPError as error:
+            if error.code not in SUPABASE_RETRY_STATUS_CODES or attempt == SUPABASE_MAX_ATTEMPTS:
+                raise
+            delay = min(2 ** (attempt - 1), 4)
+            print(f"Supabase request returned HTTP {error.code}; retrying in {delay}s ({attempt}/{SUPABASE_MAX_ATTEMPTS - 1}).")
+            time.sleep(delay)
+        except urllib.error.URLError as error:
+            if attempt == SUPABASE_MAX_ATTEMPTS:
+                raise
+            delay = min(2 ** (attempt - 1), 4)
+            print(f"Supabase request failed ({error.reason}); retrying in {delay}s ({attempt}/{SUPABASE_MAX_ATTEMPTS - 1}).")
+            time.sleep(delay)
+
+    raise RuntimeError("Supabase request retry loop ended unexpectedly")
 
 
 def load_watchlist_tickers() -> list[str]:

@@ -1,4 +1,5 @@
 import importlib
+import io
 import json
 import unittest
 from unittest.mock import MagicMock, patch
@@ -158,10 +159,73 @@ class MarketTrendsTest(unittest.TestCase):
         self.assertEqual(10, len(result["ranks"]))
         request_payload = json.loads(urlopen.call_args_list[0].args[0].data.decode())
         self.assertEqual("openai/gpt-oss-20b", request_payload["model"])
-        self.assertEqual(1024, request_payload["max_completion_tokens"])
+        self.assertEqual(4096, request_payload["max_completion_tokens"])
         self.assertNotIn("max_tokens", request_payload)
         self.assertFalse(request_payload["include_reasoning"])
         self.assertTrue(request_payload["response_format"]["json_schema"]["strict"])
+
+    def test_groq_analysis_retries_json_validation_error_in_json_object_mode(self) -> None:
+        failed_body = io.BytesIO(json.dumps({
+            "error": {
+                "message": "Failed to validate JSON.",
+                "code": "json_validate_failed",
+                "failed_generation": "",
+            },
+        }).encode())
+        validation_error = self.pipeline.urllib.error.HTTPError(
+            self.pipeline.GROQ_CHAT_COMPLETIONS_URL,
+            400,
+            "Bad Request",
+            {},
+            failed_body,
+        )
+        valid = MagicMock()
+        valid.__enter__.return_value.read.return_value = json.dumps({
+            "choices": [{"message": {"content": json.dumps({
+                "ranks": [f"테마 {index} | 키워드A, 키워드B" for index in range(1, 11)],
+                "summary": "시장 요약입니다.",
+            })}}],
+        }).encode()
+
+        with patch("calculator.pipeline.urllib.request.urlopen", side_effect=[validation_error, valid]) as urlopen:
+            result = self.pipeline.analyze_market_trends_with_groq("뉴스", "test-key")
+
+        self.assertEqual(10, len(result["ranks"]))
+        retry_payload = json.loads(urlopen.call_args_list[1].args[0].data.decode())
+        self.assertEqual({"type": "json_object"}, retry_payload["response_format"])
+
+    def test_market_trend_failure_keeps_groq_error_detail_in_metadata(self) -> None:
+        failed_body = io.BytesIO(json.dumps({
+            "error": {
+                "message": "Failed to validate JSON.",
+                "code": "json_validate_failed",
+            },
+        }).encode())
+        validation_error = self.pipeline.urllib.error.HTTPError(
+            self.pipeline.GROQ_CHAT_COMPLETIONS_URL,
+            400,
+            "Bad Request",
+            {},
+            failed_body,
+        )
+        signal_rows = [{
+            "rankText": "AI 반도체 | GPU, HBM, ASIC",
+            "score": 10.0,
+            "stockCount": 2,
+            "stockNames": ["NVIDIA", "Broadcom"],
+        }]
+
+        with (
+            patch.dict("os.environ", {"GROQ_API_KEY": "test-key"}),
+            patch.object(self.pipeline, "read_cache", return_value={"meta": {}, "rows": []}),
+            patch.object(self.pipeline, "build_market_trend_signal_rows", return_value=signal_rows),
+            patch.object(self.pipeline, "fetch_market_trend_news", return_value="뉴스"),
+            patch.object(self.pipeline, "analyze_market_trends_with_groq", side_effect=validation_error),
+        ):
+            result = self.pipeline.build_market_trends_cache()
+
+        self.assertIn("json_validate_failed", result["meta"]["failedReason"])
+        self.assertIn("json_validate_failed", result["rows"][-1]["summary"])
 
     def test_market_trend_model_ignores_retired_or_unsupported_override(self) -> None:
         with patch.dict("os.environ", {"GROQ_MARKET_TREND_MODEL": "llama-3.3-70b-versatile"}):
