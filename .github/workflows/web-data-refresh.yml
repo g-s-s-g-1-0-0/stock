@@ -93,7 +93,7 @@ jobs:
             SEND_NOTIFICATIONS="true"
             # Exact match first: weekly `0 15 * * 0` must not fall through to daily valuation.
             if [ "${{ github.event.schedule }}" = "0 15 * * 0" ]; then
-              TASKS="stock-universe market-trends"
+              TASKS="stock-universe market-trends market-events"
               FORCE_REFRESH="true"
             else
               TASKS="valuation"

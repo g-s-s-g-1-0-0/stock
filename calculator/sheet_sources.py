@@ -3,7 +3,7 @@
 This intentionally mirrors the GAS sources:
 - KR prices: Naver fchart XML API
 - US prices: Yahoo Finance chart API
-- KR valuation: Naver Finance page parsing
+- KR valuation: Naver mobile stock API
 - US valuation: Finviz page parsing
 """
 
@@ -610,57 +610,86 @@ def format_currency_values(values: list[str], currency: str) -> list[str]:
     return values
 
 
+def _korean_api_number(value: Any, *, minus: bool = False) -> float | None:
+    if value is None:
+        return None
+    raw = str(value).strip().replace(",", "").replace("%", "").replace("배", "").replace("원", "")
+    if raw in {"", "-", "N/A"}:
+        return None
+    try:
+        number = float(raw)
+    except ValueError:
+        return None
+    return -abs(number) if minus else number
+
+
+def _korean_finance_rows(payload: dict[str, Any]) -> tuple[list[str], dict[str, list[float | None]]]:
+    info = payload.get("financeInfo") or {}
+    titles = [item for item in info.get("trTitleList", []) if item.get("isConsensus") != "Y"]
+    periods = [str(item.get("key")) for item in titles if item.get("key")]
+    rows: dict[str, list[float | None]] = {}
+    for row in info.get("rowList", []):
+        values = row.get("columns") or {}
+        rows[str(row.get("title", ""))] = [
+            _korean_api_number((values.get(period) or {}).get("value"), minus=(values.get(period) or {}).get("cx") == "minus")
+            for period in periods
+        ]
+    return periods, rows
+
+
+def _korean_total_info(payload: dict[str, Any], key: str) -> str | None:
+    for item in payload.get("totalInfos", []):
+        if item.get("code") == key or item.get("key") == key:
+            return item.get("value")
+    return None
+
+
+def _korean_market_cap_billion(raw: str | None) -> float:
+    if not raw:
+        return 0.0
+    compact = raw.replace(",", "").replace(" ", "")
+    jo = re.search(r"([\d.]+)조", compact)
+    eok = re.search(r"([\d.]+)억", compact)
+    return (float(jo.group(1)) * 10000 if jo else 0.0) + (float(eok.group(1)) if eok else 0.0)
+
+
 def fetch_korean_valuation(code: str) -> list[str]:
-    html = fetch_text(f"https://finance.naver.com/item/main.naver?code={code}", encoding="utf-8")
-    table_match = re.search(r"기업실적분석([\s\S]*?)동종업종비교", html)
-    if not table_match:
-        raise RuntimeError("기업실적분석 없음")
-    table = table_match.group(1)
-    sales = extract_row_values(table, "매출액")
-    oper = extract_row_values(table, "영업이익")
-    eps = extract_row_values(table, r"EPS\(원\)")
-    roe_data = extract_row_values(table, r"ROE\(지배주주\)")
-    debt = extract_row_values(table, "부채비율")
-    quick = extract_row_values(table, "당좌비율")
+    annual = json.loads(fetch_text(f"https://m.stock.naver.com/api/stock/{code}/finance/annual"))
+    quarter = json.loads(fetch_text(f"https://m.stock.naver.com/api/stock/{code}/finance/quarter"))
+    integration = json.loads(fetch_text(f"https://m.stock.naver.com/api/stock/{code}/integration"))
+    basic = json.loads(fetch_text(f"https://m.stock.naver.com/api/stock/{code}/basic"))
+    _, ann_rows = _korean_finance_rows(annual)
+    _, qt_rows = _korean_finance_rows(quarter)
+    if not ann_rows and not qt_rows:
+        raise RuntimeError("네이버 재무 API 데이터 없음")
 
-    nums = lambda values: [v for v in values if isinstance(v, float)]
-    qt_sales = nums(sales[4:9])
-    ann_sales = nums(sales[0:3])
-    qt_oper = nums(oper[4:9])
-    qt_eps = nums(eps[4:9])
-    ann_eps = nums(eps[0:3])
-    qt_roe = nums(roe_data[4:9])
-    ann_roe = nums(roe_data[0:3])
-    qt_debt = nums(debt[4:9])
-    qt_quick = nums(quick[4:9])
-    eps_next_raw = eps[3] if len(eps) > 3 and isinstance(eps[3], float) else None
+    nums = lambda values: [v for v in values if isinstance(v, (int, float))]
+    qt_sales = nums(qt_rows.get("매출액", []))
+    ann_sales = nums(ann_rows.get("매출액", []))
+    qt_oper = nums(qt_rows.get("영업이익", []))
+    qt_eps = nums(qt_rows.get("EPS", []))
+    ann_eps = nums(ann_rows.get("EPS", []))
+    qt_roe = nums(qt_rows.get("ROE", []))
+    ann_roe = nums(ann_rows.get("ROE", []))
+    qt_debt = nums(qt_rows.get("부채비율", []))
+    qt_quick = nums(qt_rows.get("당좌비율", []))
+    annual_info = annual.get("financeInfo") or {}
+    consensus_period = next(
+        (str(item.get("key")) for item in annual_info.get("trTitleList", []) if item.get("isConsensus") == "Y" and item.get("key")),
+        None,
+    )
+    eps_row = next((row for row in annual_info.get("rowList", []) if row.get("title") == "EPS"), {})
+    eps_cell = (eps_row.get("columns") or {}).get(consensus_period or "", {})
+    eps_next_raw = _korean_api_number(eps_cell.get("value"), minus=eps_cell.get("cx") == "minus")
 
-    per = "-"
-    pbr = "-"
-    per_match = re.search(r'<em id="_per">([\d,.]+)</em>', html)
-    pbr_match = re.search(r'<em id="_pbr">([\d,.]+)</em>', html)
-    if per_match:
-        per_val = float(per_match.group(1).replace(",", ""))
-        per = "-" if per_val < 0 else f"{per_val:.2f}"
-    if pbr_match:
-        pbr_val = float(pbr_match.group(1).replace(",", ""))
-        pbr = "-" if pbr_val < 0 else f"{pbr_val:.2f}"
-
-    market_cap = "-"
-    mc_billion = 0.0
-    mc_match = re.search(r'<em id="_market_sum">([\s\S]*?)</em>억원', html)
-    if mc_match:
-        raw = re.sub(r"\s", "", re.sub(r"<[^>]+>", "", mc_match.group(1)))
-        jo_match = re.search(r"([\d,]+)조([\d,]+)?", raw)
-        eok_match = re.fullmatch(r"([\d,]+)", raw)
-        if jo_match:
-            mc_billion = float(jo_match.group(1).replace(",", "")) * 10000 + (float(jo_match.group(2).replace(",", "")) if jo_match.group(2) else 0)
-        elif eok_match:
-            mc_billion = float(eok_match.group(1).replace(",", ""))
-        market_cap = format_billion_won(mc_billion)
-
-    shares_match = re.search(r"상장주식수</th>\s*<td[^>]*><em>([\d,]+)</em></td>", html)
-    shares = shares_match.group(1) if shares_match else "-"
+    per_val = _korean_api_number(_korean_total_info(integration, "per"))
+    pbr_val = _korean_api_number(_korean_total_info(integration, "pbr"))
+    per = "-" if per_val is None or per_val < 0 else f"{per_val:.2f}"
+    pbr = "-" if pbr_val is None or pbr_val < 0 else f"{pbr_val:.2f}"
+    mc_billion = _korean_market_cap_billion(_korean_total_info(integration, "marketValue"))
+    market_cap = format_billion_won(mc_billion)
+    close = _korean_api_number(basic.get("closePrice"))
+    shares = f"{round(mc_billion * 100_000_000 / close):,}" if mc_billion > 0 and close else "-"
     sales_ttm_billion = sum(qt_sales[-4:]) if len(qt_sales) >= 4 else (ann_sales[-1] if ann_sales else 0)
     sales_ttm = format_billion_won(sales_ttm_billion) if sales_ttm_billion else "-"
     sales_qq = pct_no_plus(qt_sales[-1], qt_sales[-2]) if len(qt_sales) >= 2 and qt_sales[-2] else "-"

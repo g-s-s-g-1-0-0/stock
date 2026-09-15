@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from pathlib import Path
 import sys
 
@@ -51,3 +52,55 @@ def test_calc_technical_row_uses_sheet_cci_period_and_volume_ratios(monkeypatch)
     assert row["volRatio"] == round(rows[-1]["volume"] / (sum(item["volume"] for item in rows[-5:]) / 5), 2)
     assert row["prevVolRatio"] == round(rows[-2]["volume"] / (sum(item["volume"] for item in rows[-6:-1]) / 5), 2)
     assert row["volRatio20"] == round(rows[-1]["volume"] / (sum(item["volume"] for item in rows[-20:]) / 20), 2)
+
+
+def test_korean_valuation_uses_naver_mobile_api(monkeypatch):
+    annual_periods = ["202312", "202412", "202512", "202612"]
+    quarter_periods = ["202501", "202502", "202503", "202504", "202601"]
+
+    def finance(periods, consensus=False):
+        titles = [{"key": key, "isConsensus": "Y" if consensus and key == periods[-1] else "N"} for key in periods]
+        values = {
+            "매출액": [100, 110, 120, 130, 140],
+            "영업이익": [10, 11, 12, 13, 14],
+            "EPS": [100, 110, 120, 130, 150],
+            "ROE": [8, 9, 10, 11, 12],
+            "부채비율": [50, 51, 52, 53, 54],
+            "당좌비율": [120, 121, 122, 123, 124],
+        }
+        return {"financeInfo": {"trTitleList": titles, "rowList": [
+            {"title": title, "columns": {key: {"value": str(value)} for key, value in zip(periods, row_values)}}
+            for title, row_values in values.items()
+        ]}}
+
+    responses = {
+        "/finance/annual": finance(annual_periods, consensus=True),
+        "/finance/quarter": finance(quarter_periods),
+        "/integration": {"totalInfos": [
+            {"code": "marketValue", "key": "시총", "value": "1조 2,000억"},
+            {"code": "per", "key": "PER", "value": "10.00배"},
+            {"code": "pbr", "key": "PBR", "value": "1.50배"},
+        ]},
+        "/basic": {"closePrice": "10,000"},
+    }
+
+    def fake_fetch(url, **kwargs):
+        if "/finance/annual" in url:
+            return json.dumps(responses["/finance/annual"])
+        if "/finance/quarter" in url:
+            return json.dumps(responses["/finance/quarter"])
+        if "/integration" in url:
+            return json.dumps(responses["/integration"])
+        if "/basic" in url:
+            return json.dumps(responses["/basic"])
+        raise AssertionError(url)
+
+    monkeypatch.setattr(sheet_sources, "fetch_text", fake_fetch)
+    monkeypatch.setattr(sheet_sources, "fetch_korean_earnings_date", lambda code: "-")
+
+    values = sheet_sources.fetch_korean_valuation("000001")
+
+    assert values[0] == "₩ 1조 2,000억"
+    assert values[1] == "₩ 500억"
+    assert values[9:12] == ["10.00", "1.50", "12.00%"]
+    assert values[13] == "120,000,000"

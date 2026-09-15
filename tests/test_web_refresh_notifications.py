@@ -90,6 +90,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertNotIn('- cron: "0,10,20,30,40,50 23 * * 0-4"', workflow)
         self.assertNotIn('- cron: "30,40,50 0 * * 1-5"', workflow)
         self.assertIn('if [ "${{ github.event.schedule }}" = "0 15 * * 0" ]; then', workflow)
+        self.assertIn('TASKS="stock-universe market-trends market-events"', workflow)
         self.assertIn("- name: Send earnings D-1 emails", workflow)
         self.assertIn("python scripts/web_refresh_notifications.py earnings", workflow)
         self.assertIn('cancel-in-progress: false', workflow)

@@ -89,7 +89,7 @@ FAIR_PRICE_UNAVAILABLE_LABEL = "적자 상태라 판단 불가"
 MAX_REFRESH_UNIVERSE = int(os.environ.get("MAX_REFRESH_UNIVERSE", "200"))
 KST = ZoneInfo("Asia/Seoul")
 ET = ZoneInfo("America/New_York")
-MARKET_EVENTS_WEEKLY_SCHEDULE = "0 0 * * 1"
+MARKET_EVENTS_WEEKLY_SCHEDULE = "0 15 * * 0"
 # 주간 시장 트렌드: 한국시간 월요일 00:00 (UTC 일요일 15:00). 일→월 전환 직후 1회.
 MARKET_TRENDS_WEEKLY_SCHEDULE = "0 15 * * 0"
 IGNORED_MARKET_EVENT_TITLES = {"나스닥 100 리밸런싱"}
