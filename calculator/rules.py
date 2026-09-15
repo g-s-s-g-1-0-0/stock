@@ -193,6 +193,7 @@ def evaluate_buy_condition(
     warn_triggered: bool = False,
     trend_signal: dict[str, Any] | None = None,
     trend_market_allowed: bool = False,
+    holding_signal_close: float | None = None,
 ) -> dict[str, Any]:
     """Evaluate Strategy 1/2/3/4 entry and hold conditions.
 
@@ -293,9 +294,14 @@ def evaluate_buy_condition(
             # Once in, drop MACD golden; keep below-MA200 + QQQ lane + depth floor.
             triggered = s4_cond1 and s4_cond3 and s4_cond4
         elif holding_code in {"5", "6"}:
-            # These are one-shot entry signals, but an open position still needs a
-            # stable buy opinion until the dedicated exit rules close it.
-            triggered = True
+            # The event itself is one-shot; keep the buy opinion only while the
+            # original signal price remains within the entry chase limit and the
+            # trend market gate is still open.
+            price_window_ok = (
+                holding_signal_close is None
+                or ind.current_price <= holding_signal_close * 1.03
+            )
+            triggered = trend_market and price_window_ok
             entry_strategy = None
 
     return {

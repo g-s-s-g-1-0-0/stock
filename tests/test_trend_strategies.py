@@ -19,8 +19,9 @@ def bars():
 
 
 def buy(signal, **kwargs):
+    current_price = kwargs.pop('current_price', 100)
     return evaluate_buy_condition(
-        IndicatorRow(stock_name='TEST', current_price=100, ma200=90, rsi=50),
+        IndicatorRow(stock_name='TEST', current_price=current_price, ma200=90, rsi=50),
         vix=15, ixic_dist=kwargs.pop('ixic_dist', -2.5), ixic_filter_active=False,
         trend_market_allowed=kwargs.pop('trend_market_allowed', True),
         trend_signal={'signalClose': 100, 'stopPrice': 94, **signal}, **kwargs)
@@ -140,11 +141,19 @@ def test_new_entry_market_and_holding_blocks(kwargs):
 
 
 @pytest.mark.parametrize('code', ['5', '6'])
-def test_trend_strategy_holding_keeps_buy_without_reentry_signal(code):
-    result = buy({}, is_holding=True, holding_strategy_type=code)
+def test_trend_strategy_holding_uses_price_window_without_reentry_signal(code):
+    result = buy({}, is_holding=True, holding_strategy_type=code, holding_signal_close=100)
     assert result['triggered']
     assert not result['entryTriggered']
     assert result['strategyType'] is None
+
+
+@pytest.mark.parametrize('code', ['5', '6'])
+def test_trend_strategy_holding_turns_watch_after_price_window(code):
+    result = buy({}, is_holding=True, holding_strategy_type=code,
+                 holding_signal_close=100,
+                 current_price=104)
+    assert not result['triggered']
 
 
 def test_recovery_upper_bound_and_entry_risk_boundaries():

@@ -888,6 +888,29 @@ def open_holding_strategies() -> dict[str, str]:
     return holdings
 
 
+def open_holding_signal_closes() -> dict[str, float]:
+    """현재 보유 중인 전략 5·6의 진입 기준 가격 맵."""
+
+    rows = read_cache("trade-logs").get("rows", [])
+    signal_closes: dict[str, float] = {}
+    if not isinstance(rows, list):
+        return signal_closes
+    for row in rows:
+        if not isinstance(row, dict) or str(row.get("status") or "").strip() != "보유 중":
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        code = parse_holding_strategy_code(row.get("strategy"))
+        if not ticker or code not in {"5", "6"} or ticker in signal_closes:
+            continue
+        try:
+            signal_close = float(row.get("trendSignalClose"))
+        except (TypeError, ValueError):
+            continue
+        if signal_close > 0:
+            signal_closes[ticker] = signal_close
+    return signal_closes
+
+
 def latest_technical_row(
     stock: dict[str, str],
     earnings_date: str = "-",
@@ -896,6 +919,7 @@ def latest_technical_row(
     vix: float | None = None,
     market_event: str = "당분간 없음",
     holding_strategy_type: str | None = None,
+    holding_signal_close: float | None = None,
     season_open: bool = False,
 ) -> dict[str, str] | None:
     row = calc_technical_row(stock["ticker"])
@@ -957,6 +981,7 @@ def latest_technical_row(
         warn_triggered=warn_triggered,
         trend_signal=trend_signal,
         trend_market_allowed=trend_market_allowed,
+        holding_signal_close=holding_signal_close,
     )
     event_watch_active = market_event != "당분간 없음"
     if event_watch_active:
@@ -1136,6 +1161,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
         errors.append({"ticker": "CNN_FEAR_GREED", "error": str(exc)})
     market_event = market_snapshot[0][1] if market_snapshot and len(market_snapshot[0]) > 1 else "당분간 없음"
     holdings = open_holding_strategies()
+    holding_signal_closes = open_holding_signal_closes()
     season = load_strategy_season_state()
     season_open = bool(season.get("open")) or any(code in {"1", "2"} for code in holdings.values())
     season_opened_by: str | None = str(season.get("openedByTicker") or "") or None
@@ -1154,6 +1180,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 vix=vix_today,
                 market_event=market_event,
                 holding_strategy_type=holdings.get(str(stock["ticker"]).strip().upper()),
+                holding_signal_close=holding_signal_closes.get(str(stock["ticker"]).strip().upper()),
                 season_open=season_open,
             )
             if row:

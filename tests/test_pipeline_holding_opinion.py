@@ -129,6 +129,20 @@ def test_held_trend_strategy_keeps_buy_after_one_shot_entry(monkeypatch, code):
     assert result["entrySignalCodes"] == code
 
 
+@pytest.mark.parametrize("code", ["5", "6"])
+def test_held_trend_strategy_turns_watch_after_chase_limit(monkeypatch, code):
+    row = make_technical_row(close=104.0, ma200=100.0)
+    patch_sources(monkeypatch, row)
+    market = {**RECOVERY_MARKET, "trendEntryBlocked": False}
+
+    result = pipeline.latest_technical_row(
+        STOCK, qqq_market_state=market, vix=15.0,
+        holding_strategy_type=code, holding_signal_close=100.0, season_open=True
+    )
+
+    assert result["opinion"] == "관망"
+
+
 def test_non_holding_stock_uses_entry_signal_only(monkeypatch):
     # 미보유: 전략2 진입 조건 일부만 충족(시즌 닫힘) → 관망.
     row = make_technical_row(close=105.0, low=104.0, ma20=105.0, ma200=90.0)
