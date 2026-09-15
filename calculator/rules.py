@@ -293,7 +293,9 @@ def evaluate_buy_condition(
             # Once in, drop MACD golden; keep below-MA200 + QQQ lane + depth floor.
             triggered = s4_cond1 and s4_cond3 and s4_cond4
         elif holding_code in {"5", "6"}:
-            triggered = False
+            # These are one-shot entry signals, but an open position still needs a
+            # stable buy opinion until the dedicated exit rules close it.
+            triggered = True
             entry_strategy = None
 
     return {

@@ -139,6 +139,14 @@ def test_new_entry_market_and_holding_blocks(kwargs):
     assert buy({'attempt':True}, **kwargs)['strategyType'] is None
 
 
+@pytest.mark.parametrize('code', ['5', '6'])
+def test_trend_strategy_holding_keeps_buy_without_reentry_signal(code):
+    result = buy({}, is_holding=True, holding_strategy_type=code)
+    assert result['triggered']
+    assert not result['entryTriggered']
+    assert result['strategyType'] is None
+
+
 def test_recovery_upper_bound_and_entry_risk_boundaries():
     assert buy({'attempt':True}, ixic_dist=18, is_recovery_market=True, nasdaq_buy_block_max=18)['strategyType'] == '6'
     assert buy({'attempt':True}, ixic_dist=18.01, is_recovery_market=True, nasdaq_buy_block_max=18)['strategyType'] is None

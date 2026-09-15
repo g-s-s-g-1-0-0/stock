@@ -8,6 +8,8 @@ hold 조건을 실제로 이탈했을 때만 '관망'으로 내려간다.
 from pathlib import Path
 import sys
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from calculator import pipeline
@@ -27,6 +29,7 @@ def make_technical_row(**overrides):
         "plusDI": 20.0, "minusDI": 18.0, "adx": 20.0, "adxD1": 19.0, "adxD2": 18.0, "adxSlope": 0.0,
         "pctB": 40.0, "pctBLow": 30.0, "pctBPeak": 50.0, "pctBPeakD1": 49.0,
         "bbWidth": 10.0, "bbWidthD1": 10.0, "bbWidthAvg60": 30.0,
+        "bbMiddle": 100.0, "bbLower": 90.0, "ma120": 97.0,
         "volRatio": 1.0, "prevVolRatio": 1.0, "volRatio20": 1.0,
         "lrSlope": 0.0, "lrTrendline": 90.0,
     }
@@ -110,6 +113,20 @@ def test_held_strategy2_turns_watch_when_season_closed(monkeypatch):
     )
 
     assert result["opinion"] == "관망"
+
+
+@pytest.mark.parametrize("code", ["5", "6"])
+def test_held_trend_strategy_keeps_buy_after_one_shot_entry(monkeypatch, code):
+    row = make_technical_row(close=90.0, ma200=100.0)
+    patch_sources(monkeypatch, row)
+    market = {**RECOVERY_MARKET, "trendEntryBlocked": False}
+
+    result = pipeline.latest_technical_row(
+        STOCK, qqq_market_state=market, vix=15.0, holding_strategy_type=code, season_open=True
+    )
+
+    assert result["opinion"] == "매수"
+    assert result["entrySignalCodes"] == code
 
 
 def test_non_holding_stock_uses_entry_signal_only(monkeypatch):
