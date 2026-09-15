@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-15T16:56:11+00:00",
-    "lastSuccessfulRun": "2026-09-15T16:56:11+00:00",
+    "updatedAt": "2026-09-15T18:37:28+00:00",
+    "lastSuccessfulRun": "2026-09-15T18:37:28+00:00",
     "failedReason": null
   },
   "rows": [
@@ -246,7 +246,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "5. 저항선 돌파 후 눌림"
+      ],
       "category": "성장주",
       "industry": "AI 인프라, 에너지, 연료전지·수소, 데이터센터 전력",
       "updatedAt": "2026-09-15T16:55:56+00:00"
@@ -262,7 +264,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, HPC",
       "updatedAt": "2026-09-15T16:55:56+00:00"
@@ -438,7 +442,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "우주 산업, 소형 발사체, 위성 배포",
       "updatedAt": "2026-09-15T16:56:01+00:00"
@@ -486,7 +492,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
       "updatedAt": "2026-09-15T16:56:03+00:00"
@@ -534,7 +542,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "6. 하락 추세 이탈 시도"
+      ],
       "category": "성장주",
       "industry": "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머",
       "updatedAt": "2026-09-15T16:56:04+00:00"
@@ -614,7 +624,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "혼합주",
       "industry": "반도체 장비, 식각·증착",
       "updatedAt": "2026-09-15T16:56:07+00:00"
@@ -630,7 +642,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "2차전지, 전기차 배터리, 배터리 소재",
       "updatedAt": "2026-09-15T16:56:08+00:00"
@@ -662,7 +676,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "혼합주",
       "industry": "반도체 테스트 장비, 자동화 테스트, 협동로봇",
       "updatedAt": "2026-09-15T16:56:09+00:00"
