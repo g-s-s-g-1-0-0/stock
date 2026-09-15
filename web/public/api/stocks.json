@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-15T14:56:09+00:00",
-    "lastSuccessfulRun": "2026-09-15T14:56:09+00:00",
+    "updatedAt": "2026-09-15T15:01:43+00:00",
+    "lastSuccessfulRun": "2026-09-15T15:01:43+00:00",
     "failedReason": null
   },
   "rows": [
@@ -66,7 +66,9 @@
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "혼합주",
       "industry": "반도체, 메모리·파운드리, 스마트폰, 소비자 가전",
       "updatedAt": "2026-09-15T14:55:41+00:00"
@@ -146,7 +148,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
       "updatedAt": "2026-09-15T14:55:49+00:00"
@@ -155,7 +159,7 @@
       "ticker": "278470",
       "name": "에이피알",
       "market": "KR",
-      "fairPrice": "₩368,083 ~ ₩497,994",
+      "fairPrice": "₩367,745 ~ ₩497,538",
       "fairPriceReason": null,
       "currentPrice": "₩361,000",
       "valuation": "저평가",
@@ -242,7 +246,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "5. 저항선 돌파 후 눌림"
+      ],
       "category": "성장주",
       "industry": "AI 인프라, 에너지, 연료전지·수소, 데이터센터 전력",
       "updatedAt": "2026-09-15T14:55:54+00:00"
@@ -258,7 +264,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, HPC",
       "updatedAt": "2026-09-15T14:55:54+00:00"
@@ -434,7 +442,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "우주 산업, 소형 발사체, 위성 배포",
       "updatedAt": "2026-09-15T14:56:00+00:00"
@@ -532,7 +542,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "6. 하락 추세 이탈 시도"
+      ],
       "category": "성장주",
       "industry": "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머",
       "updatedAt": "2026-09-15T14:56:03+00:00"
@@ -557,7 +569,7 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "fairPrice": "₩271,855 ~ ₩367,803",
+      "fairPrice": "₩273,874 ~ ₩370,535",
       "fairPriceReason": null,
       "currentPrice": "₩669,000",
       "valuation": "고평가",
@@ -612,7 +624,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "혼합주",
       "industry": "반도체 장비, 식각·증착",
       "updatedAt": "2026-09-15T14:56:06+00:00"
@@ -628,7 +642,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "2차전지, 전기차 배터리, 배터리 소재",
       "updatedAt": "2026-09-15T14:56:06+00:00"
