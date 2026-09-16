@@ -91,6 +91,31 @@ def test_held_strategy1_turns_watch_when_hold_condition_lost(monkeypatch):
     assert result["opinion"] == "관망"
 
 
+def test_held_strategy4_promotes_a_different_strategy_entry_after_watch(monkeypatch):
+    # 전략4 보유분은 MA200 대비 -25% 아래로 밀려 hold 조건을 이탈했다.
+    # 다만 전략1의 독립 진입 조건이 충족되면 관망에 머물지 않고, 전략1 추가 슬롯을
+    # 만들 수 있도록 매수와 해당 진입 코드를 내보낸다.
+    row = make_technical_row(
+        close=70.0,
+        ma200=100.0,
+        rsi=30.0,
+        cci=-160.0,
+        lrSlope=0.1,
+        lrTrendline=75.0,
+        low=70.0,
+    )
+    patch_sources(monkeypatch, row)
+    market = {**RECOVERY_MARKET, "premiumPercent": -4.0, "isRecoveryMarket": False, "regimeLabel": "하락장"}
+
+    result = pipeline.latest_technical_row(
+        STOCK, qqq_market_state=market, vix=28.0, holding_strategy_type="4", season_open=True
+    )
+
+    assert result["opinion"] == "매수"
+    assert result["entrySignalCodes"] == "1"
+    assert result["entryStrategy"] == "1. 시장 공포 저점 진입"
+
+
 def test_held_strategy2_keeps_buy_when_season_and_recovery(monkeypatch):
     # 전략2 hold: 시즌 열림 + 회복장 + QQQ ≤ 차단선 (MA 터치는 hold에 불필요).
     row = make_technical_row(close=110.0, ma200=95.0, ma20=105.0)

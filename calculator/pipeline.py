@@ -988,7 +988,10 @@ def latest_technical_row(
         opinion = "관망"
         opinion_reason = f"이벤트 기간 관망 ({market_event})"
     elif is_holding:
-        opinion = "매수" if buy["triggered"] else "관망"
+        # 보유 전략의 유지 조건과 별도로 다른 전략의 신규 진입 조건도 평가한다.
+        # 보유 전략이 관망으로 전환된 뒤 다른 전략이 충족되면, 해당 전략을
+        # 추가 슬롯으로 기록·알림할 수 있도록 최종 의견을 매수로 올린다.
+        opinion = "매수" if buy["triggered"] or buy["entryTriggered"] else "관망"
         opinion_reason = "-"
     else:
         opinion = "매수" if buy["entryTriggered"] else "관망"

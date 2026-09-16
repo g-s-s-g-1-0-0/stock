@@ -73,6 +73,45 @@ def test_buy_signals_append_profile_specific_trades(monkeypatch, tmp_path):
     assert rows[1]["slotId"].startswith("MSFT_swing_1_")
 
 
+def test_held_watch_to_buy_adds_a_different_strategy_slot_without_same_strategy_restore(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [{
+            "slotId": "TEST_swing_4_20260827_1",
+            "investmentType": "swing",
+            "ticker": "TEST",
+            "name": "Test",
+            "market": "US",
+            "strategy": "4. 장기선 아래 반등 초입",
+            "buyDate": "2026.08.27",
+            "buyPrice": "$100.00",
+            "currentPrice": "$95.00",
+            "sellDate": "보유 중",
+            "sellPrice": "-",
+            "returnPct": 0,
+            "holdingDays": "-",
+            "status": "보유 중",
+        }]
+    }), encoding="utf-8")
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {
+        "long_term": [],
+        "swing": ["TEST"],
+    })
+
+    logs.update_trade_logs(
+        [{"ticker": "TEST", "name": "Test", "market": "US", "currentPrice": "$95.00", "opinion": "매수"}],
+        {"TEST": {"opinion": "관망"}},
+        {"TEST": {"entrySignalCodes": "1", "현재가": "$95.00"}},
+        {"peakTriggered": False},
+    )
+
+    rows = logs.load_json(cache_path, {})["rows"]
+    assert len(rows) == 2
+    assert rows[1]["strategy"] == "1. 시장 공포 저점 진입"
+    assert rows[1]["status"] == "보유 중"
+
+
 def test_long_term_trade_does_not_auto_exit_on_target(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     public_path.parent.mkdir(parents=True)
