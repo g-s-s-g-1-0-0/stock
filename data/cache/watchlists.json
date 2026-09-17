@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-09-17T02:55:23Z",
+    "updatedAt": "2026-09-17T04:08:57Z",
     "rowCount": 3
   },
   "rows": [
@@ -51,7 +51,8 @@
         "AMAT",
         "KLAC",
         "TER",
-        "VST"
+        "VST",
+        "GNRC"
       ],
       "tickersByType": {
         "swing": [
@@ -96,7 +97,8 @@
           "AMAT",
           "KLAC",
           "TER",
-          "VST"
+          "VST",
+          "GNRC"
         ],
         "long_term": [
           "000660",
@@ -114,7 +116,7 @@
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-16T10:28:33.386229+00:00"
+      "remoteUpdatedAt": "2026-09-17T04:08:42.619121+00:00"
     },
     {
       "id": "6065187b-8e56-4939-aae8-c108e1aae841",
@@ -144,7 +146,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-16T10:28:33.459712+00:00"
+      "remoteUpdatedAt": "2026-09-17T04:08:40.980303+00:00"
     }
   ]
 }

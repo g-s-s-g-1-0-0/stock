@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-17T02:56:00+00:00",
-    "lastSuccessfulRun": "2026-09-17T02:56:00+00:00",
+    "updatedAt": "2026-09-17T04:10:01+00:00",
+    "lastSuccessfulRun": "2026-09-17T04:10:01+00:00",
     "failedReason": null
   },
   "rows": [
@@ -43,7 +43,7 @@
       "ticker": "005380",
       "name": "현대자동차",
       "market": "KR",
-      "fairPrice": "₩438,392 ~ ₩593,119",
+      "fairPrice": "₩433,937 ~ ₩587,091",
       "fairPriceReason": null,
       "currentPrice": "₩360,500",
       "valuation": "저평가",
@@ -146,7 +146,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
       "updatedAt": "2026-09-17T02:55:45+00:00"
@@ -162,7 +164,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "글로벌 K-뷰티, 뷰티테크, 홈 뷰티 디바이스, D2C·소셜커머스",
       "updatedAt": "2026-09-17T02:55:47+00:00"
@@ -258,7 +262,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, HPC",
       "updatedAt": "2026-09-17T02:55:49+00:00"
@@ -434,7 +440,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "우주 산업, 소형 발사체, 위성 배포",
       "updatedAt": "2026-09-17T02:55:53+00:00"
@@ -482,7 +490,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
       "updatedAt": "2026-09-17T02:55:54+00:00"
@@ -610,7 +620,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "혼합주",
       "industry": "반도체 장비, 식각·증착",
       "updatedAt": "2026-09-17T02:55:57+00:00"
@@ -626,7 +638,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "2차전지, 전기차 배터리, 배터리 소재",
       "updatedAt": "2026-09-17T02:55:58+00:00"
@@ -658,7 +672,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "혼합주",
       "industry": "반도체 테스트 장비, 자동화 테스트, 협동로봇",
       "updatedAt": "2026-09-17T02:55:59+00:00"
@@ -678,6 +694,22 @@
       "category": "성장주",
       "industry": "전력 발전, 원전·가스, AI 데이터센터 전력수요, AI 인프라",
       "updatedAt": "2026-09-17T02:55:59+00:00"
+    },
+    {
+      "ticker": "GNRC",
+      "name": "Generac Holdlings",
+      "market": "US",
+      "fairPrice": "$127.27 ~ $172.19",
+      "fairPriceReason": null,
+      "currentPrice": "-",
+      "valuation": "보통",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "혼합주",
+      "industry": "산업재, 장비·제조, 자동화",
+      "updatedAt": "2026-09-17T04:10:01+00:00"
     },
     {
       "ticker": "AAPL",
