@@ -1,8 +1,8 @@
 """보유 종목 의견 산정 회귀 테스트.
 
-보유 중('보유 중' 매매로그가 있는) 종목은, 신규 진입 신호가 그 턴에 다시
-발화하지 않더라도 포지션이 열려 있는 한 의견이 '매수'로 유지돼야 한다.
-hold 조건 이탈은 청산/추가매수 판단에만 쓰고 표시 의견을 관망으로 내리지 않는다.
+보유 중에도 전략별 매수→관망 조건이 충족되면 의견은 관망이다.
+포지션은 유지하되, 그때부터는 추가 매수를 하지 말라는 뜻이다.
+관망에서 다시 매수로 가려면 추가매수 조건이 맞아야 한다.
 """
 
 from pathlib import Path
@@ -78,7 +78,7 @@ def test_held_strategy1_keeps_buy_when_hold_condition_met(monkeypatch):
     assert result["entrySignalCodes"] == "1"
 
 
-def test_held_strategy1_keeps_buy_when_hold_condition_lost(monkeypatch):
+def test_held_strategy1_turns_watch_when_hold_condition_lost(monkeypatch):
     row = strategy1_hold_row()
     row["close"] = 110.0  # MA200 위로 회복 → 전략1 hold 이탈
     patch_sources(monkeypatch, row)
@@ -88,8 +88,7 @@ def test_held_strategy1_keeps_buy_when_hold_condition_lost(monkeypatch):
         STOCK, qqq_market_state=market, vix=28.0, holding_strategy_type="1", season_open=True
     )
 
-    assert result["opinion"] == "매수"
-    assert result["entrySignalCodes"] == "1"
+    assert result["opinion"] == "관망"
 
 
 def test_held_strategy4_promotes_a_different_strategy_entry_after_watch(monkeypatch):
@@ -130,7 +129,7 @@ def test_held_strategy2_keeps_buy_when_season_and_recovery(monkeypatch):
     assert result["entrySignalCodes"] == "2"
 
 
-def test_held_strategy2_keeps_buy_when_season_closed(monkeypatch):
+def test_held_strategy2_turns_watch_when_season_closed(monkeypatch):
     row = make_technical_row(close=110.0, ma200=95.0, ma20=105.0)
     patch_sources(monkeypatch, row)
 
@@ -138,8 +137,7 @@ def test_held_strategy2_keeps_buy_when_season_closed(monkeypatch):
         STOCK, qqq_market_state=RECOVERY_MARKET, vix=15.0, holding_strategy_type="2", season_open=False
     )
 
-    assert result["opinion"] == "매수"
-    assert result["entrySignalCodes"] == "2"
+    assert result["opinion"] == "관망"
 
 
 @pytest.mark.parametrize("code", ["5", "6"])
@@ -157,7 +155,7 @@ def test_held_trend_strategy_keeps_buy_after_one_shot_entry(monkeypatch, code):
 
 
 @pytest.mark.parametrize("code", ["5", "6"])
-def test_held_trend_strategy_keeps_buy_after_chase_limit(monkeypatch, code):
+def test_held_trend_strategy_turns_watch_after_chase_limit(monkeypatch, code):
     row = make_technical_row(close=104.0, ma200=100.0)
     patch_sources(monkeypatch, row)
     market = {**RECOVERY_MARKET, "trendEntryBlocked": False}
@@ -167,8 +165,7 @@ def test_held_trend_strategy_keeps_buy_after_chase_limit(monkeypatch, code):
         holding_strategy_type=code, holding_signal_close=100.0, season_open=True
     )
 
-    assert result["opinion"] == "매수"
-    assert result["entrySignalCodes"] == code
+    assert result["opinion"] == "관망"
 
 
 def test_non_holding_stock_uses_entry_signal_only(monkeypatch):

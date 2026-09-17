@@ -1187,7 +1187,7 @@ def test_held_trade_buy_signal_without_add_slot_keeps_buy_opinion(monkeypatch, t
     stock = {"ticker": "INTC", "name": "Intel", "market": "US", "currentPrice": "$109.82", "opinion": "매수", "strategies": ["2. 상승 추세 이평선 눌림목"]}
     technical = {"INTC": {"opinion": "매수", "entrySignalCodes": "2", "entryStrategy": "2. 상승 추세 이평선 눌림목", "현재가": "$109.82"}}
 
-    changed = logs.update_trade_logs([stock], {"INTC": {"opinion": "관망"}}, technical, {"peakTriggered": False})
+    changed = logs.update_trade_logs([stock], {"INTC": {"opinion": "매수"}}, technical, {"peakTriggered": False})
 
     updated = logs.load_json(cache_path, {})
     intc_rows = [row for row in updated["rows"] if row["ticker"] == "INTC"]
@@ -1200,6 +1200,46 @@ def test_held_trade_buy_signal_without_add_slot_keeps_buy_opinion(monkeypatch, t
     assert stock["strategies"] == []
     assert technical["INTC"]["opinion"] == "매수"
     assert technical["INTC"]["entrySignalCodes"] == ""
+
+
+def test_held_watch_does_not_return_to_buy_without_additional_slot(monkeypatch, tmp_path):
+    # 매수 창이 닫혀 관망인 보유 종목은, 추가매수 조건이 슬롯을 만들기 전에는
+    # hold 게이트가 다시 살아도 매수로 올리지 않는다.
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["BE"]})
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "slotId": "BE_swing_5_20260914_1",
+                "ticker": "BE",
+                "strategy": "5. 저항선 돌파 후 눌림",
+                "buyDate": "2026.09.14",
+                "buyPrice": "$258.67",
+                "currentPrice": "$278.03",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+                "trendSignalClose": 258.75,
+            }
+        ]
+    }), encoding="utf-8")
+
+    stock = {"ticker": "BE", "name": "Bloom Energy", "market": "US", "currentPrice": "$278.03", "opinion": "매수", "strategies": ["5. 저항선 돌파 후 눌림"]}
+    technical = {"BE": {"opinion": "매수", "entrySignalCodes": "5", "entryStrategy": "5. 저항선 돌파 후 눌림", "현재가": "$278.03"}}
+
+    logs.update_trade_logs([stock], {"BE": {"opinion": "관망"}}, technical, {"peakTriggered": False})
+
+    updated = logs.load_json(cache_path, {})
+    be_rows = [row for row in updated["rows"] if row["ticker"] == "BE"]
+    assert len(be_rows) == 1
+    assert updated["meta"]["appendedOpenTrades"] == 0
+    assert stock["opinion"] == "관망"
+    assert stock["strategies"] == []
+    assert technical["BE"]["opinion"] == "관망"
+    assert technical["BE"]["entrySignalCodes"] == ""
 
 
 def test_offlist_held_trade_still_liquidates_on_exit(monkeypatch, tmp_path):

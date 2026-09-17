@@ -884,16 +884,44 @@ def suppress_offlist_buy_signal(stock: dict[str, Any], technical_row: dict[str, 
     return changed
 
 
-def block_held_public_buy_signal(stock: dict[str, Any], technical_row: dict[str, Any]) -> bool:
-    """보유 종목의 추가매수 '신호' 노출만 차단한다 — 의견은 hold 조건 그대로 유지.
+def block_held_public_buy_signal(
+    stock: dict[str, Any],
+    technical_row: dict[str, Any],
+    previous_opinion: str = "",
+) -> bool:
+    """추가 슬롯이 안 생겼을 때 공개 매수 신호를 정리한다.
 
-    추가매수 조건(눌림/대기일 등)을 통과하지 못하면 추가 슬롯을 만들거나 "더 사라"는
-    매수 신호(진입 코드)를 노출하지 않는다. 다만 보유 포지션 자체의 투자의견은
-    hold 조건이 유지되는 한 '매수'로 둔다(GAS와 동일). 추가매수 미충족을 이유로
-    의견을 '관망'으로 강제로 내리지 않는다.
+    직전 의견이 매수면 아직 매수 창이 열린 상태다. 추가매수 조건만 미충족이므로
+    의견은 매수로 두고 진입 코드만 비운다. 직전 의견이 관망이면 매수 타이밍을
+    이미 놓친 상태다. 추가매수 조건이 슬롯을 만들기 전에는 관망을 유지한다.
     """
-    reason = "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류"
     changed = False
+    if str(previous_opinion or "").strip() == "관망":
+        reason = "보유 중 — 추가매수 조건 미충족"
+        if stock.get("opinion") != "관망":
+            stock["opinion"] = "관망"
+            changed = True
+        if stock.get("opinionReason") != reason:
+            stock["opinionReason"] = reason
+            changed = True
+        if stock.get("strategies") != []:
+            stock["strategies"] = []
+            changed = True
+        if isinstance(technical_row, dict):
+            updates = {
+                "opinion": "관망",
+                "opinionReason": reason,
+                "entryStrategy": "-",
+                "entrySignalCodes": "",
+                "entrySignals": "",
+            }
+            for key, value in updates.items():
+                if technical_row.get(key) != value:
+                    technical_row[key] = value
+                    changed = True
+        return changed
+
+    reason = "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류"
     if stock.get("strategies") != []:
         stock["strategies"] = []
         changed = True
@@ -1575,7 +1603,7 @@ def run_trade_engine(
                 appended += 1
                 ticker_appended = True
         if open_for_ticker_all and not ticker_appended and mutate_public_state:
-            signal_state_changed = block_held_public_buy_signal(stock, row) or signal_state_changed
+            signal_state_changed = block_held_public_buy_signal(stock, row, previous_opinion) or signal_state_changed
 
     # Drop retired A/C/D/E/F/G/H rows from the live log; keep 1/2/3/4 (+ migrated B).
     cleaned: list[dict[str, Any]] = []

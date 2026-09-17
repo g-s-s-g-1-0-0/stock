@@ -374,9 +374,6 @@ def opinion_changes(
         added_for_ticker = added_trades_by_ticker.get(normalized_ticker, [])
         previous_ticker_trades = previous_trades_by_ticker.get(normalized_ticker, [])
         current_ticker_trades = current_trades_by_ticker.get(normalized_ticker, [])
-        still_holding = any(is_open_trade(row) for row in current_ticker_trades)
-        if still_holding and new_opinion == "관망" and old_opinion == "매수":
-            continue
         change = {
             "ticker": ticker,
             "name": current_stock.get("name") or ticker,

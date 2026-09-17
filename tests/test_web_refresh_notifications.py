@@ -794,7 +794,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
         self.assertEqual([], changes)
 
-    def test_opinion_changes_skips_held_buy_to_watch_without_exit(self) -> None:
+    def test_opinion_changes_emits_held_buy_to_watch(self) -> None:
         with TemporaryDirectory() as temp_dir:
             previous = Path(temp_dir) / "previous.json"
             current = Path(temp_dir) / "current.json"
@@ -824,7 +824,10 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
             changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
 
-        self.assertEqual([], changes)
+        self.assertEqual(1, len(changes))
+        self.assertEqual("BE", changes[0]["ticker"])
+        self.assertEqual("매수", changes[0]["from"])
+        self.assertEqual("관망", changes[0]["to"])
 
     def test_opinion_changes_detects_additional_buy_when_later_ticker_is_unchanged(self) -> None:
         with TemporaryDirectory() as temp_dir:
