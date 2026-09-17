@@ -988,10 +988,10 @@ def latest_technical_row(
         opinion = "관망"
         opinion_reason = f"이벤트 기간 관망 ({market_event})"
     elif is_holding:
-        # 보유 전략의 유지 조건과 별도로 다른 전략의 신규 진입 조건도 평가한다.
-        # 보유 전략이 관망으로 전환된 뒤 다른 전략이 충족되면, 해당 전략을
-        # 추가 슬롯으로 기록·알림할 수 있도록 최종 의견을 매수로 올린다.
-        opinion = "매수" if buy["triggered"] or buy["entryTriggered"] else "관망"
+        # 보유 포지션이 열려 있는 동안 표시 의견은 매수를 유지한다.
+        # hold 조건 이탈은 청산/추가매수 판단에만 쓰고, 관망으로 내려 알림이
+        # 매수↔관망을 반복하지 않게 한다. 다른 전략의 신규 진입은 entry 코드로만 올린다.
+        opinion = "매수"
         opinion_reason = "-"
     else:
         opinion = "매수" if buy["entryTriggered"] else "관망"
@@ -999,7 +999,7 @@ def latest_technical_row(
     if buy["entryTriggered"]:
         strategy = buy["strategyName"]
         entry_signal_codes = [buy["strategyType"]] if buy["strategyType"] else []
-    elif is_holding and opinion == "매수":
+    elif is_holding:
         strategy = strategy_display_name(holding_strategy_type)
         entry_signal_codes = [holding_strategy_type] if holding_strategy_type else []
     else:

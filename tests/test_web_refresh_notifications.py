@@ -794,6 +794,78 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
         self.assertEqual([], changes)
 
+    def test_opinion_changes_skips_held_buy_to_watch_without_exit(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+            previous_trades = Path(temp_dir) / "trade-logs.before-refresh.json"
+            current_trades = Path(temp_dir) / "trade-logs.json"
+
+            held_trade = {
+                "slotId": "BE_swing_5_20260914_1",
+                "ticker": "BE",
+                "strategy": "5. 저항선 돌파 후 눌림",
+                "buyDate": "2026.09.14",
+                "buyPrice": "$258.67",
+                "status": "보유 중",
+            }
+            previous.write_text(
+                json.dumps({"rows": [{"ticker": "BE", "name": "Bloom Energy", "opinion": "매수"}]}),
+                encoding="utf-8",
+            )
+            current.write_text(
+                json.dumps({"rows": [{"ticker": "BE", "name": "Bloom Energy", "opinion": "관망", "currentPrice": "$278.03"}]}),
+                encoding="utf-8",
+            )
+            technical.write_text(json.dumps({"rows": {"BE": {"현재가": "$278.03"}}}), encoding="utf-8")
+            previous_trades.write_text(json.dumps({"rows": [held_trade]}), encoding="utf-8")
+            current_trades.write_text(json.dumps({"rows": [held_trade]}), encoding="utf-8")
+
+            changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
+
+        self.assertEqual([], changes)
+
+    def test_opinion_changes_detects_additional_buy_when_later_ticker_is_unchanged(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+            previous_trades = Path(temp_dir) / "trade-logs.before-refresh.json"
+            current_trades = Path(temp_dir) / "trade-logs.json"
+
+            stocks = [
+                {"ticker": "DL", "name": "DL", "opinion": "매수", "currentPrice": "$97.00"},
+                {"ticker": "ZZ", "name": "ZZ", "opinion": "관망", "currentPrice": "$10.00"},
+            ]
+            previous.write_text(json.dumps({"rows": stocks}), encoding="utf-8")
+            current.write_text(json.dumps({"rows": stocks}), encoding="utf-8")
+            technical.write_text(
+                json.dumps({"rows": {"DL": {"entrySignalCodes": "2", "현재가": "$97.00"}, "ZZ": {}}}),
+                encoding="utf-8",
+            )
+            previous_trades.write_text(
+                json.dumps({"rows": [
+                    {"slotId": "DL_2_20260501_1", "ticker": "DL", "strategy": "2. 상승 추세 이평선 눌림목", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"},
+                    {"slotId": "ZZ_3_20260501_1", "ticker": "ZZ", "strategy": "3. 정상장 볼린저 워시아웃", "buyDate": "2026.05.01", "buyPrice": "$11.00", "status": "익절"},
+                ]}),
+                encoding="utf-8",
+            )
+            current_trades.write_text(
+                json.dumps({"rows": [
+                    {"slotId": "DL_2_20260501_1", "ticker": "DL", "strategy": "2. 상승 추세 이평선 눌림목", "buyDate": "2026.05.01", "buyPrice": "$100.00", "status": "보유 중"},
+                    {"slotId": "DL_2_20260510_1", "ticker": "DL", "strategy": "2. 상승 추세 이평선 눌림목", "buyDate": "2026.05.10", "buyPrice": "$97.00", "status": "보유 중"},
+                    {"slotId": "ZZ_3_20260501_1", "ticker": "ZZ", "strategy": "3. 정상장 볼린저 워시아웃", "buyDate": "2026.05.01", "buyPrice": "$11.00", "status": "익절"},
+                ]}),
+                encoding="utf-8",
+            )
+
+            changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
+
+        self.assertEqual(1, len(changes))
+        self.assertEqual("DL", changes[0]["ticker"])
+        self.assertEqual("추가 매수", changes[0]["toLabel"])
+
     def test_send_notification_uses_slack_when_selected_and_connected(self) -> None:
         sent_slack: list[tuple[str, str, str]] = []
         sent_email: list[tuple[str, str, str]] = []

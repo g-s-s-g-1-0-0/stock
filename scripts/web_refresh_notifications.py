@@ -372,8 +372,11 @@ def opinion_changes(
         technical_row = technical_rows.get(ticker, {})
         normalized_ticker = str(ticker).strip().upper()
         added_for_ticker = added_trades_by_ticker.get(normalized_ticker, [])
-        previous_trade_rows = previous_trades_by_ticker.get(normalized_ticker, [])
-        current_trade_rows = current_trades_by_ticker.get(normalized_ticker, [])
+        previous_ticker_trades = previous_trades_by_ticker.get(normalized_ticker, [])
+        current_ticker_trades = current_trades_by_ticker.get(normalized_ticker, [])
+        still_holding = any(is_open_trade(row) for row in current_ticker_trades)
+        if still_holding and new_opinion == "관망" and old_opinion == "매수":
+            continue
         change = {
             "ticker": ticker,
             "name": current_stock.get("name") or ticker,
@@ -387,10 +390,10 @@ def opinion_changes(
         }
         if new_opinion == "매수":
             added_trade = added_for_ticker[0] if added_for_ticker else None
-            if any(is_open_trade(row) for row in previous_trade_rows):
+            if any(is_open_trade(row) for row in previous_ticker_trades):
                 if not added_trade:
                     continue
-                reference_trade = added_trade or next((row for row in previous_trade_rows if is_open_trade(row)), None)
+                reference_trade = added_trade or next((row for row in previous_ticker_trades if is_open_trade(row)), None)
                 change["fromLabel"] = "매수(보유중)"
                 change["toLabel"] = "추가 매수"
                 change["reason"] = buy_reason_for_trade(reference_trade or {}, current_stock, technical_row)
@@ -401,8 +404,8 @@ def opinion_changes(
             )
             change["entryNote"] = buy_entry_note(
                 old_opinion=old_opinion,
-                previous_trade_rows=previous_trade_rows,
-                current_trade_rows=current_trade_rows,
+                previous_trade_rows=previous_ticker_trades,
+                current_trade_rows=current_ticker_trades,
                 added_trades=added_for_ticker,
             )
             buy_transition_tickers.add(normalized_ticker)
