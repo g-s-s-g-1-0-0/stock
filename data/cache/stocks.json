@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-17T16:56:37+00:00",
-    "lastSuccessfulRun": "2026-09-17T16:56:37+00:00",
+    "updatedAt": "2026-09-17T18:42:51+00:00",
+    "lastSuccessfulRun": "2026-09-17T18:42:51+00:00",
     "failedReason": null
   },
   "rows": [
@@ -216,7 +216,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "우주 산업, 위성통신, LEO 위성, D2D 통신",
       "updatedAt": "2026-09-17T16:56:27+00:00"
@@ -264,7 +266,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, HPC",
       "updatedAt": "2026-09-17T16:56:28+00:00"
@@ -440,7 +444,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "우주 산업, 소형 발사체, 위성 배포",
       "updatedAt": "2026-09-17T16:56:31+00:00"
@@ -696,7 +702,9 @@
       "opinion": "매수",
       "opinionReason": "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "혼합주",
       "industry": "산업재, 장비·제조, 자동화",
       "updatedAt": "2026-09-17T16:56:36+00:00"
