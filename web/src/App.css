@@ -5871,12 +5871,13 @@
   }
 
   /* 모바일: 트레이딩 로그가 자체 세로 스크롤을 갖지 않고 페이지와 함께 세로로 흐르게 한다.
-     가로(넓은 표)만 표 안에서 스크롤하고, 세로 제스처는 페이지 스크롤로 넘겨 스크롤이 어색하지 않게 한다. */
+     가로(넓은 표)만 표 안에서 스크롤하고, 세로 제스처는 페이지 스크롤로 넘긴다.
+     overflow-y: hidden 이어야 가로 스크롤 + 종목명 sticky가 Safari에서도 유지된다. */
   .trading-log-scroll {
     height: auto;
     max-height: none;
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: hidden;
     touch-action: pan-x;
   }
 
@@ -6436,6 +6437,95 @@
     text-overflow: ellipsis;
   }
 
+  /* 모바일: 핀 토글과 무관하게 체크박스/번호 + 종목명을 가로 스크롤에서 고정한다. */
+  .home-pin-toggle {
+    display: none !important;
+  }
+
+  .watchlist-table.editable-home-table th:nth-child(1),
+  .watchlist-table.editable-home-table td:nth-child(1),
+  .holding-table.editable-home-table th:nth-child(1),
+  .holding-table.editable-home-table td:nth-child(1) {
+    position: sticky;
+    left: var(--home-select-left);
+    z-index: 3;
+    background: var(--sheet-bg);
+  }
+
+  .trading-log-table th:nth-child(1),
+  .trading-log-table td:nth-child(1),
+  .watchlist-table.readonly-home-table th:nth-child(1),
+  .watchlist-table.readonly-home-table td:nth-child(1),
+  .holding-table.readonly-home-table th:nth-child(1),
+  .holding-table.readonly-home-table td:nth-child(1),
+  .watchlist-table.editable-home-table th:nth-child(2),
+  .watchlist-table.editable-home-table td:nth-child(2),
+  .holding-table.editable-home-table th:nth-child(2),
+  .holding-table.editable-home-table td:nth-child(2) {
+    position: sticky;
+    left: var(--home-no-left);
+    z-index: 3;
+    background: var(--sheet-bg);
+  }
+
+  .trading-log-table th:nth-child(2),
+  .trading-log-table td:nth-child(2),
+  .watchlist-table.readonly-home-table th:nth-child(2),
+  .watchlist-table.readonly-home-table td:nth-child(2),
+  .holding-table.readonly-home-table th:nth-child(2),
+  .holding-table.readonly-home-table td:nth-child(2),
+  .watchlist-table.editable-home-table th:nth-child(3),
+  .watchlist-table.editable-home-table td:nth-child(3),
+  .holding-table.editable-home-table th:nth-child(3),
+  .holding-table.editable-home-table td:nth-child(3) {
+    position: sticky;
+    left: var(--home-name-left);
+    z-index: 3;
+    overflow: hidden;
+    background: var(--sheet-bg);
+    text-align: left;
+    text-overflow: ellipsis;
+    box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
+  }
+
+  .trading-log-table th:nth-child(2)::after,
+  .trading-log-table td:nth-child(2)::after,
+  .watchlist-table.readonly-home-table th:nth-child(2)::after,
+  .watchlist-table.readonly-home-table td:nth-child(2)::after,
+  .holding-table.readonly-home-table th:nth-child(2)::after,
+  .holding-table.readonly-home-table td:nth-child(2)::after,
+  .watchlist-table.editable-home-table th:nth-child(3)::after,
+  .watchlist-table.editable-home-table td:nth-child(3)::after,
+  .holding-table.editable-home-table th:nth-child(3)::after,
+  .holding-table.editable-home-table td:nth-child(3)::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    width: 2px;
+    background: #64748b;
+    content: '';
+    pointer-events: none;
+  }
+
+  .watchlist-table.editable-home-table thead th:nth-child(-n + 3),
+  .watchlist-table.readonly-home-table thead th:nth-child(-n + 2),
+  .trading-log-table thead th:nth-child(-n + 2),
+  .holding-table.editable-home-table thead th:nth-child(-n + 3),
+  .holding-table.readonly-home-table thead th:nth-child(-n + 2) {
+    z-index: 6;
+    background: var(--sheet-head) !important;
+  }
+
+  .watchlist-table.editable-home-table tbody tr:hover td:nth-child(-n + 3),
+  .watchlist-table.readonly-home-table tbody tr:hover td:nth-child(-n + 2),
+  .trading-log-table tbody tr:hover td:nth-child(-n + 2),
+  .holding-table.editable-home-table tbody tr:hover td:nth-child(-n + 3),
+  .holding-table.readonly-home-table tbody tr:hover td:nth-child(-n + 2) {
+    background: var(--sheet-hover);
+  }
+
   .watchlist-table.editable-home-table .checkbox-cell,
   .holding-table.editable-home-table .checkbox-cell {
     width: var(--home-select-width) !important;
@@ -6471,8 +6561,8 @@
 
   .home-name-header {
     box-sizing: border-box;
-    padding-right: 24px !important;
-    padding-left: 20px !important;
+    padding-right: 10px !important;
+    padding-left: 10px !important;
   }
 
   .pinned-home-table tbody tr:hover td {
