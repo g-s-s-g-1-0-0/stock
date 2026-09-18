@@ -1965,8 +1965,49 @@ function releaseVerticalScrollAtEdge(event: globalThis.WheelEvent) {
   window.scrollBy({ top: event.deltaY, behavior: 'auto' })
 }
 
+const horizontalTouchOrigin = new WeakMap<EventTarget, { x: number; y: number }>()
+
+function rememberHorizontalTouchStart(event: Event) {
+  const touchEvent = event as globalThis.TouchEvent
+  if (touchEvent.touches.length !== 1 || !event.currentTarget) return
+  const touch = touchEvent.touches[0]
+  horizontalTouchOrigin.set(event.currentTarget, { x: touch.clientX, y: touch.clientY })
+}
+
+function clearHorizontalTouchOrigin(event: Event) {
+  if (event.currentTarget) horizontalTouchOrigin.delete(event.currentTarget)
+}
+
+function lockHorizontalOverscroll(event: Event) {
+  const container = event.currentTarget
+  if (!(container instanceof HTMLElement)) return
+  const touchEvent = event as globalThis.TouchEvent
+  if (touchEvent.touches.length !== 1) return
+
+  const touch = touchEvent.touches[0]
+  const last = horizontalTouchOrigin.get(container)
+  if (!last) {
+    horizontalTouchOrigin.set(container, { x: touch.clientX, y: touch.clientY })
+    return
+  }
+
+  const dx = touch.clientX - last.x
+  const dy = touch.clientY - last.y
+  last.x = touch.clientX
+  last.y = touch.clientY
+
+  if (Math.abs(dx) <= Math.abs(dy) || dx === 0) return
+
+  const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth)
+  const atLeft = container.scrollLeft <= 0
+  const atRight = container.scrollLeft >= maxScrollLeft - 1
+  if ((atLeft && dx > 0) || (atRight && dx < 0)) {
+    touchEvent.preventDefault()
+  }
+}
+
 // React의 onWheel은 루트에 passive로 등록돼 내부 preventDefault가 무시되고 경고를 쏟는다.
-// 비-passive 네이티브 wheel 리스너를 직접 붙여 가장자리 스크롤 제어를 정상 동작시킨다.
+// 비-passive 네이티브 wheel/touchmove 리스너를 직접 붙여 가장자리 스크롤 제어를 정상 동작시킨다.
 function useEdgeScrollWheelRef(externalRef?: RefObject<HTMLDivElement | null>) {
   const cleanupRef = useRef<(() => void) | null>(null)
   return useCallback((node: HTMLDivElement | null) => {
@@ -1975,7 +2016,17 @@ function useEdgeScrollWheelRef(externalRef?: RefObject<HTMLDivElement | null>) {
     if (externalRef) externalRef.current = node
     if (node) {
       node.addEventListener('wheel', releaseVerticalScrollAtEdge, { passive: false })
-      cleanupRef.current = () => node.removeEventListener('wheel', releaseVerticalScrollAtEdge)
+      node.addEventListener('touchstart', rememberHorizontalTouchStart, { passive: true })
+      node.addEventListener('touchmove', lockHorizontalOverscroll, { passive: false })
+      node.addEventListener('touchend', clearHorizontalTouchOrigin, { passive: true })
+      node.addEventListener('touchcancel', clearHorizontalTouchOrigin, { passive: true })
+      cleanupRef.current = () => {
+        node.removeEventListener('wheel', releaseVerticalScrollAtEdge)
+        node.removeEventListener('touchstart', rememberHorizontalTouchStart)
+        node.removeEventListener('touchmove', lockHorizontalOverscroll)
+        node.removeEventListener('touchend', clearHorizontalTouchOrigin)
+        node.removeEventListener('touchcancel', clearHorizontalTouchOrigin)
+      }
     }
   }, [externalRef])
 }
@@ -5215,6 +5266,7 @@ function MarketEventsPage({
     return () => mediaQuery.removeEventListener('change', syncViewport)
   }, [])
 
+  const sheetWheelRef = useEdgeScrollWheelRef()
   const canEdit = isAdmin && !isMobileViewport
 
   return (
@@ -5238,7 +5290,7 @@ function MarketEventsPage({
         </div>
       )}
 
-      <div className="sheet-wrap market-events-sheet">
+      <div className="sheet-wrap market-events-sheet" ref={sheetWheelRef}>
         <table className="sheet-table market-events-table">
           <thead>
             <tr>
@@ -5467,6 +5519,7 @@ function MarketTrendsPage({
   const visibleMarketTrendRows = sortedMarketTrendRows.slice(pageStart, pageStart + pageSize)
   const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleMarketTrendRows.length, 0)
   const selectedRowCount = selectedRowKeys.length
+  const sheetWheelRef = useEdgeScrollWheelRef()
 
   return (
     <section className="panel value-analysis-panel market-trends-panel">
@@ -5491,7 +5544,7 @@ function MarketTrendsPage({
         </div>
       )}
 
-      <div className="sheet-wrap market-trends-sheet">
+      <div className="sheet-wrap market-trends-sheet" ref={sheetWheelRef}>
         <table className={`sheet-table market-trends-table ${isAdmin ? 'admin-market-trends-table' : ''}`}>
           <colgroup>
             {isAdmin && <col className="trend-select-col" />}
@@ -5817,6 +5870,7 @@ function AdminLogsPage({
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null)
   const [adminLogPage, setAdminLogPage] = useState(1)
   const [copiedLogId, setCopiedLogId] = useState<string | null>(null)
+  const sheetWheelRef = useEdgeScrollWheelRef()
   const activeTab = apiLogTabs.find((tab) => tab.key === activeLogTab) ?? apiLogTabs[0]
   const filteredLogs = logs.filter((log) => apiLogMatchesTab(log, activeLogTab))
   const totalLogPages = Math.max(1, Math.ceil(filteredLogs.length / ADMIN_LOGS_PAGE_SIZE))
@@ -5869,7 +5923,7 @@ function AdminLogsPage({
         <span>{activeTab.description}</span>
       </div>
 
-      <div className={`sheet-wrap admin-logs-sheet ${filteredLogs.length === 0 ? 'admin-logs-sheet-empty' : ''}`}>
+      <div className={`sheet-wrap admin-logs-sheet ${filteredLogs.length === 0 ? 'admin-logs-sheet-empty' : ''}`} ref={sheetWheelRef}>
         {filteredLogs.length === 0 ? (
           <div className="board-empty-state admin-log-empty-state">
             <strong>아직 이 작업의 실행 로그가 없습니다.</strong>

@@ -5811,7 +5811,7 @@
   .sheet-wrap {
     overflow: auto;
     overscroll-behavior: none;
-    -webkit-overflow-scrolling: touch;
+    -webkit-overflow-scrolling: auto;
     touch-action: pan-x pan-y;
   }
 
@@ -5913,6 +5913,12 @@
 }
 
 @media (max-width: 760px) {
+  html,
+  body,
+  #root {
+    overscroll-behavior-x: none;
+  }
+
   .pull-refresh-indicator {
     display: flex;
     align-items: center;
@@ -6246,20 +6252,24 @@
   }
 
   /* Phone scroll belongs to the page. Tables grow with their rows, while retaining
-     only the horizontal viewport required to inspect their wide columns. */
+     only the horizontal viewport required to inspect their wide columns.
+     Keep overscroll locked: iOS rubber-bands a nested overflow-x scroller at the
+     left/right edge and flashes the sheet background unless this stays none. */
   .sheet-wrap.trading-log-scroll,
   .watchlist-sheet,
   .holding-sheet,
   .value-analysis-sheet,
+  .technical-analysis-sheet,
   .market-events-sheet,
-  .market-trends-sheet {
+  .market-trends-sheet,
+  .admin-logs-sheet {
     flex: none;
     height: auto;
     max-height: none;
     overflow-x: auto;
     overflow-y: hidden;
-    overscroll-behavior: auto;
-    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
     touch-action: pan-x pan-y;
   }
 
