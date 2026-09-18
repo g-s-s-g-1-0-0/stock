@@ -6396,16 +6396,13 @@ function App() {
     const headers = Array.from(table?.querySelectorAll<HTMLTableCellElement>('thead th') ?? [])
     const width = (index: number, fallback: number) => Math.ceil(headers[index]?.getBoundingClientRect().width || fallback)
     const isEditable = table?.classList.contains('editable-home-table') ?? true
-    const noIndex = type === 'trading' ? 0 : isEditable ? 1 : 0
-    const nameIndex = type === 'trading' ? 1 : type === 'watchlist' || type === 'holding' ? (isEditable ? 2 : 1) : (isEditable ? 3 : 2)
-    const selectWidth = type === 'trading' ? 0 : isEditable ? width(0, 40) : 0
-    const noWidth = width(noIndex, 48)
+    const nameIndex = type === 'trading' ? 1 : isEditable ? 2 : 1
     const nameWidth = width(nameIndex, 220)
     const vars: Record<string, string> = {
-      '--home-select-width': `${selectWidth}px`,
-      '--home-no-left': `${selectWidth}px`,
-      '--home-no-width': `${noWidth}px`,
-      '--home-name-left': `${selectWidth + noWidth}px`,
+      '--home-select-width': '0px',
+      '--home-no-left': '0px',
+      '--home-no-width': '0px',
+      '--home-name-left': '0px',
       '--home-name-width': `${nameWidth}px`,
     }
 
