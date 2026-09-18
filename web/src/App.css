@@ -5870,15 +5870,20 @@
     touch-action: pan-x pan-y;
   }
 
-  /* 모바일: 트레이딩 로그가 자체 세로 스크롤을 갖지 않고 페이지와 함께 세로로 흐르게 한다.
-     가로(넓은 표)만 표 안에서 스크롤하고, 세로 제스처는 페이지 스크롤로 넘긴다.
-     overflow-y: hidden 이어야 가로 스크롤 + 종목명 sticky가 Safari에서도 유지된다. */
+  /* 모바일: 트레이딩 로그는 페이지와 같이 세로로 흐르고, 가로는 표 안에서만 스크롤한다.
+     overflow-y: hidden은 iOS에서 열 고정을 깨므로 auto를 쓴다. 높이가 auto면 세로 스크롤바는 생기지 않는다. */
   .trading-log-scroll {
     height: auto;
     max-height: none;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: auto;
     touch-action: pan-x;
+  }
+
+  .trading-log-scroll,
+  .watchlist-sheet,
+  .holding-sheet {
+    -webkit-overflow-scrolling: auto;
   }
 
   .watchlist-sheet,
@@ -6360,13 +6365,13 @@
   .holding-table.readonly-home-table,
   .trading-log-table {
     --home-no-left: 0px;
-    --home-name-left: 48px;
+    --home-name-left: 0px;
   }
 
   .watchlist-table.editable-home-table,
   .holding-table.editable-home-table {
     --home-no-left: 40px;
-    --home-name-left: 88px;
+    --home-name-left: 0px;
   }
 
   .watchlist-table.editable-home-table th:nth-child(1),
@@ -6437,67 +6442,55 @@
     text-overflow: ellipsis;
   }
 
-  /* 모바일: 핀 토글과 무관하게 체크박스/번호 + 종목명을 가로 스크롤에서 고정한다. */
+  /* 모바일: No 열을 숨겨 종목명을 첫 고정열로 만든다. iOS는 2번째 열 sticky가 자주 무시된다. */
   .home-pin-toggle {
     display: none !important;
   }
 
-  .watchlist-table.editable-home-table th:nth-child(1),
-  .watchlist-table.editable-home-table td:nth-child(1),
-  .holding-table.editable-home-table th:nth-child(1),
-  .holding-table.editable-home-table td:nth-child(1) {
-    position: sticky;
-    left: var(--home-select-left);
-    z-index: 3;
-    background: var(--sheet-bg);
+  .trading-log-table thead th:first-child,
+  .watchlist-table.readonly-home-table thead th:first-child,
+  .holding-table.readonly-home-table thead th:first-child,
+  .watchlist-table.editable-home-table thead th:nth-child(2),
+  .holding-table.editable-home-table thead th:nth-child(2),
+  .trading-log-table .numbering-cell,
+  .watchlist-table .numbering-cell,
+  .holding-table .numbering-cell {
+    display: none;
   }
 
-  .trading-log-table th:nth-child(1),
-  .trading-log-table td:nth-child(1),
-  .watchlist-table.readonly-home-table th:nth-child(1),
-  .watchlist-table.readonly-home-table td:nth-child(1),
-  .holding-table.readonly-home-table th:nth-child(1),
-  .holding-table.readonly-home-table td:nth-child(1),
-  .watchlist-table.editable-home-table th:nth-child(2),
-  .watchlist-table.editable-home-table td:nth-child(2),
-  .holding-table.editable-home-table th:nth-child(2),
-  .holding-table.editable-home-table td:nth-child(2) {
+  .trading-log-table .home-name-header,
+  .trading-log-table .name-data-cell,
+  .watchlist-table .home-name-header,
+  .watchlist-table .name-data-cell,
+  .holding-table .home-name-header,
+  .holding-table .name-data-cell {
     position: sticky;
-    left: var(--home-no-left);
-    z-index: 3;
-    background: var(--sheet-bg);
-  }
-
-  .trading-log-table th:nth-child(2),
-  .trading-log-table td:nth-child(2),
-  .watchlist-table.readonly-home-table th:nth-child(2),
-  .watchlist-table.readonly-home-table td:nth-child(2),
-  .holding-table.readonly-home-table th:nth-child(2),
-  .holding-table.readonly-home-table td:nth-child(2),
-  .watchlist-table.editable-home-table th:nth-child(3),
-  .watchlist-table.editable-home-table td:nth-child(3),
-  .holding-table.editable-home-table th:nth-child(3),
-  .holding-table.editable-home-table td:nth-child(3) {
-    position: sticky;
-    left: var(--home-name-left);
-    z-index: 3;
+    left: 0;
+    z-index: 4;
+    width: var(--home-name-width);
+    min-width: var(--home-name-width);
+    max-width: var(--home-name-width);
     overflow: hidden;
     background: var(--sheet-bg);
+    background-clip: padding-box;
     text-align: left;
     text-overflow: ellipsis;
     box-shadow: 8px 0 12px rgba(15, 23, 42, 0.08);
   }
 
-  .trading-log-table th:nth-child(2)::after,
-  .trading-log-table td:nth-child(2)::after,
-  .watchlist-table.readonly-home-table th:nth-child(2)::after,
-  .watchlist-table.readonly-home-table td:nth-child(2)::after,
-  .holding-table.readonly-home-table th:nth-child(2)::after,
-  .holding-table.readonly-home-table td:nth-child(2)::after,
-  .watchlist-table.editable-home-table th:nth-child(3)::after,
-  .watchlist-table.editable-home-table td:nth-child(3)::after,
-  .holding-table.editable-home-table th:nth-child(3)::after,
-  .holding-table.editable-home-table td:nth-child(3)::after {
+  .trading-log-table thead .home-name-header,
+  .watchlist-table thead .home-name-header,
+  .holding-table thead .home-name-header {
+    z-index: 7;
+    background: var(--sheet-head) !important;
+  }
+
+  .trading-log-table .home-name-header::after,
+  .trading-log-table .name-data-cell::after,
+  .watchlist-table .home-name-header::after,
+  .watchlist-table .name-data-cell::after,
+  .holding-table .home-name-header::after,
+  .holding-table .name-data-cell::after {
     position: absolute;
     top: 0;
     right: 0;
@@ -6509,20 +6502,9 @@
     pointer-events: none;
   }
 
-  .watchlist-table.editable-home-table thead th:nth-child(-n + 3),
-  .watchlist-table.readonly-home-table thead th:nth-child(-n + 2),
-  .trading-log-table thead th:nth-child(-n + 2),
-  .holding-table.editable-home-table thead th:nth-child(-n + 3),
-  .holding-table.readonly-home-table thead th:nth-child(-n + 2) {
-    z-index: 6;
-    background: var(--sheet-head) !important;
-  }
-
-  .watchlist-table.editable-home-table tbody tr:hover td:nth-child(-n + 3),
-  .watchlist-table.readonly-home-table tbody tr:hover td:nth-child(-n + 2),
-  .trading-log-table tbody tr:hover td:nth-child(-n + 2),
-  .holding-table.editable-home-table tbody tr:hover td:nth-child(-n + 3),
-  .holding-table.readonly-home-table tbody tr:hover td:nth-child(-n + 2) {
+  .trading-log-table tbody tr:hover .name-data-cell,
+  .watchlist-table tbody tr:hover .name-data-cell,
+  .holding-table tbody tr:hover .name-data-cell {
     background: var(--sheet-hover);
   }
 
@@ -6577,6 +6559,18 @@
   .pinned-home-table th:nth-child(-n + 4),
   .pinned-home-table td:nth-child(-n + 4) {
     z-index: 3;
+  }
+
+  .trading-log-table .home-name-header,
+  .watchlist-table .home-name-header,
+  .holding-table .home-name-header {
+    z-index: 7;
+  }
+
+  .trading-log-table .name-data-cell,
+  .watchlist-table .name-data-cell,
+  .holding-table .name-data-cell {
+    z-index: 4;
   }
 
   .investment-profile-header {
