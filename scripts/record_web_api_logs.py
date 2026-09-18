@@ -884,19 +884,55 @@ def suppress_offlist_buy_signal(stock: dict[str, Any], technical_row: dict[str, 
     return changed
 
 
+def is_event_watch_reason(reason: Any) -> bool:
+    return str(reason or "").strip().startswith("이벤트 기간 관망")
+
+
+def event_watch_label(reason: Any) -> str:
+    text = str(reason or "").strip()
+    prefix = "이벤트 기간 관망"
+    if not text.startswith(prefix):
+        return "이벤트"
+    rest = text[len(prefix):].strip()
+    if rest.startswith("(") and rest.endswith(")"):
+        return rest[1:-1].strip() or "이벤트"
+    return rest.strip("() ") or "이벤트"
+
+
+def held_strategy_label(stock: dict[str, Any], technical_row: dict[str, Any]) -> str:
+    if isinstance(stock.get("strategies"), list):
+        for value in stock["strategies"]:
+            text = str(value or "").strip()
+            if text:
+                return text
+    if isinstance(technical_row, dict):
+        for key in ("entryStrategy", "진입 전략"):
+            text = str(technical_row.get(key) or "").strip()
+            if text and text != "-":
+                return text
+        for raw in str(technical_row.get("entrySignalCodes") or "").split(","):
+            code = normalize_strategy_code(raw)
+            if code:
+                return strategy_display_name(code)
+    return "매수 조건"
+
+
 def block_held_public_buy_signal(
     stock: dict[str, Any],
     technical_row: dict[str, Any],
     previous_opinion: str = "",
+    previous_reason: str = "",
 ) -> bool:
     """추가 슬롯이 안 생겼을 때 공개 매수 신호를 정리한다.
 
     직전 의견이 매수면 아직 매수 창이 열린 상태다. 추가매수 조건만 미충족이므로
     의견은 매수로 두고 진입 코드만 비운다. 직전 의견이 관망이면 매수 타이밍을
     이미 놓친 상태다. 추가매수 조건이 슬롯을 만들기 전에는 관망을 유지한다.
+    예외는 이벤트 기간 관망이다. 이벤트가 끝나고 매수 조건이 다시 맞으면 의견을
+    매수로 복구해 알림이 나갈 수 있게 한다. 추가 슬롯은 만들지 않는다.
     """
     changed = False
-    if str(previous_opinion or "").strip() == "관망":
+    if str(previous_opinion or "").strip() == "관망" and not is_event_watch_reason(previous_reason):
         reason = "보유 중 — 추가매수 조건 미충족"
         if stock.get("opinion") != "관망":
             stock["opinion"] = "관망"
@@ -921,7 +957,13 @@ def block_held_public_buy_signal(
                     changed = True
         return changed
 
-    reason = "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류"
+    if is_event_watch_reason(previous_reason):
+        reason = (
+            f"이벤트 종료 ({event_watch_label(previous_reason)}) 후 매수 조건 재충족 — "
+            f"{held_strategy_label(stock, technical_row)} (추가 슬롯 없음, 보유 유지)"
+        )
+    else:
+        reason = "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류"
     if stock.get("strategies") != []:
         stock["strategies"] = []
         changed = True
@@ -1498,7 +1540,9 @@ def run_trade_engine(
             continue
         current_price = parse_price(stock.get("currentPrice") or tech_value(row, "현재가"))
         open_for_ticker_all = current_open_by_ticker.get(ticker, [])
-        previous_opinion = str(previous_stocks.get(ticker, {}).get("opinion") or "").strip()
+        previous_stock = previous_stocks.get(ticker, {})
+        previous_opinion = str(previous_stock.get("opinion") or "").strip()
+        previous_reason = str(previous_stock.get("opinionReason") or "").strip()
         if current_opinion != "매수" or nasdaq_peak_alert:
             continue
         ticker_appended = False
@@ -1603,7 +1647,9 @@ def run_trade_engine(
                 appended += 1
                 ticker_appended = True
         if open_for_ticker_all and not ticker_appended and mutate_public_state:
-            signal_state_changed = block_held_public_buy_signal(stock, row, previous_opinion) or signal_state_changed
+            signal_state_changed = (
+                block_held_public_buy_signal(stock, row, previous_opinion, previous_reason) or signal_state_changed
+            )
 
     # Drop retired A/C/D/E/F/G/H rows from the live log; keep 1/2/3/4 (+ migrated B).
     cleaned: list[dict[str, Any]] = []

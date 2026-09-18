@@ -1242,6 +1242,66 @@ def test_held_watch_does_not_return_to_buy_without_additional_slot(monkeypatch, 
     assert technical["BE"]["entrySignalCodes"] == ""
 
 
+def test_event_watch_restore_returns_to_buy_without_additional_slot(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["STX"]})
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "slotId": "STX_swing_3_20260915_1",
+                "ticker": "STX",
+                "strategy": "3. 정상장 볼린저 워시아웃",
+                "buyDate": "2026.09.15",
+                "buyPrice": "$771.00",
+                "currentPrice": "$792.70",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "returnPct": 0,
+                "holdingDays": "-",
+                "status": "보유 중",
+            }
+        ]
+    }), encoding="utf-8")
+
+    stock = {
+        "ticker": "STX",
+        "name": "Seagate",
+        "market": "US",
+        "currentPrice": "$792.70",
+        "opinion": "매수",
+        "strategies": ["3. 정상장 볼린저 워시아웃"],
+    }
+    technical = {
+        "STX": {
+            "opinion": "매수",
+            "entrySignalCodes": "3",
+            "entryStrategy": "3. 정상장 볼린저 워시아웃",
+            "현재가": "$792.70",
+        }
+    }
+
+    changed = logs.update_trade_logs(
+        [stock],
+        {"STX": {"opinion": "관망", "opinionReason": "이벤트 기간 관망 (금리 발표)"}},
+        technical,
+        {"peakTriggered": False},
+    )
+
+    updated = logs.load_json(cache_path, {})
+    stx_rows = [row for row in updated["rows"] if row["ticker"] == "STX"]
+    assert len(stx_rows) == 1
+    assert updated["meta"]["appendedOpenTrades"] == 0
+    assert changed is True
+    assert stock["opinion"] == "매수"
+    assert "이벤트 종료" in str(stock.get("opinionReason") or "")
+    assert "금리 발표" in str(stock.get("opinionReason") or "")
+    assert "정상장 볼린저 워시아웃" in str(stock.get("opinionReason") or "")
+    assert stock["strategies"] == []
+    assert technical["STX"]["opinion"] == "매수"
+    assert technical["STX"]["entrySignalCodes"] == ""
+
+
 def test_offlist_held_trade_still_liquidates_on_exit(monkeypatch, tmp_path):
     # 관심종목 밖 보유 종목도 청산 조건이 충족되면 정상적으로 매도 처리된다(나스닥 고점 강제 청산).
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)

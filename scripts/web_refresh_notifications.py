@@ -387,24 +387,37 @@ def opinion_changes(
         }
         if new_opinion == "매수":
             added_trade = added_for_ticker[0] if added_for_ticker else None
-            if any(is_open_trade(row) for row in previous_ticker_trades):
-                if not added_trade:
-                    continue
+            holding_open = any(is_open_trade(row) for row in previous_ticker_trades)
+            if holding_open and added_trade:
                 reference_trade = added_trade or next((row for row in previous_ticker_trades if is_open_trade(row)), None)
                 change["fromLabel"] = "매수(보유중)"
                 change["toLabel"] = "추가 매수"
                 change["reason"] = buy_reason_for_trade(reference_trade or {}, current_stock, technical_row)
-            change["recommendedSellPrice"] = recommended_sell_price_for_trade(
-                added_trade or {},
-                current_stock,
-                technical_row,
-            )
-            change["entryNote"] = buy_entry_note(
-                old_opinion=old_opinion,
-                previous_trade_rows=previous_ticker_trades,
-                current_trade_rows=current_ticker_trades,
-                added_trades=added_for_ticker,
-            )
+                change["recommendedSellPrice"] = recommended_sell_price_for_trade(
+                    added_trade,
+                    current_stock,
+                    technical_row,
+                )
+                change["entryNote"] = buy_entry_note(
+                    old_opinion=old_opinion,
+                    previous_trade_rows=previous_ticker_trades,
+                    current_trade_rows=current_ticker_trades,
+                    added_trades=added_for_ticker,
+                )
+            elif holding_open:
+                change["entryNote"] = "보유 유지 — 추가 슬롯 없음"
+            else:
+                change["recommendedSellPrice"] = recommended_sell_price_for_trade(
+                    added_trade or {},
+                    current_stock,
+                    technical_row,
+                )
+                change["entryNote"] = buy_entry_note(
+                    old_opinion=old_opinion,
+                    previous_trade_rows=previous_ticker_trades,
+                    current_trade_rows=current_ticker_trades,
+                    added_trades=added_for_ticker,
+                )
             buy_transition_tickers.add(normalized_ticker)
         changes.append(change)
 
@@ -1320,6 +1333,17 @@ def sell_reason(current_stock: dict[str, Any], technical_row: dict[str, Any]) ->
     )
 
 
+def event_watch_name(reason: Any) -> str:
+    text = str(reason or "").strip()
+    prefix = "이벤트 기간 관망"
+    if not text.startswith(prefix):
+        return ""
+    rest = text[len(prefix):].strip()
+    if rest.startswith("(") and rest.endswith(")"):
+        return rest[1:-1].strip() or "이벤트"
+    return rest.strip("() ") or "이벤트"
+
+
 def concise_opinion_reason(
     old_opinion: str,
     new_opinion: str,
@@ -1328,7 +1352,14 @@ def concise_opinion_reason(
     technical_row: dict[str, Any],
 ) -> str:
     if new_opinion == "매수":
-        return buy_reason(current_stock, technical_row)
+        explicit_reason = first_text(current_stock.get("opinionReason"), technical_row.get("opinionReason"))
+        if explicit_reason.startswith("이벤트 종료"):
+            return explicit_reason
+        reason = buy_reason(current_stock, technical_row)
+        event_name = event_watch_name(previous_stock.get("opinionReason"))
+        if event_name:
+            reason = f"이벤트 종료 ({event_name}) 후 매수 조건 재충족 — {reason}"
+        return reason
     if new_opinion == "매도":
         return sell_reason(current_stock, technical_row)
     if new_opinion == "관망":

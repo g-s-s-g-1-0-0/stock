@@ -759,7 +759,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         # 전략 1/2는 고정 목표 수익률이 없어 권장 매도가를 계산하지 않는다.
         self.assertEqual("-", changes[0]["recommendedSellPrice"])
 
-    def test_opinion_changes_skips_held_buy_signal_without_added_trade(self) -> None:
+    def test_opinion_changes_emits_held_watch_restore_to_buy_without_added_trade(self) -> None:
         with TemporaryDirectory() as temp_dir:
             previous = Path(temp_dir) / "previous.json"
             current = Path(temp_dir) / "current.json"
@@ -792,7 +792,73 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
             changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
 
-        self.assertEqual([], changes)
+        self.assertEqual(1, len(changes))
+        self.assertEqual("관망", changes[0]["from"])
+        self.assertEqual("매수", changes[0]["to"])
+        self.assertNotEqual("추가 매수", changes[0].get("toLabel"))
+        self.assertEqual("보유 유지 — 추가 슬롯 없음", changes[0]["entryNote"])
+
+    def test_opinion_changes_explains_event_watch_restore_to_buy(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            previous = Path(temp_dir) / "previous.json"
+            current = Path(temp_dir) / "current.json"
+            technical = Path(temp_dir) / "technical.json"
+            previous_trades = Path(temp_dir) / "trade-logs.before-refresh.json"
+            current_trades = Path(temp_dir) / "trade-logs.json"
+
+            previous.write_text(
+                json.dumps({"rows": [{
+                    "ticker": "STX",
+                    "name": "Seagate",
+                    "opinion": "관망",
+                    "opinionReason": "이벤트 기간 관망 (금리 발표)",
+                }]}),
+                encoding="utf-8",
+            )
+            current.write_text(
+                json.dumps({"rows": [{
+                    "ticker": "STX",
+                    "name": "Seagate",
+                    "opinion": "매수",
+                    "currentPrice": "$792.70",
+                    "opinionReason": "이벤트 종료 (금리 발표) 후 매수 조건 재충족 — 3. 정상장 볼린저 워시아웃 (추가 슬롯 없음, 보유 유지)",
+                    "strategies": [],
+                }]}),
+                encoding="utf-8",
+            )
+            technical.write_text(
+                json.dumps({"rows": {"STX": {
+                    "opinion": "매수",
+                    "opinionReason": "이벤트 종료 (금리 발표) 후 매수 조건 재충족 — 3. 정상장 볼린저 워시아웃 (추가 슬롯 없음, 보유 유지)",
+                    "entrySignalCodes": "",
+                    "현재가": "$792.70",
+                    "RSI (D)": "42.10",
+                    "볼린저밴드 %B (저가)": "8.20",
+                    "200일 이동평균선": "210.00",
+                }}}),
+                encoding="utf-8",
+            )
+            open_trade = {
+                "slotId": "STX_swing_3_20260915_1",
+                "ticker": "STX",
+                "strategy": "3. 정상장 볼린저 워시아웃",
+                "buyDate": "2026.09.15",
+                "buyPrice": "$771.00",
+                "status": "보유 중",
+            }
+            previous_trades.write_text(json.dumps({"rows": [open_trade]}), encoding="utf-8")
+            current_trades.write_text(json.dumps({"rows": [open_trade]}), encoding="utf-8")
+
+            changes = self.notifications.opinion_changes(previous, current, technical, previous_trades, current_trades)
+
+        self.assertEqual(1, len(changes))
+        self.assertEqual("관망", changes[0]["from"])
+        self.assertEqual("매수", changes[0]["to"])
+        self.assertNotEqual("추가 매수", changes[0].get("toLabel"))
+        self.assertIn("이벤트 종료", changes[0]["reason"])
+        self.assertIn("금리 발표", changes[0]["reason"])
+        self.assertIn("정상장 볼린저 워시아웃", changes[0]["reason"])
+        self.assertEqual("보유 유지 — 추가 슬롯 없음", changes[0]["entryNote"])
 
     def test_opinion_changes_emits_held_buy_to_watch(self) -> None:
         with TemporaryDirectory() as temp_dir:
