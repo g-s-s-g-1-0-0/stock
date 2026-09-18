@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-09-18T00:56:13+00:00",
-    "lastSuccessfulRun": "2026-09-18T00:56:13+00:00",
+    "updatedAt": "2026-09-18T02:56:26+00:00",
+    "lastSuccessfulRun": "2026-09-18T02:56:26+00:00",
     "failedReason": null
   },
   "rows": [
@@ -19535,7 +19535,7 @@
       "name": "Tradr 2X Short AAOI Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "AAP",
@@ -19556,7 +19556,7 @@
       "name": "Direxion Daily AAPL Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "AAPE",
@@ -21698,7 +21698,7 @@
       "name": "Direxion Daily AI and Big Data Bear 2X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "AIBU",
@@ -21943,7 +21943,7 @@
       "name": "MicroSectors -3? Short Artificial Intelligence (AI) ETNs",
       "market": "US",
       "category": "성장주",
-      "industry": "소프트웨어·클라우드, 보안, AI 플랫폼"
+      "industry": "인버스 ETN"
     },
     {
       "ticker": "AIQU",
@@ -22902,7 +22902,7 @@
       "name": "Direxion Daily AMD Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "AMDG",
@@ -23294,7 +23294,7 @@
       "name": "Direxion Daily AMZN Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "AMZE",
@@ -23322,7 +23322,7 @@
       "name": "Tradr 2X Short AMZN Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "AMZP",
@@ -23854,7 +23854,7 @@
       "name": "Tradr 2X Short APLD Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "APMC",
@@ -25142,7 +25142,7 @@
       "name": "Defiance Daily Target 2X Short ASTS ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "ASTS",
@@ -26094,7 +26094,7 @@
       "name": "Direxion Daily AVGO Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "AVSC",
@@ -26388,7 +26388,7 @@
       "name": "Tradr 2X Short AXTI Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "AXTU",
@@ -27984,7 +27984,7 @@
       "name": "MicroSectors FANG & Innovation -3x Inverse Leveraged ETN",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "BESF",
@@ -28061,7 +28061,7 @@
       "name": "Tradr 2X Short BE Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "BF.A",
@@ -28873,7 +28873,7 @@
       "name": "ProShares UltraShort Nasdaq Biotechnology",
       "market": "US",
       "category": "성장주",
-      "industry": "바이오, 제약·헬스케어"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "BIT",
@@ -28908,7 +28908,7 @@
       "name": "ProShares Short Bitcoin ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "BITO",
@@ -29748,7 +29748,7 @@
       "name": "Defiance Daily Target 2X Short BMNR ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "BMO",
@@ -29965,7 +29965,7 @@
       "name": "MicroSectors U.S. Big Banks -3 Inverse Leveraged ETNs due February 17, 2045",
       "market": "US",
       "category": "가치주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "BNKK",
@@ -30833,7 +30833,7 @@
       "name": "MicroSectors -3x Short Brazil ETNs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "BRZE",
@@ -31393,7 +31393,7 @@
       "name": "T-Rex 2X Inverse Bitcoin Daily Target ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "BTDL",
@@ -32184,7 +32184,7 @@
       "name": "ProShares UltraShort MSCI Brazil Capped",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "BZUN",
@@ -32618,7 +32618,7 @@
       "name": "MAX Auto Industry -3x Inverse Leveraged ETN",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "CARE",
@@ -32996,7 +32996,7 @@
       "name": "Tradr 2X Short CBRS Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "CBSE",
@@ -35152,7 +35152,7 @@
       "name": "ProShares Long Online/Short Stores ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "CLLS",
@@ -36048,7 +36048,7 @@
       "name": "Tradr 2X Short COHR Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "COHR",
@@ -36216,7 +36216,7 @@
       "name": "GraniteShares 2x Short COIN Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "CONL",
@@ -36356,7 +36356,7 @@
       "name": "T-REX 2X Inverse CRWV Daily Target ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "CORN",
@@ -37028,7 +37028,7 @@
       "name": "T-REX 2X Inverse CRCL Daily Target ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "CRCG",
@@ -37329,7 +37329,7 @@
       "name": "YieldMax Short TSLA Option Income Strategy ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "CRSP",
@@ -37525,7 +37525,7 @@
       "name": "Direxion Daily CSCO Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "CSD",
@@ -38743,7 +38743,7 @@
       "name": "Defiance Daily Target 2X Short AMD ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "DAN",
@@ -40164,7 +40164,7 @@
       "name": "DB Gold Short ETN due February 15, 2038",
       "market": "US",
       "category": "성장주",
-      "industry": "2차전지, 전기차 배터리, 배터리 소재"
+      "industry": "인버스 ETN"
     },
     {
       "ticker": "DH",
@@ -40374,7 +40374,7 @@
       "name": "YieldMax Short NVDA Option Income Strategy ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "DIS",
@@ -40724,7 +40724,7 @@
       "name": "DoubleLine Ultrashort Income ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "DLX",
@@ -41018,7 +41018,7 @@
       "name": "ProShares Short Dow30",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "DOGG",
@@ -41291,7 +41291,7 @@
       "name": "Direxion Daily S&P Oil & Gas Exp. & Prod. Bear 2X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "DRIV",
@@ -41396,7 +41396,7 @@
       "name": "Direxion Daily Real Estate Bear 3X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "DRVN",
@@ -41515,7 +41515,7 @@
       "name": "Leverage Shares 1X Short SPCX Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "DSPY",
@@ -41746,7 +41746,7 @@
       "name": "ProShares UltraShort Energy",
       "market": "US",
       "category": "성장주",
-      "industry": "AI 인프라, 데이터센터 전력·냉각, 광통신"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "DUHP",
@@ -41823,7 +41823,7 @@
       "name": "MicroSectors Gold -3X Inverse Leveraged ETNs due January 29, 2043",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "DUNK",
@@ -41879,7 +41879,7 @@
       "name": "Dimensional Ultrashort Fixed Income ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "DUSG",
@@ -41900,7 +41900,7 @@
       "name": "Direxion Daily Gold Miners Index Bear 2X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "DUTY",
@@ -42061,7 +42061,7 @@
       "name": "AdvisorShares Dorsey Wright Short ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "DWSN",
@@ -42124,7 +42124,7 @@
       "name": "ProShares UltraShort Dow30",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "DXF",
@@ -42299,7 +42299,7 @@
       "name": "DB Gold Double Short ETN due February 15, 2038",
       "market": "US",
       "category": "성장주",
-      "industry": "2차전지, 전기차 배터리, 배터리 소재"
+      "industry": "인버스 ETN"
     },
     {
       "ticker": "E",
@@ -42831,7 +42831,7 @@
       "name": "Direxion Emerging Markets Bear 3X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "EE",
@@ -42943,7 +42943,7 @@
       "name": "ProShares UltraShort MSCI Emerging Markets",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "EFA",
@@ -43104,7 +43104,7 @@
       "name": "ProShares UltraShort MSCI EAFE",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "EFV",
@@ -43132,7 +43132,7 @@
       "name": "ProShares Short MSCI EAFE",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "EG",
@@ -44525,7 +44525,7 @@
       "name": "ProShares UltraShort FTSE Europe ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "EQ",
@@ -44749,7 +44749,7 @@
       "name": "Direxion Daily Energy Bear 2X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "ES",
@@ -45064,7 +45064,7 @@
       "name": "ProShares UltraShort Ether ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "ETHE",
@@ -45288,14 +45288,14 @@
       "name": "ProShares Short MSCI Emerging Markets",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "EUO",
       "name": "ProShares UltraShort Euro",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "EURK",
@@ -45820,7 +45820,7 @@
       "name": "ProShares UltraShort MSCI Japan",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "EWW",
@@ -46310,7 +46310,7 @@
       "name": "Direxion Financial Bear 3X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "FB",
@@ -47752,7 +47752,7 @@
       "name": "YieldMax Short COIN Option Income Strategy ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "FIAX",
@@ -48676,7 +48676,7 @@
       "name": "MicroSectors Travel -3x Inverse Leveraged ETN",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "FLYE",
@@ -49033,7 +49033,7 @@
       "name": "MicroSectors FANG Index -3X Inverse Leveraged ETNs due January 8, 2038",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "FNGG",
@@ -50461,7 +50461,7 @@
       "name": "Federated Hermes Ultrashort Bond ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "FUSE",
@@ -50783,7 +50783,7 @@
       "name": "ProShares UltraShort FTSE China 50",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "FXR",
@@ -51462,7 +51462,7 @@
       "name": "MicroSectors Gold Miners -3X Inverse Leveraged ETNs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "GDXJ",
@@ -51917,7 +51917,7 @@
       "name": "Direxion Daily GOOGL Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "GGM",
@@ -52540,7 +52540,7 @@
       "name": "ProShares UltraShort Gold",
       "market": "US",
       "category": "성장주",
-      "industry": "2차전지, 전기차 배터리, 배터리 소재"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "GLND",
@@ -55158,7 +55158,7 @@
       "name": "Ranger Equity Bear Bear ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "HDL",
@@ -55592,7 +55592,7 @@
       "name": "Direxion Daily S&P 500 High Beta Bear 3X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "HIDE",
@@ -57090,7 +57090,7 @@
       "name": "MicroSectors -3x Short High Yield Corporate Bond (HYG) ETNs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "HYGH",
@@ -60100,7 +60100,7 @@
       "name": "Defiance Daily Target 2x Short IONQ ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "IOO",
@@ -60590,7 +60590,7 @@
       "name": "Tradr 2X Short IREN Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "IRHO",
@@ -62011,7 +62011,7 @@
       "name": "Direxion Daily Junior Gold Miners Index Bear 2X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "JDVI",
@@ -62116,7 +62116,7 @@
       "name": "MAX Airlines -3X Inverse Leveraged ETNs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "JETS",
@@ -62795,7 +62795,7 @@
       "name": "MicroSectors -3x Short Japan ETNs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "JPNU",
@@ -64328,7 +64328,7 @@
       "name": "ProShares UltraShort Bloomberg Natural Gas",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "KOMP",
@@ -65014,7 +65014,7 @@
       "name": "Direxion Daily S&P Biotech Bear 3X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "LABT",
@@ -66274,7 +66274,7 @@
       "name": "Tradr 2X Short LITE Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "LIVE",
@@ -66617,7 +66617,7 @@
       "name": "Direxion Daily SpaceX Bear 2X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "LOFF",
@@ -66897,7 +66897,7 @@
       "name": "MicroSectors -3x Short Investment Grade Corporate Bond (LQD) ETNs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "LQDH",
@@ -67107,7 +67107,7 @@
       "name": "Harbor Long-Short Equity ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "LSF",
@@ -68969,7 +68969,7 @@
       "name": "Direxion Daily META Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "METG",
@@ -68990,7 +68990,7 @@
       "name": "Tradr 2X Short META Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "METU",
@@ -71139,7 +71139,7 @@
       "name": "Direxion Daily MSFT Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "MSFL",
@@ -71419,7 +71419,7 @@
       "name": "T-Rex 2X Inverse MSTR Daily Target ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "MT",
@@ -71699,7 +71699,7 @@
       "name": "Direxion Daily MU Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "MUFG",
@@ -71888,7 +71888,7 @@
       "name": "Defiance Daily Target 2X Short MU ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "MUZE",
@@ -72350,7 +72350,7 @@
       "name": "ProShares Short MidCap400",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "MZTI",
@@ -72371,7 +72371,7 @@
       "name": "ProShares UltraShort MidCap400",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "NA",
@@ -72728,7 +72728,7 @@
       "name": "Tradr 2X Short NBIS Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "NBJP",
@@ -73484,7 +73484,7 @@
       "name": "Direxion Daily NFLX Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "NG",
@@ -74534,7 +74534,7 @@
       "name": "MicroSectors U.S. Big Oil -3 Inverse Leveraged ETNs due February 17, 2045",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "NRGU",
@@ -75297,7 +75297,7 @@
       "name": "GraniteShares 2x Short NVDA Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "NVDA",
@@ -75318,7 +75318,7 @@
       "name": "Direxion Daily NVDA Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "NVDG",
@@ -75339,14 +75339,14 @@
       "name": "T-Rex 2X Inverse NVIDIA Daily Target ETF",
       "market": "US",
       "category": "성장주",
-      "industry": "반도체, AI GPU, 데이터센터, CUDA"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "NVDS",
       "name": "Tradr 1.5X Short NVDA Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "NVDU",
@@ -76627,7 +76627,7 @@
       "name": "MicroSectors Oil & Gas Exp. & Prod. -3x Inverse Leveraged ETN",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "OILK",
@@ -77439,7 +77439,7 @@
       "name": "Direxion Daily ORCL Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "ORCU",
@@ -77460,7 +77460,7 @@
       "name": "Tradr 2X Short ORCL Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "ORGO",
@@ -78279,7 +78279,7 @@
       "name": "Direxion Daily PANW Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "PALI",
@@ -80561,7 +80561,7 @@
       "name": "Direxion Daily PLTR Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "PLTG",
@@ -80631,7 +80631,7 @@
       "name": "Defiance Daily Target 2x Short PLTR ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "PLU",
@@ -82227,7 +82227,7 @@
       "name": "ProShares Short QQQ",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "PSQA",
@@ -82276,7 +82276,7 @@
       "name": "ProShares UltraShort Lehman 7-10 Year Treasury",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "PSTL",
@@ -82983,7 +82983,7 @@
       "name": "TrueShares Quarterly Bear Hedge ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "QBF",
@@ -83074,7 +83074,7 @@
       "name": "Defiance Daily Target 2x Short QBTS ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "QBUF",
@@ -83144,7 +83144,7 @@
       "name": "Direxion Daily QCOM Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "QCML",
@@ -83375,7 +83375,7 @@
       "name": "ProShares UltraShort QQQ",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "QIDX",
@@ -83690,7 +83690,7 @@
       "name": "ProShares UltraShort QQQ Mega",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "QQEW",
@@ -83767,7 +83767,7 @@
       "name": "Direxion Daily Magnificent 7 Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "QQQE",
@@ -84453,7 +84453,7 @@
       "name": "T-REX 2X Inverse DRAM Daily Target ETF",
       "market": "US",
       "category": "성장주",
-      "industry": "반도체, 메모리, DRAM, NAND, HBM"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "RAND",
@@ -84530,7 +84530,7 @@
       "name": "Northern Trust Ultra-Short Fixed Income ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "RAYA",
@@ -84586,7 +84586,7 @@
       "name": "F/m Ultrashort Treasury Inflation-Protected Security (TIPS) ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "RBKB",
@@ -85181,7 +85181,7 @@
       "name": "ProShares Short Real Estate",
       "market": "US",
       "category": "가치주",
-      "industry": "리츠·인프라펀드, 부동산·대체투자"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "REKR",
@@ -85328,7 +85328,7 @@
       "name": "ProShares UltraShort Technology",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "REX",
@@ -85650,7 +85650,7 @@
       "name": "Defiance Daily Target 2x Short RGTI ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "RGYY",
@@ -86007,7 +86007,7 @@
       "name": "Defiance Daily Target 2x Short RKLB ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "RKNG",
@@ -87372,7 +87372,7 @@
       "name": "ProShares Short Russell2000",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "RWO",
@@ -87442,7 +87442,7 @@
       "name": "ProShares UltraShort Health Care",
       "market": "US",
       "category": "성장주",
-      "industry": "바이오, 제약·헬스케어"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "RXI",
@@ -87883,7 +87883,7 @@
       "name": "Tradr 1X Short Innovation Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "SARO",
@@ -88009,7 +88009,7 @@
       "name": "ProShares Short SmallCap600",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "SBC",
@@ -88100,7 +88100,7 @@
       "name": "ProShares UltraShort Bitcoin ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SBLK",
@@ -88233,7 +88233,7 @@
       "name": "ProShares UltraShort Consumer Discretionary",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SCCD",
@@ -88611,7 +88611,7 @@
       "name": "ProShares UltraShort Bloomberg Crude Oil",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SCOP",
@@ -88765,7 +88765,7 @@
       "name": "ProShares UltraShort SmallCap600",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SDEM",
@@ -88870,14 +88870,14 @@
       "name": "UltraPro Short Dow30",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SDP",
       "name": "ProShares UltraShort Utilities",
       "market": "US",
       "category": "성장주",
-      "industry": "전력 인프라, 유틸리티, 신재생·청정에너지"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SDRL",
@@ -88891,7 +88891,7 @@
       "name": "ProShares UltraShort S&P500",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SDSI",
@@ -89045,7 +89045,7 @@
       "name": "ProShares Short Financials",
       "market": "US",
       "category": "가치주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "SEG",
@@ -89269,7 +89269,7 @@
       "name": "ProShares Short Ether ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "SETM",
@@ -89619,7 +89619,7 @@
       "name": "ProShares Short S&P500",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "SHAG",
@@ -89857,7 +89857,7 @@
       "name": "Gotham Short Strategies ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "SHRY",
@@ -90025,7 +90025,7 @@
       "name": "ProShares UltraShort Industrials",
       "market": "US",
       "category": "혼합주",
-      "industry": "산업재, 장비·제조, 자동화"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SIL",
@@ -90270,7 +90270,7 @@
       "name": "ProShares Short High Yield",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "SJCP",
@@ -90319,7 +90319,7 @@
       "name": "GraniteShares 2x Short SK Hynix Daily ETF",
       "market": "US",
       "category": "성장주",
-      "industry": "반도체, 메모리, HBM, AI 메모리, DRAM"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SKE",
@@ -90333,7 +90333,7 @@
       "name": "ProShares UltraShort Financials",
       "market": "US",
       "category": "가치주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SKHA",
@@ -90354,14 +90354,14 @@
       "name": "Tradr 2X Short SK hynix Daily ETF",
       "market": "US",
       "category": "성장주",
-      "industry": "반도체, 메모리, HBM, AI 메모리, DRAM"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SKHQ",
       "name": "Leverage Shares 2X Short Sk Hynix Daily ETF",
       "market": "US",
       "category": "성장주",
-      "industry": "반도체, 메모리, HBM, AI 메모리, DRAM"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SKHU",
@@ -90389,7 +90389,7 @@
       "name": "Leverage Shares 1X Short SK Hynix Daily ETF",
       "market": "US",
       "category": "성장주",
-      "industry": "반도체, 메모리, HBM, AI 메모리, DRAM"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "SKIL",
@@ -90431,7 +90431,7 @@
       "name": "Tuttle Capital Daily 2X Inverse Regional Banks ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SKT",
@@ -90760,7 +90760,7 @@
       "name": "YieldMax Ultra Short Option Income Strategy ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SLV",
@@ -90984,14 +90984,14 @@
       "name": "Defiance Daily Target 2X Short SMCI ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SMDD",
       "name": "UltraPro Short MidCap400",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SMDV",
@@ -91047,7 +91047,7 @@
       "name": "MicroSectors -3x Short Semiconductor ETNs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "SMHI",
@@ -91159,7 +91159,7 @@
       "name": "ProShares UltraShort Materials",
       "market": "US",
       "category": "성장주",
-      "industry": "2차전지, 전기차 배터리, 배터리 소재"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SMOG",
@@ -91250,7 +91250,7 @@
       "name": "Defiance Daily Target 2x Short MSTR ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SMTC",
@@ -91341,7 +91341,7 @@
       "name": "Tradr 2X Short SMR Daily ETF",
       "market": "US",
       "category": "성장주",
-      "industry": "원전·에너지, 전력 인프라, 발전 설비"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SN",
@@ -91432,7 +91432,7 @@
       "name": "Tradr 2X Short SNDK Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SNDR",
@@ -91488,7 +91488,7 @@
       "name": "GraniteShares 2x Short SpaceX Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SNN",
@@ -91985,7 +91985,7 @@
       "name": "Direxion Daily Semiconductor Bear 3X ETF",
       "market": "US",
       "category": "성장주",
-      "industry": "반도체 레버리지 ETF"
+      "industry": "반도체 인버스 레버리지 ETF"
     },
     {
       "ticker": "SOXX",
@@ -92118,7 +92118,7 @@
       "name": "Tradr 2X Short SpaceX Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SPCH",
@@ -92160,7 +92160,7 @@
       "name": "Defiance Daily Target 2X Short SPCX ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SPCT",
@@ -92209,7 +92209,7 @@
       "name": "Direxion Daily S&P 500 Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "SPDV",
@@ -92650,7 +92650,7 @@
       "name": "State Street SPDR Portfolio Ultra Short T-Bill ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SPTX",
@@ -92762,7 +92762,7 @@
       "name": "Direxion Daily S&P 500 Bear 3X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SPXT",
@@ -92776,7 +92776,7 @@
       "name": "ProShares UltraPro Short S&P500",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SPXV",
@@ -92951,7 +92951,7 @@
       "name": "ProShares UltraPro Short QQQ",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SQS",
@@ -93091,7 +93091,7 @@
       "name": "ProShares UltraShort Real Estate",
       "market": "US",
       "category": "가치주",
-      "industry": "리츠·인프라펀드, 부동산·대체투자"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SRTA",
@@ -93112,7 +93112,7 @@
       "name": "ProShares UltraPro Short Russell2000",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SRV",
@@ -93231,7 +93231,7 @@
       "name": "ProShares UltraShort Semiconductors",
       "market": "US",
       "category": "성장주",
-      "industry": "AI 인프라, 데이터센터 전력·냉각, 광통신"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SSII",
@@ -93301,7 +93301,7 @@
       "name": "Leverage Shares 2X Short SPCX Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SSPY",
@@ -93784,7 +93784,7 @@
       "name": "Defiance Daily Target 2X Short TSM ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "STT",
@@ -94218,7 +94218,7 @@
       "name": "1x Short VIX Futures ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "SVM",
@@ -94274,7 +94274,7 @@
       "name": "ProShares Short VIX Short Term Futures ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "SW",
@@ -94540,7 +94540,7 @@
       "name": "ProShares UltraShort Consumer Staples",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "SZZL",
@@ -94953,7 +94953,7 @@
       "name": "ProShares Short 20+ Year Treasury",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "TBFC",
@@ -95044,7 +95044,7 @@
       "name": "ProShares UltraShort Lehman 20 Year Treasury",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "TBUX",
@@ -95058,7 +95058,7 @@
       "name": "ProShares Short 7 10 Year Treasury",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "TBXU",
@@ -95520,7 +95520,7 @@
       "name": "Direxion Technology Bear 3X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "TECX",
@@ -96990,7 +96990,7 @@
       "name": "Direxion Daily 20-Year Treasury Bear 3X",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "TMVE",
@@ -97116,7 +97116,7 @@
       "name": "Manager Directed Portfolios Twin Oak Short Horizon Absolute Return ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "TOAO",
@@ -97368,7 +97368,7 @@
       "name": "MicroSectors -3x Short Taiwan ETNs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "TPET",
@@ -98061,7 +98061,7 @@
       "name": "GraniteShares 2x Short TSLA Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "TSEC",
@@ -98194,7 +98194,7 @@
       "name": "Tradr 2X Short TSLA Daily ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "TSLR",
@@ -98208,7 +98208,7 @@
       "name": "Direxion Daily TSLA Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "TSLT",
@@ -98243,7 +98243,7 @@
       "name": "T-Rex 2X Inverse Tesla Daily Target ETF",
       "market": "US",
       "category": "성장주",
-      "industry": "전기차, 에너지, AI, FSD, 로보택시"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "TSM",
@@ -98292,7 +98292,7 @@
       "name": "Direxion Daily TSM Bear 1X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "TSN",
@@ -98376,7 +98376,7 @@
       "name": "Direxion Daily Semiconductors Top 5 Bear 2X ETF",
       "market": "US",
       "category": "성장주",
-      "industry": "반도체 레버리지 ETF"
+      "industry": "반도체 인버스 레버리지 ETF"
     },
     {
       "ticker": "TSXU",
@@ -98523,7 +98523,7 @@
       "name": "ProShares UltraPro Short 20 Year Treasury",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "TTWO",
@@ -98537,7 +98537,7 @@
       "name": "Direxion Daily Technology Top 5 Bear 2X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "TTXU",
@@ -98817,7 +98817,7 @@
       "name": "ProShares UltraShort Russell2000",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "TWN",
@@ -99034,7 +99034,7 @@
       "name": "Direxion Daily 10-Yr Treasury Bear 3x Shrs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "TYRA",
@@ -99055,7 +99055,7 @@
       "name": "Direxion Small Cap Bear 3X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "TZOO",
@@ -100875,7 +100875,7 @@
       "name": "Angel Oak UltraShort Income ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "UYM",
@@ -101750,7 +101750,7 @@
       "name": "Vanguard Ultra-Short Treasury ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "VGVT",
@@ -103213,7 +103213,7 @@
       "name": "Inverse VIX Short-Term Futures ETNs due March 22, 2045",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETN"
     },
     {
       "ticker": "VYM",
@@ -103717,7 +103717,7 @@
       "name": "Direxion Daily Dow Jones Internet Bear 3X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "WEBX",
@@ -104333,7 +104333,7 @@
       "name": "YieldMax MSTR Short Option Income Strategy ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "WNW",
@@ -104725,7 +104725,7 @@
       "name": "MicroSectors Energy 3X Inverse Leveraged ETNs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "WTIP",
@@ -105656,7 +105656,7 @@
       "name": "MicroSectors -3x Short Communication Services (XLC) ETNs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "XLCI",
@@ -105782,7 +105782,7 @@
       "name": "MicroSectors -3x Short Consumer Staples (XLP) ETNs",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETN"
     },
     {
       "ticker": "XLPU",
@@ -106797,7 +106797,7 @@
       "name": "Direxion Daily FTSE China Bear 3X ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "YARW",
@@ -106867,7 +106867,7 @@
       "name": "ProShares UltraShort Yen",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "YCY",
@@ -107196,7 +107196,7 @@
       "name": "YieldMax Short N100 Option Income Strategy ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "YRAM",
@@ -107308,7 +107308,7 @@
       "name": "ProShares Short FTSE China 50",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "인버스 ETF"
     },
     {
       "ticker": "YXT",
@@ -107728,7 +107728,7 @@
       "name": "F/m Ultrashort Tax-Free Municipal ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "ZNB",
@@ -107819,7 +107819,7 @@
       "name": "ProShares UltraShort Silver",
       "market": "US",
       "category": "성장주",
-      "industry": "2차전지, 전기차 배터리, 배터리 소재"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "ZSQR",
