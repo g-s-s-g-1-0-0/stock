@@ -13,7 +13,8 @@ from html import unescape
 from pathlib import Path
 from typing import Any
 
-from .industry_classification import classify_stock
+from .industry_classification import CATEGORY_VALUES, classify_stock, is_curated_ticker, summarize_industry
+from .industry_review import reviewed_industry_is_fresh
 from .sheet_sources import fetch_valuation, resolve_market
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -252,8 +253,22 @@ def enrich_stock_industry(row: dict[str, Any]) -> dict[str, Any]:
             next_row["rawIndustry"] = fetched_industry
 
     classification = classify_stock(next_row)
+    if is_curated_ticker(ticker):
+        next_row["category"] = classification["category"]
+        next_row["industry"] = classification["industry"]
+        next_row.pop("industryReviewedAt", None)
+        return next_row
+
+    if reviewed_industry_is_fresh(row) and summarize_industry(row.get("industry")) not in ("", "-"):
+        previous_category = str(row.get("category") or "").strip()
+        next_row["category"] = previous_category if previous_category in CATEGORY_VALUES else classification["category"]
+        next_row["industry"] = summarize_industry(row.get("industry"))
+        next_row["industryReviewedAt"] = row.get("industryReviewedAt")
+        return next_row
+
     next_row["category"] = classification["category"]
     next_row["industry"] = classification["industry"]
+    next_row.pop("industryReviewedAt", None)
     return next_row
 
 

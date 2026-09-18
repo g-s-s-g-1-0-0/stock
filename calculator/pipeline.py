@@ -24,7 +24,8 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from .industry_classification import CATEGORY_VALUES, classify_stock, summarize_industry
+from .industry_classification import CATEGORY_VALUES, classify_stock, is_curated_ticker, summarize_industry
+from .industry_review import reviewed_industry_is_fresh
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
 from .trend_strategies import build_trend_chart, trend_market_blocked
 from .rules import (
@@ -687,6 +688,12 @@ def rule_of_40(metric: dict[str, str]) -> str:
 
 def stock_industry(stock: dict[str, Any], metric: dict[str, str] | None = None) -> str:
     classified = classify_stock(stock)
+    if is_curated_ticker(stock.get("ticker")) and classified["industry"] != "-":
+        return classified["industry"]
+    if reviewed_industry_is_fresh(stock):
+        reviewed = summarize_industry(stock.get("industry"))
+        if reviewed not in ("", "-"):
+            return reviewed
     if classified["industry"] != "-":
         return classified["industry"]
     candidates = [

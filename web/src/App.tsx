@@ -9226,6 +9226,7 @@ function App() {
   const exampleStock = rawTableStocks[0]
   const fairPricePendingLabel = nextMidnightUpdateLabel()
   const currentPricePendingLabel = nextTwoHourUpdateLabel()
+  const industryPendingLabel = nextTwoHourUpdateLabel()
   const showEmptyTradeExample = tableStocks.length > 0 && scopedTrades.length === 0
   const showEmptyHoldingExample = tableStocks.length > 0 && scopedOpenTrades.length === 0
   const tradeBlankRows = Math.max(3, (isLongTermInvestor ? 23 : 22) - filteredTrades.length - (showEmptyTradeExample ? 1 : 0))
@@ -10037,7 +10038,11 @@ function App() {
                           />
                         </td>
                         <td className="ticker-cell">{stock.ticker}</td>
-                        <td className="industry-cell">{displayIndustryLabel(stock.industry)}</td>
+                        <td className="industry-cell">
+                          {isPendingValue(displayIndustryLabel(stock.industry)) ? (
+                            <span className="pending-update-label">{industryPendingLabel}</span>
+                          ) : displayIndustryLabel(stock.industry)}
+                        </td>
                         <td className="number-cell">
                           {isFairPriceUnavailable(stock) ? (
                             <span className="unavailable-value-label">{displayFairPriceText(stock)}</span>

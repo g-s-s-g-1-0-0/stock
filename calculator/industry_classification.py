@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from .ticker_aliases import canonical_ticker
@@ -12,6 +13,17 @@ UNKNOWN_INDUSTRY_LABELS = {
     "해외 보통주, 개별 사업영역 추가 확인 필요",
     "상장기업, 개별 사업영역 추가 확인 필요",
 }
+INVERSE_ETF_ISSUERS = (
+    "direxion",
+    "proshares",
+    "kodex",
+    "tiger",
+    "rise",
+    "kosef",
+    "plus",
+    "ace",
+    "sol",
+)
 
 CURATED_BY_TICKER: dict[str, tuple[str, str]] = {
     "000150": ("성장주", "AI 인프라, 전자소재 CCL, 데이터센터 전력, 피지컬 AI·로보틱스, 연료전지"),
@@ -210,6 +222,10 @@ def summarize_industry(value: Any, max_items: int = MAX_INDUSTRY_ITEMS) -> str:
     return ", ".join(parts) if parts else cleaned
 
 
+def is_curated_ticker(ticker: str | None) -> bool:
+    return canonical_ticker(_clean(ticker)) in CURATED_BY_TICKER
+
+
 def _curated(row: dict[str, Any]) -> tuple[str, str] | None:
     ticker = canonical_ticker(_clean(row.get("ticker")))
     name = _clean(row.get("name"))
@@ -233,6 +249,52 @@ def _rule_based(row: dict[str, Any]) -> tuple[str, str] | None:
     return None
 
 
+def _is_inverse_etf(row: dict[str, Any]) -> bool:
+    name = _clean(row.get("name")).lower()
+    explicit_inverse = bool(re.search(r"\b(bear|inverse|ultrashort)\b", name)) or any(
+        token in name for token in ("인버스", "곱버스", "숏")
+    )
+    exchange_traded_product = (
+        "etf" in name
+        or "etn" in name
+        or "ultrapro short" in name
+        or any(issuer in name for issuer in INVERSE_ETF_ISSUERS)
+    )
+    leveraged_short = bool(
+        re.search(r"(?:-[123]x?|double|ultrapro)\s+short\b", name)
+    )
+    issuer_directional_short = bool(
+        re.search(r"^proshares\s+(?:ultra(?:pro)?\s+)?short\b", name)
+    )
+    directional_short = leveraged_short or issuer_directional_short or (
+        bool(
+            re.search(
+                r"\bshort\s+(?!term\b|duration\b|maturity\b|municipal\b|muni\b|income\b|bond\b|government\b|high\s+yield\b|investment\s+grade\b)",
+                name,
+            )
+        )
+        and not bool(re.search(r"\blong\s*/?\s*short\b", name))
+    )
+    return (explicit_inverse or directional_short) and exchange_traded_product
+
+
+def _inverse_industry(row: dict[str, Any], industry: str) -> str:
+    if not _is_inverse_etf(row) or "인버스" in industry:
+        return industry
+    name = _clean(row.get("name")).lower()
+    product_type = "ETN" if re.search(r"\betns?\b", name) else "ETF"
+    leveraged = bool(re.search(r"(?:^|\s)[+-]?[23]x\b", name)) or any(
+        token in name for token in ("ultra", "leveraged", "레버리지", "곱버스")
+    )
+    if industry == "레버리지·테마 ETF":
+        return f"인버스 {'레버리지 ' if leveraged else ''}{product_type}"
+    if "레버리지 ETF" in industry:
+        return industry.replace("레버리지 ETF", f"인버스 레버리지 {product_type}", 1)
+    if "ETF" in industry:
+        return industry.replace("ETF", f"인버스 {product_type}", 1)
+    return f"인버스 {'레버리지 ' if leveraged else ''}{product_type}"
+
+
 def classify_stock(row: dict[str, Any]) -> dict[str, str]:
     classification = _curated(row) or _rule_based(row)
     if classification:
@@ -250,6 +312,7 @@ def classify_stock(row: dict[str, Any]) -> dict[str, str]:
                 industry = "ETF, 테마·지수형 상장상품"
             else:
                 industry = "-"
+    industry = _inverse_industry(row, industry)
     if category not in CATEGORY_VALUES:
         category = "성장주"
     return {

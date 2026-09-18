@@ -16,6 +16,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from calculator import build_stock_universe
+from calculator.industry_review import preserve_reviewed_industries, review_universe_industries
 from calculator.pipeline import build_stock_search_cache, read_search_universe, run, write_cache
 from calculator.ticker_aliases import canonical_ticker
 from scripts.record_signal_snapshots import record_daily_signal_snapshots
@@ -198,15 +199,47 @@ def universe_for_tickers(tickers: list[str]) -> list[dict[str, str]]:
             continue
         universe.append({
             key: row[key]
-            for key in ("ticker", "name", "market", "category", "industry", "rawIndustry", "products")
+            for key in ("ticker", "name", "market", "category", "industry", "rawIndustry", "products", "industryReviewedAt")
             if key in row
         })
 
     return universe
 
 
+def latest_market_trend_text() -> str:
+    for path in (
+        ROOT_DIR / "web" / "public" / "api" / "market-trends.json",
+        ROOT_DIR / "data" / "cache" / "market-trends.json",
+    ):
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        rows = payload.get("rows") if isinstance(payload, dict) else []
+        if not isinstance(rows, list) or not rows:
+            continue
+        latest = next((row for row in reversed(rows) if isinstance(row, dict)), {})
+        ranks = latest.get("ranks") if isinstance(latest.get("ranks"), list) else []
+        summary = str(latest.get("summary") or "").strip()
+        rank_text = "\n".join(str(rank) for rank in ranks if str(rank).strip())
+        parts = [part for part in (summary, rank_text) if part]
+        if parts:
+            return "\n".join(parts)
+    return ""
+
+
 def refresh_search_universe() -> dict:
+    previous = None
+    if build_stock_universe.OUTPUT_PATH.exists():
+        try:
+            previous = json.loads(build_stock_universe.OUTPUT_PATH.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            previous = None
     payload = build_stock_universe.build()
+    if isinstance(previous, dict):
+        payload = preserve_reviewed_industries(payload, previous)
     build_stock_universe.OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     build_stock_universe.OUTPUT_PATH.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
@@ -233,6 +266,38 @@ def enrich_search_universe(tickers: list[str]) -> int:
 
     build_stock_universe.OUTPUT_PATH.write_text(
         json.dumps(enriched_payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    search_payload = build_stock_search_cache()
+    write_cache("stock-search", search_payload)
+    return changed
+
+
+def review_search_universe_industries(tickers: list[str]) -> int:
+    if not tickers or not build_stock_universe.OUTPUT_PATH.exists():
+        return 0
+    api_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if not api_key:
+        print("industry review skipped: GROQ_API_KEY missing")
+        return 0
+    try:
+        payload = json.loads(build_stock_universe.OUTPUT_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return 0
+    if not isinstance(payload, dict):
+        return 0
+
+    reviewed_payload, changed = review_universe_industries(
+        payload,
+        tickers,
+        trend_text=latest_market_trend_text(),
+        api_key=api_key,
+    )
+    if not changed:
+        return 0
+
+    build_stock_universe.OUTPUT_PATH.write_text(
+        json.dumps(reviewed_payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
     search_payload = build_stock_search_cache()
@@ -273,6 +338,9 @@ def main() -> None:
     if any(task in tasks for task in ("stock-universe", "valuation", "stocks")):
         enriched_count = enrich_search_universe(tickers)
         print(f"industry enriched search-universe rows: {enriched_count}")
+    if "stock-universe" in tasks:
+        reviewed_count = review_search_universe_industries(tickers)
+        print(f"industry reviewed search-universe rows: {reviewed_count}")
     universe = universe_for_tickers(tickers)
     print(f"refresh universe size: {len(universe)}")
     print(f"refresh tasks: {', '.join(tasks)}")
