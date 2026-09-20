@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15459,
-    "industryEnrichedAt": "2026-09-20T14:49:58+00:00",
+    "industryEnrichedAt": "2026-09-20T14:55:34+00:00",
     "industryEnrichedTickers": 1,
     "industryReviewedAt": "2026-09-20T07:25:32+00:00",
     "industryReviewedTickers": 5
@@ -179878,7 +179878,7 @@
       "opinion": "관망",
       "strategies": [],
       "category": "가치주",
-      "industry": "금융, 은행·자산운용·증권",
+      "industry": "금융, 은행·보험·증권, 지주회사",
       "rawIndustry": "Financial | Exchange Traded Fund",
       "products": "-",
       "updatedAt": "2026-09-20T07:25:18+00:00"
