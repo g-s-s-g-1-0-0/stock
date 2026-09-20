@@ -27,6 +27,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
+from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from email.mime.multipart import MIMEMultipart
@@ -39,6 +40,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from calculator.market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
+from calculator.portfolio_risk import position_allocation_percent, risk_group_exposure, swing_entry_decision
 from calculator.rules import STRATEGY_RULES, enrich_profit_exit_reason
 from calculator.sheet_sources import calc_rsi, calc_technical_row, fetch_us_ohlcv
 from zoneinfo import ZoneInfo
@@ -233,6 +235,24 @@ def is_open_trade(row: dict[str, Any]) -> bool:
     return str(row.get("status") or "").strip() == "보유 중"
 
 
+def notification_trade_investment_type(row: dict[str, Any]) -> str:
+    value = str(row.get("investmentType") or "").strip()
+    if value in {"long_term", "swing"}:
+        return value
+    return "long_term" if row.get("manualExit") is True else "swing"
+
+
+def open_trades_for_investment_type(
+    trades: list[dict[str, Any]],
+    investment_type: str,
+) -> list[dict[str, Any]]:
+    return [
+        trade
+        for trade in trades
+        if is_open_trade(trade) and notification_trade_investment_type(trade) == investment_type
+    ]
+
+
 def trade_key(row: dict[str, Any]) -> tuple[str, str, str]:
     slot_id = str(row.get("slotId") or "").strip()
     if slot_id:
@@ -335,6 +355,26 @@ def buy_reason_for_trade(trade: dict[str, Any], stock: dict[str, Any], technical
     return f"{strategy_label(code, stock, technical_row)} — {buy_reason_detail(code, stock, technical_row)}"
 
 
+ALLOCATION_CHANGE_FIELDS = (
+    "allocationStatus",
+    "allocationReason",
+    "recommendedAllocationPercent",
+    "riskGroup",
+    "currentRiskGroupPercent",
+    "postRiskGroupPercent",
+    "openPositionCount",
+    "maxPositionCount",
+)
+
+
+def attach_allocation_fields(change: dict[str, Any], *sources: dict[str, Any] | None) -> None:
+    for key in (*ALLOCATION_CHANGE_FIELDS, "strategy", "supportStopPrice"):
+        for source in sources:
+            if isinstance(source, dict) and source.get(key) not in (None, ""):
+                change[key] = source[key]
+                break
+
+
 def opinion_changes(
     previous_path: Path,
     current_path: Path,
@@ -383,6 +423,7 @@ def opinion_changes(
             "valuation": current_stock.get("valuation") or "-",
             "industry": current_stock.get("industry") or "-",
             "strategies": current_stock.get("strategies") or [],
+            "signalUpdatedAt": current_stock.get("updatedAt") or technical_row.get("updatedAt") or "",
             "reason": concise_opinion_reason(old_opinion, new_opinion, previous_stock, current_stock, technical_row),
         }
         if new_opinion == "매수":
@@ -418,6 +459,7 @@ def opinion_changes(
                     current_trade_rows=current_ticker_trades,
                     added_trades=added_for_ticker,
                 )
+            attach_allocation_fields(change, added_trade, current_stock, technical_row)
             buy_transition_tickers.add(normalized_ticker)
         changes.append(change)
 
@@ -448,6 +490,7 @@ def opinion_changes(
             "valuation": current_stock.get("valuation") or "-",
             "industry": current_stock.get("industry") or "-",
             "strategies": current_stock.get("strategies") or [],
+            "signalUpdatedAt": current_stock.get("updatedAt") or technical_row.get("updatedAt") or "",
             "reason": buy_reason_for_trade(trade, current_stock, technical_row),
             "recommendedSellPrice": recommended_sell_price_for_trade(trade, current_stock, technical_row),
             "entryNote": buy_entry_note(
@@ -457,6 +500,7 @@ def opinion_changes(
                 added_trades=added_trades_by_ticker.get(ticker, []),
             ),
         }
+        attach_allocation_fields(change, trade, current_stock, technical_row)
         if is_additional_buy:
             change["fromLabel"] = "매수(보유중)"
             change["toLabel"] = "추가 매수"
@@ -1096,6 +1140,78 @@ def recommended_sell_price_for_trade(
     return format_target_price(entry_price_text, entry_price * (1 + target_pct))
 
 
+def stop_guidance_for_change(
+    change: dict[str, Any],
+    stock: dict[str, Any],
+    technical_row: dict[str, Any],
+) -> tuple[str, float | None]:
+    codes = buy_strategy_codes(stock, technical_row)
+    code = strategy_code(change.get("strategy")) or (codes[0] if codes else "")
+    trend_signal = technical_row.get("trendSignal") if isinstance(technical_row.get("trendSignal"), dict) else {}
+    support_stop = parse_metric_number(
+        change.get("supportStopPrice")
+        or technical_row.get("supportStopPrice")
+        or trend_signal.get("stopPrice")
+        or stock.get("supportStopPrice")
+    )
+    entry_price_text = first_text(change.get("price"), stock.get("currentPrice"), technical_row.get("현재가"))
+    entry_price = parse_metric_number(entry_price_text)
+    if code in {"3", "6"} and support_stop is not None:
+        risk_pct = (
+            max(0.0, (entry_price - support_stop) / entry_price * 100)
+            if entry_price and support_stop < entry_price
+            else None
+        )
+        return f"{format_target_price(entry_price_text, support_stop)} (고정 지지선)", risk_pct
+
+    stop_pct_by_strategy = {
+        "1": 30.0,
+        "2": 30.0,
+        "3": 25.0,
+        "4": 30.0,
+        "5": 8.0,
+    }
+    stop_pct = stop_pct_by_strategy.get(code)
+    if stop_pct is None:
+        return "-", None
+    if entry_price is None:
+        return f"-{stop_pct:.0f}%", stop_pct
+    stop_price = entry_price * (1 - stop_pct / 100)
+    label = "비상손절" if code in {"1", "2", "3", "4"} else "고정손절"
+    return f"{format_target_price(entry_price_text, stop_price)} (-{stop_pct:.0f}% {label})", stop_pct
+
+
+def enrich_swing_change_risk(
+    change: dict[str, Any],
+    stock: dict[str, Any],
+    technical_row: dict[str, Any],
+    open_trades: list[dict[str, Any]],
+    stocks_by_ticker: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    enriched = dict(change)
+    if str(enriched.get("to") or "") != "매수":
+        return enriched
+    entry_note = str(enriched.get("entryNote") or "")
+    if entry_note.startswith("보유 유지"):
+        enriched["actionLabel"] = "보유"
+    else:
+        ticker = str(enriched.get("ticker") or "").strip().upper()
+        prior_open = [trade for trade in open_trades if trade_ticker(trade) != ticker]
+        decision = swing_entry_decision(stock, prior_open, stocks_by_ticker)
+        enriched.update(decision)
+        enriched["actionLabel"] = (
+            f"매수 {decision['recommendedAllocationPercent']:.0f}%"
+            if decision["allocationStatus"] == "진입 가능"
+            else decision["allocationStatus"]
+        )
+    stop_guidance, stop_risk_pct = stop_guidance_for_change(enriched, stock, technical_row)
+    enriched["stopGuidance"] = stop_guidance
+    allocation_pct = enriched.get("recommendedAllocationPercent")
+    if isinstance(allocation_pct, (int, float)) and stop_risk_pct is not None:
+        enriched["maxAccountLossPercent"] = float(allocation_pct) * stop_risk_pct / 100
+    return enriched
+
+
 def metric_number(row: dict[str, Any], *keys: str) -> float | None:
     for key in keys:
         parsed = parse_metric_number(row.get(key))
@@ -1534,6 +1650,42 @@ def opinion_email_body(
             if include_recommended_sell_price and is_buy and recommended_sell_price and recommended_sell_price != "-"
             else ""
         )
+        action_label = str(change.get("actionLabel") or "").strip()
+        action_html = (
+            f'<br><span style="font-size:14px;">행동: <strong>{html.escape(action_label)}</strong></span>'
+            if action_label
+            else ""
+        )
+        risk_group = str(change.get("riskGroup") or "").strip()
+        allocation_reason = str(change.get("allocationReason") or "").strip()
+        current_group_pct = change.get("currentRiskGroupPercent")
+        post_group_pct = change.get("postRiskGroupPercent")
+        allocation_html = ""
+        if is_buy and risk_group:
+            exposure_text = ""
+            if isinstance(current_group_pct, (int, float)) and isinstance(post_group_pct, (int, float)):
+                exposure_text = f" {float(current_group_pct):.0f}%→{float(post_group_pct):.0f}%"
+            allocation_html = (
+                f'<br><span style="font-size:12px;color:#666;">위험군: {html.escape(risk_group)}'
+                f'{html.escape(exposure_text)}</span>'
+                + (
+                    f'<br><span style="font-size:12px;color:#c0392b;">보류 사유: {html.escape(allocation_reason)}</span>'
+                    if allocation_reason
+                    else ""
+                )
+            )
+        stop_guidance = str(change.get("stopGuidance") or "").strip()
+        max_account_loss = change.get("maxAccountLossPercent")
+        stop_html = (
+            f'<br><span style="font-size:12px;color:#666;">손절 기준: {html.escape(stop_guidance)}</span>'
+            if is_buy and stop_guidance and stop_guidance != "-"
+            else ""
+        )
+        if is_buy and isinstance(max_account_loss, (int, float)):
+            stop_html += (
+                f'<br><span style="font-size:12px;color:#666;">계좌 최대 계획손실: '
+                f'{float(max_account_loss):.1f}%</span>'
+            )
         changed_html.append(
             f"""
             <div style="margin-bottom:8px;padding:8px;background:#f9f9f9;border-left:3px solid {border};">
@@ -1542,7 +1694,10 @@ def opinion_email_body(
               → <strong style="color:{color};">{html.escape(to_label)}</strong><br>
               <span style="font-size:13px;">이유: {change_reason_html(change.get('reason'))}</span><br>
               <span style="font-size:13px;">현재가: <strong>{html.escape(str(change.get('price') or '-'))}</strong></span>
+              {action_html}
               {recommended_sell_html}
+              {allocation_html}
+              {stop_html}
               {entry_note_html}
               {f'<br><span style="font-size:12px;color:#666;">산업: {html.escape(industry)}</span>' if industry and industry != '-' else ''}
               {f'<br><span style="font-size:12px;color:#e67e22;">{html.escape(trend_badge)}</span>' if trend_badge else ''}
@@ -2315,9 +2470,9 @@ def consume_personal_exit_events(path: Path = PERSONAL_TRADE_EXITS) -> None:
     )
 
 
-def load_personal_open_trade_tickers_by_owner() -> dict[str, set[str]]:
+def load_personal_open_trades_by_owner() -> dict[str, list[dict[str, Any]]]:
     rows = supabase_request("/rest/v1/user_settings?select=owner_id,personal_trade_logs")
-    result: dict[str, set[str]] = {}
+    result: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
         if not isinstance(row, dict):
             continue
@@ -2325,15 +2480,21 @@ def load_personal_open_trade_tickers_by_owner() -> dict[str, set[str]]:
         trades = row.get("personal_trade_logs")
         if not owner_id or not isinstance(trades, list):
             continue
-        open_tickers = {
-            trade_ticker(trade)
+        open_trades = [
+            trade
             for trade in trades
             if isinstance(trade, dict) and is_open_trade(trade)
-        }
-        open_tickers.discard("")
-        if open_tickers:
-            result[owner_id] = open_tickers
+        ]
+        if open_trades:
+            result[owner_id] = open_trades
     return result
+
+
+def load_personal_open_trade_tickers_by_owner() -> dict[str, set[str]]:
+    return {
+        owner_id: {ticker for ticker in (trade_ticker(trade) for trade in trades) if ticker}
+        for owner_id, trades in load_personal_open_trades_by_owner().items()
+    }
 
 
 def opinion_groups_for_tickers(
@@ -2358,6 +2519,104 @@ def opinion_groups_for_tickers(
         elif opinion == "매도":
             sell_opinions.append(label)
     return buy_opinions, watch_holding_opinions, sell_opinions
+
+
+def opinion_notification_key(recipient: Recipient, change: dict[str, Any]) -> str:
+    payload = {
+        "owner": recipient.owner_id or recipient.email,
+        "ticker": str(change.get("ticker") or "").strip().upper(),
+        "from": change_display_from(change),
+        "to": change_display_to(change),
+        "action": change.get("actionLabel"),
+        "reason": change.get("reason"),
+        "entryNote": change.get("entryNote"),
+        "signalDate": str(change.get("signalUpdatedAt") or "")[:10],
+        "price": change.get("price"),
+        "buyDate": change.get("buyDate"),
+        "sellDate": change.get("sellDate"),
+        "status": change.get("status"),
+    }
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def is_swing_daily_digest_window(now: datetime | None = None) -> bool:
+    current = now or datetime.now().astimezone()
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=KST)
+    et_now = current.astimezone(ET)
+    return et_now.weekday() < 5 and 16 <= et_now.hour < 20
+
+
+def next_market_event_text(
+    path: Path = DEFAULT_MARKET_EVENTS,
+    now: datetime | None = None,
+) -> str:
+    payload = read_json(path)
+    groups = payload.get("groups") if isinstance(payload, dict) else []
+    current = now or datetime.now().astimezone()
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=KST)
+    today_et = current.astimezone(ET).date()
+    candidates: list[tuple[date, str]] = []
+    for group in groups if isinstance(groups, list) else []:
+        if not isinstance(group, dict):
+            continue
+        title = str(group.get("title") or "").strip()
+        for entry in group.get("entries") if isinstance(group.get("entries"), list) else []:
+            if not isinstance(entry, dict):
+                continue
+            date_text = str(entry.get("date") or "").strip()
+            event_date = None
+            for fmt in ("%Y. %m. %d", "%Y-%m-%d"):
+                try:
+                    event_date = datetime.strptime(date_text, fmt).date()
+                    break
+                except ValueError:
+                    continue
+            if event_date is None or event_date < today_et:
+                continue
+            candidates.append((event_date, f"{title} · {date_text}"))
+    if not candidates:
+        return "확인 필요"
+    event_date, label = min(candidates, key=lambda item: item[0])
+    return f"{label} (D-{(event_date - today_et).days})"
+
+
+def swing_daily_digest_body(
+    open_trades: list[dict[str, Any]],
+    stocks_by_ticker: dict[str, dict[str, Any]],
+) -> str:
+    swing_trades = open_trades_for_investment_type(open_trades, "swing")
+    allocated = sum(
+        position_allocation_percent(
+            trade,
+            stocks_by_ticker.get(trade_ticker(trade), {}),
+        )
+        for trade in swing_trades
+    )
+    group_exposure = risk_group_exposure(swing_trades, stocks_by_ticker)
+    group_rows = "".join(
+        f"<li>{html.escape(group)}: <strong>{percent:.0f}%</strong></li>"
+        for group, percent in sorted(group_exposure.items(), key=lambda item: (-item[1], item[0]))
+    ) or "<li>보유 없음</li>"
+    kst_label, et_label = now_labels()
+    return f"""
+    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
+      <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
+        스윙 계좌 일일 위험 요약
+      </p>
+      <p><strong>보유 슬롯:</strong> {len({trade_ticker(trade) for trade in swing_trades if trade_ticker(trade)})}/10</p>
+      <p><strong>계획 투자비중:</strong> {allocated:.0f}% · <strong>현금 여력:</strong> {max(0.0, 100 - allocated):.0f}%</p>
+      <p><strong>위험군 비중</strong></p>
+      <ul>{group_rows}</ul>
+      <p><strong>다음 주요 일정:</strong> {html.escape(next_market_event_text())}</p>
+      <p style="color:#888;font-size:12px;">
+        발송 시각 (한국): {html.escape(kst_label)}<br>
+        발송 시각 (미 동부): {html.escape(et_label)}
+      </p>
+    </div>
+    """
 
 
 def send_opinion_notifications(
@@ -2386,7 +2645,8 @@ def send_opinion_notifications(
         current_trade_logs,
     )
     personal_exits_by_owner = load_personal_exit_changes_by_owner()
-    if not changes and not system_exit_changes and not personal_exits_by_owner:
+    digest_due = is_swing_daily_digest_window()
+    if not changes and not system_exit_changes and not personal_exits_by_owner and not digest_due:
         print("No opinion changes.")
         if reset_active:
             clear_runtime_reset()
@@ -2405,24 +2665,33 @@ def send_opinion_notifications(
         return 0
 
     watchlists = load_watchlists()
-    personal_open_tickers = load_personal_open_trade_tickers_by_owner()
-    system_open_tickers = {
-        trade_ticker(row)
+    personal_open_trades = load_personal_open_trades_by_owner()
+    system_open_trades = [
+        row
         for row in trade_rows(current_trade_logs or DEFAULT_CURRENT_TRADE_LOGS)
         if is_open_trade(row)
-    }
-    system_open_tickers.discard("")
+    ]
     current_stocks = stock_rows_by_ticker(current)
+    current_technical = technical_rows_by_ticker(DEFAULT_TECHNICAL)
+    already_sent_keys = read_sent_keys("opinionChange")
+    newly_sent_keys: set[str] = set()
 
     sent = 0
     for recipient in recipients:
         my_tickers = watchlist_tickers_for_recipient(recipient, watchlists, admin_uses_operator=True)
         if recipient.is_admin:
-            my_open_tickers = system_open_tickers
+            my_open_trades = open_trades_for_investment_type(
+                system_open_trades,
+                recipient.investment_type,
+            )
             my_exit_changes = system_exit_changes
         else:
-            my_open_tickers = personal_open_tickers.get(recipient.owner_id, set())
+            my_open_trades = open_trades_for_investment_type(
+                personal_open_trades.get(recipient.owner_id, []),
+                recipient.investment_type,
+            )
             my_exit_changes = personal_exits_by_owner.get(recipient.owner_id, [])
+        my_open_tickers = {ticker for ticker in (trade_ticker(trade) for trade in my_open_trades) if ticker}
         relevant_tickers = my_tickers | my_open_tickers
         my_opinion_changes = [
             change
@@ -2478,16 +2747,76 @@ def send_opinion_notifications(
             my_changes.extend(my_exit_changes)
             if not my_changes:
                 continue
+            my_changes = [
+                enrich_swing_change_risk(
+                    change,
+                    current_stocks.get(str(change.get("ticker") or "").strip().upper(), {}),
+                    current_technical.get(str(change.get("ticker") or "").strip().upper(), {}),
+                    my_open_trades,
+                    current_stocks,
+                )
+                for change in my_changes
+            ]
             buy_opinions, watch_holding_opinions, sell_opinions = opinion_groups_for_tickers(
                 current_stocks, relevant_tickers, my_open_tickers
             )
+
+        keyed_changes = [
+            (change, opinion_notification_key(recipient, change))
+            for change in my_changes
+        ]
+        keyed_changes = [
+            (change, key)
+            for change, key in keyed_changes
+            if key not in already_sent_keys and key not in newly_sent_keys
+        ]
+        if not keyed_changes:
+            continue
+        my_changes = [change for change, _ in keyed_changes]
+        if recipient.investment_type == "long_term":
+            body = opinion_email_body(
+                my_changes,
+                buy_opinions,
+                watch_holding_opinions,
+                None,
+                include_sell_summary=False,
+                include_recommended_sell_price=False,
+            )
+        else:
             body = opinion_email_body(my_changes, buy_opinions, watch_holding_opinions, sell_opinions)
 
         subject_tickers = list(dict.fromkeys(str(change["ticker"]) for change in my_changes))
         subject = "투자의견 변경 알림 (" + ", ".join(subject_tickers[:8]) + ")"
         send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
+        newly_sent_keys.update(key for _, key in keyed_changes)
         sent += 1
 
+    record_sent_keys("opinionChange", newly_sent_keys, limit=2000)
+    if digest_due:
+        digest_date = datetime.now().astimezone(ET).date().isoformat()
+        digest_sent_keys = read_sent_keys("swingDailyDigest")
+        new_digest_keys: set[str] = set()
+        for recipient in recipients:
+            if recipient.investment_type != "swing":
+                continue
+            digest_key = f"{recipient.owner_id or recipient.email}:{digest_date}"
+            if digest_key in digest_sent_keys:
+                continue
+            open_trades = (
+                system_open_trades
+                if recipient.is_admin
+                else personal_open_trades.get(recipient.owner_id, [])
+            )
+            body = swing_daily_digest_body(open_trades, current_stocks)
+            subject = f"스윙 일일 위험 요약 ({digest_date})"
+            send_notification(
+                recipient,
+                subject,
+                append_notification_footer(body, recipient, "opinionChangeEmail"),
+            )
+            new_digest_keys.add(digest_key)
+            sent += 1
+        record_sent_keys("swingDailyDigest", new_digest_keys, limit=800)
     consume_personal_exit_events()
     if reset_active:
         clear_runtime_reset()

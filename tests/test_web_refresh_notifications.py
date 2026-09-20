@@ -87,6 +87,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn('  schedule:', workflow)
         self.assertIn('- cron: "0 15 * * *"', workflow)
         self.assertIn('- cron: "0 15 * * 0"', workflow)
+        self.assertIn('- cron: "0 22 * * 1-5"', workflow)
         self.assertNotIn('- cron: "0,10,20,30,40,50 23 * * 0-4"', workflow)
         self.assertNotIn('- cron: "30,40,50 0 * * 1-5"', workflow)
         self.assertIn('if [ "${{ github.event.schedule }}" = "0 15 * * 0" ]; then', workflow)
@@ -267,6 +268,178 @@ class WebRefreshNotificationsTest(unittest.TestCase):
 
         self.assertNotIn("권장 매도가", body)
         self.assertNotIn("₩110,760", body)
+
+    def test_swing_email_shows_allocation_industry_cap_and_stop_risk(self) -> None:
+        stock = {
+            "ticker": "ALAB",
+            "name": "Astera Labs",
+            "industry": "반도체, AI 데이터센터 연결",
+            "currentPrice": "$100.00",
+        }
+        change = {
+            "ticker": "ALAB",
+            "name": "Astera Labs",
+            "from": "관망",
+            "to": "매수",
+            "price": "$100.00",
+            "entryNote": "신규 진입",
+        }
+        open_trades = [
+            {"ticker": "000660", "name": "SK하이닉스", "recommendedAllocationPercent": 10},
+            {"ticker": "CRDO", "name": "Credo Technology Group", "recommendedAllocationPercent": 10},
+        ]
+
+        enriched = self.notifications.enrich_swing_change_risk(
+            change,
+            stock,
+            {"entrySignalCodes": "5", "현재가": "$100.00"},
+            open_trades,
+            {"ALAB": stock},
+        )
+        body = self.notifications.opinion_email_body([enriched])
+
+        self.assertEqual("매수 보류", enriched["actionLabel"])
+        self.assertEqual("반도체·AI 인프라", enriched["riskGroup"])
+        self.assertEqual(20, enriched["currentRiskGroupPercent"])
+        self.assertEqual(0.8, enriched["maxAccountLossPercent"])
+        self.assertIn("행동: <strong>매수 보류</strong>", body)
+        self.assertIn("반도체·AI 인프라 20%→30%", body)
+        self.assertIn("산업 한도 20% 초과", body)
+        self.assertIn("$92.00 (-8% 고정손절)", body)
+        self.assertIn("계좌 최대 계획손실: 0.8%", body)
+
+    def test_swing_mail_allocation_excludes_long_term_positions(self) -> None:
+        mixed_trades = [
+            {
+                "ticker": f"LONG{i}",
+                "investmentType": "long_term",
+                "status": "보유 중",
+                "riskGroup": f"장기{i}",
+            }
+            for i in range(10)
+        ]
+        swing_trades = self.notifications.open_trades_for_investment_type(mixed_trades, "swing")
+        stock = {
+            "ticker": "MSFT",
+            "name": "Microsoft",
+            "industry": "소프트웨어·클라우드",
+            "currentPrice": "$100.00",
+        }
+
+        enriched = self.notifications.enrich_swing_change_risk(
+            {
+                "ticker": "MSFT",
+                "name": "Microsoft",
+                "from": "관망",
+                "to": "매수",
+                "price": "$100.00",
+                "entryNote": "신규 진입",
+            },
+            stock,
+            {"entrySignalCodes": "1", "현재가": "$100.00"},
+            swing_trades,
+            {"MSFT": stock},
+        )
+
+        self.assertEqual([], swing_trades)
+        self.assertEqual("매수 10%", enriched["actionLabel"])
+        self.assertEqual(0, enriched["openPositionCount"])
+
+    def test_opinion_notification_deduplicates_same_refresh_transition(self) -> None:
+        sent_messages: list[tuple[str, str, str]] = []
+        recipient = self.notifications.Recipient(
+            owner_id="swing-user",
+            email="swing@example.com",
+            is_admin=False,
+            preferences={"opinionChangeEmail": True},
+            investment_type="swing",
+        )
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            previous = root / "previous.json"
+            current = root / "current.json"
+            state = root / "state.json"
+            previous.write_text(
+                json.dumps({"rows": [{"ticker": "ALAB", "name": "Astera Labs", "opinion": "관망"}]}),
+                encoding="utf-8",
+            )
+            current.write_text(
+                json.dumps({"rows": [{
+                    "ticker": "ALAB",
+                    "name": "Astera Labs",
+                    "industry": "반도체, AI 데이터센터 연결",
+                    "currentPrice": "$100.00",
+                    "opinion": "매수",
+                    "updatedAt": "2026-09-20T06:00:00Z",
+                }]}),
+                encoding="utf-8",
+            )
+            original_state_path = self.notifications.NOTIFICATION_STATE
+            self.notifications.NOTIFICATION_STATE = state
+            try:
+                with (
+                    mock.patch.object(self.notifications, "load_recipients", return_value=[recipient]),
+                    mock.patch.object(self.notifications, "load_watchlists", return_value={"swing-user": {"ALAB"}}),
+                    mock.patch.object(self.notifications, "load_personal_open_trades_by_owner", return_value={}),
+                    mock.patch.object(self.notifications, "load_personal_exit_changes_by_owner", return_value={}),
+                    mock.patch.object(self.notifications, "consume_personal_exit_events"),
+                    mock.patch.object(
+                        self.notifications,
+                        "send_notification",
+                        side_effect=lambda user, subject, body: sent_messages.append((user.email, subject, body)) or "email",
+                    ),
+                ):
+                    first = self.notifications.send_opinion_notifications(previous, current)
+                    second = self.notifications.send_opinion_notifications(previous, current)
+            finally:
+                self.notifications.NOTIFICATION_STATE = original_state_path
+
+        self.assertEqual(1, first)
+        self.assertEqual(0, second)
+        self.assertEqual(1, len(sent_messages))
+
+    def test_swing_daily_digest_summarizes_slots_cash_and_risk_group(self) -> None:
+        body = self.notifications.swing_daily_digest_body(
+            [
+                {"ticker": "000660", "investmentType": "swing", "status": "보유 중", "recommendedAllocationPercent": 10},
+                {"ticker": "SOXL", "investmentType": "swing", "status": "보유 중", "recommendedAllocationPercent": 5},
+            ],
+            {
+                "000660": {"ticker": "000660", "name": "SK하이닉스"},
+                "SOXL": {"ticker": "SOXL", "name": "Direxion Daily Semiconductor Bull 3X ETF"},
+            },
+        )
+
+        self.assertIn("보유 슬롯:</strong> 2/10", body)
+        self.assertIn("계획 투자비중:</strong> 15%", body)
+        self.assertIn("현금 여력:</strong> 85%", body)
+        self.assertIn("반도체·AI 인프라: <strong>15%</strong>", body)
+        self.assertTrue(
+            self.notifications.is_swing_daily_digest_window(
+                datetime(2026, 9, 21, 16, 30, tzinfo=ZoneInfo("America/New_York"))
+            )
+        )
+
+    def test_next_market_event_ignores_stale_cached_dday(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "events.json"
+            path.write_text(json.dumps({
+                "groups": [{
+                    "title": "금리 발표",
+                    "entries": [
+                        {"date": "2026. 9. 17", "dday": "2"},
+                        {"date": "2026. 10. 29", "dday": "44"},
+                    ],
+                }]
+            }), encoding="utf-8")
+
+            label = self.notifications.next_market_event_text(
+                path,
+                now=datetime(2026, 9, 20, 12, 0, tzinfo=ZoneInfo("America/New_York")),
+            )
+
+        self.assertNotIn("2026. 9. 17", label)
+        self.assertEqual("금리 발표 · 2026. 10. 29 (D-39)", label)
 
     def test_strategy2_buy_reason_uses_email_format_without_fixed_target_price(self) -> None:
         trade = {

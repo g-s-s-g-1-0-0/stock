@@ -83,6 +83,12 @@ type Stock = {
   strategies: string[]
   category?: string
   industry?: string
+  allocationStatus?: string
+  allocationReason?: string
+  recommendedAllocationPercent?: number
+  riskGroup?: string
+  currentRiskGroupPercent?: number
+  postRiskGroupPercent?: number
   fairPriceReason?: 'loss_making' | 'etf'
   updatedAt: string
 }
@@ -120,6 +126,14 @@ type TradeLog = {
   breakoutLevel?: number
   entrySessionDate?: string
   heldTradingSessions?: number
+  allocationStatus?: string
+  allocationReason?: string
+  recommendedAllocationPercent?: number
+  riskGroup?: string
+  currentRiskGroupPercent?: number
+  postRiskGroupPercent?: number
+  openPositionCount?: number
+  maxPositionCount?: number
 }
 
 type TooltipState = {
@@ -369,8 +383,21 @@ const DEFAULT_USER_SETTINGS: StoredUserSettings = {
 const DEFAULT_INVESTMENT_TYPE: InvestmentType = 'long_term'
 const DEFAULT_PORTFOLIO_CASH = 10_000_000
 const MEGA_TREND_INVESTMENT_RANK_LIMIT = 5
+const SWING_RISK_GROUP_MAX_PERCENT = 20
+const SWING_RISK_GROUP_RULES: Array<[string, string[]]> = [
+  ['반도체·AI 인프라', ['반도체', 'hbm', 'dram', 'nand', 'gpu', 'asic', 'ai 인프라', 'ai 데이터센터', '데이터센터 연결', '인터커넥트', '광인터커넥트', '광통신', '트랜시버']],
+  ['전력·에너지', ['전력', '에너지', '원전', 'smr', '태양광', '풍력', '연료전지', '수소']],
+  ['방산·우주', ['방산', '무기', '레이더', '드론', '무인체계', '우주', '위성', '발사체']],
+  ['자동차·배터리', ['자동차', '전기차', '배터리', '2차전지', '리튬', '모빌리티']],
+  ['금융·가상자산', ['금융', '은행', '보험', '증권', '핀테크', '가상화폐', '암호화폐', '비트코인']],
+  ['바이오·헬스케어', ['바이오', '제약', '헬스케어', '의료', '진단']],
+  ['소프트웨어·클라우드', ['소프트웨어', '클라우드', '사이버보안', 'ai 플랫폼']],
+  ['산업재·건설', ['산업재', '건설', '플랜트', '철강', '조선', '물류', '자동화']],
+  ['소비재', ['소비재', '식품', '유통', '화장품', '뷰티', '패션', '의류']],
+  ['원자재', ['원자재', '광산', '희토류', '구리', '알루미늄', '금속']],
+]
 const DEFAULT_ALLOCATION_SETTINGS: Record<InvestmentType, AllocationSettings> = {
-  swing: { slotCount: 3, slotPercents: [50, 25, 25], megaTrendOnly: false },
+  swing: { slotCount: 10, slotPercents: Array.from({ length: 10 }, () => 10), megaTrendOnly: false },
   long_term: { slotCount: 10, slotPercents: Array.from({ length: 10 }, () => 10), megaTrendOnly: false },
 }
 const DEFAULT_CONTRIBUTION_SETTINGS: ContributionSettings = {
@@ -1002,6 +1029,14 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     supportLevel: typeof candidate.supportLevel === 'string' ? candidate.supportLevel : undefined,
     trendSignalDate: typeof candidate.trendSignalDate === 'string' ? candidate.trendSignalDate : undefined,
     entrySessionDate: typeof candidate.entrySessionDate === 'string' ? candidate.entrySessionDate : undefined,
+    allocationStatus: typeof candidate.allocationStatus === 'string' ? candidate.allocationStatus : undefined,
+    allocationReason: typeof candidate.allocationReason === 'string' ? candidate.allocationReason : undefined,
+    recommendedAllocationPercent: typeof candidate.recommendedAllocationPercent === 'number' && Number.isFinite(candidate.recommendedAllocationPercent) ? candidate.recommendedAllocationPercent : undefined,
+    riskGroup: typeof candidate.riskGroup === 'string' ? candidate.riskGroup : undefined,
+    currentRiskGroupPercent: typeof candidate.currentRiskGroupPercent === 'number' && Number.isFinite(candidate.currentRiskGroupPercent) ? candidate.currentRiskGroupPercent : undefined,
+    postRiskGroupPercent: typeof candidate.postRiskGroupPercent === 'number' && Number.isFinite(candidate.postRiskGroupPercent) ? candidate.postRiskGroupPercent : undefined,
+    openPositionCount: typeof candidate.openPositionCount === 'number' && Number.isFinite(candidate.openPositionCount) ? candidate.openPositionCount : undefined,
+    maxPositionCount: typeof candidate.maxPositionCount === 'number' && Number.isFinite(candidate.maxPositionCount) ? candidate.maxPositionCount : undefined,
   }
 }
 
@@ -1086,6 +1121,13 @@ function storeCachedRemoteUserSettings(settings: StoredUserSettings) {
 function normalizeAllocationSettings(value: unknown, investmentType: InvestmentType): AllocationSettings {
   const fallback = DEFAULT_ALLOCATION_SETTINGS[investmentType]
   const candidate = value as Partial<AllocationSettings> | null
+  if (investmentType === 'swing') {
+    return {
+      slotCount: fallback.slotCount,
+      slotPercents: [...fallback.slotPercents],
+      megaTrendOnly: candidate?.megaTrendOnly === true,
+    }
+  }
   const slotCount = typeof candidate?.slotCount === 'number' && Number.isFinite(candidate.slotCount)
     ? Math.min(20, Math.max(1, Math.round(candidate.slotCount)))
     : fallback.slotCount
@@ -3570,6 +3612,59 @@ function allocationWeightsForProfile(investmentType: InvestmentType, settings: C
   return allocation.slotPercents.slice(0, allocation.slotCount).map((percent) => percent / 100)
 }
 
+
+function swingRiskGroupForFields(ticker: string, name?: string, industryValue?: string) {
+  const industry = displayIndustryLabel(industryValue)
+  const text = `${ticker} ${name ?? ''} ${industry}`.toLowerCase()
+  const matchedRule = SWING_RISK_GROUP_RULES.find(([, keywords]) => keywords.some((keyword) => text.includes(keyword)))
+  if (matchedRule) return matchedRule[0]
+  const primary = industryParts(industry)[0]
+  return !primary || primary === '-' || primary === '분류 확인 필요' ? '분류 확인 필요' : primary
+}
+
+function swingRiskGroupForTrade(trade: TradeLog, stocksByTicker: Map<string, Stock>) {
+  if (trade.riskGroup && trade.riskGroup !== '분류 확인 필요') return trade.riskGroup
+  const stock = stocksByTicker.get(trade.ticker)
+  return swingRiskGroupForFields(trade.ticker, trade.name ?? stock?.name, stock?.industry)
+}
+
+function isLeveragedEtfFields(ticker: string, name?: string, industry?: string) {
+  const text = `${ticker} ${name ?? ''} ${industry ?? ''}`.toLowerCase()
+  const etfLike = ['etf', 'etn', 'direxion', 'proshares', 'kodex', 'tiger'].some((token) => text.includes(token))
+  const leveraged = ['레버리지', '인버스', '곱버스', 'ultra', 'bull', 'bear'].some((token) => text.includes(token))
+    || /(^|\W)[+-]?[23]x(\W|$)/.test(text)
+  return etfLike && leveraged
+}
+
+function isLeveragedEtfTrade(trade: TradeLog, stocksByTicker: Map<string, Stock>) {
+  const stock = stocksByTicker.get(trade.ticker)
+  return isLeveragedEtfFields(trade.ticker, trade.name ?? stock?.name, stock?.industry)
+}
+
+function manualSwingEntryBlockReason(
+  candidate: Stock,
+  openTrades: TradeLog[],
+  stocks: Stock[],
+) {
+  const swingTrades = openTrades.filter((trade) => trade.status === '보유 중' && (trade.investmentType ?? 'swing') === 'swing')
+  if (swingTrades.some((trade) => tickerMatches(trade.ticker, candidate.ticker))) return '동일 종목은 한 포지션만 허용됩니다.'
+  if (new Set(swingTrades.map((trade) => trade.ticker)).size >= 10) return '스윙 10슬롯이 모두 사용 중입니다.'
+  const stocksByTicker = new Map(stocks.map((stock) => [stock.ticker, stock]))
+  stocksByTicker.set(candidate.ticker, candidate)
+  const candidateGroup = swingRiskGroupForFields(candidate.ticker, candidate.name, candidate.industry)
+  if (candidateGroup === '분류 확인 필요') return '대표 위험군 분류가 필요합니다.'
+  const candidatePercent = isLeveragedEtfFields(candidate.ticker, candidate.name, candidate.industry) ? 5 : 10
+  const currentPercent = swingTrades.reduce((sum, trade) => (
+    swingRiskGroupForTrade(trade, stocksByTicker) === candidateGroup
+      ? sum + (trade.recommendedAllocationPercent ?? (isLeveragedEtfTrade(trade, stocksByTicker) ? 5 : 10))
+      : sum
+  ), 0)
+  if (currentPercent + candidatePercent > SWING_RISK_GROUP_MAX_PERCENT) {
+    return `${candidateGroup} 계획 비중이 ${currentPercent + candidatePercent}%로 20% 한도를 넘습니다.`
+  }
+  return ''
+}
+
 function contributionSettingsDraftFrom(settings: ContributionSettings): ContributionSettingsDraft {
   return {
     initialCapital: String(settings.initialCapital),
@@ -3615,7 +3710,11 @@ function buildPortfolioSummary(
   let runningCash = initialCash
   const slotWeights = allocationWeightsForProfile(investmentType, settings)
   const megaTrendOnly = settings.allocationByInvestmentType[investmentType].megaTrendOnly
+  const stocksByTicker = new Map(stocks.map((stock) => [stock.ticker, stock]))
   const occupiedSlots = new Map<string, number>()
+  const occupiedTickerCounts = new Map<string, number>()
+  const swingRiskGroupPercent = new Map<string, number>()
+  const swingAllocationByTradeKey = new Map<string, { group: string; percent: number }>()
   const amountByTradeKey = new Map<string, number>()
   let openInvestmentAmount = 0
   let cumulativeInvestmentAmount = 0
@@ -3653,9 +3752,23 @@ function buildPortfolioSummary(
       const tradeProfit = Math.round(amount * (displayedTradeReturnPct(trade, stocks) ?? 0) / 100)
       runningCash += amount + tradeProfit
       occupiedSlots.delete(key)
+      const tickerCount = occupiedTickerCounts.get(trade.ticker) ?? 0
+      if (tickerCount <= 1) occupiedTickerCounts.delete(trade.ticker)
+      else occupiedTickerCounts.set(trade.ticker, tickerCount - 1)
+      const swingAllocation = swingAllocationByTradeKey.get(key)
+      if (swingAllocation) {
+        const nextPercent = Math.max(0, (swingRiskGroupPercent.get(swingAllocation.group) ?? 0) - swingAllocation.percent)
+        if (nextPercent === 0) swingRiskGroupPercent.delete(swingAllocation.group)
+        else swingRiskGroupPercent.set(swingAllocation.group, nextPercent)
+        swingAllocationByTradeKey.delete(key)
+      }
     }
 
     const cashBeforeBuys = runningCash
+    const allocationBaseBeforeBuys = cashBeforeBuys + [...occupiedSlots.keys()].reduce(
+      (sum, key) => sum + (amountByTradeKey.get(key) ?? 0),
+      0,
+    )
     const orderedBuys = [...events.buys].sort((a, b) => {
       const aPriority = buyPriorityForTrade(a)
       const bPriority = buyPriorityForTrade(b)
@@ -3670,12 +3783,39 @@ function buildPortfolioSummary(
         ? Math.max(0, Math.round(trade.investmentAmount))
         : null
       const blockedByMegaTrend = megaTrendOnly && fixedAmount === null && buyPriorityForTrade(trade).megaRank !== 0
-      const slotIndex = fixedAmount === 0 || blockedByMegaTrend ? -1 : slotWeights.findIndex((_, index) => ![...occupiedSlots.values()].includes(index))
-      const amount = fixedAmount !== null
-        ? fixedAmount
-        : slotIndex >= 0 ? Math.min(runningCash, Math.max(0, Math.floor(cashBeforeBuys * slotWeights[slotIndex]))) : 0
+      const duplicateSwingTicker = investmentType === 'swing' && (occupiedTickerCounts.get(trade.ticker) ?? 0) > 0
+      const riskGroup = investmentType === 'swing' ? swingRiskGroupForTrade(trade, stocksByTicker) : ''
+      const slotIndex = fixedAmount === 0 || blockedByMegaTrend || duplicateSwingTicker
+        ? -1
+        : slotWeights.findIndex((_, index) => ![...occupiedSlots.values()].includes(index))
+      const configuredPercent = slotIndex >= 0 ? slotWeights[slotIndex] * 100 : 0
+      const fixedPercent = fixedAmount !== null && allocationBaseBeforeBuys > 0 ? fixedAmount / allocationBaseBeforeBuys * 100 : null
+      const leveragedEtf = investmentType === 'swing' && isLeveragedEtfTrade(trade, stocksByTicker)
+      const recommendedPercent = investmentType === 'swing'
+        ? (fixedPercent ?? (leveragedEtf ? 5 : (trade.recommendedAllocationPercent ?? configuredPercent)))
+        : configuredPercent
+      const blockedByRiskGroup = investmentType === 'swing'
+        && (
+          riskGroup === '분류 확인 필요'
+          || (swingRiskGroupPercent.get(riskGroup) ?? 0) + recommendedPercent > SWING_RISK_GROUP_MAX_PERCENT
+        )
+      const blockedByPositionSize = investmentType === 'swing'
+        && fixedPercent !== null
+        && fixedPercent > (leveragedEtf ? 5 : 10)
+      const amount = slotIndex >= 0 && !blockedByRiskGroup && !blockedByPositionSize
+        ? fixedAmount !== null
+          ? Math.min(runningCash, fixedAmount)
+          : Math.min(runningCash, Math.max(0, Math.floor(allocationBaseBeforeBuys * recommendedPercent / 100)))
+        : 0
       amountByTradeKey.set(key, amount)
-      if (slotIndex >= 0 && amount > 0) occupiedSlots.set(key, slotIndex)
+      if (slotIndex >= 0 && amount > 0) {
+        occupiedSlots.set(key, slotIndex)
+        occupiedTickerCounts.set(trade.ticker, (occupiedTickerCounts.get(trade.ticker) ?? 0) + 1)
+        if (investmentType === 'swing') {
+          swingRiskGroupPercent.set(riskGroup, (swingRiskGroupPercent.get(riskGroup) ?? 0) + recommendedPercent)
+          swingAllocationByTradeKey.set(key, { group: riskGroup, percent: recommendedPercent })
+        }
+      }
       cumulativeInvestmentAmount += amount
       runningCash -= amount
     }
@@ -8083,11 +8223,18 @@ function App() {
     setManualHoldingDraft((current) => (current ? { ...current, [field]: value } : current))
   }
 
+  const manualHoldingResolved = manualHoldingDraft
+    ? resolveStockForTicker(manualHoldingDraft.ticker, apiStocks, apiSearchStocks)
+    : null
+  const manualHoldingRiskBlockReason = displayedInvestmentType === 'swing' && manualHoldingResolved?.ticker
+    ? manualSwingEntryBlockReason(manualHoldingResolved, scopedOpenTrades, [...apiStocks, ...apiSearchStocks])
+    : ''
   const isManualHoldingReady = manualHoldingDraft !== null
     && manualHoldingDraft.ticker.trim().length > 0
     && (parsePriceValue(manualHoldingDraft.buyPrice) ?? 0) > 0
     && !Number.isNaN(parseTradeDate(manualHoldingDraft.buyDate))
     && (manualHoldingDraft.strategy !== '6' || ((parsePriceValue(manualHoldingDraft.supportStopPrice ?? '') ?? 0) >= (parsePriceValue(manualHoldingDraft.buyPrice) ?? 0) * 0.92 && (parsePriceValue(manualHoldingDraft.supportStopPrice ?? '') ?? 0) < (parsePriceValue(manualHoldingDraft.buyPrice) ?? 0)))
+    && !manualHoldingRiskBlockReason
 
   const confirmManualHoldingAdd = async () => {
     if (!manualHoldingDraft || !isManualHoldingReady || isSavingTradeLogs) return
@@ -8119,6 +8266,11 @@ function App() {
       newTrade.supportStopPrice = manualHoldingDraft.strategy === '5' ? buyPriceValue * .92 : parsePriceValue(manualHoldingDraft.supportStopPrice ?? '') ?? undefined
       newTrade.supportLevel = manualHoldingDraft.strategy === '5' ? '매수가 -8%' : '직접 입력한 진입 시 고정 손절가'
       newTrade.entrySessionDate = newTrade.buyDate
+    }
+    if (displayedInvestmentType === 'swing') {
+      newTrade.riskGroup = swingRiskGroupForFields(resolvedTicker, resolved.name, resolved.industry)
+      newTrade.recommendedAllocationPercent = isLeveragedEtfFields(resolvedTicker, resolved.name, resolved.industry) ? 5 : 10
+      newTrade.allocationStatus = '진입 가능'
     }
 
     try {
@@ -11140,6 +11292,9 @@ function App() {
                 </label>
               </div>
             </div>
+            {manualHoldingRiskBlockReason && (
+              <p style={{ color: '#c0392b', fontSize: 13 }}>{manualHoldingRiskBlockReason}</p>
+            )}
             <div className="modal-actions">
               <button className="modal-cancel" disabled={isSavingTradeLogs} type="button" onClick={() => setManualHoldingDraft(null)}>
                 취소

@@ -19,6 +19,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from calculator.pipeline import load_strategy_season_state, save_strategy_season_state
+from calculator.portfolio_risk import swing_entry_decision
 from calculator.rules import (
     ACTIVE_STRATEGY_CODES,
     STRATEGY_RULES,
@@ -521,6 +522,34 @@ def entry_signal_codes(row: dict[str, Any]) -> list[str]:
     if any(code in {"5", "6"} for code in codes):
         return sorted(codes, key=int)[:1]
     return codes
+
+
+def apply_allocation_guidance(
+    stock: dict[str, Any],
+    technical_row: dict[str, Any],
+    decision: dict[str, Any],
+) -> bool:
+    """Attach portfolio guidance without changing the underlying strategy signal."""
+    changed = False
+    keys = (
+        "allocationStatus",
+        "allocationReason",
+        "recommendedAllocationPercent",
+        "riskGroup",
+        "currentRiskGroupPercent",
+        "postRiskGroupPercent",
+        "openPositionCount",
+        "maxPositionCount",
+    )
+    for target in (stock, technical_row):
+        if not isinstance(target, dict):
+            continue
+        for key in keys:
+            value = decision.get(key)
+            if target.get(key) != value:
+                target[key] = value
+                changed = True
+    return changed
 
 
 def parse_trade_date(value: Any) -> date | None:
@@ -1496,6 +1525,12 @@ def run_trade_engine(
     current_open_counts = open_trade_counts(trades)
     current_open_trades = open_trades_by_slot(trades)
     current_open_by_ticker = open_trades_by_ticker(trades)
+    open_swing_trades = [
+        trade
+        for trade in trades
+        if str(trade.get("status") or "") == "보유 중"
+        and trade_investment_type(trade) == "swing"
+    ]
 
     if mutate_public_state:
         for stock in stocks:
@@ -1545,6 +1580,12 @@ def run_trade_engine(
         previous_reason = str(previous_stock.get("opinionReason") or "").strip()
         if current_opinion != "매수" or nasdaq_peak_alert:
             continue
+        active_entry_codes = entry_signal_codes(row)
+        if "1" in active_entry_codes:
+            season["open"] = True
+            season["openedAt"] = season.get("openedAt") or publish_iso()
+            season["openedByTicker"] = season.get("openedByTicker") or ticker
+            season["updatedAt"] = publish_iso()
         ticker_appended = False
         for investment_type in INVESTMENT_TYPES:
             if ticker not in set(entry_tickers_by_type.get(investment_type, [])):
@@ -1559,7 +1600,16 @@ def run_trade_engine(
                 for trade in open_for_ticker
                 if hold_restore_allowed(trade, current_price, today_date)
             ]
-            for code in entry_signal_codes(row):
+            allocation_decision: dict[str, Any] | None = None
+            if investment_type == "swing":
+                allocation_decision = swing_entry_decision(stock, open_swing_trades, stocks_by_symbol)
+                if mutate_public_state:
+                    signal_state_changed = (
+                        apply_allocation_guidance(stock, row, allocation_decision) or signal_state_changed
+                    )
+                if allocation_decision["allocationStatus"] != "진입 가능":
+                    continue
+            for code in active_entry_codes:
                 if code not in ACTIVE_STRATEGIES:
                     continue
                 if code in SWING_ONLY_STRATEGIES and investment_type != "swing":
@@ -1622,6 +1672,8 @@ def run_trade_engine(
                     "holdingDays": "-",
                     "status": "보유 중",
                 }
+                if allocation_decision is not None:
+                    new_trade.update(allocation_decision)
                 if code == "3":
                     support_stop = strategy_3_support_stop(row, current_price or 0)
                     if support_stop is not None:
@@ -1632,11 +1684,6 @@ def run_trade_engine(
                            and strategy_code(t.get("strategy")) == code and trade_investment_type(t) == investment_type for t in trades):
                         continue
                     new_trade.update(trend_levels)
-                if code == "1":
-                    season["open"] = True
-                    season["openedAt"] = season.get("openedAt") or publish_iso()
-                    season["openedByTicker"] = season.get("openedByTicker") or ticker
-                    season["updatedAt"] = publish_iso()
                 trades.append(new_trade)
                 for trade in restore_source_trades:
                     trade.pop("restoreWatchDate", None)
@@ -1644,9 +1691,18 @@ def run_trade_engine(
                 current_open_counts[slot_key] = open_count + 1
                 current_open_trades.setdefault(slot_key, []).append(new_trade)
                 current_open_by_ticker.setdefault(ticker, []).append(new_trade)
+                if investment_type == "swing":
+                    open_swing_trades.append(new_trade)
                 appended += 1
                 ticker_appended = True
-        if open_for_ticker_all and not ticker_appended and mutate_public_state:
+                if investment_type == "swing":
+                    break
+        if (
+            open_for_ticker_all
+            and not ticker_appended
+            and mutate_public_state
+            and stock.get("allocationStatus") != "보유"
+        ):
             signal_state_changed = (
                 block_held_public_buy_signal(stock, row, previous_opinion, previous_reason) or signal_state_changed
             )

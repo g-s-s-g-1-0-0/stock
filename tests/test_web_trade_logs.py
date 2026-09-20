@@ -73,7 +73,7 @@ def test_buy_signals_append_profile_specific_trades(monkeypatch, tmp_path):
     assert rows[1]["slotId"].startswith("MSFT_swing_1_")
 
 
-def test_held_watch_to_buy_adds_a_different_strategy_slot_without_same_strategy_restore(monkeypatch, tmp_path):
+def test_held_watch_to_buy_does_not_add_a_second_swing_position(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     public_path.parent.mkdir(parents=True)
     public_path.write_text(logs.json.dumps({
@@ -106,10 +106,11 @@ def test_held_watch_to_buy_adds_a_different_strategy_slot_without_same_strategy_
         {"peakTriggered": False},
     )
 
-    rows = logs.load_json(cache_path, {})["rows"]
-    assert len(rows) == 2
-    assert rows[1]["strategy"] == "1. 시장 공포 저점 진입"
-    assert rows[1]["status"] == "보유 중"
+    updated = logs.load_json(cache_path, {})
+    rows = updated["rows"]
+    assert len(rows) == 1
+    assert rows[0]["strategy"] == "4. 장기선 아래 반등 초입"
+    assert updated["meta"]["appendedOpenTrades"] == 0
 
 
 def test_long_term_trade_does_not_auto_exit_on_target(monkeypatch, tmp_path):
@@ -846,25 +847,160 @@ def test_closed_trade_status_is_normalized_to_strategy_target(monkeypatch, tmp_p
     assert updated["meta"]["correctedClosedStatuses"] == 1
 
 
-def test_buy_signals_append_one_open_trade_per_strategy(monkeypatch, tmp_path):
+def test_buy_signal_appends_one_swing_position_with_allocation_guidance(monkeypatch, tmp_path):
     cache_path, _ = patch_log_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {
+        "long_term": [],
+        "swing": ["MSFT"],
+    })
 
     logs.update_trade_logs(
-        [{"ticker": "MSFT", "name": "Microsoft", "market": "US", "currentPrice": "$100.00", "opinion": "매수"}],
+        [{
+            "ticker": "MSFT",
+            "name": "Microsoft",
+            "market": "US",
+            "industry": "소프트웨어·클라우드",
+            "currentPrice": "$100.00",
+            "opinion": "매수",
+        }],
         {},
-        {"MSFT": {"entrySignalCodes": "A,D", "현재가": "$100.00"}},
+        {"MSFT": {"entrySignalCodes": "1,2", "현재가": "$100.00"}},
         {"peakTriggered": False},
     )
 
     updated = logs.load_json(cache_path, {})
     rows = updated["rows"]
-    assert [row["strategy"] for row in rows] == [
-        "1. 시장 공포 저점 진입",
-        "1. 시장 공포 저점 진입",
-    ]
-    assert [row["investmentType"] for row in rows] == ["swing", "swing"]
-    assert all(row["status"] == "보유 중" for row in rows)
-    assert updated["meta"]["appendedOpenTrades"] == 2
+    assert len(rows) == 1
+    assert rows[0]["strategy"] == "1. 시장 공포 저점 진입"
+    assert rows[0]["investmentType"] == "swing"
+    assert rows[0]["recommendedAllocationPercent"] == 10
+    assert rows[0]["riskGroup"] == "소프트웨어·클라우드"
+    assert rows[0]["status"] == "보유 중"
+    assert updated["meta"]["appendedOpenTrades"] == 1
+
+
+def test_industry_cap_keeps_buy_signal_but_blocks_trade_allocation(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "investmentType": "swing",
+                "ticker": "000660",
+                "name": "SK하이닉스",
+                "strategy": "1. 시장 공포 저점 진입",
+                "buyDate": "2026.09.01",
+                "buyPrice": "₩1,000,000",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "status": "보유 중",
+                "recommendedAllocationPercent": 10,
+            },
+            {
+                "investmentType": "swing",
+                "ticker": "CRDO",
+                "name": "Credo Technology Group",
+                "strategy": "1. 시장 공포 저점 진입",
+                "buyDate": "2026.09.02",
+                "buyPrice": "$100.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "status": "보유 중",
+                "recommendedAllocationPercent": 10,
+            },
+        ]
+    }), encoding="utf-8")
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {
+        "long_term": [],
+        "swing": ["ALAB"],
+    })
+    stock = {
+        "ticker": "ALAB",
+        "name": "Astera Labs",
+        "market": "US",
+        "industry": "반도체, AI 데이터센터 연결",
+        "currentPrice": "$290.00",
+        "opinion": "매수",
+    }
+    technical = {"ALAB": {"entrySignalCodes": "1", "현재가": "$290.00"}}
+
+    logs.update_trade_logs([stock], {"ALAB": {"opinion": "관망"}}, technical, {"peakTriggered": False})
+
+    updated = logs.load_json(cache_path, {})
+    assert len([row for row in updated["rows"] if row["status"] == "보유 중"]) == 2
+    assert updated["meta"]["appendedOpenTrades"] == 0
+    assert stock["opinion"] == "매수"
+    assert stock["allocationStatus"] == "매수 보류"
+    assert stock["riskGroup"] == "반도체·AI 인프라"
+    assert stock["currentRiskGroupPercent"] == 20
+    assert technical["ALAB"]["entrySignalCodes"] == "1"
+
+
+def test_strategy_one_signal_opens_season_even_when_allocation_is_blocked(monkeypatch, tmp_path):
+    cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
+    public_path.parent.mkdir(parents=True)
+    public_path.write_text(logs.json.dumps({
+        "rows": [
+            {
+                "investmentType": "swing",
+                "ticker": "000660",
+                "name": "SK하이닉스",
+                "status": "보유 중",
+                "strategy": "1. 시장 공포 저점 진입",
+                "buyDate": "2026.09.01",
+                "buyPrice": "₩1,000,000",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "recommendedAllocationPercent": 10,
+            },
+            {
+                "investmentType": "swing",
+                "ticker": "CRDO",
+                "name": "Credo Technology Group",
+                "status": "보유 중",
+                "strategy": "1. 시장 공포 저점 진입",
+                "buyDate": "2026.09.02",
+                "buyPrice": "$100.00",
+                "sellDate": "보유 중",
+                "sellPrice": "-",
+                "recommendedAllocationPercent": 10,
+            },
+        ]
+    }), encoding="utf-8")
+    monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {
+        "long_term": [],
+        "swing": ["ALAB"],
+    })
+    initial_season = {
+        "open": False,
+        "sawRecovery": False,
+        "nonRecoveryStreak": 0,
+        "openedAt": None,
+        "openedByTicker": None,
+    }
+    saved: list[dict] = []
+    monkeypatch.setattr(logs, "load_strategy_season_state", lambda: dict(initial_season))
+    monkeypatch.setattr(logs, "save_strategy_season_state", lambda state: saved.append(dict(state)))
+
+    logs.update_trade_logs(
+        [{
+            "ticker": "ALAB",
+            "name": "Astera Labs",
+            "market": "US",
+            "industry": "반도체, AI 데이터센터 연결",
+            "currentPrice": "$290.00",
+            "opinion": "매수",
+        }],
+        {"ALAB": {"opinion": "관망"}},
+        {"ALAB": {"entrySignalCodes": "1", "현재가": "$290.00"}},
+        {"peakTriggered": False},
+    )
+
+    updated = logs.load_json(cache_path, {})
+    assert updated["meta"]["appendedOpenTrades"] == 0
+    assert updated["meta"]["strategySeasonOpen"] is True
+    assert saved[-1]["open"] is True
+    assert saved[-1]["openedByTicker"] == "ALAB"
 
 
 def test_same_strategy_does_not_duplicate_while_signal_never_left(monkeypatch, tmp_path):
@@ -939,7 +1075,7 @@ def test_public_log_removes_duplicate_closed_same_day_strategy_slots(monkeypatch
     assert updated["rows"][0]["slotId"] == "INTC_swing_3_20260825_1"
 
 
-def test_same_strategy_adds_slot_after_ten_percent_drop_and_ten_days(monkeypatch, tmp_path):
+def test_same_strategy_never_adds_a_second_swing_position(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     today = logs.kst_trade_date()
     public_path.parent.mkdir(parents=True)
@@ -970,14 +1106,12 @@ def test_same_strategy_adds_slot_after_ten_percent_drop_and_ten_days(monkeypatch
 
     updated = logs.load_json(cache_path, {})
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
-    assert len(rows) == 2
-    assert rows[1]["strategy"] == "1. 시장 공포 저점 진입"
-    assert rows[1]["investmentType"] == "swing"
-    assert rows[1]["slotId"].startswith("MP_1_")
-    assert updated["meta"]["appendedOpenTrades"] == 1
+    assert len(rows) == 1
+    assert rows[0]["strategy"] == "1. 시장 공포 저점 진입"
+    assert updated["meta"]["appendedOpenTrades"] == 0
 
 
-def test_ef_family_blocks_cross_strategy_slot_until_restore_condition(monkeypatch, tmp_path):
+def test_one_position_rule_does_not_create_restore_state(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     today = logs.kst_trade_date()
     public_path.parent.mkdir(parents=True)
@@ -1009,11 +1143,11 @@ def test_ef_family_blocks_cross_strategy_slot_until_restore_condition(monkeypatc
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
     assert len(rows) == 1
     assert rows[0]["strategy"] == "2. 상승 추세 이평선 눌림목"
-    assert "restoreWatchDate" in rows[0]
+    assert "restoreWatchDate" not in rows[0]
     assert updated["meta"]["appendedOpenTrades"] == 0
 
 
-def test_ef_family_adds_cross_strategy_slot_after_ten_percent_drop_ten_days_and_two_signals(monkeypatch, tmp_path):
+def test_one_position_rule_ignores_repeated_restore_signals(monkeypatch, tmp_path):
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     today = logs.kst_trade_date()
     public_path.parent.mkdir(parents=True)
@@ -1045,7 +1179,7 @@ def test_ef_family_adds_cross_strategy_slot_after_ten_percent_drop_ten_days_and_
     updated = logs.load_json(cache_path, {})
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
     assert len(rows) == 1
-    assert rows[0]["restoreSignalCounts"] == {"F": 1}
+    assert "restoreSignalCounts" not in rows[0]
     assert updated["meta"]["appendedOpenTrades"] == 0
 
     logs.update_trade_logs(
@@ -1057,14 +1191,10 @@ def test_ef_family_adds_cross_strategy_slot_after_ten_percent_drop_ten_days_and_
 
     updated = logs.load_json(cache_path, {})
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
-    assert [row["strategy"] for row in rows] == [
-        "2. 상승 추세 이평선 눌림목",
-        "2. 상승 추세 이평선 눌림목",
-    ]
-    assert rows[1]["investmentType"] == "swing"
-    assert rows[1]["slotId"].startswith("DL_2_")
+    assert len(rows) == 1
+    assert rows[0]["strategy"] == "2. 상승 추세 이평선 눌림목"
     assert "restoreSignalCounts" not in rows[0]
-    assert updated["meta"]["appendedOpenTrades"] == 1
+    assert updated["meta"]["appendedOpenTrades"] == 0
 
 
 def test_same_day_sell_does_not_reopen_same_strategy(monkeypatch, tmp_path):
@@ -1160,8 +1290,7 @@ def test_offlist_held_trade_keeps_tracking_but_blocks_additional_buy(monkeypatch
 
 
 def test_held_trade_buy_signal_without_add_slot_keeps_buy_opinion(monkeypatch, tmp_path):
-    # 보유 중 '매수' 종목은 추가매수 조건(-10%/대기일)을 못 채워도 의견은 '매수'를 유지한다.
-    # 추가매수 '신호'(추가 슬롯/진입 코드)만 보류될 뿐, 의견을 관망으로 강제로 내리지 않는다(GAS와 동일).
+    # 동일 종목 1포지션 규칙은 실제 추가 배분만 막고 전략 신호는 보존한다.
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["INTC"]})
     public_path.parent.mkdir(parents=True)
@@ -1195,16 +1324,15 @@ def test_held_trade_buy_signal_without_add_slot_keeps_buy_opinion(monkeypatch, t
     # 추가 슬롯은 생성되지 않는다(추가매수 조건 미충족).
     assert updated["meta"]["appendedOpenTrades"] == 0
     assert changed is True
-    # 의견은 '매수' 유지, 추가매수 신호(코드/전략 리스트)만 비운다.
     assert stock["opinion"] == "매수"
-    assert stock["strategies"] == []
+    assert stock["strategies"] == ["2. 상승 추세 이평선 눌림목"]
+    assert stock["allocationStatus"] == "보유"
     assert technical["INTC"]["opinion"] == "매수"
-    assert technical["INTC"]["entrySignalCodes"] == ""
+    assert technical["INTC"]["entrySignalCodes"] == "2"
 
 
-def test_held_watch_does_not_return_to_buy_without_additional_slot(monkeypatch, tmp_path):
-    # 매수 창이 닫혀 관망인 보유 종목은, 추가매수 조건이 슬롯을 만들기 전에는
-    # hold 게이트가 다시 살아도 매수로 올리지 않는다.
+def test_held_watch_returns_to_buy_signal_but_allocation_stays_hold(monkeypatch, tmp_path):
+    # 전략 신호와 실제 배분을 분리해 관망→매수 전환은 알리고 추가 포지션만 막는다.
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["BE"]})
     public_path.parent.mkdir(parents=True)
@@ -1236,10 +1364,11 @@ def test_held_watch_does_not_return_to_buy_without_additional_slot(monkeypatch, 
     be_rows = [row for row in updated["rows"] if row["ticker"] == "BE"]
     assert len(be_rows) == 1
     assert updated["meta"]["appendedOpenTrades"] == 0
-    assert stock["opinion"] == "관망"
-    assert stock["strategies"] == []
-    assert technical["BE"]["opinion"] == "관망"
-    assert technical["BE"]["entrySignalCodes"] == ""
+    assert stock["opinion"] == "매수"
+    assert stock["strategies"] == ["5. 저항선 돌파 후 눌림"]
+    assert stock["allocationStatus"] == "보유"
+    assert technical["BE"]["opinion"] == "매수"
+    assert technical["BE"]["entrySignalCodes"] == "5"
 
 
 def test_event_watch_restore_returns_to_buy_without_additional_slot(monkeypatch, tmp_path):
@@ -1294,12 +1423,10 @@ def test_event_watch_restore_returns_to_buy_without_additional_slot(monkeypatch,
     assert updated["meta"]["appendedOpenTrades"] == 0
     assert changed is True
     assert stock["opinion"] == "매수"
-    assert "이벤트 종료" in str(stock.get("opinionReason") or "")
-    assert "금리 발표" in str(stock.get("opinionReason") or "")
-    assert "정상장 볼린저 워시아웃" in str(stock.get("opinionReason") or "")
-    assert stock["strategies"] == []
+    assert stock["strategies"] == ["3. 정상장 볼린저 워시아웃"]
+    assert stock["allocationStatus"] == "보유"
     assert technical["STX"]["opinion"] == "매수"
-    assert technical["STX"]["entrySignalCodes"] == ""
+    assert technical["STX"]["entrySignalCodes"] == "3"
 
 
 def test_offlist_held_trade_still_liquidates_on_exit(monkeypatch, tmp_path):
