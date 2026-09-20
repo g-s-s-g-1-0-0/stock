@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-09-20T16:56:02+00:00",
-    "lastSuccessfulRun": "2026-09-20T16:56:02+00:00",
+    "updatedAt": "2026-09-20T17:47:49+00:00",
+    "lastSuccessfulRun": "2026-09-20T17:47:49+00:00",
     "failedReason": null
   },
   "rows": [
@@ -2437,13 +2437,6 @@
       "industry": "조선, LNG선, 해양 플랜트, 방산 선박"
     },
     {
-      "ticker": "008290",
-      "name": "원풍물산",
-      "market": "KR",
-      "category": "성장주",
-      "industry": "남성용신사복"
-    },
-    {
       "ticker": "0082N0",
       "name": "카나프테라퓨틱스",
       "market": "KR",
@@ -3709,6 +3702,13 @@
       "market": "KR",
       "category": "성장주",
       "industry": "뷰티테크, 화장품·건기식, D2C 브랜드"
+    },
+    {
+      "ticker": "0161M0",
+      "name": "네오사피엔스",
+      "market": "KR",
+      "category": "성장주",
+      "industry": "소프트웨어·클라우드, 보안, AI 플랫폼"
     },
     {
       "ticker": "016250",
@@ -6441,13 +6441,6 @@
       "industry": "LED패키지"
     },
     {
-      "ticker": "046070",
-      "name": "코다코",
-      "market": "KR",
-      "category": "가치주",
-      "industry": "2차전지, 전기차 배터리, 배터리 소재"
-    },
-    {
       "ticker": "046120",
       "name": "오르비텍",
       "market": "KR",
@@ -8938,13 +8931,6 @@
       "market": "KR",
       "category": "성장주",
       "industry": "소프트웨어·클라우드, 보안, AI 플랫폼"
-    },
-    {
-      "ticker": "082660",
-      "name": "코스나인",
-      "market": "KR",
-      "category": "성장주",
-      "industry": "뷰티테크, 화장품·건기식, D2C 브랜드"
     },
     {
       "ticker": "082740",
