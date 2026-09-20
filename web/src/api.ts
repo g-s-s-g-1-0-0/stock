@@ -238,21 +238,24 @@ export async function saveTradeLogs<TTradeLog>(
   throw new Error('트레이딩 로그 저장에 실패했습니다.')
 }
 
-export async function refreshAppData(tickers: string[], accessToken?: string, scope = 'analysis') {
+export async function refreshAppData(tickers: string[], accessToken?: string, scope = 'analysis', page?: string) {
   const endpoints = import.meta.env.DEV
     ? ['/api/admin/trigger-refresh', '/api/admin/refresh-data', 'http://127.0.0.1:8787/api/admin/refresh-data']
     : ['/api/admin/trigger-refresh']
   let lastError = ''
+  const params = new URLSearchParams({ scope })
+  if (page) params.set('page', page)
 
   for (const endpoint of endpoints) {
     try {
-      const response = await fetch(endpoint, {
+      const separator = endpoint.includes('?') ? '&' : '?'
+      const response = await fetch(`${endpoint}${separator}${params.toString()}`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
           ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
         },
-        body: JSON.stringify({ tickers, scope }),
+        body: JSON.stringify({ tickers, scope, page }),
       })
 
       if (response.ok) {
@@ -262,6 +265,7 @@ export async function refreshAppData(tickers: string[], accessToken?: string, sc
           mode?: 'workflow_dispatch'
           message?: string
           actionsUrl?: string
+          scope?: string
         }
         return {
           ...payload,

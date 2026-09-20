@@ -1,3 +1,17 @@
 {
-  "ignoreCommand": "bash scripts/vercel-ignore-data-only.sh"
+  "ignoreCommand": "bash scripts/vercel-ignore-data-only.sh",
+  "headers": [
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
+  ]
 }

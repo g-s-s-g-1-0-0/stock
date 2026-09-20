@@ -769,6 +769,22 @@ function refreshScopeForPage(page: ActivePage) {
   return 'analysis'
 }
 
+function refreshScopeButtonLabel(page: ActivePage) {
+  if (page === 'value-analysis') return '가치분석'
+  if (page === 'technical-analysis') return '기술분석'
+  if (page === 'market-trends') return '시장 트렌드'
+  if (page === 'market-events') return '시장 이벤트'
+  return '분석'
+}
+
+function refreshLogTabs(scope: string): ApiLogTrigger[] {
+  if (scope === 'valuation') return ['value-analysis']
+  if (scope === 'technical') return ['technical-analysis']
+  if (scope === 'market-trends') return ['market-trends']
+  if (scope === 'analysis') return ['value-analysis', 'technical-analysis']
+  return []
+}
+
 function refreshScopeNeedsTickers(scope: string) {
   return scope === 'valuation' || scope === 'technical' || scope === 'analysis'
 }
@@ -7117,7 +7133,11 @@ function App() {
   }
 
   async function recordRefreshDataLogs(status: 'success' | 'failure', message: string, metadata: Record<string, unknown> = {}) {
-    await Promise.all(apiLogTabs.map((tab) => recordApiLog(tab.key, status, message, buildRefreshLogMetadata(tab.key, metadata))))
+    const scope = typeof metadata.scope === 'string' ? metadata.scope : ''
+    if (scope === 'market-events') return
+    const tabs = refreshLogTabs(scope)
+    const targets = tabs.length > 0 ? tabs : apiLogTabs.map((tab) => tab.key)
+    await Promise.all(targets.map((tab) => recordApiLog(tab, status, message, buildRefreshLogMetadata(tab, metadata))))
   }
 
   async function loadWatchlist(scope: 'personal' | 'operator', session: UserSession | null): Promise<LoadedWatchlist> {
@@ -8029,9 +8049,9 @@ function App() {
       const accessToken = authData.session?.access_token
       await refreshAppData([ticker], accessToken, 'valuation')
       setRefreshDataMessage(`${ticker} 산업군/가치 데이터 갱신 워크플로를 실행했습니다.`)
-      void recordRefreshDataLogs('success', `${ticker} 관심종목 추가 후 산업군/가치 데이터 갱신을 실행했습니다.`, { tickers: [ticker] })
+      void recordRefreshDataLogs('success', `${ticker} 관심종목 추가 후 산업군/가치 데이터 갱신을 실행했습니다.`, { tickers: [ticker], scope: 'valuation' })
     } catch (error) {
-      void recordRefreshDataLogs('failure', error instanceof Error ? error.message : `${ticker} 산업군/가치 데이터 갱신 실행에 실패했습니다.`, { tickers: [ticker] })
+      void recordRefreshDataLogs('failure', error instanceof Error ? error.message : `${ticker} 산업군/가치 데이터 갱신 실행에 실패했습니다.`, { tickers: [ticker], scope: 'valuation' })
     }
   }
 
@@ -8997,7 +9017,9 @@ function App() {
   const refreshCurrentData = async () => {
     if (!isAdminUser) return
 
-    const scope = refreshScopeForPage(currentActivePage)
+    const page = activePageFromHash() ?? currentActivePage
+    const scope = refreshScopeForPage(page)
+    const scopeLabel = refreshScopeButtonLabel(page)
     const tickers = refreshScopeNeedsTickers(scope)
       ? Array.from(new Set(tableStocks.map((stock) => stock.ticker)))
       : []
@@ -9007,7 +9029,7 @@ function App() {
     }
 
     setIsRefreshingData(true)
-    setRefreshDataMessage('데이터 갱신 작업을 실행하는 중입니다...')
+    setRefreshDataMessage(`${scopeLabel} 갱신을 실행하는 중입니다...`)
     try {
       if (!supabase) {
         throw new Error('Supabase 연결값이 설정되지 않았습니다.')
@@ -9016,10 +9038,15 @@ function App() {
       const { data: authData } = await supabase.auth.getSession()
       const accessToken = authData.session?.access_token
       const previousMetas = apiMetas
-      const result = await refreshAppData(tickers, accessToken, scope)
+      const result = await refreshAppData(tickers, accessToken, scope, page)
+      if (result.scope && result.scope !== scope) {
+        setRefreshDataMessage(`${scopeLabel} 요청이 ${result.scope}로 실행됐습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.`)
+        await recordRefreshDataLogs('failure', `요청 scope=${scope}와 실행 scope=${result.scope}가 다릅니다.`, { tickers, scope, page })
+        return
+      }
 
       if (result.mode === 'workflow_dispatch') {
-        setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 최신 데이터 반영 여부를 확인하는 중입니다...')
+        setRefreshDataMessage(`${scopeLabel} 갱신 워크플로를 실행했습니다. 최신 데이터 반영 여부를 확인하는 중입니다...`)
         for (let attempt = 1; attempt <= 40; attempt += 1) {
           await wait(attempt <= 3 ? 8000 : 15000)
           const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>()
@@ -9028,14 +9055,14 @@ function App() {
             applyLoadedData(data)
             const successMessage = refreshScopeSuccessMessage(scope, data, result.refreshedTickers)
             setRefreshDataMessage(successMessage)
-            await recordRefreshDataLogs('success', successMessage, { tickers: result.refreshedTickers, scope })
+            await recordRefreshDataLogs('success', successMessage, { tickers: result.refreshedTickers, scope, page })
             return
           }
           if (attempt === 3 || attempt % 4 === 0) {
-            setRefreshDataMessage(`데이터 갱신 워크플로가 진행 중입니다. 최신 데이터 반영을 확인하는 중입니다... (${attempt}/40)`)
+            setRefreshDataMessage(`${scopeLabel} 갱신 워크플로가 진행 중입니다. 최신 데이터 반영을 확인하는 중입니다... (${attempt}/40)`)
           }
         }
-        setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 아직 반영 확인이 끝나지 않았습니다. 잠시 후 새로고침해 주세요.')
+        setRefreshDataMessage(`${scopeLabel} 갱신 워크플로를 실행했습니다. 아직 반영 확인이 끝나지 않았습니다. 잠시 후 새로고침해 주세요.`)
         return
       }
 
@@ -9043,10 +9070,10 @@ function App() {
       applyLoadedData(data)
       const successMessage = refreshScopeSuccessMessage(scope, data, result.refreshedTickers)
       setRefreshDataMessage(successMessage)
-      await recordRefreshDataLogs('success', successMessage, { tickers: result.refreshedTickers, scope })
+      await recordRefreshDataLogs('success', successMessage, { tickers: result.refreshedTickers, scope, page })
     } catch (error) {
       setRefreshDataMessage('즉시 갱신에 실패했습니다. GitHub Actions 토큰과 Vercel 환경 변수를 확인해 주세요.')
-      await recordRefreshDataLogs('failure', error instanceof Error ? error.message : '데이터 즉시 갱신에 실패했습니다.', { tickers, scope })
+      await recordRefreshDataLogs('failure', error instanceof Error ? error.message : '데이터 즉시 갱신에 실패했습니다.', { tickers, scope, page })
     } finally {
       setIsRefreshingData(false)
     }
@@ -9827,7 +9854,7 @@ function App() {
         )}
         {isAdminUser && (
           <button className="refresh-data-button" disabled={isRefreshingData} type="button" onClick={refreshCurrentData}>
-            {isRefreshingData ? '갱신 중' : '즉시 갱신'}
+            {isRefreshingData ? '갱신 중' : `즉시 갱신 · ${refreshScopeButtonLabel(currentActivePage)}`}
           </button>
         )}
         <button

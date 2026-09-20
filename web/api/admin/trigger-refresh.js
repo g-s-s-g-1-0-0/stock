@@ -22,11 +22,23 @@ function readAdminEmails() {
 }
 
 function normalizeScope(value) {
-  const scope = String(value || 'all').trim()
+  const scope = String(value || '').trim()
   return ALLOWED_SCOPES.has(scope) ? scope : null
 }
 
+function scopeFromPage(value) {
+  const page = String(value || '').trim()
+  if (page === 'value-analysis') return 'valuation'
+  if (page === 'technical-analysis') return 'technical'
+  if (page === 'market-trends') return 'market-trends'
+  if (page === 'market-events') return 'market-events'
+  if (page === 'home' || page === 'board' || page === 'admin-logs') return 'analysis'
+  return null
+}
+
 function readRequestScope(req) {
+  const fromPage = scopeFromPage(req.query?.page || req.body?.page)
+  if (fromPage) return fromPage
   return normalizeScope(req.query?.scope || req.body?.scope || 'all')
 }
 
