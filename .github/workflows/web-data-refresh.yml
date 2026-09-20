@@ -6,8 +6,6 @@ on:
     - cron: "0 15 * * *"
     # Weekly market trends + universe report: Monday 00:00 KST (Sunday 15:00 UTC).
     - cron: "0 15 * * 0"
-    # Swing close digest: weekdays 22:00 UTC (17:00/18:00 ET, 07:00 KST next day).
-    - cron: "0 22 * * 1-5"
   workflow_dispatch:
     inputs:
       refresh_scope:

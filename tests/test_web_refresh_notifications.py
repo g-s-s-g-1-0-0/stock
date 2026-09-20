@@ -87,7 +87,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn('  schedule:', workflow)
         self.assertIn('- cron: "0 15 * * *"', workflow)
         self.assertIn('- cron: "0 15 * * 0"', workflow)
-        self.assertIn('- cron: "0 22 * * 1-5"', workflow)
+        self.assertNotIn('- cron: "0 22 * * 1-5"', workflow)
         self.assertNotIn('- cron: "0,10,20,30,40,50 23 * * 0-4"', workflow)
         self.assertNotIn('- cron: "30,40,50 0 * * 1-5"', workflow)
         self.assertIn('if [ "${{ github.event.schedule }}" = "0 15 * * 0" ]; then', workflow)
@@ -269,7 +269,7 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertNotIn("권장 매도가", body)
         self.assertNotIn("₩110,760", body)
 
-    def test_swing_email_shows_allocation_industry_cap_and_stop_risk(self) -> None:
+    def test_swing_email_explains_industry_cap_without_hypothetical_stop_risk(self) -> None:
         stock = {
             "ticker": "ALAB",
             "name": "Astera Labs",
@@ -301,12 +301,12 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual("매수 보류", enriched["actionLabel"])
         self.assertEqual("반도체·AI 인프라", enriched["riskGroup"])
         self.assertEqual(20, enriched["currentRiskGroupPercent"])
-        self.assertEqual(0.8, enriched["maxAccountLossPercent"])
-        self.assertIn("행동: <strong>매수 보류</strong>", body)
-        self.assertIn("반도체·AI 인프라 20%→30%", body)
+        self.assertNotIn("maxAccountLossPercent", enriched)
+        self.assertIn("권장 행동: <strong>매수 보류</strong>", body)
+        self.assertIn("산업 비중: 반도체·AI 인프라 · 현재 20% → 매수 후 30% / 한도 20%", body)
         self.assertIn("산업 한도 20% 초과", body)
-        self.assertIn("$92.00 (-8% 고정손절)", body)
-        self.assertIn("계좌 최대 계획손실: 0.8%", body)
+        self.assertNotIn("손절 기준:", body)
+        self.assertNotIn("손절 시 계좌 영향:", body)
 
     def test_swing_mail_allocation_excludes_long_term_positions(self) -> None:
         mixed_trades = [
@@ -342,8 +342,72 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         )
 
         self.assertEqual([], swing_trades)
-        self.assertEqual("매수 10%", enriched["actionLabel"])
+        body = self.notifications.opinion_email_body([enriched])
+
+        self.assertEqual("계좌의 10%까지 매수", enriched["actionLabel"])
         self.assertEqual(0, enriched["openPositionCount"])
+        self.assertIn("권장 행동: <strong>계좌의 10%까지 매수</strong>", body)
+        self.assertIn("산업 비중: 소프트웨어·클라우드 · 매수 후 10% / 한도 20%", body)
+        self.assertIn("$70.00 (-30% 비상손절)", body)
+        self.assertIn("손절 시 계좌 영향: 약 -3.0%", body)
+
+    def test_swing_mail_uses_clear_recommendations_for_held_watch_and_sell(self) -> None:
+        open_trades = [{"ticker": "GOOGL", "status": "보유 중", "investmentType": "swing"}]
+        stock = {
+            "ticker": "GOOGL",
+            "name": "Alphabet",
+            "industry": "소프트웨어·클라우드",
+            "currentPrice": "$390.00",
+        }
+
+        held_buy = self.notifications.enrich_swing_change_risk(
+            {
+                "ticker": "GOOGL",
+                "name": "Alphabet",
+                "from": "관망",
+                "to": "매수",
+                "price": "$390.00",
+                "entryNote": "보유 유지 — 추가 슬롯 없음",
+            },
+            stock,
+            {"entrySignalCodes": "2", "현재가": "$390.00"},
+            open_trades,
+            {"GOOGL": stock},
+        )
+        held_watch = self.notifications.enrich_swing_change_risk(
+            {
+                "ticker": "GOOGL",
+                "name": "Alphabet",
+                "from": "매수",
+                "to": "관망",
+                "price": "$390.00",
+            },
+            stock,
+            {},
+            open_trades,
+            {"GOOGL": stock},
+        )
+        sell = self.notifications.enrich_swing_change_risk(
+            {
+                "ticker": "GOOGL",
+                "name": "Alphabet",
+                "from": "보유 중",
+                "to": "매도",
+                "price": "$390.00",
+            },
+            stock,
+            {},
+            [],
+            {"GOOGL": stock},
+        )
+        body = self.notifications.opinion_email_body([held_buy, held_watch, sell])
+
+        self.assertEqual("추가매수 없음 · 기존 보유 유지", held_buy["actionLabel"])
+        self.assertEqual("기존 보유 유지 · 신규·추가매수 없음", held_watch["actionLabel"])
+        self.assertEqual("매도", sell["actionLabel"])
+        self.assertIn("권장 행동: <strong>추가매수 없음 · 기존 보유 유지</strong>", body)
+        self.assertIn("권장 행동: <strong>기존 보유 유지 · 신규·추가매수 없음</strong>", body)
+        self.assertIn("권장 행동: <strong>매도</strong>", body)
 
     def test_opinion_notification_deduplicates_same_refresh_transition(self) -> None:
         sent_messages: list[tuple[str, str, str]] = []
@@ -397,49 +461,6 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertEqual(1, first)
         self.assertEqual(0, second)
         self.assertEqual(1, len(sent_messages))
-
-    def test_swing_daily_digest_summarizes_slots_cash_and_risk_group(self) -> None:
-        body = self.notifications.swing_daily_digest_body(
-            [
-                {"ticker": "000660", "investmentType": "swing", "status": "보유 중", "recommendedAllocationPercent": 10},
-                {"ticker": "SOXL", "investmentType": "swing", "status": "보유 중", "recommendedAllocationPercent": 5},
-            ],
-            {
-                "000660": {"ticker": "000660", "name": "SK하이닉스"},
-                "SOXL": {"ticker": "SOXL", "name": "Direxion Daily Semiconductor Bull 3X ETF"},
-            },
-        )
-
-        self.assertIn("보유 슬롯:</strong> 2/10", body)
-        self.assertIn("계획 투자비중:</strong> 15%", body)
-        self.assertIn("현금 여력:</strong> 85%", body)
-        self.assertIn("반도체·AI 인프라: <strong>15%</strong>", body)
-        self.assertTrue(
-            self.notifications.is_swing_daily_digest_window(
-                datetime(2026, 9, 21, 16, 30, tzinfo=ZoneInfo("America/New_York"))
-            )
-        )
-
-    def test_next_market_event_ignores_stale_cached_dday(self) -> None:
-        with TemporaryDirectory() as temp_dir:
-            path = Path(temp_dir) / "events.json"
-            path.write_text(json.dumps({
-                "groups": [{
-                    "title": "금리 발표",
-                    "entries": [
-                        {"date": "2026. 9. 17", "dday": "2"},
-                        {"date": "2026. 10. 29", "dday": "44"},
-                    ],
-                }]
-            }), encoding="utf-8")
-
-            label = self.notifications.next_market_event_text(
-                path,
-                now=datetime(2026, 9, 20, 12, 0, tzinfo=ZoneInfo("America/New_York")),
-            )
-
-        self.assertNotIn("2026. 9. 17", label)
-        self.assertEqual("금리 발표 · 2026. 10. 29 (D-39)", label)
 
     def test_strategy2_buy_reason_uses_email_format_without_fixed_target_price(self) -> None:
         trade = {

@@ -27,7 +27,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
-from datetime import date
 from datetime import datetime
 from datetime import timedelta
 from email.mime.multipart import MIMEMultipart
@@ -40,7 +39,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from calculator.market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
-from calculator.portfolio_risk import position_allocation_percent, risk_group_exposure, swing_entry_decision
+from calculator.portfolio_risk import RISK_GROUP_MAX_PERCENT, swing_entry_decision
 from calculator.rules import STRATEGY_RULES, enrich_profit_exit_reason
 from calculator.sheet_sources import calc_rsi, calc_technical_row, fetch_us_ohlcv
 from zoneinfo import ZoneInfo
@@ -1189,21 +1188,33 @@ def enrich_swing_change_risk(
     stocks_by_ticker: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
     enriched = dict(change)
-    if str(enriched.get("to") or "") != "매수":
+    target_opinion = str(enriched.get("to") or "")
+    ticker = str(enriched.get("ticker") or "").strip().upper()
+    is_held = any(trade_ticker(trade) == ticker for trade in open_trades)
+    if target_opinion == "관망":
+        if is_held:
+            enriched["actionLabel"] = "기존 보유 유지 · 신규·추가매수 없음"
+        return enriched
+    if target_opinion == "매도":
+        enriched["actionLabel"] = "매도"
+        return enriched
+    if target_opinion != "매수":
         return enriched
     entry_note = str(enriched.get("entryNote") or "")
     if entry_note.startswith("보유 유지"):
-        enriched["actionLabel"] = "보유"
+        enriched["actionLabel"] = "추가매수 없음 · 기존 보유 유지"
     else:
-        ticker = str(enriched.get("ticker") or "").strip().upper()
         prior_open = [trade for trade in open_trades if trade_ticker(trade) != ticker]
         decision = swing_entry_decision(stock, prior_open, stocks_by_ticker)
         enriched.update(decision)
-        enriched["actionLabel"] = (
-            f"매수 {decision['recommendedAllocationPercent']:.0f}%"
-            if decision["allocationStatus"] == "진입 가능"
-            else decision["allocationStatus"]
-        )
+        if decision["allocationStatus"] == "진입 가능":
+            enriched["actionLabel"] = f"계좌의 {decision['recommendedAllocationPercent']:.0f}%까지 매수"
+        elif decision["allocationStatus"] == "보유":
+            enriched["actionLabel"] = "추가매수 없음 · 기존 보유 유지"
+        else:
+            enriched["actionLabel"] = "매수 보류"
+    if enriched.get("allocationStatus") != "진입 가능":
+        return enriched
     stop_guidance, stop_risk_pct = stop_guidance_for_change(enriched, stock, technical_row)
     enriched["stopGuidance"] = stop_guidance
     allocation_pct = enriched.get("recommendedAllocationPercent")
@@ -1652,22 +1663,29 @@ def opinion_email_body(
         )
         action_label = str(change.get("actionLabel") or "").strip()
         action_html = (
-            f'<br><span style="font-size:14px;">행동: <strong>{html.escape(action_label)}</strong></span>'
+            f'<br><span style="font-size:14px;">권장 행동: <strong>{html.escape(action_label)}</strong></span>'
             if action_label
             else ""
         )
+        allocation_status = str(change.get("allocationStatus") or "").strip()
         risk_group = str(change.get("riskGroup") or "").strip()
         allocation_reason = str(change.get("allocationReason") or "").strip()
         current_group_pct = change.get("currentRiskGroupPercent")
         post_group_pct = change.get("postRiskGroupPercent")
         allocation_html = ""
-        if is_buy and risk_group:
+        if is_buy and risk_group and allocation_status in {"진입 가능", "매수 보류"}:
             exposure_text = ""
             if isinstance(current_group_pct, (int, float)) and isinstance(post_group_pct, (int, float)):
-                exposure_text = f" {float(current_group_pct):.0f}%→{float(post_group_pct):.0f}%"
+                current_pct = float(current_group_pct)
+                post_pct = float(post_group_pct)
+                exposure_text = (
+                    f"매수 후 {post_pct:.0f}% / 한도 {RISK_GROUP_MAX_PERCENT:.0f}%"
+                    if current_pct == 0
+                    else f"현재 {current_pct:.0f}% → 매수 후 {post_pct:.0f}% / 한도 {RISK_GROUP_MAX_PERCENT:.0f}%"
+                )
             allocation_html = (
-                f'<br><span style="font-size:12px;color:#666;">위험군: {html.escape(risk_group)}'
-                f'{html.escape(exposure_text)}</span>'
+                f'<br><span style="font-size:12px;color:#666;">산업 비중: {html.escape(risk_group)}'
+                f'{f" · {html.escape(exposure_text)}" if exposure_text else ""}</span>'
                 + (
                     f'<br><span style="font-size:12px;color:#c0392b;">보류 사유: {html.escape(allocation_reason)}</span>'
                     if allocation_reason
@@ -1683,8 +1701,8 @@ def opinion_email_body(
         )
         if is_buy and isinstance(max_account_loss, (int, float)):
             stop_html += (
-                f'<br><span style="font-size:12px;color:#666;">계좌 최대 계획손실: '
-                f'{float(max_account_loss):.1f}%</span>'
+                f'<br><span style="font-size:12px;color:#666;">손절 시 계좌 영향: '
+                f'약 -{float(max_account_loss):.1f}%</span>'
             )
         changed_html.append(
             f"""
@@ -2540,85 +2558,6 @@ def opinion_notification_key(recipient: Recipient, change: dict[str, Any]) -> st
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
-def is_swing_daily_digest_window(now: datetime | None = None) -> bool:
-    current = now or datetime.now().astimezone()
-    if current.tzinfo is None:
-        current = current.replace(tzinfo=KST)
-    et_now = current.astimezone(ET)
-    return et_now.weekday() < 5 and 16 <= et_now.hour < 20
-
-
-def next_market_event_text(
-    path: Path = DEFAULT_MARKET_EVENTS,
-    now: datetime | None = None,
-) -> str:
-    payload = read_json(path)
-    groups = payload.get("groups") if isinstance(payload, dict) else []
-    current = now or datetime.now().astimezone()
-    if current.tzinfo is None:
-        current = current.replace(tzinfo=KST)
-    today_et = current.astimezone(ET).date()
-    candidates: list[tuple[date, str]] = []
-    for group in groups if isinstance(groups, list) else []:
-        if not isinstance(group, dict):
-            continue
-        title = str(group.get("title") or "").strip()
-        for entry in group.get("entries") if isinstance(group.get("entries"), list) else []:
-            if not isinstance(entry, dict):
-                continue
-            date_text = str(entry.get("date") or "").strip()
-            event_date = None
-            for fmt in ("%Y. %m. %d", "%Y-%m-%d"):
-                try:
-                    event_date = datetime.strptime(date_text, fmt).date()
-                    break
-                except ValueError:
-                    continue
-            if event_date is None or event_date < today_et:
-                continue
-            candidates.append((event_date, f"{title} · {date_text}"))
-    if not candidates:
-        return "확인 필요"
-    event_date, label = min(candidates, key=lambda item: item[0])
-    return f"{label} (D-{(event_date - today_et).days})"
-
-
-def swing_daily_digest_body(
-    open_trades: list[dict[str, Any]],
-    stocks_by_ticker: dict[str, dict[str, Any]],
-) -> str:
-    swing_trades = open_trades_for_investment_type(open_trades, "swing")
-    allocated = sum(
-        position_allocation_percent(
-            trade,
-            stocks_by_ticker.get(trade_ticker(trade), {}),
-        )
-        for trade in swing_trades
-    )
-    group_exposure = risk_group_exposure(swing_trades, stocks_by_ticker)
-    group_rows = "".join(
-        f"<li>{html.escape(group)}: <strong>{percent:.0f}%</strong></li>"
-        for group, percent in sorted(group_exposure.items(), key=lambda item: (-item[1], item[0]))
-    ) or "<li>보유 없음</li>"
-    kst_label, et_label = now_labels()
-    return f"""
-    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
-      <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
-        스윙 계좌 일일 위험 요약
-      </p>
-      <p><strong>보유 슬롯:</strong> {len({trade_ticker(trade) for trade in swing_trades if trade_ticker(trade)})}/10</p>
-      <p><strong>계획 투자비중:</strong> {allocated:.0f}% · <strong>현금 여력:</strong> {max(0.0, 100 - allocated):.0f}%</p>
-      <p><strong>위험군 비중</strong></p>
-      <ul>{group_rows}</ul>
-      <p><strong>다음 주요 일정:</strong> {html.escape(next_market_event_text())}</p>
-      <p style="color:#888;font-size:12px;">
-        발송 시각 (한국): {html.escape(kst_label)}<br>
-        발송 시각 (미 동부): {html.escape(et_label)}
-      </p>
-    </div>
-    """
-
-
 def send_opinion_notifications(
     previous: Path,
     current: Path,
@@ -2645,8 +2584,7 @@ def send_opinion_notifications(
         current_trade_logs,
     )
     personal_exits_by_owner = load_personal_exit_changes_by_owner()
-    digest_due = is_swing_daily_digest_window()
-    if not changes and not system_exit_changes and not personal_exits_by_owner and not digest_due:
+    if not changes and not system_exit_changes and not personal_exits_by_owner:
         print("No opinion changes.")
         if reset_active:
             clear_runtime_reset()
@@ -2792,31 +2730,6 @@ def send_opinion_notifications(
         sent += 1
 
     record_sent_keys("opinionChange", newly_sent_keys, limit=2000)
-    if digest_due:
-        digest_date = datetime.now().astimezone(ET).date().isoformat()
-        digest_sent_keys = read_sent_keys("swingDailyDigest")
-        new_digest_keys: set[str] = set()
-        for recipient in recipients:
-            if recipient.investment_type != "swing":
-                continue
-            digest_key = f"{recipient.owner_id or recipient.email}:{digest_date}"
-            if digest_key in digest_sent_keys:
-                continue
-            open_trades = (
-                system_open_trades
-                if recipient.is_admin
-                else personal_open_trades.get(recipient.owner_id, [])
-            )
-            body = swing_daily_digest_body(open_trades, current_stocks)
-            subject = f"스윙 일일 위험 요약 ({digest_date})"
-            send_notification(
-                recipient,
-                subject,
-                append_notification_footer(body, recipient, "opinionChangeEmail"),
-            )
-            new_digest_keys.add(digest_key)
-            sent += 1
-        record_sent_keys("swingDailyDigest", new_digest_keys, limit=800)
     consume_personal_exit_events()
     if reset_active:
         clear_runtime_reset()
