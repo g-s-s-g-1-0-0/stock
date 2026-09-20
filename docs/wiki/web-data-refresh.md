@@ -16,6 +16,6 @@
 | 시장 주요 이벤트 | `market-events` | market-events |
 | HOME 등 | `analysis` | valuation + technical |
 
-버튼 문구는 `즉시 갱신 · 시장 트렌드`처럼 대상을 표시한다. API는 `page` 쿼리/바디를 scope보다 우선한다. HTML은 no-cache라 배포 후 새로고침하면 새 번들을 받는다.
+버튼 문구는 `즉시 갱신`으로 두고, 실제 실행 범위만 페이지에 맞춘다. API는 `page` 쿼리/바디를 scope보다 우선한다. HTML은 no-cache라 배포 후 새로고침하면 새 번들을 받는다.
 
 근거: GitHub Actions `35496196604` (`case "analysis"`, `Resolved refresh tasks: valuation technical`), `web/src/App.tsx:764-794`, `web/api/admin/trigger-refresh.js:29-44`, `web/vercel.json`

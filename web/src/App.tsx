@@ -769,14 +769,6 @@ function refreshScopeForPage(page: ActivePage) {
   return 'analysis'
 }
 
-function refreshScopeButtonLabel(page: ActivePage) {
-  if (page === 'value-analysis') return '가치분석'
-  if (page === 'technical-analysis') return '기술분석'
-  if (page === 'market-trends') return '시장 트렌드'
-  if (page === 'market-events') return '시장 이벤트'
-  return '분석'
-}
-
 function refreshLogTabs(scope: string): ApiLogTrigger[] {
   if (scope === 'valuation') return ['value-analysis']
   if (scope === 'technical') return ['technical-analysis']
@@ -802,10 +794,9 @@ function refreshScopeMetaChanged(data: GssgAppData, previousMetas: AppDataMetas,
 }
 
 function refreshScopeSuccessMessage(scope: string, data: GssgAppData, fallbackTickers: string[]) {
-  if (scope === 'valuation') return '가치분석 최신 데이터가 반영됐습니다.'
-  if (scope === 'technical') return '기술분석 최신 데이터가 반영됐습니다.'
-  if (scope === 'market-trends') return '시장 트렌드 최신 데이터가 반영됐습니다.'
-  if (scope === 'market-events') return '시장 주요 이벤트 최신 데이터가 반영됐습니다.'
+  if (scope === 'valuation' || scope === 'technical' || scope === 'market-trends' || scope === 'market-events') {
+    return '최신 데이터가 반영됐습니다.'
+  }
   const rowCount = data.stocks?.rows?.length ?? fallbackTickers.length
   return `최신 데이터가 반영됐습니다. ${rowCount}개 종목 기준으로 갱신되었습니다.`
 }
@@ -9019,7 +9010,6 @@ function App() {
 
     const page = activePageFromHash() ?? currentActivePage
     const scope = refreshScopeForPage(page)
-    const scopeLabel = refreshScopeButtonLabel(page)
     const tickers = refreshScopeNeedsTickers(scope)
       ? Array.from(new Set(tableStocks.map((stock) => stock.ticker)))
       : []
@@ -9029,7 +9019,7 @@ function App() {
     }
 
     setIsRefreshingData(true)
-    setRefreshDataMessage(`${scopeLabel} 갱신을 실행하는 중입니다...`)
+    setRefreshDataMessage('데이터 갱신 작업을 실행하는 중입니다...')
     try {
       if (!supabase) {
         throw new Error('Supabase 연결값이 설정되지 않았습니다.')
@@ -9040,13 +9030,13 @@ function App() {
       const previousMetas = apiMetas
       const result = await refreshAppData(tickers, accessToken, scope, page)
       if (result.scope && result.scope !== scope) {
-        setRefreshDataMessage(`${scopeLabel} 요청이 ${result.scope}로 실행됐습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.`)
+        setRefreshDataMessage('데이터 갱신 범위가 맞지 않습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.')
         await recordRefreshDataLogs('failure', `요청 scope=${scope}와 실행 scope=${result.scope}가 다릅니다.`, { tickers, scope, page })
         return
       }
 
       if (result.mode === 'workflow_dispatch') {
-        setRefreshDataMessage(`${scopeLabel} 갱신 워크플로를 실행했습니다. 최신 데이터 반영 여부를 확인하는 중입니다...`)
+        setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 최신 데이터 반영 여부를 확인하는 중입니다...')
         for (let attempt = 1; attempt <= 40; attempt += 1) {
           await wait(attempt <= 3 ? 8000 : 15000)
           const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>()
@@ -9059,10 +9049,10 @@ function App() {
             return
           }
           if (attempt === 3 || attempt % 4 === 0) {
-            setRefreshDataMessage(`${scopeLabel} 갱신 워크플로가 진행 중입니다. 최신 데이터 반영을 확인하는 중입니다... (${attempt}/40)`)
+            setRefreshDataMessage(`데이터 갱신 워크플로가 진행 중입니다. 최신 데이터 반영을 확인하는 중입니다... (${attempt}/40)`)
           }
         }
-        setRefreshDataMessage(`${scopeLabel} 갱신 워크플로를 실행했습니다. 아직 반영 확인이 끝나지 않았습니다. 잠시 후 새로고침해 주세요.`)
+        setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 아직 반영 확인이 끝나지 않았습니다. 잠시 후 새로고침해 주세요.')
         return
       }
 
@@ -9854,7 +9844,7 @@ function App() {
         )}
         {isAdminUser && (
           <button className="refresh-data-button" disabled={isRefreshingData} type="button" onClick={refreshCurrentData}>
-            {isRefreshingData ? '갱신 중' : `즉시 갱신 · ${refreshScopeButtonLabel(currentActivePage)}`}
+            {isRefreshingData ? '갱신 중' : '즉시 갱신'}
           </button>
         )}
         <button
