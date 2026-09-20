@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-09-20T13:50:29Z",
+    "updatedAt": "2026-09-20T14:49:50Z",
     "rowCount": 3
   },
   "rows": [
@@ -52,7 +52,8 @@
         "KLAC",
         "TER",
         "VST",
-        "GNRC"
+        "GNRC",
+        "QQQ"
       ],
       "tickersByType": {
         "swing": [
@@ -98,7 +99,8 @@
           "KLAC",
           "TER",
           "VST",
-          "GNRC"
+          "GNRC",
+          "QQQ"
         ],
         "long_term": [
           "000660",
@@ -116,7 +118,7 @@
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-20T09:13:02.381691+00:00"
+      "remoteUpdatedAt": "2026-09-20T14:49:37.479274+00:00"
     },
     {
       "id": "6065187b-8e56-4939-aae8-c108e1aae841",
@@ -146,7 +148,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-20T09:12:50.12814+00:00"
+      "remoteUpdatedAt": "2026-09-20T14:49:34.180968+00:00"
     }
   ]
 }

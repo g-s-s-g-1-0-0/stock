@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-09-20T13:51:16+00:00",
-    "lastSuccessfulRun": "2026-09-20T13:51:16+00:00",
+    "updatedAt": "2026-09-20T14:50:49+00:00",
+    "lastSuccessfulRun": "2026-09-20T14:50:49+00:00",
     "failedReason": null
   },
   "rows": [
@@ -83941,8 +83941,8 @@
       "ticker": "QQQ",
       "name": "Invesco QQQ Trust",
       "market": "US",
-      "category": "혼합주",
-      "industry": "-"
+      "category": "가치주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
       "ticker": "QQQA",

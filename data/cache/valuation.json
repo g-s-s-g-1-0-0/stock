@@ -5,7 +5,7 @@
     "updatedAt": "2026-09-19T15:00:00+00:00",
     "lastSuccessfulRun": "2026-09-19T15:00:00+00:00",
     "failedReason": null,
-    "successfulRows": 45
+    "successfulRows": 46
   },
   "rows": {
     "000150": {
@@ -893,7 +893,7 @@
       "epsNextYear": "$ -2.00",
       "epsQoq": "-79.20%",
       "earningsDate": "2026-08-12 (D+39)",
-      "industry": "소프트웨어·클라우드, 보안, AI 플랫폼",
+      "industry": "소프트웨어·클라우드, AI 플랫폼",
       "ruleOf40": "112.23%"
     },
     "LRCX": {
@@ -1039,6 +1039,30 @@
       "earningsDate": "2026-07-29 (D+53)",
       "industry": "산업재, 장비·제조, 자동화",
       "ruleOf40": "13.83%"
+    },
+    "QQQ": {
+      "marketCap": "-",
+      "sales": "-",
+      "salesQoq": "-",
+      "salesYoyTtm": "-",
+      "salesPastYears": "-",
+      "currentRatio": "-",
+      "debtToEquity": "-",
+      "priceToFreeCashFlow": "-",
+      "priceToSales": "-",
+      "per": "-",
+      "pbr": "-",
+      "roe": "-",
+      "peg": "-",
+      "sharesOutstanding": "-",
+      "grossMargin": "-",
+      "operatingMargin": "-",
+      "epsTtm": "-",
+      "epsNextYear": "-",
+      "epsQoq": "-",
+      "earningsDate": "-",
+      "industry": "금융, 은행·보험·증권, 지주회사",
+      "ruleOf40": "-"
     },
     "AAPL": {
       "marketCap": "$ 4905.54B",
