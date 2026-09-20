@@ -99,6 +99,30 @@ class MarketTrendsTest(unittest.TestCase):
 
         self.assertEqual("이번 주 전체 시장 분위기는 우주항공과 로봇·자동화 분야도 주목을 받고 있습니다.", normalized)
 
+    def test_clip_market_trend_summary_keeps_one_short_sentence(self) -> None:
+        summary = (
+            "이번 주 전체 시장 분위기는 기술과 금융 분야에서 새로운 동향과 발전이 나타남에 따라 "
+            "투자자들의 관심이 집중되는 가운데, 이란 전쟁과 경제적 불안정성으로 인해 시장의 불확실성이 커지고 있습니다."
+        )
+
+        clipped = self.pipeline.clip_market_trend_summary(summary)
+
+        self.assertLessEqual(len(clipped), 80)
+        self.assertTrue(clipped.endswith("."))
+
+    def test_parse_market_trend_json_clips_long_summary(self) -> None:
+        payload = {
+            "ranks": [f"테마 {index} | 키워드A, 키워드B, 키워드C" for index in range(1, 11)],
+            "summary": (
+                "이번 주 전체 시장 분위기는 기술과 금융 분야에서 새로운 동향과 발전이 나타남에 따라 "
+                "투자자들의 관심이 집중되는 가운데, 이란 전쟁과 경제적 불안정성으로 인해 시장의 불확실성이 커지고 있습니다."
+            ),
+        }
+
+        parsed = self.pipeline.parse_market_trend_json(payload)
+
+        self.assertLessEqual(len(parsed["summary"]), 80)
+
     def test_market_trend_week_date_normalizes_to_monday(self) -> None:
         self.assertEqual(self.pipeline.market_trend_week_date("2026.07.15"), "2026.07.13")
         # UTC 일요일 라벨은 cron(KST 월요일 00:00) 주차인 다음 월요일로 올린다.

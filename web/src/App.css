@@ -1918,11 +1918,11 @@
 
 .market-trends-table {
   table-layout: fixed;
-  min-width: 3284px;
+  min-width: 3604px;
 }
 
 .admin-market-trends-table {
-  min-width: 3326px;
+  min-width: 3646px;
 }
 
 .market-trends-table .trend-select-col {
@@ -1938,7 +1938,7 @@
 }
 
 .market-trends-table .trend-summary-col {
-  width: 1080px;
+  width: 1400px;
 }
 
 .market-trends-table th:first-child,
@@ -1981,9 +1981,9 @@
 
 .market-trends-table th:last-child,
 .market-trends-table td:last-child {
-  width: 1080px;
-  min-width: 1080px;
-  max-width: 1080px;
+  width: 1400px;
+  min-width: 1400px;
+  max-width: 1400px;
 }
 
 .admin-market-trends-table th:first-child,
@@ -2048,14 +2048,18 @@
   text-overflow: ellipsis;
 }
 
-.trend-rank-cell.is-truncated {
+.trend-rank-cell.is-truncated,
+.trend-summary-cell.is-truncated {
   cursor: help;
   -webkit-tap-highlight-color: transparent;
 }
 
 .trend-rank-cell.is-truncated:focus,
 .trend-rank-cell.is-truncated:focus-visible,
-.trend-rank-cell.is-truncated:active {
+.trend-rank-cell.is-truncated:active,
+.trend-summary-cell.is-truncated:focus,
+.trend-summary-cell.is-truncated:focus-visible,
+.trend-summary-cell.is-truncated:active {
   outline: none;
   box-shadow: none;
   color: inherit;
@@ -2075,12 +2079,11 @@
 }
 
 .trend-summary-cell {
-  overflow: visible;
+  overflow: hidden;
   line-height: 1.45;
-  text-overflow: clip;
-  white-space: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   word-break: keep-all;
-  overflow-wrap: anywhere;
 }
 
 .market-trends-pagination {

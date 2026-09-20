@@ -1718,6 +1718,24 @@ def normalize_market_trend_summary(value: Any) -> str:
     return sanitized
 
 
+MARKET_TREND_SUMMARY_MAX_CHARS = 80
+
+
+def clip_market_trend_summary(value: Any) -> str:
+    text = normalize_market_trend_summary(value)
+    if len(text) <= MARKET_TREND_SUMMARY_MAX_CHARS:
+        return text
+    window = text[:MARKET_TREND_SUMMARY_MAX_CHARS]
+    for sep in ("습니다.", "입니다."):
+        idx = window.rfind(sep)
+        if idx >= 24:
+            clipped = text[: idx + len(sep)].strip()
+            if len(clipped) <= MARKET_TREND_SUMMARY_MAX_CHARS:
+                return clipped
+    trimmed = window[: MARKET_TREND_SUMMARY_MAX_CHARS - 1].rstrip(" ,、.")
+    return f"{trimmed}."
+
+
 def sanitize_market_trend_rows(rows: list[Any]) -> list[Any]:
     """날짜를 주 단위 월요일로 맞추고, 같은 주 중복은 뒤쪽(최신) 행을 남긴다."""
 
@@ -1773,7 +1791,7 @@ def parse_market_trend_analysis(text: str) -> dict[str, Any]:
     return {
         "date": market_trend_week_date(),
         "ranks": ranks[:10],
-        "summary": summary,
+        "summary": clip_market_trend_summary(summary),
     }
 
 
@@ -1805,7 +1823,7 @@ def parse_market_trend_json(payload: Any) -> dict[str, Any]:
     return {
         "date": market_trend_week_date(),
         "ranks": ranks,
-        "summary": summary.strip(),
+        "summary": clip_market_trend_summary(summary),
     }
 
 
@@ -1834,7 +1852,7 @@ def analyze_market_trends_with_groq(news_text: str, api_key: str, signal_rows: l
 [출력 형식]
 JSON만 출력합니다. ranks는 정확히 10개이며, 각 항목은 "섹터명 | 키워드1, 키워드2, 키워드3" 형식입니다.
 10개 섹터명은 띄어쓰기 차이를 포함해 서로 중복되면 안 됩니다.
-summary는 이번 주 전체 시장 분위기를 한 줄로 적습니다.
+summary는 이번 주 전체 시장 분위기를 한 문장, 80자 이내로 적습니다. 섹터를 나열하지 말고 핵심 분위기만 남깁니다.
 
 [관심종목 가격·기술 모멘텀 신호]
 {signal_evidence}

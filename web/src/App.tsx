@@ -5772,7 +5772,13 @@ function MarketTrendsPage({
                       onTooltipOpen={onTooltipOpen}
                     />
                   ))}
-                  <td className="trend-summary-cell">{row.summary}</td>
+                  <TruncatedTrendCell
+                    className="trend-summary-cell"
+                    cellKey={`${row.date}-summary`}
+                    text={row.summary}
+                    onTooltipClose={onTooltipClose}
+                    onTooltipOpen={onTooltipOpen}
+                  />
                 </tr>
               )
             })}
