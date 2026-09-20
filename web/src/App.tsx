@@ -761,6 +761,39 @@ function appDataMetaChanged(data: GssgAppData, previousMetas: AppDataMetas) {
   )
 }
 
+function refreshScopeForPage(page: ActivePage) {
+  if (page === 'value-analysis') return 'valuation'
+  if (page === 'technical-analysis') return 'technical'
+  if (page === 'market-trends') return 'market-trends'
+  if (page === 'market-events') return 'market-events'
+  return 'analysis'
+}
+
+function refreshScopeNeedsTickers(scope: string) {
+  return scope === 'valuation' || scope === 'technical' || scope === 'analysis'
+}
+
+function refreshScopeMetaChanged(data: GssgAppData, previousMetas: AppDataMetas, scope: string) {
+  if (scope === 'valuation') return runtimeMetaChanged(data.valuation?.meta, previousMetas.valuation)
+  if (scope === 'technical') return runtimeMetaChanged(data.technical?.meta, previousMetas.technical)
+  if (scope === 'market-trends') return runtimeMetaChanged(data.marketTrends?.meta, previousMetas.marketTrends)
+  if (scope === 'market-events') return runtimeMetaChanged(data.marketEvents?.meta, previousMetas.marketEvents)
+  if (scope === 'analysis') {
+    return runtimeMetaChanged(data.valuation?.meta, previousMetas.valuation)
+      || runtimeMetaChanged(data.technical?.meta, previousMetas.technical)
+  }
+  return appDataMetaChanged(data, previousMetas)
+}
+
+function refreshScopeSuccessMessage(scope: string, data: GssgAppData, fallbackTickers: string[]) {
+  if (scope === 'valuation') return '가치분석 최신 데이터가 반영됐습니다.'
+  if (scope === 'technical') return '기술분석 최신 데이터가 반영됐습니다.'
+  if (scope === 'market-trends') return '시장 트렌드 최신 데이터가 반영됐습니다.'
+  if (scope === 'market-events') return '시장 주요 이벤트 최신 데이터가 반영됐습니다.'
+  const rowCount = data.stocks?.rows?.length ?? fallbackTickers.length
+  return `최신 데이터가 반영됐습니다. ${rowCount}개 종목 기준으로 갱신되었습니다.`
+}
+
 function readStoredViewMode() {
   return localStorage.getItem(VIEW_MODE_STORAGE_KEY) === 'operator' ? 'operator' : 'personal'
 }
@@ -8964,8 +8997,11 @@ function App() {
   const refreshCurrentData = async () => {
     if (!isAdminUser) return
 
-    const tickers = Array.from(new Set(tableStocks.map((stock) => stock.ticker)))
-    if (tickers.length === 0) {
+    const scope = refreshScopeForPage(currentActivePage)
+    const tickers = refreshScopeNeedsTickers(scope)
+      ? Array.from(new Set(tableStocks.map((stock) => stock.ticker)))
+      : []
+    if (refreshScopeNeedsTickers(scope) && tickers.length === 0) {
       setRefreshDataMessage('먼저 관심종목을 추가해 주세요.')
       return
     }
@@ -8980,19 +9016,19 @@ function App() {
       const { data: authData } = await supabase.auth.getSession()
       const accessToken = authData.session?.access_token
       const previousMetas = apiMetas
-      const result = await refreshAppData(tickers, accessToken)
+      const result = await refreshAppData(tickers, accessToken, scope)
 
       if (result.mode === 'workflow_dispatch') {
         setRefreshDataMessage('데이터 갱신 워크플로를 실행했습니다. 최신 데이터 반영 여부를 확인하는 중입니다...')
         for (let attempt = 1; attempt <= 40; attempt += 1) {
           await wait(attempt <= 3 ? 8000 : 15000)
           const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>()
-          const isRefreshed = appDataMetaChanged(data, previousMetas)
+          const isRefreshed = refreshScopeMetaChanged(data, previousMetas, scope)
           if (isRefreshed) {
             applyLoadedData(data)
-            const rowCount = data.stocks?.rows?.length ?? result.refreshedTickers.length
-            setRefreshDataMessage(`최신 데이터가 반영됐습니다. ${rowCount}개 종목 기준으로 갱신되었습니다.`)
-            await recordRefreshDataLogs('success', `${rowCount}개 종목 최신 데이터가 반영됐습니다.`, { tickers: result.refreshedTickers })
+            const successMessage = refreshScopeSuccessMessage(scope, data, result.refreshedTickers)
+            setRefreshDataMessage(successMessage)
+            await recordRefreshDataLogs('success', successMessage, { tickers: result.refreshedTickers, scope })
             return
           }
           if (attempt === 3 || attempt % 4 === 0) {
@@ -9005,11 +9041,12 @@ function App() {
 
       const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>()
       applyLoadedData(data)
-      setRefreshDataMessage(`${result.refreshedTickers.length}개 종목을 현재 시점 기준으로 갱신했습니다.`)
-      await recordRefreshDataLogs('success', `${result.refreshedTickers.length}개 종목을 갱신했습니다.`, { tickers: result.refreshedTickers })
+      const successMessage = refreshScopeSuccessMessage(scope, data, result.refreshedTickers)
+      setRefreshDataMessage(successMessage)
+      await recordRefreshDataLogs('success', successMessage, { tickers: result.refreshedTickers, scope })
     } catch (error) {
       setRefreshDataMessage('즉시 갱신에 실패했습니다. GitHub Actions 토큰과 Vercel 환경 변수를 확인해 주세요.')
-      await recordRefreshDataLogs('failure', error instanceof Error ? error.message : '데이터 즉시 갱신에 실패했습니다.', { tickers })
+      await recordRefreshDataLogs('failure', error instanceof Error ? error.message : '데이터 즉시 갱신에 실패했습니다.', { tickers, scope })
     } finally {
       setIsRefreshingData(false)
     }
