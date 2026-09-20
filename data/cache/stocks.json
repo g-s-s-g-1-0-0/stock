@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-20T14:56:11+00:00",
-    "lastSuccessfulRun": "2026-09-20T14:56:11+00:00",
+    "updatedAt": "2026-09-20T15:00:56+00:00",
+    "lastSuccessfulRun": "2026-09-20T15:00:56+00:00",
     "failedReason": null
   },
   "rows": [
@@ -719,8 +719,8 @@
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
       "strategies": [],
-      "category": "가치주",
-      "industry": "금융, 은행·보험·증권, 지주회사",
+      "category": "혼합주",
+      "industry": "금융, 은행·자산운용·증권",
       "updatedAt": "2026-09-20T14:56:10+00:00"
     },
     {
