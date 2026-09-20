@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-09-20T07:12:49+00:00",
-    "lastSuccessfulRun": "2026-09-20T07:12:49+00:00",
+    "updatedAt": "2026-09-20T07:25:35+00:00",
+    "lastSuccessfulRun": "2026-09-20T07:25:35+00:00",
     "failedReason": null
   },
   "rows": [
@@ -2087,13 +2087,6 @@
       "industry": "소비재, 식품·유통, 브랜드 커머스"
     },
     {
-      "ticker": "006380",
-      "name": "카프로",
-      "market": "KR",
-      "category": "성장주",
-      "industry": "화학, 소재, 합성수지·정밀화학"
-    },
-    {
       "ticker": "006400",
       "name": "삼성SDI",
       "market": "KR",
@@ -2571,7 +2564,7 @@
     },
     {
       "ticker": "009140",
-      "name": "경인전자",
+      "name": "케이아이이",
       "market": "KR",
       "category": "성장주",
       "industry": "스위치, 리모콘, 배선기구, 섬머스타트, 게임기"
@@ -14855,13 +14848,6 @@
       "industry": "전력 인프라, 전기장비, 변압기·배전, 전력망"
     },
     {
-      "ticker": "279060",
-      "name": "이노벡스",
-      "market": "KR",
-      "category": "성장주",
-      "industry": "2차전지, 전기차 배터리, 배터리 소재"
-    },
-    {
       "ticker": "279570",
       "name": "케이뱅크",
       "market": "KR",
@@ -14919,7 +14905,7 @@
     },
     {
       "ticker": "282880",
-      "name": "코윈테크",
+      "name": "코윈로보틱스",
       "market": "KR",
       "category": "성장주",
       "industry": "반도체, 반도체 장비·소재, 첨단 패키징"
@@ -18467,13 +18453,6 @@
       "industry": "실감미디어 콘텐츠 및 시설 구축, 전시 및 테마파크 운영"
     },
     {
-      "ticker": "465320",
-      "name": "교보15호스팩",
-      "market": "KR",
-      "category": "가치주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
-    },
-    {
       "ticker": "465480",
       "name": "인스피언",
       "market": "KR",
@@ -19811,6 +19790,13 @@
       "industry": "소프트웨어·클라우드, 보안, AI 플랫폼"
     },
     {
+      "ticker": "ABND",
+      "name": "American Century Core Plus Income ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "ABOS",
       "name": "Acumen Pharmaceuticals",
       "market": "US",
@@ -21120,6 +21106,20 @@
       "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
+      "ticker": "AFDM",
+      "name": "First Trust Active Factor International ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "AFEM",
+      "name": "First Trust Active Factor Emerging Markets ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "AFG",
       "name": "American Financial Group",
       "market": "US",
@@ -21713,6 +21713,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "AICH",
+      "name": "China AI ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
     },
     {
       "ticker": "AIDX",
@@ -23563,13 +23570,6 @@
       "industry": "바이오, 제약·헬스케어"
     },
     {
-      "ticker": "ANY",
-      "name": "Sphere 3D",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
       "ticker": "AOA",
       "name": "iShares Core 80/20 Aggressive Allocation ETF",
       "market": "US",
@@ -24809,6 +24809,13 @@
       "industry": "-"
     },
     {
+      "ticker": "ASBH",
+      "name": "American Savings Bank, N.A.",
+      "market": "US",
+      "category": "가치주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
       "ticker": "ASBP",
       "name": "Aspire-Lakewood Holdings",
       "market": "US",
@@ -24877,6 +24884,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "ASGI.V",
+      "name": "abrdn Global Infrastructure Income Fund Rights (expiring October 15, 2026) Rights when issued",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
       "ticker": "ASGM",
@@ -25089,6 +25103,13 @@
       "industry": "-"
     },
     {
+      "ticker": "ASSX",
+      "name": "T-REX 2X Long ASST Daily Target ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "ASTC",
       "name": "Astrotech",
       "market": "US",
@@ -25201,11 +25222,11 @@
       "industry": "-"
     },
     {
-      "ticker": "ATAI",
-      "name": "AtaiBeckley",
+      "ticker": "AT",
+      "name": "Defiance Robotics Actuators ETF",
       "market": "US",
-      "category": "성장주",
-      "industry": "소프트웨어·클라우드, 보안, AI 플랫폼"
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
     },
     {
       "ticker": "ATAT",
@@ -31102,6 +31123,13 @@
       "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
+      "ticker": "BSMA",
+      "name": "Invesco BulletShares 2036 Municipal Bond ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "BSMC",
       "name": "Brandes U.S. Small-Mid Cap Value ETF",
       "market": "US",
@@ -31327,7 +31355,7 @@
     },
     {
       "ticker": "BTCC",
-      "name": "Grayscale Bitcoin Covered Call ETF",
+      "name": "Grayscale Bitcoin High Income ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -31711,6 +31739,13 @@
       "industry": "전력 인프라, 유틸리티, 신재생·청정에너지"
     },
     {
+      "ticker": "BUIL",
+      "name": "Rebuild America ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "BUL",
       "name": "Pacer US Cash Cows Growth ETF",
       "market": "US",
@@ -31762,6 +31797,13 @@
     {
       "ticker": "BURL",
       "name": "Burlington Stores",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
+    },
+    {
+      "ticker": "BURU",
+      "name": "Nuburu",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -32531,7 +32573,7 @@
     },
     {
       "ticker": "CAPA",
-      "name": "Defiance AI Capacitors Leaders ETF",
+      "name": "Defiance AI Capacitors & MLCC ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -32759,6 +32801,20 @@
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "CATL",
+      "name": "Catalyst Acquisition Class A",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
+      "ticker": "CATLR",
+      "name": "Catalyst Acquisition Corp. - Rights",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
       "ticker": "CATLU",
@@ -34096,6 +34152,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "CGFS",
+      "name": "CG Flagship Equity ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
     },
     {
       "ticker": "CGGE",
@@ -37455,7 +37518,7 @@
       "name": "CoreWeave Class A",
       "market": "US",
       "category": "성장주",
-      "industry": "소프트웨어·클라우드, 보안, AI 플랫폼"
+      "industry": "소프트웨어·클라우드, AI 플랫폼"
     },
     {
       "ticker": "CRWX",
@@ -37537,6 +37600,13 @@
     {
       "ticker": "CSEN",
       "name": "Cohen & Steers Future of Energy Active ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "CSEP",
+      "name": "Corgi U.S. Equities 15% Structured Buffer ETF - September Series",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -37960,6 +38030,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "CTSE",
+      "name": "Corgi U.S. Equities 30% Structured Buffer ETF - September Series",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
     },
     {
       "ticker": "CTSH",
@@ -40888,6 +40965,13 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "DMXU",
+      "name": "Xtrackers Bloomberg Developed Markets ex US Equity ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "DNA",
       "name": "Ginkgo Bioworks Holdings Class A",
       "market": "US",
@@ -41299,6 +41383,13 @@
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "DRK",
+      "name": "DarkHorse Technologies",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
     },
     {
       "ticker": "DRKY",
@@ -42374,13 +42465,6 @@
     {
       "ticker": "EART",
       "name": "Global X Rare Earth & Critical Materials ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
-    },
-    {
-      "ticker": "EASG",
-      "name": "Xtrackers MSCI EAFE Selection Equity ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -43996,6 +44080,13 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "EMSE",
+      "name": "Corgi Emerging Markets Equities 15% Structured Buffer ETF - September Series",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "EMSF",
       "name": "Matthews Emerging Markets Sustainable Future Active ETF",
       "market": "US",
@@ -45005,7 +45096,7 @@
     },
     {
       "ticker": "ETCO",
-      "name": "Grayscale Ethereum Covered Call ETF",
+      "name": "Grayscale Ethereum High Income ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -45156,6 +45247,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "ETRA",
+      "name": "Electra Therapeutics, Inc. - Common stock",
+      "market": "US",
+      "category": "성장주",
+      "industry": "바이오, 제약·헬스케어"
     },
     {
       "ticker": "ETS",
@@ -47130,13 +47228,6 @@
       "market": "US",
       "category": "성장주",
       "industry": "교육 서비스, 에듀테크"
-    },
-    {
-      "ticker": "FEED",
-      "name": "ENvue Medical",
-      "market": "US",
-      "category": "성장주",
-      "industry": "바이오, 제약·헬스케어"
     },
     {
       "ticker": "FEGE",
@@ -50479,10 +50570,10 @@
     },
     {
       "ticker": "FUSI",
-      "name": "American Century Multisector Floating Income ETF",
+      "name": "American Century Ultrashort Income ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
+      "industry": "인버스 레버리지 ETF"
     },
     {
       "ticker": "FUTG",
@@ -50626,14 +50717,14 @@
     },
     {
       "ticker": "FWONA",
-      "name": "Liberty Media Corporation - Liberty Formula One",
+      "name": "Liberty Media",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
     },
     {
       "ticker": "FWONK",
-      "name": "Liberty Media Corporation - Liberty Formula One",
+      "name": "Liberty Media",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -52966,7 +53057,7 @@
       "ticker": "GNRC",
       "name": "Generac Holdlings",
       "market": "US",
-      "category": "혼합주",
+      "category": "가치주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
@@ -55112,13 +55203,6 @@
       "industry": "바이오, 제약·헬스케어"
     },
     {
-      "ticker": "HCWC",
-      "name": "Healthy Choice Wellness Class A",
-      "market": "US",
-      "category": "성장주",
-      "industry": "바이오, 제약·헬스케어"
-    },
-    {
       "ticker": "HCXY",
       "name": "Hercules Capital, Inc. 6.25% Notes due 2033",
       "market": "US",
@@ -56162,6 +56246,13 @@
       "industry": "-"
     },
     {
+      "ticker": "HOST",
+      "name": "Host Digital Class A",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
+    },
+    {
       "ticker": "HOUR",
       "name": "Hour Loop, Inc. - common stock",
       "market": "US",
@@ -56470,6 +56561,13 @@
       "industry": "가상화폐, 핀테크, Solana 2x 레버리지 ETF"
     },
     {
+      "ticker": "HSEP",
+      "name": "Corgi U.S. Equities 100% Structured Buffer ETF - September Series",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "HSHP",
       "name": "Himalaya Shipping",
       "market": "US",
@@ -56748,6 +56846,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "HUMM",
+      "name": "800VDC AI Datacenter Ecosystem ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
     },
     {
       "ticker": "HUMN",
@@ -57234,7 +57339,7 @@
     },
     {
       "ticker": "HYSA",
-      "name": "BondBloxx USD High Yield Bond Sector Rotation ETF",
+      "name": "BondBloxx High Yield Income ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -58369,6 +58474,13 @@
     {
       "ticker": "IDRV",
       "name": "iShares Self-Driving EV and Tech ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "IDSE",
+      "name": "Corgi International Developed Equities 15% Structured Buffer ETF - September Series",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -60418,6 +60530,13 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "IQGR",
+      "name": "Astoria International Quality Growth Kings ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "IQHI",
       "name": "NYLIM MacKay High Income ETF",
       "market": "US",
@@ -62385,6 +62504,13 @@
       "industry": "-"
     },
     {
+      "ticker": "JINT",
+      "name": "Janus Henderson International Core Alpha ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "JIRE",
       "name": "JPMorgan International Research Enhanced Equity ETF",
       "market": "US",
@@ -63491,6 +63617,13 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "KCHP",
+      "name": "KICK Korea Semiconductor Index ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "KCHV",
       "name": "Kochav Defense Acquisition Class A",
       "market": "US",
@@ -63963,7 +64096,7 @@
       "ticker": "KLAC",
       "name": "KLA",
       "market": "US",
-      "category": "혼합주",
+      "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
@@ -64786,13 +64919,6 @@
       "industry": "바이오, 제약·헬스케어"
     },
     {
-      "ticker": "KTTAW",
-      "name": "Pasithea Therapeutics Corp. - Warrant",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
-    },
-    {
       "ticker": "KTUP",
       "name": "T-REX 2X Long KTOS Daily Target ETF",
       "market": "US",
@@ -65568,6 +65694,13 @@
       "market": "US",
       "category": "성장주",
       "industry": "전력 인프라, 유틸리티, 신재생·청정에너지"
+    },
+    {
+      "ticker": "LEDRU",
+      "name": "Leader's Advantage Acquisition Corp. - Units",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
       "ticker": "LEDS",
@@ -66839,6 +66972,13 @@
     {
       "ticker": "LPRE",
       "name": "Long Pond Real Estate Select ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "LPSV",
+      "name": "Lone Peak SMID Value ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -70323,6 +70463,13 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "MNGZ",
+      "name": "Yorkville America 2X Long MANGOS Plus Daily Target ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "MNKD",
       "name": "MannKind",
       "market": "US",
@@ -71436,8 +71583,22 @@
       "industry": "-"
     },
     {
+      "ticker": "MTAK",
+      "name": "Market Technology Acquisition Class A",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
       "ticker": "MTAKU",
       "name": "Market Technology Acquisition Corp - Unit",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
+      "ticker": "MTAKW",
+      "name": "Market Technology Acquisition Corp - Warrants",
       "market": "US",
       "category": "스윙주",
       "industry": "금융, 은행·보험·증권, 지주회사"
@@ -71837,13 +71998,6 @@
     {
       "ticker": "MUSE",
       "name": "TCW Multisector Credit Income ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
-    },
-    {
-      "ticker": "MUSI",
-      "name": "American Century Multisector Income ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -73380,6 +73534,13 @@
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "NFEGP",
+      "name": "New Fortress Energy Inc. - Mandatorily Convertible Series A Pref",
+      "market": "US",
+      "category": "성장주",
+      "industry": "AI 인프라, 데이터센터 전력·냉각, 광통신"
     },
     {
       "ticker": "NFG",
@@ -75097,6 +75258,13 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "NUIB",
+      "name": "Nuveen Impact Bond ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "NUIF",
       "name": "Nuveen US Infrastructure ETF",
       "market": "US",
@@ -76607,6 +76775,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "OIG",
+      "name": "Orion180 Insurance Group Class A",
+      "market": "US",
+      "category": "가치주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
       "ticker": "OIH",
@@ -79059,6 +79234,13 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "PCPC",
+      "name": "Porter & Company Property & Casualty Index ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "PCPI",
       "name": "PIMCO Inflation PLUS Active Exchange-Traded Fund",
       "market": "US",
@@ -81461,7 +81643,7 @@
     },
     {
       "ticker": "PRAE",
-      "name": "PlanRock Alternative Growth ETF",
+      "name": "PlanRock Equity Plus Alternatives ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -82706,6 +82888,13 @@
       "industry": "전력 인프라, 유틸리티, 신재생·청정에너지"
     },
     {
+      "ticker": "PWRX",
+      "name": "Westwood Salient Enhanced Power & Infrastructure ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "PWRZ",
       "name": "TrueShares Eagle Global Renewable Energy Income ETF",
       "market": "US",
@@ -83854,6 +84043,13 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "QQSE",
+      "name": "Corgi Growth & Technology 15% Structured Buffer ETF - September Series",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "QQUP",
       "name": "ProShares Ultra QQQ Mega",
       "market": "US",
@@ -83915,6 +84111,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "QSE",
+      "name": "Corgi Growth & Technology 10% Structured Buffer ETF - September Series",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
     },
     {
       "ticker": "QSEA",
@@ -85436,20 +85639,6 @@
       "industry": "레버리지·테마 ETF"
     },
     {
-      "ticker": "RFDI",
-      "name": "First Trust RiverFront Dynamic Developed International ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
-    },
-    {
-      "ticker": "RFEM",
-      "name": "First Trust RiverFront Dynamic Emerging Markets ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "레버리지·테마 ETF"
-    },
-    {
       "ticker": "RFFC",
       "name": "ALPS Active Equity Opportunity ETF",
       "market": "US",
@@ -85905,13 +86094,6 @@
       "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
-      "ticker": "RITR",
-      "name": "Reitar Logtech Holdings",
-      "market": "US",
-      "category": "가치주",
-      "industry": "리츠·인프라펀드, 부동산·대체투자"
-    },
-    {
       "ticker": "RIV",
       "name": "RiverNorth Opportunities Fund",
       "market": "US",
@@ -86311,8 +86493,22 @@
       "industry": "바이오, 제약·헬스케어"
     },
     {
+      "ticker": "RNAQ",
+      "name": "Rainier Acquisition Class A",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
       "ticker": "RNAQU",
       "name": "Rainier Acquisition Corporation - Units",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
+      "ticker": "RNAQW",
+      "name": "Rainier Acquisition Corporation - Warrants",
       "market": "US",
       "category": "스윙주",
       "industry": "금융, 은행·보험·증권, 지주회사"
@@ -87795,6 +87991,13 @@
       "industry": "우주항공, 위성·발사체, 항공기 부품"
     },
     {
+      "ticker": "SALI",
+      "name": "Schroders US Autocallable Ladder Income ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "SAM",
       "name": "Boston Beer Company",
       "market": "US",
@@ -87898,13 +88101,6 @@
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
-    },
-    {
-      "ticker": "SAT",
-      "name": "Saratoga Investment Corp 6.00% Notes due 2027",
-      "market": "US",
-      "category": "성장주",
-      "industry": "우주항공, 위성·발사체, 항공기 부품"
     },
     {
       "ticker": "SATA",
@@ -88670,6 +88866,13 @@
       "industry": "-"
     },
     {
+      "ticker": "SCSE",
+      "name": "Corgi U.S. Small-Cap 15% Structured Buffer ETF - September Series",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "SCTX",
       "name": "Scribe Therapeutics",
       "market": "US",
@@ -89172,6 +89375,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "SEPC",
+      "name": "Corgi U.S. Equities 10% Structured Buffer ETF - September Series",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
     },
     {
       "ticker": "SEPI",
@@ -91638,13 +91848,6 @@
       "industry": "-"
     },
     {
-      "ticker": "SNYR",
-      "name": "Synergy CHC",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
       "ticker": "SO",
       "name": "Southern Company",
       "market": "US",
@@ -91661,13 +91864,6 @@
     {
       "ticker": "SOBO",
       "name": "South Bow",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
-      "ticker": "SOBR",
-      "name": "SOBR Safe",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -95334,6 +95530,13 @@
       "industry": "-"
     },
     {
+      "ticker": "TDNA",
+      "name": "T. Rowe Price Biotech ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "TDOC",
       "name": "Teladoc Health",
       "market": "US",
@@ -96426,6 +96629,13 @@
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
+      "ticker": "TIZE",
+      "name": "TCW Securitized Income ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
       "ticker": "TJAN",
       "name": "Innovator Equity Defined Protection ETF - 2 Yr to January 2027",
       "market": "US",
@@ -96531,8 +96741,22 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "TLAC",
+      "name": "Three Lions Acquisition",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
       "ticker": "TLACU",
       "name": "Three Lions Acquisition Corp. - Units",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
+      "ticker": "TLACW",
+      "name": "Three Lions Acquisition Corp. - Warrants",
       "market": "US",
       "category": "스윙주",
       "industry": "금융, 은행·보험·증권, 지주회사"
@@ -96865,6 +97089,13 @@
       "market": "US",
       "category": "성장주",
       "industry": "2차전지, 전기차 배터리, 배터리 소재"
+    },
+    {
+      "ticker": "TMID",
+      "name": "T. Rowe Price Mid Cap Equity Research ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
     },
     {
       "ticker": "TMLP",
@@ -98066,6 +98297,13 @@
     {
       "ticker": "TSEC",
       "name": "Touchstone Securitized Income ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "TSEE",
+      "name": "T. Rowe Price Small Cap ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
@@ -103496,6 +103734,13 @@
       "industry": "-"
     },
     {
+      "ticker": "WCCB",
+      "name": "West Coast Community Bancorp",
+      "market": "US",
+      "category": "가치주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
       "ticker": "WCEO",
       "name": "Hypatia Women CEO ETF",
       "market": "US",
@@ -105526,8 +105771,22 @@
       "industry": "레버리지·테마 ETF"
     },
     {
+      "ticker": "XIII",
+      "name": "Churchill Capital Corp XIII Class A",
+      "market": "US",
+      "category": "가치주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
       "ticker": "XIIIU",
       "name": "Churchill Capital Corp XIII - Units",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
+      "ticker": "XIIIW",
+      "name": "Churchill Capital Corp XIII - Warrants",
       "market": "US",
       "category": "스윙주",
       "industry": "금융, 은행·보험·증권, 지주회사"
@@ -106606,6 +106865,13 @@
     {
       "ticker": "XUDV",
       "name": "Franklin U.S. Dividend Booster Index ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "레버리지·테마 ETF"
+    },
+    {
+      "ticker": "XUSM",
+      "name": "MarketDesk International Momentum ETF",
       "market": "US",
       "category": "스윙주",
       "industry": "레버리지·테마 ETF"
