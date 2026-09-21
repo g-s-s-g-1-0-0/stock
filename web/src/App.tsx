@@ -8,7 +8,7 @@ import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 type Market = 'KR' | 'US'
 type Valuation = '저평가' | '보통' | '고평가' | '판단 불가'
 type Opinion = '매수' | '관망' | '매도' | '-'
-type TradeStatus = '익절' | '손절' | '실패 익절' | '보유 중'
+type TradeStatus = '익절' | '손절' | '실패 익절' | '보유 중' | '매수 보류'
 type WatchlistSortKey = 'registered' | 'market_kr_first' | 'market_us_first' | 'holding_first' | 'not_holding_first' | 'valuation_low_first' | 'valuation_high_first' | 'opinion_buy_first' | 'opinion_sell_first' | 'name_asc' | 'name_desc'
 type NotificationDeliveryChannel = 'email' | 'kakaoTalk' | 'slack'
 type NotificationIntegrationChannel = Exclude<NotificationDeliveryChannel, 'email'>
@@ -1054,7 +1054,7 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     sellPrice: typeof candidate.sellPrice === 'string' ? candidate.sellPrice : '-',
     returnPct: typeof candidate.returnPct === 'number' && Number.isFinite(candidate.returnPct) ? candidate.returnPct : 0,
     holdingDays: typeof candidate.holdingDays === 'number' || candidate.holdingDays === '-' ? candidate.holdingDays : '-',
-    status: ['익절', '손절', '실패 익절', '보유 중'].includes(normalizedStatus) ? normalizedStatus as TradeStatus : '보유 중',
+    status: ['익절', '손절', '실패 익절', '보유 중', '매수 보류'].includes(normalizedStatus) ? normalizedStatus as TradeStatus : '보유 중',
     manualExit: candidate.manualExit === true ? true : undefined,
     manualEntry: candidate.manualEntry === true ? true : undefined,
     sellTimestamp: typeof candidate.sellTimestamp === 'string' ? candidate.sellTimestamp : undefined,
@@ -1158,25 +1158,41 @@ function storeCachedRemoteUserSettings(settings: StoredUserSettings) {
   localStorage.setItem(USER_SETTINGS_REMOTE_CACHE_STORAGE_KEY, JSON.stringify(settings))
 }
 
+function normalizeSlotPercent(value: unknown) {
+  const number = typeof value === 'number' ? value : Number(String(value ?? '').trim())
+  if (!Number.isFinite(number)) return null
+  return Math.min(100, Math.max(0, Math.round(number * 10) / 10))
+}
+
+function slotPercentDraftValue(value: string) {
+  const cleaned = value.replace(/[^0-9.]/g, '')
+  if (!cleaned) return ''
+  const dot = cleaned.indexOf('.')
+  if (dot < 0) return cleaned
+  const whole = cleaned.slice(0, dot)
+  const fraction = cleaned.slice(dot + 1).replace(/\./g, '').slice(0, 1)
+  return `${whole}.${fraction}`
+}
+
+function isLegacySwingThreeSlot(candidate: Partial<AllocationSettings> | null | undefined) {
+  const percents = Array.isArray(candidate?.slotPercents) ? candidate.slotPercents : []
+  return candidate?.slotCount === 3
+    && Number(percents[0]) === 50
+    && Number(percents[1]) === 25
+    && Number(percents[2]) === 25
+}
+
 function normalizeAllocationSettings(value: unknown, investmentType: InvestmentType): AllocationSettings {
   const fallback = DEFAULT_ALLOCATION_SETTINGS[investmentType]
   const candidate = value as Partial<AllocationSettings> | null
-  if (investmentType === 'swing') {
-    return {
-      slotCount: fallback.slotCount,
-      slotPercents: [...fallback.slotPercents],
-      megaTrendOnly: candidate?.megaTrendOnly === true,
-    }
-  }
-  const slotCount = typeof candidate?.slotCount === 'number' && Number.isFinite(candidate.slotCount)
+  const useFallbackSlots = investmentType === 'swing' && isLegacySwingThreeSlot(candidate)
+  const slotCount = !useFallbackSlots && typeof candidate?.slotCount === 'number' && Number.isFinite(candidate.slotCount)
     ? Math.min(20, Math.max(1, Math.round(candidate.slotCount)))
     : fallback.slotCount
-  const candidatePercents = Array.isArray(candidate?.slotPercents) ? candidate.slotPercents : []
+  const candidatePercents = !useFallbackSlots && Array.isArray(candidate?.slotPercents) ? candidate.slotPercents : []
   const slotPercents = Array.from({ length: slotCount }, (_, index) => {
-    const value = candidatePercents[index]
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return Math.min(100, Math.max(0, Math.round(value)))
-    }
+    const normalized = normalizeSlotPercent(candidatePercents[index])
+    if (normalized !== null) return normalized
     return fallback.slotPercents[index] ?? 0
   })
   const megaTrendOnly = typeof candidate?.megaTrendOnly === 'boolean'
@@ -2113,6 +2129,10 @@ function useEdgeScrollWheelRef(externalRef?: RefObject<HTMLDivElement | null>) {
   }, [externalRef])
 }
 
+function isOpenTradeStatus(status: TradeStatus) {
+  return status === '보유 중' || status === '매수 보류'
+}
+
 function statusClass(value: Valuation | Opinion | TradeStatus) {
   if (value === '저평가' || value === '매수' || value === '익절') return 'positive'
   if (value === '고평가' || value === '매도' || value === '손절' || value === '실패 익절') return 'negative'
@@ -2532,6 +2552,7 @@ function tradeResultLabel(trade: TradeLog) {
   if (trade.status === '익절') return '성공(익절)'
   if (trade.status === '손절') return '실패(손절)'
   if (trade.status === '실패 익절') return '실패(익절)'
+  if (trade.status === '매수 보류') return '매수 보류'
   if (trade.manualEntry) return '보유중(직접)'
   return '보유중'
 }
@@ -2558,6 +2579,9 @@ function tradeResultInfo(trade: TradeLog) {
       return '전략과 무관하게 직접 추가한 보유 항목입니다. 자동 청산 조건이 적용되지 않으며, 직접 청산할 때까지 보유 상태로 유지됩니다.'
     }
     return '보유중인 종목에 직접 추가한 항목입니다. 입력한 매수일·평단가 기준으로 자동 청산 로직이 동일하게 적용되며, 청산 조건을 충족하면 자동으로 청산됩니다.'
+  }
+  if (trade.status === '매수 보류') {
+    return '슬롯·위험군 한도 때문에 실제 매수는 보류했지만, 전략 신호는 기록해 같은 청산 기준으로 추적합니다. 현금·슬롯·평가액에는 넣지 않습니다.'
   }
   if (trade.status !== '보유 중') return tradeCriteriaInfo(trade.strategy)
   return '아직 매도 신호가 없어 성공/실패를 확정하지 않은 보유 중 거래입니다. 보유 여부는 투자금 산정과 별개로 구분해서 봅니다.'
@@ -3164,7 +3188,7 @@ function ResultBadge({
 }
 
 function formatWinRate(label: string, targetTrades: TradeLog[]) {
-  const finished = targetTrades.filter((trade) => trade.status !== '보유 중')
+  const finished = targetTrades.filter((trade) => !isOpenTradeStatus(trade.status))
   if (finished.length === 0) return `${label} -`
   const wins = finished.filter((trade) => trade.status === '익절').length
   return `${label} ${Math.round((wins / finished.length) * 100)}%`
@@ -3199,7 +3223,7 @@ function normalizeTradeDateInput(value: string) {
 }
 
 function holdingPeriodDays(trade: TradeLog) {
-  const endTime = trade.status === '보유 중' ? Date.now() : parseTradeDate(trade.sellDate)
+  const endTime = isOpenTradeStatus(trade.status) ? Date.now() : parseTradeDate(trade.sellDate)
   return Math.max(0, Math.ceil((endTime - parseTradeDate(trade.buyDate)) / 86_400_000))
 }
 
@@ -3533,7 +3557,7 @@ function tradeCurrentPriceText(trade: TradeLog, stocks: Stock[] = searchUniverse
 }
 
 function displayedTradeReturnPct(trade: TradeLog, stocks: Stock[] = searchUniverse) {
-  return trade.status === '보유 중' ? currentReturnPct(trade, stocks) : trade.returnPct
+  return isOpenTradeStatus(trade.status) ? currentReturnPct(trade, stocks) : trade.returnPct
 }
 
 function tradeInvestmentAmount(trade: TradeLog, amountByTradeKey?: Map<string, number>) {
@@ -3559,7 +3583,7 @@ function tradeProfitClass(value: number | null) {
 }
 
 function tradeReturnPriceText(trade: TradeLog, stocks: Stock[] = searchUniverse) {
-  return trade.status === '보유 중' ? tradeCurrentPriceText(trade, stocks) : trade.sellPrice || '-'
+  return isOpenTradeStatus(trade.status) ? tradeCurrentPriceText(trade, stocks) : trade.sellPrice || '-'
 }
 
 function formatPriceWithReturn(price: string, returnPct: number | null) {
@@ -3685,10 +3709,11 @@ function manualSwingEntryBlockReason(
   candidate: Stock,
   openTrades: TradeLog[],
   stocks: Stock[],
+  maxPositions = 10,
 ) {
   const swingTrades = openTrades.filter((trade) => trade.status === '보유 중' && (trade.investmentType ?? 'swing') === 'swing')
   if (swingTrades.some((trade) => tickerMatches(trade.ticker, candidate.ticker))) return '동일 종목은 한 포지션만 허용됩니다.'
-  if (new Set(swingTrades.map((trade) => trade.ticker)).size >= 10) return '스윙 10슬롯이 모두 사용 중입니다.'
+  if (new Set(swingTrades.map((trade) => trade.ticker)).size >= maxPositions) return `스윙 ${maxPositions}슬롯이 모두 사용 중입니다.`
   const stocksByTicker = new Map(stocks.map((stock) => [stock.ticker, stock]))
   stocksByTicker.set(candidate.ticker, candidate)
   const candidateGroup = swingRiskGroupForFields(candidate.ticker, candidate.name, candidate.industry)
@@ -3819,6 +3844,10 @@ function buildPortfolioSummary(
 
     for (const trade of orderedBuys) {
       const key = tradeKey(trade)
+      if (trade.status === '매수 보류') {
+        amountByTradeKey.set(key, 0)
+        continue
+      }
       const fixedAmount = typeof trade.investmentAmount === 'number' && Number.isFinite(trade.investmentAmount)
         ? Math.max(0, Math.round(trade.investmentAmount))
         : null
@@ -3832,7 +3861,7 @@ function buildPortfolioSummary(
       const fixedPercent = fixedAmount !== null && allocationBaseBeforeBuys > 0 ? fixedAmount / allocationBaseBeforeBuys * 100 : null
       const leveragedEtf = investmentType === 'swing' && isLeveragedEtfTrade(trade, stocksByTicker)
       const recommendedPercent = investmentType === 'swing'
-        ? (fixedPercent ?? (leveragedEtf ? 5 : (trade.recommendedAllocationPercent ?? configuredPercent)))
+        ? (fixedPercent ?? (leveragedEtf ? 5 : (configuredPercent || trade.recommendedAllocationPercent || 10)))
         : configuredPercent
       const blockedByRiskGroup = investmentType === 'swing'
         && (
@@ -3841,7 +3870,7 @@ function buildPortfolioSummary(
         )
       const blockedByPositionSize = investmentType === 'swing'
         && fixedPercent !== null
-        && fixedPercent > (leveragedEtf ? 5 : 10)
+        && fixedPercent > (leveragedEtf ? 5 : Math.max(configuredPercent, 10))
       const amount = slotIndex >= 0 && !blockedByRiskGroup && !blockedByPositionSize
         ? fixedAmount !== null
           ? Math.min(runningCash, fixedAmount)
@@ -3869,7 +3898,7 @@ function buildPortfolioSummary(
       unrealizedProfitAmount += tradeProfit
       openInvestmentAmount += amount
       positionValue += amount + tradeProfit
-    } else {
+    } else if (trade.status !== '매수 보류') {
       realizedProfitAmount += tradeProfit
     }
   }
@@ -8277,7 +8306,12 @@ function App() {
     ? resolveStockForTicker(manualHoldingDraft.ticker, apiStocks, apiSearchStocks)
     : null
   const manualHoldingRiskBlockReason = displayedInvestmentType === 'swing' && manualHoldingResolved?.ticker
-    ? manualSwingEntryBlockReason(manualHoldingResolved, scopedOpenTrades, [...apiStocks, ...apiSearchStocks])
+    ? manualSwingEntryBlockReason(
+      manualHoldingResolved,
+      scopedOpenTrades,
+      [...apiStocks, ...apiSearchStocks],
+      contributionSettings.allocationByInvestmentType.swing.slotCount,
+    )
     : ''
   const isManualHoldingReady = manualHoldingDraft !== null
     && manualHoldingDraft.ticker.trim().length > 0
@@ -8319,7 +8353,9 @@ function App() {
     }
     if (displayedInvestmentType === 'swing') {
       newTrade.riskGroup = swingRiskGroupForFields(resolvedTicker, resolved.name, resolved.industry)
-      newTrade.recommendedAllocationPercent = isLeveragedEtfFields(resolvedTicker, resolved.name, resolved.industry) ? 5 : 10
+      newTrade.recommendedAllocationPercent = isLeveragedEtfFields(resolvedTicker, resolved.name, resolved.industry)
+        ? 5
+        : (displayedAllocationSettings.slotPercents[0] ?? 10)
       newTrade.allocationStatus = '진입 가능'
     }
 
@@ -11256,10 +11292,10 @@ function App() {
                         <label className="login-field" key={`${displayedInvestmentType}-slot-${index + 1}`}>
                           <span>{index + 1}번 슬롯 비중(%)</span>
                           <input
-                            inputMode="numeric"
+                            inputMode="decimal"
                             value={percent}
                             onChange={(event) => {
-                              const nextPercent = event.target.value.replace(/[^0-9]/g, '')
+                              const nextPercent = slotPercentDraftValue(event.target.value)
                               setContributionDraft((current) => {
                                 if (!current) return current
                                 const currentAllocation = current.allocationByInvestmentType[displayedInvestmentType]

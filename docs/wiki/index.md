@@ -80,5 +80,7 @@
 
 ## 7. 운영 문서
 
-- [[swing-risk-operations]] — 10슬롯, 동일 종목 1포지션, 위험군 20%, 레버리지 ETF 5%, 메일 행동·중복 방지·일일 요약 기준
+- [[swing-risk-operations]] — 10슬롯, 동일 종목 1포지션, 위험군 20%, 레버리지 ETF 5%, 메일 권장 행동·중복 방지 기준
 - [[web-data-refresh]] — 즉시갱신 버튼이 페이지별로 valuation / technical / market-trends / market-events workflow를 실행하는 기준
+- [[qqq-etf-classification]] — QQQ는 나스닥100 ETF인데, Finviz Financial 태그와 이름에 ETF가 없어 금융 산업·보통 밸류로 오분류됨
+- [[market-events-verification]] — BLS 공식 일정은 라이브 403 시 Wayback iframe 원문을 읽고, 날짜가 확실할 때만 자동 반영

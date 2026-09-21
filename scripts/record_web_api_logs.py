@@ -58,6 +58,9 @@ HOLD_RESTORE_DROP = 0.10
 HOLD_RESTORE_MIN_TRADING_DAYS = 10
 HOLD_RESTORE_SIGNAL_CONFIRMATIONS = 2
 MAX_OPEN_PER_STRATEGY = 2
+OPEN_POSITION_STATUS = "보유 중"
+DEFERRED_BUY_STATUS = "매수 보류"
+TRACKED_TRADE_STATUSES = {OPEN_POSITION_STATUS, DEFERRED_BUY_STATUS}
 RESTORE_FAMILY_STRATEGIES: set[str] = set()
 ACTIVE_STRATEGIES = set(ACTIVE_STRATEGY_CODES)
 REMOVED_STRATEGIES = {"A", "C", "D", "E", "F", "G", "H"}
@@ -329,9 +332,37 @@ def trade_key(trade: dict[str, Any]) -> tuple[str, str, str, str]:
     )
 
 
+def trade_status(trade: dict[str, Any]) -> str:
+    return str(trade.get("status") or "").strip()
+
+
+def is_tracked_trade(trade: dict[str, Any]) -> bool:
+    return trade_status(trade) in TRACKED_TRADE_STATUSES
+
+
+def has_deferred_buy_log(
+    trades: list[dict[str, Any]],
+    ticker: str,
+    code: str,
+    investment_type: str,
+) -> bool:
+    ticker = ticker.upper()
+    for trade in trades:
+        if trade_status(trade) != DEFERRED_BUY_STATUS:
+            continue
+        if str(trade.get("ticker") or "").strip().upper() != ticker:
+            continue
+        if trade_investment_type(trade) != investment_type:
+            continue
+        if strategy_code(trade.get("strategy")) != code:
+            continue
+        return True
+    return False
+
+
 def public_trade_identity(trade: dict[str, Any]) -> tuple[str, str, str, str] | None:
     """Identify one closed automatic entry, independently of its generated slot ID."""
-    if str(trade.get("status") or "").strip() == "보유 중":
+    if is_tracked_trade(trade):
         return None
     ticker = str(trade.get("ticker") or "").strip().upper()
     strategy = strategy_code(trade.get("strategy"))
@@ -491,7 +522,7 @@ def trade_status_for_exit(trade: dict[str, Any], result: float) -> str:
 
 
 def normalize_closed_trade_status(trade: dict[str, Any]) -> bool:
-    if str(trade.get("status") or "").strip() == "보유 중":
+    if is_tracked_trade(trade):
         return False
     try:
         result = float(trade.get("returnPct"))
@@ -1417,7 +1448,7 @@ def run_trade_engine(
             trade["name"] = stock.get("name") or trade.get("name") or ticker
             trade["market"] = stock.get("market") or trade.get("market") or "-"
             trade["currentPrice"] = stock.get("currentPrice") or trade.get("currentPrice") or "-"
-        if str(trade.get("status") or "") != "보유 중":
+        if not is_tracked_trade(trade):
             continue
         if trade_investment_type(trade) == "long_term":
             continue
@@ -1601,13 +1632,16 @@ def run_trade_engine(
                 if hold_restore_allowed(trade, current_price, today_date)
             ]
             allocation_decision: dict[str, Any] | None = None
+            deferred_buy = False
             if investment_type == "swing":
                 allocation_decision = swing_entry_decision(stock, open_swing_trades, stocks_by_symbol)
                 if mutate_public_state:
                     signal_state_changed = (
                         apply_allocation_guidance(stock, row, allocation_decision) or signal_state_changed
                     )
-                if allocation_decision["allocationStatus"] != "진입 가능":
+                allocation_status = str(allocation_decision.get("allocationStatus") or "")
+                deferred_buy = allocation_status == DEFERRED_BUY_STATUS
+                if not deferred_buy and allocation_status != "진입 가능":
                     continue
             for code in active_entry_codes:
                 if code not in ACTIVE_STRATEGIES:
@@ -1647,15 +1681,26 @@ def run_trade_engine(
                 ]
                 if family_restore_sources and not any(confirm_restore_signal(trade, code) for trade in family_restore_sources):
                     continue
+                if deferred_buy and has_deferred_buy_log(trades, ticker, code, investment_type):
+                    continue
                 closed_trade = latest_closed_trade(trades, ticker, code, investment_type)
                 if code in {"5", "6"}:
                     closed_for_ticker = [t for t in trades if str(t.get("ticker") or "").upper() == ticker
-                                         and trade_investment_type(t) == investment_type and t.get("status") != "보유 중"]
+                                         and trade_investment_type(t) == investment_type and not is_tracked_trade(t)]
                     closed_trade = max(closed_for_ticker, key=lambda t: parse_trade_date(t.get("sellDate")) or date.min, default=None)
-                if code not in {"5", "6"} and not seed_after_reset and open_count == 0 and closed_trade is None and previous_opinion == "매수" and not restore_source_trades:
+                if (
+                    code not in {"5", "6"}
+                    and not seed_after_reset
+                    and open_count == 0
+                    and closed_trade is None
+                    and previous_opinion == "매수"
+                    and not restore_source_trades
+                    and not deferred_buy
+                ):
                     continue
                 if investment_type == "swing" and not sell_reentry_allowed(closed_trade, current_price, today_date):
                     continue
+                status = DEFERRED_BUY_STATUS if deferred_buy else OPEN_POSITION_STATUS
                 new_trade = {
                     "slotId": next_slot_id(ticker, code, trades, today, investment_type),
                     "investmentType": investment_type,
@@ -1666,11 +1711,11 @@ def run_trade_engine(
                     "strategy": strategy_display_name(code),
                     "buyDate": today,
                     "buyPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
-                    "sellDate": "보유 중",
+                    "sellDate": OPEN_POSITION_STATUS if status == OPEN_POSITION_STATUS else "-",
                     "sellPrice": "-",
                     "returnPct": 0,
                     "holdingDays": "-",
-                    "status": "보유 중",
+                    "status": status,
                 }
                 if allocation_decision is not None:
                     new_trade.update(allocation_decision)
@@ -1688,11 +1733,12 @@ def run_trade_engine(
                 for trade in restore_source_trades:
                     trade.pop("restoreWatchDate", None)
                     set_restore_signal_count(trade, code, 0)
-                current_open_counts[slot_key] = open_count + 1
-                current_open_trades.setdefault(slot_key, []).append(new_trade)
-                current_open_by_ticker.setdefault(ticker, []).append(new_trade)
-                if investment_type == "swing":
-                    open_swing_trades.append(new_trade)
+                if status == OPEN_POSITION_STATUS:
+                    current_open_counts[slot_key] = open_count + 1
+                    current_open_trades.setdefault(slot_key, []).append(new_trade)
+                    current_open_by_ticker.setdefault(ticker, []).append(new_trade)
+                    if investment_type == "swing":
+                        open_swing_trades.append(new_trade)
                 appended += 1
                 ticker_appended = True
                 if investment_type == "swing":

@@ -21,6 +21,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from html import unescape
 from html.parser import HTMLParser
 from pathlib import Path
+from time import sleep
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -2191,15 +2192,55 @@ def add_unique_market_event_source(
     target[month] = value
 
 
+def wayback_playback_url(url: str) -> str:
+    """Return the archived document, not the Wayback toolbar/iframe shell."""
+
+    match = re.match(
+        r"(https://web\.archive\.org/web/)(\d+)(?:id_|if_)?/(https?://.+)",
+        url,
+    )
+    if not match:
+        return url
+    return f"{match.group(1)}{match.group(2)}if_/{match.group(3)}"
+
+
+def is_wayback_playback_shell(html_text: str) -> bool:
+    return 'id="playback"' in html_text and "bundle-playback.js" in html_text
+
+
+def _retryable_fetch_error(exc: BaseException) -> bool:
+    if isinstance(exc, TimeoutError):
+        return True
+    if isinstance(exc, urllib.error.HTTPError) and exc.code in {429, 502, 503, 504}:
+        return True
+    reason = getattr(exc, "reason", exc)
+    return "timed out" in str(reason).lower()
+
+
+def fetch_text_retry(url: str, *, timeout: float, attempts: int = 3) -> str:
+    last: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            return fetch_text(url, timeout=timeout)
+        except Exception as exc:  # noqa: BLE001
+            last = exc
+            if attempt >= attempts - 1 or not _retryable_fetch_error(exc):
+                raise
+            sleep(1.5 * (attempt + 1))
+    raise last or RuntimeError(url)
+
+
 def wayback_snapshot_url(url: str) -> str | None:
     """Resolve a recent archived copy of an official page blocked for live bots."""
 
     encoded = urllib.parse.quote(url, safe="")
     try:
-        available = json.loads(fetch_text(f"{WAYBACK_AVAILABLE_API}?url={encoded}", timeout=30))
+        available = json.loads(
+            fetch_text_retry(f"{WAYBACK_AVAILABLE_API}?url={encoded}", timeout=30)
+        )
         closest = (available.get("archived_snapshots") or {}).get("closest") or {}
         if closest.get("available") and closest.get("url"):
-            return str(closest["url"])
+            return wayback_playback_url(str(closest["url"]))
     except Exception:
         pass
 
@@ -2208,13 +2249,28 @@ def wayback_snapshot_url(url: str) -> str | None:
         f"&fl=timestamp,original&from=202601"
     )
     try:
-        rows = json.loads(fetch_text(cdx, timeout=40))
+        rows = json.loads(fetch_text_retry(cdx, timeout=40))
     except Exception:
         return None
     if not isinstance(rows, list) or len(rows) < 2:
         return None
     timestamp, original = rows[-1][0], rows[-1][1]
-    return f"https://web.archive.org/web/{timestamp}/{original}"
+    return wayback_playback_url(f"https://web.archive.org/web/{timestamp}/{original}")
+
+
+def fetch_wayback_html(snapshot: str) -> str:
+    playback = wayback_playback_url(snapshot)
+    html_text = fetch_text_retry(playback, timeout=45)
+    if is_wayback_playback_shell(html_text):
+        iframe = re.search(r'<iframe[^>]*id="playback"[^>]*src="([^"]+)"', html_text)
+        if not iframe:
+            iframe = re.search(r'<iframe[^>]*src="([^"]+)"[^>]*id="playback"', html_text)
+        if not iframe:
+            raise RuntimeError("wayback playback shell without archived document")
+        html_text = fetch_text_retry(unescape(iframe.group(1)), timeout=45)
+    if is_wayback_playback_shell(html_text):
+        raise RuntimeError("wayback returned playback shell instead of archived document")
+    return html_text
 
 
 def fetch_bls_schedule_html(url: str) -> tuple[str, str]:
@@ -2227,7 +2283,7 @@ def fetch_bls_schedule_html(url: str) -> tuple[str, str]:
         if not snapshot:
             raise RuntimeError(f"live={live_exc}; wayback snapshot unavailable") from live_exc
         try:
-            return fetch_text(snapshot, timeout=45), f"wayback:{snapshot}"
+            return fetch_wayback_html(snapshot), f"wayback:{snapshot}"
         except Exception as archive_exc:  # noqa: BLE001
             raise RuntimeError(f"live={live_exc}; wayback={archive_exc}") from archive_exc
 

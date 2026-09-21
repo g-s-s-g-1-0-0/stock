@@ -928,12 +928,21 @@ def test_industry_cap_keeps_buy_signal_but_blocks_trade_allocation(monkeypatch, 
 
     updated = logs.load_json(cache_path, {})
     assert len([row for row in updated["rows"] if row["status"] == "보유 중"]) == 2
-    assert updated["meta"]["appendedOpenTrades"] == 0
+    deferred = [row for row in updated["rows"] if row["status"] == "매수 보류"]
+    assert updated["meta"]["appendedOpenTrades"] == 1
+    assert len(deferred) == 1
+    assert deferred[0]["ticker"] == "ALAB"
+    assert deferred[0]["allocationStatus"] == "매수 보류"
     assert stock["opinion"] == "매수"
     assert stock["allocationStatus"] == "매수 보류"
     assert stock["riskGroup"] == "반도체·AI 인프라"
     assert stock["currentRiskGroupPercent"] == 20
     assert technical["ALAB"]["entrySignalCodes"] == "1"
+
+    logs.update_trade_logs([stock], {"ALAB": {"opinion": "매수"}}, technical, {"peakTriggered": False})
+    updated = logs.load_json(cache_path, {})
+    assert len([row for row in updated["rows"] if row["ticker"] == "ALAB" and row["status"] == "매수 보류"]) == 1
+    assert updated["meta"]["appendedOpenTrades"] == 0
 
 
 def test_strategy_one_signal_opens_season_even_when_allocation_is_blocked(monkeypatch, tmp_path):
@@ -997,8 +1006,9 @@ def test_strategy_one_signal_opens_season_even_when_allocation_is_blocked(monkey
     )
 
     updated = logs.load_json(cache_path, {})
-    assert updated["meta"]["appendedOpenTrades"] == 0
+    assert updated["meta"]["appendedOpenTrades"] == 1
     assert updated["meta"]["strategySeasonOpen"] is True
+    assert [row["status"] for row in updated["rows"] if row["ticker"] == "ALAB"] == ["매수 보류"]
     assert saved[-1]["open"] is True
     assert saved[-1]["openedByTicker"] == "ALAB"
 
