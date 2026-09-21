@@ -1529,7 +1529,7 @@
 .value-analysis-table {
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 2464px;
+  min-width: 2504px;
 }
 
 .value-analysis-table thead th {
@@ -2660,12 +2660,40 @@
   color: var(--muted);
 }
 
-.value-analysis-table .industry-cell,
 .value-analysis-table .name-data-cell {
   max-width: 240px;
   overflow: hidden;
   text-align: left;
   text-overflow: ellipsis;
+}
+
+.value-analysis-table .industry-cell {
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  text-align: left;
+}
+
+.truncated-sheet-cell-text {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value-analysis-table .industry-cell.is-truncated {
+  cursor: help;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.value-analysis-table .industry-cell.is-truncated:focus,
+.value-analysis-table .industry-cell.is-truncated:focus-visible,
+.value-analysis-table .industry-cell.is-truncated:active {
+  outline: none;
+  box-shadow: none;
+  color: inherit;
 }
 
 .value-analysis-table .name-cell > span:last-child {

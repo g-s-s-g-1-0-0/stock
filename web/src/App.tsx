@@ -4821,7 +4821,14 @@ function ValueAnalysisPage({
                   </td>
                   <td className="ticker-cell">{stock.ticker}</td>
                   <td>{stock.category ?? (stock.market === 'KR' ? '성장주' : '혼합주')}</td>
-                  <td className="industry-cell">{displayIndustryLabel(stock.industry)}</td>
+                  <TruncatedTrendCell
+                    cellKey={`value-industry-${stock.ticker}`}
+                    className="industry-cell"
+                    text={displayIndustryLabel(stock.industry)}
+                    tooltipClassName="stock-name-floating-tooltip"
+                    onTooltipClose={onTooltipClose}
+                    onTooltipOpen={onTooltipOpen}
+                  />
                   <td className={`number-cell ${valuationClassName}`.trim()}>{isFairPriceUnavailable(stock) ? <span className="unavailable-value-label">{displayFairPriceText(stock)}</span> : displayFairPriceText(stock)}</td>
                   <td className={`number-cell ${valuationClassName}`.trim()}>{displayCurrentPriceText(stock)}</td>
                   <td><span className={`status-badge ${valuationBadgeClass(displayValuation)}`}>{displayValuation}</span></td>
@@ -5603,36 +5610,40 @@ function TruncatedTrendCell({
   text,
   className,
   cellKey,
+  tooltipClassName,
   onTooltipOpen,
   onTooltipClose,
 }: {
   text: string
   className: string
   cellKey: string
+  tooltipClassName?: string
   onTooltipOpen: (tooltip: TooltipState) => void
   onTooltipClose: () => void
 }) {
   const cellRef = useRef<HTMLTableCellElement>(null)
+  const textRef = useRef<HTMLSpanElement>(null)
   const [isTruncated, setIsTruncated] = useState(false)
 
   useLayoutEffect(() => {
-    const cellElement = cellRef.current
-    if (!cellElement) return undefined
+    const textElement = textRef.current
+    if (!textElement) return undefined
 
     let frameId = 0
     const updateTruncation = () => {
       window.cancelAnimationFrame(frameId)
       frameId = window.requestAnimationFrame(() => {
         setIsTruncated(
-          cellElement.scrollWidth > cellElement.clientWidth + 1 ||
-            cellElement.scrollHeight > cellElement.clientHeight + 1,
+          textElement.scrollWidth > textElement.clientWidth + 1 ||
+            textElement.scrollHeight > textElement.clientHeight + 1,
         )
       })
     }
 
     updateTruncation()
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updateTruncation)
-    observer?.observe(cellElement)
+    observer?.observe(textElement)
+    if (textElement.parentElement) observer?.observe(textElement.parentElement)
     window.addEventListener('resize', updateTruncation)
 
     return () => {
@@ -5643,34 +5654,46 @@ function TruncatedTrendCell({
   }, [text])
 
   const openTooltip = (element: HTMLElement, toggle = false) => {
-    const cellElement = cellRef.current
+    const textElement = textRef.current
     if (
-      !cellElement ||
-      (cellElement.scrollWidth <= cellElement.clientWidth + 1 &&
-        cellElement.scrollHeight <= cellElement.clientHeight + 1)
+      !textElement ||
+      (textElement.scrollWidth <= textElement.clientWidth + 1 &&
+        textElement.scrollHeight <= textElement.clientHeight + 1)
     ) {
       return
     }
 
     const rect = element.getBoundingClientRect()
-    const tooltipHalfWidth = Math.min(130, (window.innerWidth - 32) / 2)
-    const minX = tooltipHalfWidth + 16
-    const maxX = window.innerWidth - tooltipHalfWidth - 16
+    const edgePadding = window.innerWidth <= 760 ? 20 : 32
+    const maxTooltipWidth = window.innerWidth - edgePadding * 2
+    const tooltipWidth = tooltipClassName === 'stock-name-floating-tooltip'
+      ? Math.min(textElement.scrollWidth + 26, Math.min(520, maxTooltipWidth))
+      : Math.min(280, maxTooltipWidth)
+    const tooltipHalfWidth = tooltipWidth / 2
+    const minX = tooltipHalfWidth + edgePadding
+    const maxX = window.innerWidth - tooltipHalfWidth - edgePadding
     const centeredX = rect.left + rect.width / 2
 
     onTooltipOpen({
       text,
       x: Math.min(Math.max(centeredX, minX), maxX),
       y: rect.top - 8,
+      className: tooltipClassName,
       toggle,
       sourceKey: `truncated-cell:${cellKey}:${text.slice(0, 80)}`,
     })
   }
 
+  const cellBody = (
+    <span className="truncated-sheet-cell-text" ref={textRef}>
+      {text}
+    </span>
+  )
+
   if (!isTruncated) {
     return (
       <td className={className} key={cellKey} ref={cellRef}>
-        {text}
+        {cellBody}
       </td>
     )
   }
@@ -5698,7 +5721,7 @@ function TruncatedTrendCell({
       onMouseEnter={(event) => openTooltip(event.currentTarget)}
       onMouseLeave={onTooltipClose}
     >
-      {text}
+      {cellBody}
     </td>
   )
 }
