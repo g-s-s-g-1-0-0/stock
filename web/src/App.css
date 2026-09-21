@@ -5800,6 +5800,12 @@
     grid-column: 1 / -1;
   }
 
+  .asset-summary-item:nth-child(even):not(.strong) .asset-summary-tooltip {
+    left: auto;
+    right: 8px;
+    max-width: min(280px, calc(100vw - 40px));
+  }
+
   .app-shell {
     overflow-x: clip;
   }
@@ -6559,7 +6565,8 @@
   }
 
   .watchlist-sort-popover {
-    right: -8px;
+    right: 0;
+    width: min(328px, calc(100vw - 32px));
   }
 
   .account-alert-header {
