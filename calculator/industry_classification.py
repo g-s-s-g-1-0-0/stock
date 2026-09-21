@@ -24,6 +24,33 @@ INVERSE_ETF_ISSUERS = (
     "ace",
     "sol",
 )
+GENERIC_ETF_CATEGORY = "스윙주"
+GENERIC_ETF_INDUSTRY = "ETF, 테마·지수형 상장상품"
+ETF_ISSUER_TOKENS = (
+    "invesco",
+    "ishares",
+    "spdr",
+    "vanguard",
+    "proshares",
+    "direxion",
+    "vaneck",
+    "wisdomtree",
+    "global x",
+    "first trust",
+    "pacer",
+    "roundhill",
+    "graniteshares",
+    "yieldmax",
+    "kraneshares",
+    "amplify",
+    "innovator",
+    "simplify",
+)
+KR_ETF_NAME_RE = re.compile(
+    r"^(kodex|tiger|ace|sol|rise|kosef|plus|hanaro|kindex|timefolio)\b",
+    re.IGNORECASE,
+)
+ETF_WORD_RE = re.compile(r"\b(etfs?|etns?)\b", re.IGNORECASE)
 
 CURATED_BY_TICKER: dict[str, tuple[str, str]] = {
     "000150": ("성장주", "AI 인프라, 전자소재 CCL, 데이터센터 전력, 피지컬 AI·로보틱스, 연료전지"),
@@ -163,7 +190,7 @@ KEYWORD_RULES: tuple[tuple[tuple[str, ...], tuple[str, str]], ...] = (
     (("철강", "후판", "강재"), ("성장주", "철강, 자동차강판, 조선·건설용 강재")),
     (("물류", "해운", "화물 운송", "여객 운송", "운송관련", "택배", "SCM"), ("성장주", "종합물류, 해운, 3PL·SCM")),
     (("REIT", "리츠"), ("가치주", "리츠, 부동산 임대, 배당형 자산")),
-    (("ETF", "2X", "3X", "Bull", "Bear", "Daily"), ("스윙주", "레버리지·테마 ETF")),
+    (("ETF", "ETN", "2X", "3X"), ("스윙주", "레버리지·테마 ETF")),
     (("Acquisition", "SPAC", "Warrant", "Rights", "Units"), ("스윙주", "스팩·권리증권, 이벤트성 상장상품")),
     (("Bitcoin", "Ether", "Crypto", "Coin", "Solana", "블록체인", "가상화폐"), ("스윙주", "가상화폐, 핀테크, 블록체인")),
     (("Digital Infrastructure", "Data Center", "Datacenter", "AI Infrastructure"), ("성장주", "AI 인프라, 데이터센터 전력·냉각, 광통신")),
@@ -240,11 +267,21 @@ def _curated(row: dict[str, Any]) -> tuple[str, str] | None:
 def _rule_based(row: dict[str, Any]) -> tuple[str, str] | None:
     haystack = " ".join(
         _clean(row.get(key))
-        for key in ("name", "industry", "rawIndustry", "products", "market")
+        for key in ("name", "rawIndustry", "products", "market")
     )
     lower_haystack = haystack.lower()
     for keywords, classification in KEYWORD_RULES:
-        if any(keyword.lower() in lower_haystack for keyword in keywords):
+        bounded = keywords[0] in {"ETF", "ETN", "2X", "3X"}
+        matched = False
+        for keyword in keywords:
+            if bounded:
+                if re.search(rf"\b{re.escape(keyword)}\b", haystack, flags=re.IGNORECASE):
+                    matched = True
+                    break
+            elif keyword.lower() in lower_haystack:
+                matched = True
+                break
+        if matched:
             return classification
     return None
 
@@ -286,7 +323,7 @@ def _inverse_industry(row: dict[str, Any], industry: str) -> str:
     leveraged = bool(re.search(r"(?:^|\s)[+-]?[23]x\b", name)) or any(
         token in name for token in ("ultra", "leveraged", "레버리지", "곱버스")
     )
-    if industry == "레버리지·테마 ETF":
+    if industry in {GENERIC_ETF_INDUSTRY, "레버리지·테마 ETF"}:
         return f"인버스 {'레버리지 ' if leveraged else ''}{product_type}"
     if "레버리지 ETF" in industry:
         return industry.replace("레버리지 ETF", f"인버스 레버리지 {product_type}", 1)
@@ -295,23 +332,79 @@ def _inverse_industry(row: dict[str, Any], industry: str) -> str:
     return f"인버스 {'레버리지 ' if leveraged else ''}{product_type}"
 
 
+def _industry_has_etf(industry: str) -> bool:
+    text = _clean(industry)
+    upper = text.upper()
+    return "ETF" in upper or "ETN" in upper or "상장지수" in text
+
+
+def _etf_flag(row: dict[str, Any]) -> bool:
+    value = row.get("etfFlag", row.get("etf"))
+    if value is True:
+        return True
+    return str(value or "").strip().upper() in {"Y", "YES", "TRUE", "1"}
+
+
+def looks_like_etf(row: dict[str, Any]) -> bool:
+    if _etf_flag(row):
+        return True
+    if _is_inverse_etf(row):
+        return True
+    haystack = " ".join(
+        _clean(row.get(key))
+        for key in ("name", "rawIndustry", "products")
+    )
+    lower = haystack.lower()
+    if ETF_WORD_RE.search(lower):
+        return True
+    if "exchange traded fund" in lower or "exchange traded note" in lower:
+        return True
+    if "상장지수" in haystack:
+        return True
+    if "index fund" in lower:
+        return True
+    name = _clean(row.get("name")).lower()
+    if KR_ETF_NAME_RE.search(name):
+        return True
+    if any(token in lower for token in ("reit", "realty", "부동산")):
+        return False
+    issuer_hit = any(token in name for token in ETF_ISSUER_TOKENS)
+    return issuer_hit and bool(re.search(r"\b(trust|fund|shares|index)\b", name))
+
+
+def _etf_classification(row: dict[str, Any]) -> tuple[str, str]:
+    name = _clean(row.get("name"))
+    if ETF_WORD_RE.search(name):
+        rule = _rule_based(row)
+        if rule and _industry_has_etf(rule[1]):
+            return rule
+    return GENERIC_ETF_CATEGORY, GENERIC_ETF_INDUSTRY
+
+
 def classify_stock(row: dict[str, Any]) -> dict[str, str]:
-    classification = _curated(row) or _rule_based(row)
-    if classification:
-        category, industry = classification
+    curated = _curated(row)
+    if curated:
+        category, industry = curated
+    elif looks_like_etf(row):
+        category, industry = _etf_classification(row)
     else:
-        category = "성장주" if row.get("market") == "KR" else "혼합주"
-        industry = _valid(row.get("products")) or _valid(row.get("rawIndustry")) or _valid(row.get("industry"))
-        if not industry and row.get("market") == "US":
-            name = _clean(row.get("name"))
-            if any(token in name for token in ("Warrant", "Rights", "Units")):
-                category = "스윙주"
-                industry = "스팩·권리증권, 이벤트성 상장상품"
-            elif "ETF" in name:
-                category = "스윙주"
-                industry = "ETF, 테마·지수형 상장상품"
-            else:
-                industry = "-"
+        classification = _rule_based(row)
+        if classification:
+            category, industry = classification
+        else:
+            category = "성장주" if row.get("market") == "KR" else "혼합주"
+            industry = _valid(row.get("products")) or _valid(row.get("rawIndustry"))
+            if not industry:
+                candidate = _valid(row.get("industry"))
+                if candidate and not _industry_has_etf(candidate):
+                    industry = candidate
+            if not industry and row.get("market") == "US":
+                name = _clean(row.get("name"))
+                if any(token in name for token in ("Warrant", "Rights", "Units")):
+                    category = "스윙주"
+                    industry = "스팩·권리증권, 이벤트성 상장상품"
+                else:
+                    industry = "-"
     industry = _inverse_industry(row, industry)
     if category not in CATEGORY_VALUES:
         category = "성장주"

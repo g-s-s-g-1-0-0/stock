@@ -13,7 +13,7 @@ from html import unescape
 from pathlib import Path
 from typing import Any
 
-from .industry_classification import CATEGORY_VALUES, classify_stock, is_curated_ticker, summarize_industry
+from .industry_classification import CATEGORY_VALUES, classify_stock, is_curated_ticker, looks_like_etf, summarize_industry
 from .industry_review import reviewed_industry_is_fresh
 from .sheet_sources import fetch_valuation, resolve_market
 
@@ -130,7 +130,10 @@ def load_us_stocks() -> list[dict[str, str]]:
             continue
         if "$" in ticker or ticker.endswith((".W", ".R", ".U")):
             continue
-        rows[ticker] = {"ticker": ticker, "name": clean_us_name(name), "market": "US"}
+        next_row = {"ticker": ticker, "name": clean_us_name(name), "market": "US"}
+        if (row.get("ETF") or "").strip().upper() == "Y":
+            next_row["etfFlag"] = True
+        rows[ticker] = next_row
 
     other_text = fetch_text(OTHER_LISTED_URL)
     for row in csv.DictReader(StringIO(other_text), delimiter="|"):
@@ -142,7 +145,15 @@ def load_us_stocks() -> list[dict[str, str]]:
             continue
         if "$" in ticker or ticker.endswith((".W", ".R", ".U")):
             continue
-        rows.setdefault(ticker, {"ticker": ticker, "name": clean_us_name(name), "market": "US"})
+        next_row = {"ticker": ticker, "name": clean_us_name(name), "market": "US"}
+        if (row.get("ETF") or "").strip().upper() == "Y":
+            next_row["etfFlag"] = True
+        existing = rows.get(ticker)
+        if existing:
+            if next_row.get("etfFlag"):
+                existing["etfFlag"] = True
+            continue
+        rows[ticker] = next_row
 
     return sorted(rows.values(), key=lambda item: item["ticker"])
 
@@ -212,7 +223,7 @@ def load_kr_stocks_from_kind() -> list[dict[str, str]]:
 
 def stock_shell(row: dict[str, str], updated_at: str) -> dict[str, Any]:
     classification = classify_stock(row)
-    return {
+    payload = {
         "ticker": row["ticker"],
         "name": row["name"],
         "market": row["market"],
@@ -227,6 +238,9 @@ def stock_shell(row: dict[str, str], updated_at: str) -> dict[str, Any]:
         "products": row.get("products", "-"),
         "updatedAt": updated_at,
     }
+    if row.get("etfFlag") is True:
+        payload["etfFlag"] = True
+    return payload
 
 
 def valid_industry(value: Any) -> str:
@@ -236,6 +250,16 @@ def valid_industry(value: Any) -> str:
     if "개별 사업영역 추가 확인 필요" in cleaned:
         return ""
     return cleaned
+
+
+def has_stale_etf_industry(row: dict[str, Any]) -> bool:
+    if looks_like_etf(row):
+        return False
+    industry = summarize_industry(row.get("industry"))
+    if industry in ("", "-"):
+        return False
+    upper = industry.upper()
+    return "ETF" in upper or "ETN" in upper or "상장지수" in industry
 
 
 def enrich_stock_industry(row: dict[str, Any]) -> dict[str, Any]:
@@ -252,8 +276,11 @@ def enrich_stock_industry(row: dict[str, Any]) -> dict[str, Any]:
         if fetched_industry:
             next_row["rawIndustry"] = fetched_industry
 
+    if looks_like_etf(next_row):
+        next_row["etfFlag"] = True
+
     classification = classify_stock(next_row)
-    if is_curated_ticker(ticker):
+    if is_curated_ticker(ticker) or looks_like_etf(next_row) or has_stale_etf_industry(row):
         next_row["category"] = classification["category"]
         next_row["industry"] = classification["industry"]
         next_row.pop("industryReviewedAt", None)

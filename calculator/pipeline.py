@@ -25,7 +25,7 @@ from time import sleep
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from .industry_classification import CATEGORY_VALUES, classify_stock, is_curated_ticker, summarize_industry
+from .industry_classification import CATEGORY_VALUES, classify_stock, is_curated_ticker, looks_like_etf, summarize_industry
 from .industry_review import reviewed_industry_is_fresh
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
 from .trend_strategies import build_trend_chart, trend_market_blocked
@@ -691,6 +691,8 @@ def stock_industry(stock: dict[str, Any], metric: dict[str, str] | None = None) 
     classified = classify_stock(stock)
     if is_curated_ticker(stock.get("ticker")) and classified["industry"] != "-":
         return classified["industry"]
+    if looks_like_etf(stock) and classified["industry"] != "-":
+        return classified["industry"]
     if reviewed_industry_is_fresh(stock):
         reviewed = summarize_industry(stock.get("industry"))
         if reviewed not in ("", "-"):
@@ -722,6 +724,8 @@ def parse_amount(value: Any) -> float | None:
 
 
 def stock_category(stock: dict[str, Any]) -> str:
+    if looks_like_etf(stock):
+        return classify_stock(stock)["category"]
     category = stock.get("category")
     if isinstance(category, str) and category in CATEGORY_VALUES:
         return category
@@ -729,6 +733,8 @@ def stock_category(stock: dict[str, Any]) -> str:
 
 
 def is_etf_stock(stock: dict[str, Any], metric: dict[str, str] | None = None) -> bool:
+    if looks_like_etf(stock):
+        return True
     classified = classify_stock(stock)
     text = " ".join(str(value or "") for value in (
         stock.get("name"),
@@ -738,7 +744,7 @@ def is_etf_stock(stock: dict[str, Any], metric: dict[str, str] | None = None) ->
         metric.get("industry") if metric else None,
         classified.get("industry"),
     ))
-    return "ETF" in text.upper()
+    return "ETF" in text.upper() or "ETN" in text.upper() or "상장지수" in text
 
 
 def fair_price_unavailable_reason(stock: dict[str, Any], metric: dict[str, str]) -> str | None:

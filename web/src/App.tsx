@@ -2593,7 +2593,12 @@ function isSystemHolding(ticker: string, targetTrades: TradeLog[]) {
 
 function isEtfStock(stock: Stock) {
   const normalizedText = `${stock.name} ${stock.category ?? ''} ${stock.industry ?? ''}`.toUpperCase()
-  return stock.fairPriceReason === 'etf' || /\bETF\b/.test(normalizedText)
+  return stock.fairPriceReason === 'etf'
+    || /\bETFS?\b/.test(normalizedText)
+    || /\bETNS?\b/.test(normalizedText)
+    || normalizedText.includes('EXCHANGE TRADED FUND')
+    || normalizedText.includes('INDEX FUND')
+    || normalizedText.includes('상장지수')
 }
 
 function isFairPriceUnavailable(stock: Stock) {
