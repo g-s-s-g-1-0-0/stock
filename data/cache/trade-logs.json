@@ -2,10 +2,10 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-09-22T01:00:00Z",
-    "lastSuccessfulRun": "2026-09-22T01:00:00Z",
+    "updatedAt": "2026-09-22T06:15:23.144647Z",
+    "lastSuccessfulRun": "2026-09-22T06:15:23.144647Z",
     "failedReason": null,
-    "appendedOpenTrades": 1,
+    "appendedOpenTrades": 0,
     "closedTrades": 0,
     "correctedClosedStatuses": 0,
     "nasdaqPeakLiquidation": false,
@@ -19,7 +19,7 @@
       "ticker": "277810",
       "name": "레인보우로보틱스",
       "market": "KR",
-      "currentPrice": "₩452,000",
+      "currentPrice": "₩440,000",
       "strategy": "4. 장기선 아래 반등 초입",
       "buyDate": "2026.08.27",
       "buyPrice": "₩471,000",
@@ -228,7 +228,7 @@
       "ticker": "278470",
       "name": "에이피알",
       "market": "KR",
-      "currentPrice": "₩361,000",
+      "currentPrice": "₩361,500",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.09.16",
       "buyPrice": "₩354,500",
@@ -239,7 +239,9 @@
       "status": "보유 중",
       "supportLevel": "MA200",
       "supportStopPrice": 330151.83,
-      "restoreWatchDate": "2026.09.18"
+      "restoreWatchDate": "2026.09.18",
+      "s3HighRegimeDate": "2026.09.22",
+      "s3HighRegimeDays": 1
     },
     {
       "slotId": "ASTS_swing_4_20260917_1",
@@ -298,7 +300,7 @@
       "ticker": "042700",
       "name": "한미반도체",
       "market": "KR",
-      "currentPrice": "₩245,000",
+      "currentPrice": "₩238,500",
       "strategy": "4. 장기선 아래 반등 초입",
       "buyDate": "2026.09.21",
       "buyPrice": "₩237,000",
@@ -323,7 +325,7 @@
       "ticker": "005380",
       "name": "현대자동차",
       "market": "KR",
-      "currentPrice": "₩367,500",
+      "currentPrice": "₩360,500",
       "strategy": "6. 하락 추세 이탈 시도",
       "buyDate": "2026.09.22",
       "buyPrice": "₩367,500",
@@ -346,7 +348,8 @@
       "trendSignalClose": 367500.0,
       "breakoutLevel": null,
       "entrySessionDate": "2026-09-22",
-      "heldTradingSessions": 0
+      "heldTradingSessions": 0,
+      "restoreWatchDate": "2026.09.22"
     }
   ]
 }
