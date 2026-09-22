@@ -1,10 +1,16 @@
 # 웹 즉시갱신 범위
 
-최종 갱신: 2026-09-21
+최종 갱신: 2026-09-22
 
-관리자 헤더의 즉시갱신 버튼은 현재 페이지에 맞는 GitHub Actions `refresh_scope`를 보낸다. 워크플로/API는 원래 페이지별 scope를 지원했지만, UI가 기본값 `analysis`(가치+기술)만 보내 시장 트렌드·이벤트가 빠졌다.
+## 2시간 기술 갱신 흐름
 
-2026-09-20 16:11 KST 클릭은 이미 수정 커밋 `8cf4c583` 위에서 돌았지만 입력은 여전히 `analysis`였다. 열린 탭이 이전 번들(`index-BwP8r0WL.js`)을 들고 있었고, 새 번들(`index-CFbummpT.js`)은 그 직후에야 HTML에 붙었다. 가치분석 `updatedAt`은 당일 자정으로 고정돼 기술분석만 바뀐 것처럼 보인다.
+외부 cron이 `technical` scope로 `/api/admin/trigger-refresh`를 호출하면 GitHub Actions가 돈다. 정시 5분 전(예: 9:55) 트리거 → 러너에서 `technical.json`·`trade-logs.json` 갱신 → **정시까지 대기** → **캐시 push(화면 반영)** → 의견 변경 메일 발송 → `web-notification-state.json`만 별도 push.
+
+2026-09-22 이전에는 메일을 먼저 보내고 캐시를 나중에 push해서, 메일은 왔는데 화면·트레이딩로그는 이전 슬롯(예: 8시) 그대로인 구간이 있었다. 프로덕션은 `web/public/api/*.json`을 GitHub published copy(`/api/cache/` → raw)에서 읽는다.
+
+관리자 HOME 트레이딩로그 = `trade-logs.json`. 일반 계정 = Supabase `personal_trade_logs`(갱신은 같은 `record_web_api_logs.py` 단계).
+
+근거: `.github/workflows/web-data-refresh.yml`, `web/src/api.ts`, `scripts/record_web_api_logs.py`, `OPERATIONS.md`
 
 ## 페이지 → scope
 

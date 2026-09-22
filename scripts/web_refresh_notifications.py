@@ -170,8 +170,8 @@ def read_sent_keys(section: str) -> set[str]:
 def record_sent_keys(section: str, keys: set[str], limit: int = 500) -> None:
     """이미 보낸 알림 키를 남겨 같은 내용이 재발송되지 않게 한다.
 
-    워크플로가 이메일 발송 뒤 data/cache를 커밋하므로, 외부 cron과 GitHub
-    schedule이 같은 작업을 두 번 트리거해도 다음 실행이 이 상태를 읽어 건너뛴다.
+    워크플로가 이메일 발송 뒤 notification state만 별도 커밋하므로, 외부 cron과
+    GitHub schedule이 같은 작업을 두 번 트리거해도 다음 실행이 이 상태를 읽어 건너뛴다.
     """
 
     if not keys:

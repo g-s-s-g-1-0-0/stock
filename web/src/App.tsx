@@ -1164,6 +1164,17 @@ function normalizeSlotPercent(value: unknown) {
   return Math.min(100, Math.max(0, Math.round(number * 10) / 10))
 }
 
+function equalSlotPercents(slotCount: number) {
+  const count = Math.min(20, Math.max(1, Math.round(slotCount)))
+  const rounded = Math.round((100 / count) * 10) / 10
+  const percents = Array.from({ length: count }, () => rounded)
+  const remainder = Math.round((100 - rounded * count) * 10) / 10
+  if (remainder !== 0) {
+    percents[count - 1] = Math.round((percents[count - 1] + remainder) * 10) / 10
+  }
+  return percents
+}
+
 function slotPercentDraftValue(value: string) {
   const cleaned = value.replace(/[^0-9.]/g, '')
   if (!cleaned) return ''
@@ -11298,8 +11309,10 @@ function App() {
                           setContributionDraft((current) => {
                             if (!current) return current
                             const currentAllocation = current.allocationByInvestmentType[displayedInvestmentType]
-                            const fallbackPercents = DEFAULT_ALLOCATION_SETTINGS[displayedInvestmentType].slotPercents
-                            const slotPercents = Array.from({ length: parsedSlotCount }, (_, index) => currentAllocation.slotPercents[index] ?? String(fallbackPercents[index] ?? 0))
+                            const slotCountChanged = parsedSlotCount !== currentAllocation.slotPercents.length
+                            const slotPercents = slotCountChanged
+                              ? equalSlotPercents(parsedSlotCount).map(String)
+                              : currentAllocation.slotPercents
                             return {
                               ...current,
                               allocationByInvestmentType: {

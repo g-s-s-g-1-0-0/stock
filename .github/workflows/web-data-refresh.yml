@@ -227,6 +227,33 @@ jobs:
               time.sleep(wait_seconds)
           PY
 
+      - name: Publish refreshed web caches
+        if: ${{ env.SKIP_REFRESH != 'true' }}
+        run: |
+          # Publish analysis caches before notification emails so the site and
+          # trade logs match what users will see when they open the mail.
+          git add data/cache data/history data/search_universe.json web/public/api
+          git reset HEAD -- data/cache/web-notification-state.json 2>/dev/null || true
+          if git diff --cached --quiet -- data/cache data/history data/search_universe.json web/public/api; then
+            echo "No cache changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update scheduled web data caches"
+          BRANCH="${GITHUB_REF_NAME:-main}"
+          for attempt in 1 2 3; do
+            git fetch origin "$BRANCH"
+            git rebase -X theirs "origin/$BRANCH"
+            if git push origin "HEAD:$BRANCH"; then
+              exit 0
+            fi
+            echo "Push failed; retrying after syncing remote changes (attempt $attempt/3)."
+            sleep $((attempt * 5))
+          done
+          echo "Failed to push refreshed caches after retries."
+          exit 1
+
       - name: Send opinion change emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         run: python scripts/web_refresh_notifications.py opinion --previous "$RUNNER_TEMP/stocks.before-refresh.json" --previous-trade-logs "$RUNNER_TEMP/trade-logs.before-refresh.json"
@@ -255,19 +282,17 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'market-events') }}
         run: python scripts/web_refresh_notifications.py market-events-review
 
-      - name: Commit refreshed caches and notification state
-        if: ${{ env.SKIP_REFRESH != 'true' }}
+      - name: Commit notification send state
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' }}
         run: |
-          # Stage first: each day starts a brand new snapshot file, and plain
-          # `git diff` cannot see files that are not tracked yet.
-          git add data/cache data/history data/search_universe.json web/public/api
-          if git diff --cached --quiet -- data/cache data/history data/search_universe.json web/public/api; then
-            echo "No cache changes."
+          git add data/cache/web-notification-state.json
+          if git diff --cached --quiet -- data/cache/web-notification-state.json; then
+            echo "No notification state changes."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update scheduled web data caches"
+          git commit -m "Update notification send state"
           BRANCH="${GITHUB_REF_NAME:-main}"
           for attempt in 1 2 3; do
             git fetch origin "$BRANCH"
@@ -278,7 +303,7 @@ jobs:
             echo "Push failed; retrying after syncing remote changes (attempt $attempt/3)."
             sleep $((attempt * 5))
           done
-          echo "Failed to push refreshed caches after retries."
+          echo "Failed to push notification state after retries."
           exit 1
 
       - name: Record stock-level operation logs

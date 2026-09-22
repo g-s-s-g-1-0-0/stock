@@ -1,5 +1,7 @@
 # 위키 변경 기록
 
+- 2026-09-22: 평가액 설정에서 슬롯 개수를 바꾸면 100%를 새 슬롯 수로 균등 분배하고, 이후 각 슬롯 비중은 수동 조정 가능하게 [[swing-risk-operations]]에 적었다.
+- 2026-09-22: 2시간 기술 갱신 워크플로를 정시 대기 → 캐시 push → 메일 → notification state push 순으로 바꿨다. 이전에는 메일이 먼저 나가 화면·트레이딩로그가 한 슬롯 늦게 보였다. [[web-data-refresh]]
 - 2026-09-21: ETF 자가진단(`looks_like_etf`, 나스닥 `etfFlag`, Trust/Index Fund 패턴)과 유니버스 전수 재분류를 [[qqq-etf-classification]]에 기록했다. NFLX 등 stale 산업 ETF 라벨 7건을 `-`로 정리했다.
 - 2026-09-21: 슬롯 비중은 소수점 한 자리까지 받고, 스윙도 8×12.5% 같은 저장값을 쓰도록 [[swing-risk-operations]]에 적었다. 옛 3슬롯 50/25/25만 기본 10×10%로 되돌린다.
 - 2026-09-21: QQQ는 나스닥100 ETF인데 Finviz `Financial | Exchange Traded Fund`와 이름 `Invesco QQQ Trust` 때문에 금융 산업·적정가 `-`·밸류 `보통`으로 나온다고 [[qqq-etf-classification]]에 적었다.
