@@ -117,6 +117,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn("git diff --cached --quiet -- data/cache data/history data/search_universe.json web/public/api", workflow)
         self.assertIn("git add data/cache data/history data/search_universe.json web/public/api", workflow)
         self.assertIn('git commit -m "Update scheduled web data caches"', workflow)
+        self.assertIn('git rebase -X theirs --autostash "origin/$BRANCH"', workflow)
         self.assertIn("python scripts/verify_web_auth_config.py", workflow)
         self.assertIn("프로덕션 웹 번들에 Supabase 로그인 설정이 없습니다.", workflow)
         self.assertNotIn("npx --yes vercel@latest deploy --prod", workflow)

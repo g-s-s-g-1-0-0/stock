@@ -244,7 +244,7 @@ jobs:
           BRANCH="${GITHUB_REF_NAME:-main}"
           for attempt in 1 2 3; do
             git fetch origin "$BRANCH"
-            git rebase -X theirs "origin/$BRANCH"
+            git rebase -X theirs --autostash "origin/$BRANCH"
             if git push origin "HEAD:$BRANCH"; then
               exit 0
             fi
@@ -296,7 +296,7 @@ jobs:
           BRANCH="${GITHUB_REF_NAME:-main}"
           for attempt in 1 2 3; do
             git fetch origin "$BRANCH"
-            git rebase -X theirs "origin/$BRANCH"
+            git rebase -X theirs --autostash "origin/$BRANCH"
             if git push origin "HEAD:$BRANCH"; then
               exit 0
             fi
