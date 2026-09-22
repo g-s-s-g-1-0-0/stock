@@ -356,6 +356,8 @@ function metricTooltip(concept: string, colorGuide: string) {
   return `${concept}\n\n${formattedGuide}`
 }
 const ADMIN_LOGS_PAGE_SIZE = 50
+/** Set true to show the admin board tab and page again. */
+const ADMIN_BOARD_FEATURE_ENABLED = false
 const BOARD_POST_PAGE_SIZE = 50
 const MAX_BOARD_COMMENTS_PER_POST = 50
 const MAX_BOARD_COMMENT_LENGTH = 500
@@ -805,14 +807,20 @@ function readStoredViewMode() {
   return localStorage.getItem(VIEW_MODE_STORAGE_KEY) === 'operator' ? 'operator' : 'personal'
 }
 
+function normalizeActivePage(page: ActivePage): ActivePage {
+  if (page === 'board' && !ADMIN_BOARD_FEATURE_ENABLED) return 'home'
+  return page
+}
+
 function readStoredActivePage(): ActivePage {
   const stored = localStorage.getItem(ACTIVE_PAGE_STORAGE_KEY)
-  return activePages.includes(stored as ActivePage) ? stored as ActivePage : 'home'
+  return normalizeActivePage(activePages.includes(stored as ActivePage) ? stored as ActivePage : 'home')
 }
 
 function activePageFromHash() {
   const page = window.location.hash.replace(/^#\/?/, '').split('?')[0]
-  return activePages.includes(page as ActivePage) ? page as ActivePage : null
+  if (!activePages.includes(page as ActivePage)) return null
+  return normalizeActivePage(page as ActivePage)
 }
 
 function readInitialActivePage(): ActivePage {
@@ -4096,7 +4104,7 @@ function isSameTrendWeek(tradeDate: string, trendDate: string) {
 }
 
 const gnbMenus = ['HOME', '가치 분석', '기술 분석', '시장 주요 이벤트', '시장 트렌드']
-const adminGnbMenus = [...gnbMenus, '운영 로그', '게시판']
+const adminGnbMenus = [...gnbMenus, '운영 로그', ...(ADMIN_BOARD_FEATURE_ENABLED ? ['게시판'] : [])]
 const boardCategories: BoardCategory[] = ['칭찬', '버그', '건의', '기타']
 const boardFilters: BoardFilter[] = ['전체', ...boardCategories]
 const watchlistSortOptions: Array<{ value: WatchlistSortKey; label: string; description: string }> = [
@@ -7480,7 +7488,9 @@ function App() {
       const personalTickersPromise = session ? loadWatchlist('personal', session) : Promise.resolve(null)
       const loadedSettingsPromise = loadUserSettings(session)
       const loadedPortfolioStatePromise = loadPortfolioState(session)
-      void loadBoardPosts().catch(() => undefined)
+      if (ADMIN_BOARD_FEATURE_ENABLED) {
+        void loadBoardPosts().catch(() => undefined)
+      }
       void loadedSettingsPromise.then((settings) => {
         setWatchlistSortSettings(settings.watchlistSort)
         setNotificationPreferences(settings.notificationPreferences)
@@ -7986,7 +7996,11 @@ function App() {
     },
   ]
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
-  const currentActivePage = !isAdminUser && (activePage === 'board' || activePage === 'admin-logs') ? 'home' : activePage
+  const currentActivePage = (() => {
+    if (!isAdminUser && (activePage === 'board' || activePage === 'admin-logs')) return 'home'
+    if (!ADMIN_BOARD_FEATURE_ENABLED && activePage === 'board') return 'home'
+    return activePage
+  })()
   const homeSheetResetKey = `${currentActivePage}-${effectiveViewMode}-${displayedInvestmentType}-${userSession?.id ?? 'guest'}`
   const refreshPageData = async () => {
     const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>()
@@ -9364,9 +9378,10 @@ function App() {
 
   useEffect(() => {
     if (hasAuthCallbackPayload()) return
-    localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, activePage)
-    const nextHash = activePageHash(activePage)
-    if (activePageFromHash() !== activePage) {
+    const page = normalizeActivePage(activePage)
+    localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, page)
+    const nextHash = activePageHash(page)
+    if (activePageFromHash() !== page) {
       window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`)
     }
   }, [activePage])
@@ -10656,7 +10671,7 @@ function App() {
         />
       ) : currentActivePage === 'admin-logs' && isAdminUser ? (
         <AdminLogsPage logs={apiLogs} isLoading={isLoadingApiLogs} onRefresh={loadApiLogs} />
-      ) : currentActivePage === 'board' && isAdminUser ? (
+      ) : currentActivePage === 'board' && isAdminUser && ADMIN_BOARD_FEATURE_ENABLED ? (
         <BoardPage
           category={boardCategory}
           content={boardContent}
