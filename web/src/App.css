@@ -1595,7 +1595,17 @@
 }
 
 .pinned-home-table .home-name-header,
-.pinned-home-table .name-data-cell {
+.pinned-home-table .name-data-cell,
+.pinned-home-table.trading-log-table th:nth-child(2),
+.pinned-home-table.trading-log-table td:nth-child(2),
+.pinned-home-table.watchlist-table.readonly-home-table th:nth-child(2),
+.pinned-home-table.watchlist-table.readonly-home-table td:nth-child(2),
+.pinned-home-table.holding-table.readonly-home-table th:nth-child(2),
+.pinned-home-table.holding-table.readonly-home-table td:nth-child(2),
+.pinned-home-table.watchlist-table.editable-home-table th:nth-child(3),
+.pinned-home-table.watchlist-table.editable-home-table td:nth-child(3),
+.pinned-home-table.holding-table.editable-home-table th:nth-child(3),
+.pinned-home-table.holding-table.editable-home-table td:nth-child(3) {
   position: sticky;
   left: 0;
   z-index: 4;
@@ -1616,7 +1626,17 @@
 }
 
 .pinned-home-table .home-name-header::after,
-.pinned-home-table .name-data-cell::after {
+.pinned-home-table .name-data-cell::after,
+.pinned-home-table.trading-log-table th:nth-child(2)::after,
+.pinned-home-table.trading-log-table td:nth-child(2)::after,
+.pinned-home-table.watchlist-table.readonly-home-table th:nth-child(2)::after,
+.pinned-home-table.watchlist-table.readonly-home-table td:nth-child(2)::after,
+.pinned-home-table.holding-table.readonly-home-table th:nth-child(2)::after,
+.pinned-home-table.holding-table.readonly-home-table td:nth-child(2)::after,
+.pinned-home-table.watchlist-table.editable-home-table th:nth-child(3)::after,
+.pinned-home-table.watchlist-table.editable-home-table td:nth-child(3)::after,
+.pinned-home-table.holding-table.editable-home-table th:nth-child(3)::after,
+.pinned-home-table.holding-table.editable-home-table td:nth-child(3)::after {
   position: absolute;
   top: 0;
   right: 0;
