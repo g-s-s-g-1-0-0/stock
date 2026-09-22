@@ -982,6 +982,8 @@ def latest_technical_row(
         ma20_d1=row["ma20D1"],
         ma20_prev5=row["ma20Prev5"],
         ma60=row.get("ma60"),
+        ma50=row.get("ma50"),
+        ma120=row.get("ma120"),
         ma144=row.get("ma144"),
         close_d1=row["closeD1"],
         bb_width=row["bbWidth"],
@@ -1083,6 +1085,7 @@ def latest_technical_row(
         "4": ["현재가 < MA200", "MACD 히스토그램 양수 전환", "QQQ 하락/정상장", "MA200 대비 -25% 이상"],
         "5": ["QQQ 매수 허용 구간", "돌파 후 10거래일 내 눌림 지지", "신호 가격 대비 +3% 이내"],
         "6": ["QQQ 매수 허용 구간", "하락 추세 이탈 시도 첫 신호", "신호 가격 대비 +3% 이내", "지지선 손절까지 8% 이내"],
+        "7": ["QQQ 매수 허용 구간", "20/50/120/200일선 중 하나 터치", "이평선 위 양봉 회복", "진입가 -8% 손절"],
     }
     condition_summaries = []
     for group, labels in strategy_labels.items():

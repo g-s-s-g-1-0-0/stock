@@ -70,7 +70,7 @@ TRACKED_TRADE_STATUSES = {OPEN_POSITION_STATUS, DEFERRED_BUY_STATUS}
 RESTORE_FAMILY_STRATEGIES: set[str] = set()
 ACTIVE_STRATEGIES = set(ACTIVE_STRATEGY_CODES)
 REMOVED_STRATEGIES = {"A", "C", "D", "E", "F", "G", "H"}
-SWING_ONLY_STRATEGIES = {"3", "4", "5", "6"}
+SWING_ONLY_STRATEGIES = {"3", "4", "5", "6", "7"}
 INVESTMENT_TYPES = ("long_term", "swing")
 VALUATION_LOG_FIELDS = [
     ("marketCap", "시가총액"),
@@ -451,7 +451,7 @@ def open_trades_by_slot(trades: list[dict[str, Any]]) -> dict[tuple[str, str, st
 def open_trades_by_ticker(trades: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
     grouped: dict[str, list[dict[str, Any]]] = {}
     for trade in trades:
-        if str(trade.get("status") or "") != "보유 중":
+        if not is_tracked_trade(trade):
             continue
         ticker = str(trade.get("ticker") or "").strip().upper()
         if not ticker:
@@ -1670,7 +1670,7 @@ def run_trade_engine(
                     continue
                 if code in SWING_ONLY_STRATEGIES and investment_type != "swing":
                     continue
-                if open_for_ticker and (code in {"5", "6"} or any(strategy_code(t.get("strategy")) in {"5", "6"} for t in open_for_ticker)):
+                if open_for_ticker and (code in {"5", "6", "7"} or any(strategy_code(t.get("strategy")) in {"5", "6", "7"} for t in open_for_ticker)):
                     continue
                 trend_levels = trend_entry_levels(code, row, current_price) if code in {"5", "6"} else None
                 if code in {"5", "6"} and trend_levels is None:
@@ -1706,12 +1706,12 @@ def run_trade_engine(
                 if deferred_buy and has_deferred_buy_log(trades, ticker, code, investment_type):
                     continue
                 closed_trade = latest_closed_trade(trades, ticker, code, investment_type)
-                if code in {"5", "6"}:
+                if code in {"5", "6", "7"}:
                     closed_for_ticker = [t for t in trades if str(t.get("ticker") or "").upper() == ticker
                                          and trade_investment_type(t) == investment_type and not is_tracked_trade(t)]
                     closed_trade = max(closed_for_ticker, key=lambda t: parse_trade_date(t.get("sellDate")) or date.min, default=None)
                 if (
-                    code not in {"5", "6"}
+                    code not in {"5", "6", "7"}
                     and not seed_after_reset
                     and open_count == 0
                     and closed_trade is None
@@ -1797,7 +1797,7 @@ def run_trade_engine(
             trade["strategy"] = strategy_display_name("3")
         elif code == "4":
             trade["strategy"] = strategy_display_name("4")
-        elif code in {"5", "6"}:
+        elif code in {"5", "6", "7"}:
             trade["strategy"] = strategy_display_name(code)
         cleaned.append(trade)
     trades = cleaned

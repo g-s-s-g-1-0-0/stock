@@ -1571,7 +1571,7 @@ const initialWatchlist: string[] = []
 
 const operatorTickers: string[] = []
 const strategyFiltersByInvestmentType: Record<InvestmentType, string[]> = {
-  swing: ['1', '2', '3', '4', '5', '6'],
+  swing: ['1', '2', '3', '4', '5', '6', '7'],
   long_term: ['1', '2'],
 }
 const personalTrades: TradeLog[] = []
@@ -2181,11 +2181,12 @@ const STRATEGY_LABELS: Record<string, string> = {
   '3': '정상장 볼린저 워시아웃',
   '4': '장기선 아래 반등 초입',
   '5': '저항선 돌파 후 눌림',
-  '6': '하락 추세 이탈 시도',
+      '6': '하락 추세 이탈 시도',
+  '7': '이평선 눌림 반등',
 }
 
 function strategyCode(strategy: string) {
-  const match = String(strategy || '').trim().match(/^([1-6])\b/)
+  const match = String(strategy || '').trim().match(/^([1-7])\b/)
   if (match) return match[1]
   const legacy = String(strategy || '').trim().match(/^([A-H])\b/i)
   if (legacy && legacy[1].toUpperCase() === 'B') return '1'
@@ -2468,6 +2469,13 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
       { label: '손절', value: '신호 당시 직전 20거래일 최저가보다 3% 낮은 가격에 도달하면 손절합니다. 이 손절가는 진입 때 고정하며 이후 낮추지 않습니다.' },
       { label: '대상', value: '스윙투자 전용입니다. 보유 중에는 추가 매수하거나 다른 전략으로 바꾸지 않습니다. 청산 뒤에는 기존 재진입 대기·가격 조건을 적용합니다.' },
     ],
+    '7': [
+      { label: '시장', value: ['QQQ 이격도 -3% 미만이면 신규 매수 중단, -2.5% 이상 회복 시 재개합니다.', '고점 알람·이벤트 관망 기간에는 신규 매수하지 않습니다.'] },
+      { label: '진입', value: ['종목의 20·50·120·200일 이동평균선 중 하나를 전일 종가가 웃돌고 있어야 합니다.', '당일 저가가 해당 선의 0.3% 이내까지 내려온 뒤, 종가가 이동평균선·시가·전일 종가를 모두 웃돌면 다음 거래일 시가에 매수합니다.', '같은 날 여러 선을 만져도 한 종목 한 포지션만 매수합니다.'] },
+      { label: '청산', value: ['고정 익절은 없습니다. 회복장 종료 또는 나스닥 고점 알람 때 전량매도합니다.', NASDAQ_PEAK_EXIT_DESCRIPTION] },
+      { label: '손절', value: '진입가 대비 -8%에 도달하면 손절합니다.' },
+      { label: '대상', value: '스윙투자 전용입니다. 기존 전략 1~6과 같은 계좌에서 최대 슬롯·현금을 공유합니다.' },
+    ],
   },
   long_term: {
     '1': [
@@ -2586,6 +2594,7 @@ function tradeCriteriaInfo(strategy: string) {
   }
   if (code === '5') return '전략 5 기준: 고정 익절 없음, 매수가 -8% 손절, 회복장 종료·나스닥 고점 알람·최대 60거래일 보유 시 청산.'
   if (code === '6') return '전략 6 기준: +12% 익절, 신호 당시 20거래일 최저가의 -3% 고정 손절, 회복장 종료·나스닥 고점 알람·최대 60거래일 보유 시 청산.'
+  if (code === '7') return '전략 7 기준: 20·50·120·200일선 눌림 반등 매수, 고정 익절 없음, 진입가 -8% 손절, 회복장 종료·나스닥 고점 알람 시 청산.'
   return '전략별 성공/실패 기준 정보가 준비 중입니다.'
 }
 
@@ -2759,6 +2768,7 @@ function recommendedSellPriceNote(strategy: string) {
   }
   if (code === '5') return '고정 익절 없음. 매수가 -8% 손절, 회복장 종료·나스닥 고점 알람·최대 60거래일 청산.'
   if (code === '6') return '권장 매도가 = 매수가 +12%. 신호 당시 20거래일 최저가의 -3% 고정 손절, 회복장 종료·나스닥 고점 알람·최대 60거래일 청산.'
+  if (code === '7') return '고정 익절 없음. 진입가 -8% 손절, 회복장 종료·나스닥 고점 알람 청산.'
   return '권장 매도가 참고 정보가 준비 중입니다.'
 }
 

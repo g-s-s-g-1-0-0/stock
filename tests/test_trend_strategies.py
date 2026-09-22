@@ -164,6 +164,25 @@ def test_recovery_upper_bound_and_entry_risk_boundaries():
     assert buy({'retest':True,'candidatePrice':103.01})['strategyType'] is None
 
 
+def test_strategy_7_reclaims_any_major_moving_average_and_uses_eight_percent_stop():
+    row = IndicatorRow(
+        stock_name='TEST', current_price=101, ma20=100, ma50=120, ma120=130, ma200=140,
+        candle_open=100, candle_low=99.8, close_d1=100,
+    )
+    result = evaluate_buy_condition(
+        row, vix=15, ixic_dist=-2.5, ixic_filter_active=False,
+        trend_market_allowed=True,
+    )
+    assert result['strategyType'] == '7'
+    exit_result = evaluate_exit_condition(
+        IndicatorRow(stock_name='TEST', current_price=91, entry_price=100),
+        strategy_type='7',
+    )
+    assert exit_result['shouldExit']
+    assert '-9.00%' in exit_result['reason']
+    assert '-8%' in exit_result['reason']
+
+
 def test_existing_strategy_wins_over_both_new_signals():
     row=IndicatorRow(stock_name='TEST',current_price=100,ma200=110,macd_hist_d1=-1,macd_hist=1)
     result=evaluate_buy_condition(row,vix=15,ixic_dist=-2.5,ixic_filter_active=False,trend_market_allowed=True,

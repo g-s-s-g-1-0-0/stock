@@ -1,4 +1,4 @@
-"""Strategy 1–6 rules for the web service.
+"""Strategy 1–7 rules for the web service.
 
 Strategy 1: panic bottom (former B entry).
 Strategy 2: MA pullback buys while the season is open and the market is in recovery.
@@ -27,6 +27,7 @@ STRATEGY_RULES: dict[str, float | int] = {
     "CIRCUIT_PCT_4": 0.30,
     "CIRCUIT_PCT_5": 0.08,
     "CIRCUIT_PCT_6": 0.08,
+    "CIRCUIT_PCT_7": 0.08,
     "TARGET_PCT_5": 0.0,
     "TARGET_PCT_6": 0.12,
     "MAX_HOLD_DAYS_5": 60,
@@ -59,6 +60,7 @@ STRATEGY_LABELS = {
     "4": "장기선 아래 반등 초입",
     "5": "저항선 돌파 후 눌림",
     "6": "하락 추세 이탈 시도",
+    "7": "이평선 눌림 반등",
 }
 
 # Legacy A–H codes map to nothing active; B maps to 1 for migration.
@@ -66,7 +68,7 @@ LEGACY_STRATEGY_MAP = {
     "B": "1",
 }
 
-ACTIVE_STRATEGY_CODES = ("1", "2", "3", "4", "5", "6")
+ACTIVE_STRATEGY_CODES = ("1", "2", "3", "4", "5", "6", "7")
 # Strategy 3 uses its own 횡보장 고점 regime exit, not S1/S2/S4 peakTriggered.
 NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES: set[str] = {"3"}
 
@@ -87,6 +89,8 @@ class IndicatorRow:
     ma20_d1: float | None = None
     ma20_prev5: float | None = None
     ma60: float | None = None
+    ma50: float | None = None
+    ma120: float | None = None
     ma144: float | None = None
     close_d1: float | None = None
     bb_width: float | None = None
@@ -279,6 +283,21 @@ def evaluate_buy_condition(
     s6_conditions = [trend_market, bool(trend.get("attempt")), gap_ok, risk_ok]
     if entry_strategy is None and not is_holding:
         entry_strategy = "5" if all(s5_conditions) else "6" if all(s6_conditions) else None
+    ma_lines = (("20", ind.ma20), ("50", ind.ma50), ("120", ind.ma120), ("200", ind.ma200))
+    s7_touches = {
+        name: bool(
+            line is not None and ind.candle_low is not None and ind.current_price is not None
+            and ind.candle_open is not None and ind.close_d1 is not None
+            and ind.candle_low <= line * float(s["MA_TOUCH_RATIO"])
+            and ind.current_price > line
+            and ind.current_price > ind.candle_open
+            and ind.current_price > ind.close_d1
+        )
+        for name, line in ma_lines
+    }
+    s7_conditions = [trend_market, any(s7_touches.values())]
+    if entry_strategy is None and not is_holding and all(s7_conditions):
+        entry_strategy = "7"
     triggered = entry_strategy is not None
 
     holding_code = normalize_strategy_code(holding_strategy_type)
@@ -317,12 +336,14 @@ def evaluate_buy_condition(
             "4": [s4_cond1, s4_cond2, s4_cond3, s4_cond4],
             "5": s5_conditions,
             "6": s6_conditions,
+            "7": s7_conditions,
         },
         "maTouches": {
             "20": touch_20,
             "60": touch_60,
             "144": touch_144,
             "200": touch_200,
+            **s7_touches,
         },
     }
 
@@ -470,6 +491,8 @@ def indicator_from_mapping(values: dict[str, Any]) -> IndicatorRow:
         ma20_d1=_num(values.get("ma20D1")),
         ma20_prev5=_num(values.get("ma20Prev5")),
         ma60=_num(values.get("ma60")),
+        ma50=_num(values.get("ma50")),
+        ma120=_num(values.get("ma120")),
         ma144=_num(values.get("ma144")),
         close_d1=_num(values.get("closeD1")),
         bb_width=_num(values.get("bbWidth")),

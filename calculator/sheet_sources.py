@@ -417,6 +417,7 @@ def calc_technical_row(ticker: str) -> dict[str, Any]:
         "ma20": ma20,
         "ma20D1": ma20_d1,
         "ma20Prev5": ma20_prev5,
+        "ma50": sum(closes[-50:]) / 50,
         "trendSignal": build_trend_signal(rows),
         "tradingDates": [row.get("date") for row in rows],
         "ma60": sum(closes[-60:]) / 60,
