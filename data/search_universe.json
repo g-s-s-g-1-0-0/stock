@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15457,
-    "industryEnrichedAt": "2026-09-21T07:54:35.982958+00:00",
-    "industryEnrichedTickers": 47,
+    "industryEnrichedAt": "2026-09-22T07:35:43+00:00",
+    "industryEnrichedTickers": 2,
     "industryReviewedAt": "2026-09-20T17:47:46+00:00",
     "industryReviewedTickers": 6
   },
@@ -183190,7 +183190,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "ETF, 테마·지수형 상장상품",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial | Exchange Traded Fund",
       "products": "-",
       "updatedAt": "2026-09-20T17:47:32+00:00",
       "etfFlag": true
@@ -220493,7 +220493,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "ETF, 테마·지수형 상장상품",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial | Exchange Traded Fund",
       "products": "-",
       "updatedAt": "2026-09-20T17:47:32+00:00",
       "etfFlag": true

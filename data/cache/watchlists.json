@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-09-22T06:55:28Z",
+    "updatedAt": "2026-09-22T07:35:29Z",
     "rowCount": 3
   },
   "rows": [
@@ -10,50 +10,17 @@
       "scope": "operator",
       "ownerId": null,
       "tickers": [
-        "000150",
         "000660",
-        "005380",
-        "005930",
-        "009150",
-        "011070",
-        "039030",
-        "042700",
-        "277810",
-        "278470",
-        "AEHR",
-        "AMD",
-        "ASTS",
-        "ASX",
-        "BE",
-        "CIFR",
-        "CRDO",
-        "HOOG",
-        "INTC",
-        "IONQ",
-        "IREN",
-        "LITE",
-        "LPTH",
-        "MU",
         "NBIS",
         "PL",
-        "RKLB",
-        "SNDK",
-        "SOXL",
-        "STX",
-        "COHR",
-        "GLW",
+        "AAPL",
+        "GOOGL",
+        "BE",
         "ALAB",
-        "VRT",
-        "079550",
-        "WULF",
-        "CRWV",
-        "LRCX",
-        "AMAT",
-        "KLAC",
-        "TER",
+        "CRDO",
         "VST",
-        "GNRC",
-        "QQQ"
+        "QLD",
+        "USD"
       ],
       "tickersByType": {
         "swing": [
@@ -100,7 +67,9 @@
           "TER",
           "VST",
           "GNRC",
-          "QQQ"
+          "QQQ",
+          "QLD",
+          "USD"
         ],
         "long_term": [
           "000660",
@@ -111,14 +80,16 @@
           "BE",
           "ALAB",
           "CRDO",
-          "VST"
+          "VST",
+          "QLD",
+          "USD"
         ]
       },
       "watchlistSort": {
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-22T06:44:09.124965+00:00"
+      "remoteUpdatedAt": "2026-09-22T07:35:25.739375+00:00"
     },
     {
       "id": "6065187b-8e56-4939-aae8-c108e1aae841",
@@ -148,7 +119,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-22T06:44:09.123364+00:00"
+      "remoteUpdatedAt": "2026-09-22T07:35:11.310655+00:00"
     }
   ]
 }
