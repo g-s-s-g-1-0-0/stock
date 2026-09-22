@@ -29,6 +29,10 @@ from .industry_classification import CATEGORY_VALUES, classify_stock, is_curated
 from .industry_review import reviewed_industry_is_fresh
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
 from .trend_strategies import build_trend_chart, trend_market_blocked
+from .opinion_reasons import (
+    build_held_watch_opinion_reason,
+    build_plain_watch_opinion_reason,
+)
 from .rules import (
     ACTIVE_STRATEGY_CODES,
     STRATEGY_RULES,
@@ -902,6 +906,24 @@ def open_holding_strategies() -> dict[str, str]:
     return holdings
 
 
+def open_holding_trades() -> dict[str, dict[str, Any]]:
+    """현재 '보유 중'인 종목의 대표 trade-log row (ticker → row)."""
+
+    rows = read_cache("trade-logs").get("rows", [])
+    holdings: dict[str, dict[str, Any]] = {}
+    if not isinstance(rows, list):
+        return holdings
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("status") or "").strip() != "보유 중":
+            continue
+        ticker = str(row.get("ticker") or "").strip().upper()
+        if ticker and ticker not in holdings:
+            holdings[ticker] = row
+    return holdings
+
+
 def open_holding_signal_closes() -> dict[str, float]:
     """현재 보유 중인 전략 5·6의 진입 기준 가격 맵."""
 
@@ -934,6 +956,7 @@ def latest_technical_row(
     market_event: str = "당분간 없음",
     holding_strategy_type: str | None = None,
     holding_signal_close: float | None = None,
+    holding_trade: dict[str, Any] | None = None,
     season_open: bool = False,
 ) -> dict[str, str] | None:
     row = calc_technical_row(stock["ticker"])
@@ -1006,10 +1029,26 @@ def latest_technical_row(
         # hold가 살아 있거나, 다른 전략의 신규 진입이 켜지면 매수로 올려 추가 슬롯을
         # 검토하게 한다. 실제 관망→매수 확정은 추가매수 조건이 슬롯을 만들 때만이다.
         opinion = "매수" if buy["triggered"] or buy["entryTriggered"] else "관망"
-        opinion_reason = "-"
+        if opinion == "매수":
+            opinion_reason = "-"
+        else:
+            opinion_reason = build_held_watch_opinion_reason(
+                holding_strategy_type,
+                buy=buy,
+                qqq_market_state=qqq_market_state,
+                ind=ind,
+                holding_signal_close=holding_signal_close,
+                trade=holding_trade,
+            )
     else:
         opinion = "매수" if buy["entryTriggered"] else "관망"
-        opinion_reason = "-"
+        if opinion == "관망":
+            opinion_reason = build_plain_watch_opinion_reason(
+                buy=buy,
+                qqq_market_state=qqq_market_state,
+            )
+        else:
+            opinion_reason = "-"
     if buy["entryTriggered"]:
         strategy = buy["strategyName"]
         entry_signal_codes = [buy["strategyType"]] if buy["strategyType"] else []
@@ -1178,6 +1217,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
         errors.append({"ticker": "CNN_FEAR_GREED", "error": str(exc)})
     market_event = market_snapshot[0][1] if market_snapshot and len(market_snapshot[0]) > 1 else "당분간 없음"
     holdings = open_holding_strategies()
+    holding_trades = open_holding_trades()
     holding_signal_closes = open_holding_signal_closes()
     season = load_strategy_season_state()
     season_open = bool(season.get("open")) or any(code in {"1", "2"} for code in holdings.values())
@@ -1198,6 +1238,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 market_event=market_event,
                 holding_strategy_type=holdings.get(str(stock["ticker"]).strip().upper()),
                 holding_signal_close=holding_signal_closes.get(str(stock["ticker"]).strip().upper()),
+                holding_trade=holding_trades.get(str(stock["ticker"]).strip().upper()),
                 season_open=season_open,
             )
             if row:

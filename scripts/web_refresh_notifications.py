@@ -40,6 +40,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from calculator.market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
 from calculator.portfolio_risk import RISK_GROUP_MAX_PERCENT, swing_entry_decision
+from calculator.opinion_reasons import format_sell_opinion_reason
 from calculator.rules import STRATEGY_RULES, enrich_profit_exit_reason
 from calculator.sheet_sources import calc_rsi, calc_technical_row, fetch_us_ohlcv
 from zoneinfo import ZoneInfo
@@ -596,10 +597,11 @@ def exit_change_from_trade(
         return_pct_value = float(result)
     except (TypeError, ValueError):
         return_pct_value = None
-    exit_reason = enrich_profit_exit_reason(
+    exit_reason = format_sell_opinion_reason(
         str(current.get("exitReason") or current_status or "시스템 매도"),
         strategy_code(strategy),
         return_pct_value,
+        trade=current,
     )
     return {
         "ticker": current.get("ticker") or fallback_ticker,
@@ -1439,24 +1441,29 @@ def sell_reason(current_stock: dict[str, Any], technical_row: dict[str, Any]) ->
     explicit_reason = first_text(
         current_stock.get("opinionReason"),
         technical_row.get("exitReason"),
+        technical_row.get("opinionReason"),
         technical_row.get("매도 사유"),
     )
+    strategy = first_text(
+        current_stock.get("strategy"),
+        current_stock.get("entryStrategy"),
+        technical_row.get("entryStrategy"),
+        *(current_stock.get("strategies") or []),
+    )
+    return_pct_value = parse_metric_number(current_stock.get("returnPct"))
     if explicit_reason != "-":
-        return_pct_value = parse_metric_number(current_stock.get("returnPct"))
-        return enrich_profit_exit_reason(
+        return format_sell_opinion_reason(
             explicit_reason,
-            strategy_code(
-                current_stock.get("entryStrategy")
-                or current_stock.get("strategy")
-                or technical_row.get("entryStrategy")
-                or technical_row.get("strategy")
-            ),
+            strategy_code(strategy),
             return_pct_value,
+            trade=current_stock,
         )
     c = metric_context(current_stock, technical_row)
-    return append_market_context(
-        f"매도 조건 충족 — 현재가 {c['price']} / MA200 {c['ma200']} | RSI {c['rsi']} | MACD Hist {c['macd']}",
-        technical_row,
+    return format_sell_opinion_reason(
+        f"매도 조건 충족 — 현재가 {c['price']} / MA200 {c['ma200']}",
+        strategy_code(strategy),
+        return_pct_value,
+        trade=current_stock,
     )
 
 

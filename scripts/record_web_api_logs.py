@@ -18,6 +18,12 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+from calculator.opinion_reasons import (
+    build_held_watch_opinion_reason,
+    format_sell_opinion_reason,
+    is_sparse_watch_reason,
+    strategy_code_from_trade,
+)
 from calculator.pipeline import load_strategy_season_state, save_strategy_season_state
 from calculator.portfolio_risk import swing_entry_decision
 from calculator.rules import (
@@ -693,21 +699,13 @@ def preserve_recent_sell_opinion(
     if not within_sell_hold(closed_trade):
         return False
     reason = str(closed_trade.get("exitReason") or closed_trade.get("status") or "매도 후 재진입 대기").strip()
-    
-    # Format older short reasons to include strategy and percentage
-    if reason in ["목표 수익 달성 즉시 매도", "목표 수익 구간 + MACD 히스토그램 둔화전환 매도"]:
-        from calculator.rules import enrich_profit_exit_reason
-        strategy_full = closed_trade.get("strategy", "")
-        strategy_type = strategy_full.split(".")[0] if "." in strategy_full else "A"
-        return_pct = closed_trade.get("returnPct")
-        reason = enrich_profit_exit_reason(
-            reason,
-            strategy_type=strategy_type,
-            return_pct=return_pct,
-            return_pct_is_percent=True
-        )
-        
-    return mark_exit_opinion(stock, technical_row, reason)
+    reason = format_sell_opinion_reason(
+        reason,
+        strategy_code_from_trade(closed_trade),
+        closed_trade.get("returnPct"),
+        trade=closed_trade,
+    )
+    return mark_exit_opinion(stock, technical_row, reason, closed_trade)
 
 
 def mark_restore_watch(trade: dict[str, Any], today: str) -> None:
@@ -982,6 +980,7 @@ def block_held_public_buy_signal(
     technical_row: dict[str, Any],
     previous_opinion: str = "",
     previous_reason: str = "",
+    open_trade: dict[str, Any] | None = None,
 ) -> bool:
     """추가 슬롯이 안 생겼을 때 공개 매수 신호를 정리한다.
 
@@ -993,11 +992,15 @@ def block_held_public_buy_signal(
     """
     changed = False
     if str(previous_opinion or "").strip() == "관망" and not is_event_watch_reason(previous_reason):
-        reason = "보유 중 — 추가매수 조건 미충족"
+        reason = build_held_watch_opinion_reason(
+            strategy_code_from_trade(open_trade),
+            trade=open_trade,
+            additional_buy_blocked=True,
+        )
         if stock.get("opinion") != "관망":
             stock["opinion"] = "관망"
             changed = True
-        if stock.get("opinionReason") != reason:
+        if is_sparse_watch_reason(stock.get("opinionReason")) or stock.get("opinionReason") != reason:
             stock["opinionReason"] = reason
             changed = True
         if stock.get("strategies") != []:
@@ -1023,11 +1026,17 @@ def block_held_public_buy_signal(
             f"{held_strategy_label(stock, technical_row)} (추가 슬롯 없음, 보유 유지)"
         )
     else:
-        reason = "보유 유지 — 추가매수 조건 미충족으로 추가 매수 신호만 보류"
+        reason = build_held_watch_opinion_reason(
+            strategy_code_from_trade(open_trade),
+            trade=open_trade,
+            additional_buy_blocked=True,
+        )
     if stock.get("strategies") != []:
         stock["strategies"] = []
         changed = True
-    if stock.get("opinion") == "매수" and stock.get("opinionReason") != reason:
+    if stock.get("opinion") in {"매수", "관망"} and (
+        is_sparse_watch_reason(stock.get("opinionReason")) or stock.get("opinionReason") != reason
+    ):
         stock["opinionReason"] = reason
         changed = True
 
@@ -1040,17 +1049,30 @@ def block_held_public_buy_signal(
             if technical_row.get(key) != value:
                 technical_row[key] = value
                 changed = True
-        if technical_row.get("opinion") == "매수" and technical_row.get("opinionReason") != reason:
+        if technical_row.get("opinion") in {"매수", "관망"} and (
+            is_sparse_watch_reason(technical_row.get("opinionReason")) or technical_row.get("opinionReason") != reason
+        ):
             technical_row["opinionReason"] = reason
             changed = True
     return changed
 
 
-def mark_exit_opinion(stock: dict[str, Any], technical_row: dict[str, Any], reason: str) -> bool:
+def mark_exit_opinion(
+    stock: dict[str, Any],
+    technical_row: dict[str, Any],
+    reason: str,
+    trade: dict[str, Any] | None = None,
+) -> bool:
+    enriched = format_sell_opinion_reason(
+        reason,
+        strategy_code_from_trade(trade),
+        (trade or {}).get("returnPct"),
+        trade=trade,
+    )
     changed = False
     updates = {
         "opinion": "매도",
-        "opinionReason": reason,
+        "opinionReason": enriched,
         "strategies": [],
     }
     for key, value in updates.items():
@@ -1061,8 +1083,8 @@ def mark_exit_opinion(stock: dict[str, Any], technical_row: dict[str, Any], reas
     if isinstance(technical_row, dict):
         technical_updates = {
             "opinion": "매도",
-            "opinionReason": reason,
-            "exitReason": reason,
+            "opinionReason": enriched,
+            "exitReason": enriched,
             "entryStrategy": "-",
             "entrySignalCodes": "",
             "entrySignals": "",
@@ -1534,7 +1556,7 @@ def run_trade_engine(
             exit_reason = str(exit_result.get("reason") or "시스템 매도")
             close_trade(trade, sell_price=exit_price, today=today, reason=exit_reason)
             if stock and mutate_public_state:
-                signal_state_changed = mark_exit_opinion(stock, row, exit_reason) or signal_state_changed
+                signal_state_changed = mark_exit_opinion(stock, row, exit_reason, trade) or signal_state_changed
             closed += 1
             continue
         clear_stale_restore_signal_counts(trade, entry_codes)
@@ -1750,7 +1772,13 @@ def run_trade_engine(
             and stock.get("allocationStatus") != "보유"
         ):
             signal_state_changed = (
-                block_held_public_buy_signal(stock, row, previous_opinion, previous_reason) or signal_state_changed
+                block_held_public_buy_signal(
+                    stock,
+                    row,
+                    previous_opinion,
+                    previous_reason,
+                    open_for_ticker_all[0] if open_for_ticker_all else None,
+                ) or signal_state_changed
             )
 
     # Drop retired A/C/D/E/F/G/H rows from the live log; keep 1/2/3/4 (+ migrated B).
@@ -1776,6 +1804,10 @@ def run_trade_engine(
 
     # 중복 제거는 공용 로그 정리용이다. 개인 로그는 사용자 데이터 유실을 막기 위해 그대로 둔다.
     deduped = dedupe_public_trades(trades) if mutate_public_state else trades
+    if mutate_public_state:
+        signal_state_changed = (
+            apply_sparse_watch_opinion_reasons(stocks, technical, deduped) or signal_state_changed
+        )
     if mutate_public_state and season.get("open") and not recovery_ended:
         save_strategy_season_state(season)
     return {
@@ -1786,6 +1818,43 @@ def run_trade_engine(
         "signal_state_changed": signal_state_changed,
         "season": season,
     }
+
+
+def apply_sparse_watch_opinion_reasons(
+    stocks: list[dict[str, Any]],
+    technical: dict[str, Any],
+    trades: list[dict[str, Any]],
+) -> bool:
+    changed = False
+    open_by_ticker: dict[str, dict[str, Any]] = {}
+    for trade in trades:
+        if str(trade.get("status") or "").strip() != "보유 중":
+            continue
+        ticker = str(trade.get("ticker") or "").strip().upper()
+        if ticker and ticker not in open_by_ticker:
+            open_by_ticker[ticker] = trade
+
+    for stock in stocks:
+        ticker = str(stock.get("ticker") or "").strip().upper()
+        if not ticker or stock.get("opinion") != "관망":
+            continue
+        open_trade = open_by_ticker.get(ticker)
+        if not open_trade:
+            continue
+        if not is_sparse_watch_reason(stock.get("opinionReason")):
+            continue
+        reason = build_held_watch_opinion_reason(
+            strategy_code_from_trade(open_trade),
+            trade=open_trade,
+        )
+        if stock.get("opinionReason") != reason:
+            stock["opinionReason"] = reason
+            changed = True
+        row = technical.get(ticker, {}) if isinstance(technical, dict) else {}
+        if isinstance(row, dict) and row.get("opinion") == "관망" and is_sparse_watch_reason(row.get("opinionReason")):
+            row["opinionReason"] = reason
+            changed = True
+    return changed
 
 
 def parse_log_tasks(argv: list[str]) -> set[str]:
