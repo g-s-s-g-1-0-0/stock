@@ -1764,11 +1764,18 @@ def normalize_market_trend_summary(value: Any) -> str:
         "cloud": "클라우드",
         "Data Center": "데이터센터",
         "data center": "데이터센터",
+        "SpaceX": "스페이스엑스",
+        "IPO": "기업공개",
     }.items():
         sanitized = sanitized.replace(source, target)
+    sanitized = sanitized.replace("인공지능와", "인공지능과")
     if re.search(r"[A-Za-z]", sanitized):
         return "이번 주 시장은 주요 산업별 흐름이 엇갈렸습니다."
     replacements = [
+        (r"보이고 있다\.$", "보이고 있습니다."),
+        (r"이어지고 있다\.$", "이어지고 있습니다."),
+        (r"있다\.$", "있습니다."),
+        (r"나타남\.$", "나타났습니다."),
         (r"모습을 보였다\.$", "모습을 보였습니다."),
         (r"부상했다\.$", "부상했습니다."),
         (r"커지고 있다\.$", "커지고 있습니다."),
