@@ -4268,9 +4268,12 @@ void marketTrendRows
 const eventMonths = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
 
 const marketEventDisplayLabels: Record<string, string> = {
-  'CPI 발표': '소비자물가지수 발표',
-  'PPI 발표': '생산자물가지수 발표',
-  'PCE 발표': '개인소비지출물가지수 발표',
+  'CPI 발표': '소비자물가지수 발표 (CPI)',
+  'PPI 발표': '생산자물가지수 발표 (PPI)',
+  'PCE 발표': '개인소비지출물가지수 발표 (PCE)',
+  '소비자물가지수 발표': '소비자물가지수 발표 (CPI)',
+  '생산자물가지수 발표': '생산자물가지수 발표 (PPI)',
+  '개인소비지출물가지수 발표': '개인소비지출물가지수 발표 (PCE)',
 }
 
 function marketEventDisplayLabel(value: string) {
@@ -4279,10 +4282,10 @@ function marketEventDisplayLabel(value: string) {
 
 function marketEventDisplayTooltip(value: string) {
   return value
-    .replaceAll('FOMC', '미국 연방공개시장위원회')
-    .replaceAll('CPI', '소비자물가지수')
-    .replaceAll('PPI', '생산자물가지수')
-    .replaceAll('PCE', '개인소비지출물가지수')
+    .replaceAll('FOMC', '미국 연방공개시장위원회 (FOMC)')
+    .replaceAll('CPI', '소비자물가지수 (CPI)')
+    .replaceAll('PPI', '생산자물가지수 (PPI)')
+    .replaceAll('PCE', '개인소비지출물가지수 (PCE)')
 }
 
 const marketEventGroups: MarketEventGroup[] = [
@@ -4323,7 +4326,7 @@ const marketEventGroups: MarketEventGroup[] = [
     ],
   },
   {
-    title: '소비자물가지수 발표',
+    title: '소비자물가지수 발표 (CPI)',
     tooltip: '소비자 물가가 얼마나 올랐는지 보는 지표입니다. 예상과 다르면 금리 전망이 바뀌어 주식과 달러가 크게 움직일 수 있습니다.',
     entries: [
       { month: '1월', date: '2026. 1. 13', dday: '110', time: '22:30' },
@@ -4341,7 +4344,7 @@ const marketEventGroups: MarketEventGroup[] = [
     ],
   },
   {
-    title: '생산자물가지수 발표',
+    title: '생산자물가지수 발표 (PPI)',
     tooltip: '기업이 물건을 만들 때 드는 비용 변화를 봅니다. 비용 부담이 커지면 물가 걱정이 커져 시장 변동성이 커질 수 있습니다.',
     entries: [
       { month: '1월', date: '2026. 1. 30', dday: '100', time: '22:30' },
@@ -4359,7 +4362,7 @@ const marketEventGroups: MarketEventGroup[] = [
     ],
   },
   {
-    title: '개인소비지출물가지수 발표',
+    title: '개인소비지출물가지수 발표 (PCE)',
     tooltip: '미국 중앙은행이 중요하게 보는 물가 지표입니다. 예상과 다르면 금리 전망이 바뀌어 시장이 흔들릴 수 있습니다.',
     entries: [
       { month: '1월', date: '2026. 1. 29', dday: '94', time: '22:30' },

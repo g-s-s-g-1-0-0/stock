@@ -100,9 +100,9 @@ MARKET_EVENTS_WEEKLY_SCHEDULE = "0 15 * * 0"
 MARKET_TRENDS_WEEKLY_SCHEDULE = "0 15 * * 0"
 IGNORED_MARKET_EVENT_TITLES = {"나스닥 100 리밸런싱"}
 MARKET_EVENT_DISPLAY_LABELS = {
-    "CPI 발표": "소비자물가지수 발표",
-    "PPI 발표": "생산자물가지수 발표",
-    "PCE 발표": "개인소비지출물가지수 발표",
+    "CPI 발표": "소비자물가지수 발표 (CPI)",
+    "PPI 발표": "생산자물가지수 발표 (PPI)",
+    "PCE 발표": "개인소비지출물가지수 발표 (PCE)",
 }
 FED_FOMC_SCHEDULE_URL = "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm"
 BLS_RELEASE_SCHEDULE_URLS = {

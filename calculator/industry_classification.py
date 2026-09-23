@@ -162,9 +162,9 @@ CURATED_BY_NAME: tuple[tuple[str, tuple[str, str]], ...] = (
     ("Alphabet", ("혼합주", "AI, 광고, 클라우드, Waymo, TPU, Gemini")),
     ("Microsoft", ("혼합주", "소프트웨어·클라우드, AI, Azure, Copilot")),
     ("Broadcom", ("혼합주", "반도체, 네트워크·AI 인프라, ASIC, 광트랜시버")),
-    ("Direxion Daily Semiconductor", ("성장주", "반도체 레버리지 ETF")),
-    ("2X Ether", ("스윙주", "가상화폐, 핀테크, 이더리움 2x 레버리지 ETF")),
-    ("Solana", ("스윙주", "가상화폐, 핀테크, Solana 2x 레버리지 ETF")),
+    ("Direxion Daily Semiconductor", ("스윙주", "반도체 지수 3배 레버리지 ETF(일일 3배)")),
+    ("2X Ether", ("스윙주", "이더리움 2배 레버리지 ETF(일일 2배)")),
+    ("Solana", ("스윙주", "솔라나 2배 레버리지 ETF(일일 2배)")),
 )
 
 KEYWORD_RULES: tuple[tuple[tuple[str, ...], tuple[str, str]], ...] = (
@@ -378,11 +378,41 @@ def looks_like_etf(row: dict[str, Any]) -> bool:
 
 def _etf_classification(row: dict[str, Any]) -> tuple[str, str]:
     name = _clean(row.get("name"))
-    if ETF_WORD_RE.search(name):
-        rule = _rule_based(row)
-        if rule and _industry_has_etf(rule[1]):
-            return rule
-    return GENERIC_ETF_CATEGORY, GENERIC_ETF_INDUSTRY
+    source = " ".join(_clean(row.get(key)) for key in ("name", "rawIndustry", "products"))
+    lower = source.lower()
+    multiplier = re.search(r"(?:^|\s)([234])x\b", lower)
+    leverage = f"{multiplier.group(1)}배 레버리지 " if multiplier else ""
+    inverse = bool(re.search(r"\b(inverse|short|bear|ultrashort)\b|인버스|곱버스|숏", lower))
+    if inverse:
+        leverage = f"{leverage}인버스 " if leverage else "인버스 "
+
+    underlying_rules = (
+        (("qqq", "nasdaq 100", "nasdaq-100"), "나스닥100 지수"),
+        (("semiconductor", "semiconductors", "반도체"), "반도체 지수"),
+        (("s&p 500", "s&p500", "sp500"), "S&P500 지수"),
+        (("russell 2000", "iwm"), "러셀2000 지수"),
+        (("bitcoin", "btc", "비트코인"), "비트코인"),
+        (("ethereum", "ether", "eth", "이더리움"), "이더리움"),
+        (("solana", "sol", "솔라나"), "솔라나"),
+        (("treasury", "국채", "bond", "채권"), "채권·국채"),
+        (("gold", "금"), "금"),
+        (("silver", "은"), "은"),
+    )
+    underlying = next(
+        (label for tokens, label in underlying_rules if any(token in lower for token in tokens)),
+        "테마·지수",
+    )
+    if underlying == "테마·지수" and name:
+        stripped = re.sub(
+            r"\b(?:daily|bull|bear|ultra|proshares|direxion|shares|trust|fund|etf|etn|leveraged|inverse)\b",
+            "",
+            name,
+            flags=re.IGNORECASE,
+        )
+        stripped = re.sub(r"\s+", " ", stripped).strip(" -")
+        if stripped:
+            underlying = stripped[:40]
+    return GENERIC_ETF_CATEGORY, f"{underlying} {leverage}ETF".replace("  ", " ").strip()
 
 
 def classify_stock(row: dict[str, Any]) -> dict[str, str]:

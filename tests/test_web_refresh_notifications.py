@@ -1918,7 +1918,7 @@ class WebMarketEventPipelineTest(unittest.TestCase):
 
         label = self.pipeline.current_market_event_label(payload, today=date(2026, 5, 13))
 
-        self.assertEqual("PPI 발표", label)
+        self.assertEqual("생산자물가지수 발표 (PPI)", label)
 
     def test_current_market_event_label_clears_after_release_time(self) -> None:
         payload = {
@@ -1933,7 +1933,7 @@ class WebMarketEventPipelineTest(unittest.TestCase):
         before = datetime(2026, 5, 28, 9, 0, tzinfo=kst)
         after = datetime(2026, 5, 28, 10, 0, tzinfo=kst)
 
-        self.assertEqual("PCE 발표", self.pipeline.current_market_event_label(payload, now=before))
+        self.assertEqual("개인소비지출물가지수 발표 (PCE)", self.pipeline.current_market_event_label(payload, now=before))
         self.assertEqual("당분간 없음", self.pipeline.current_market_event_label(payload, now=after))
 
 

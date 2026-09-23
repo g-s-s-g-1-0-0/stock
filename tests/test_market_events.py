@@ -245,7 +245,7 @@ class MarketEventsTest(unittest.TestCase):
         before = datetime(2026, 5, 28, 21, 0, tzinfo=KST)
         after = datetime(2026, 5, 28, 22, 0, tzinfo=KST)
 
-        self.assertEqual("PCE 발표", pipeline.current_market_event_label(payload, now=before))
+        self.assertEqual("개인소비지출물가지수 발표 (PCE)", pipeline.current_market_event_label(payload, now=before))
         self.assertEqual("당분간 없음", pipeline.current_market_event_label(payload, now=after))
 
     def test_current_market_event_label_keeps_same_day_fallback_without_time(self) -> None:
@@ -259,7 +259,7 @@ class MarketEventsTest(unittest.TestCase):
         }
         noon = datetime(2026, 5, 13, 12, 0, tzinfo=KST)
 
-        self.assertEqual("PPI 발표", pipeline.current_market_event_label(payload, now=noon))
+        self.assertEqual("생산자물가지수 발표 (PPI)", pipeline.current_market_event_label(payload, now=noon))
 
     def test_current_market_event_label_ignores_nasdaq_100_rebalancing(self) -> None:
         payload = {
