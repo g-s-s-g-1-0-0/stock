@@ -20,6 +20,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from calculator.opinion_reasons import (
     build_held_watch_opinion_reason,
+    build_post_sell_watch_reason,
     format_sell_opinion_reason,
     is_sparse_watch_reason,
     strategy_code_from_trade,
@@ -1504,7 +1505,10 @@ def run_trade_engine(
                 trading_days=trend_held_sessions(trade, row),
             )
         elif strategy == "3" and confirm_strategy_3_market_exit(trade, market_premium, held_trading_days, today):
-            exit_result = {"shouldExit": True, "reason": f"횡보장 고점 확인 청산 ({market_premium:+.2f}%)"}
+            exit_result = {
+                "shouldExit": True,
+                "reason": f"횡보장 고점 확인 청산 (QQQ 이격도 {market_premium:+.2f}%, 수익률 {return_pct(trade.get('buyPrice'), sell_price):+.2f}%; 고정 익절 아님)",
+            }
         elif recovery_ended:
             exit_result = evaluate_exit_condition(
                 IndicatorRow(
@@ -1606,7 +1610,9 @@ def run_trade_engine(
                     row["opinion"] = "관망"
                 if stock.get("opinion") == "매도":
                     stock["opinion"] = "관망"
-                    stock.pop("opinionReason", None)
+                    reason = build_post_sell_watch_reason(qqq_market_state=qqq_market_state)
+                    stock["opinionReason"] = reason
+                    row["opinionReason"] = reason
                 signal_state_changed = True
 
     for stock in stocks:

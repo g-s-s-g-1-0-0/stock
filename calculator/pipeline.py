@@ -99,6 +99,11 @@ MARKET_EVENTS_WEEKLY_SCHEDULE = "0 15 * * 0"
 # 주간 시장 트렌드: 한국시간 월요일 00:00 (UTC 일요일 15:00). 일→월 전환 직후 1회.
 MARKET_TRENDS_WEEKLY_SCHEDULE = "0 15 * * 0"
 IGNORED_MARKET_EVENT_TITLES = {"나스닥 100 리밸런싱"}
+MARKET_EVENT_DISPLAY_LABELS = {
+    "CPI 발표": "소비자물가지수 발표",
+    "PPI 발표": "생산자물가지수 발표",
+    "PCE 발표": "개인소비지출물가지수 발표",
+}
 FED_FOMC_SCHEDULE_URL = "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm"
 BLS_RELEASE_SCHEDULE_URLS = {
     "고용보고서 발표": "https://www.bls.gov/schedule/news_release/empsit.htm",
@@ -369,7 +374,7 @@ def current_market_event_label(
             if title not in active_titles:
                 active_titles.append(title)
 
-    return ", ".join(active_titles) if active_titles else "당분간 없음"
+    return ", ".join(MARKET_EVENT_DISPLAY_LABELS.get(title, title) for title in active_titles) if active_titles else "당분간 없음"
 
 
 def has_value(value: Any) -> bool:
@@ -1751,6 +1756,18 @@ def normalize_market_trend_summary(value: Any) -> str:
     sanitized = sanitize_market_trend_text(value)
     if not isinstance(sanitized, str):
         return ""
+    for source, target in {
+        "AI": "인공지능",
+        "GPU": "그래픽처리장치",
+        "ETF": "상장지수펀드",
+        "Cloud": "클라우드",
+        "cloud": "클라우드",
+        "Data Center": "데이터센터",
+        "data center": "데이터센터",
+    }.items():
+        sanitized = sanitized.replace(source, target)
+    if re.search(r"[A-Za-z]", sanitized):
+        return "이번 주 시장은 주요 산업별 흐름이 엇갈렸습니다."
     replacements = [
         (r"모습을 보였다\.$", "모습을 보였습니다."),
         (r"부상했다\.$", "부상했습니다."),

@@ -69,6 +69,7 @@ LEGACY_STRATEGY_MAP = {
 }
 
 ACTIVE_STRATEGY_CODES = ("1", "2", "3", "4", "5", "6", "7")
+ENTRY_STRATEGY_PRIORITY = ACTIVE_STRATEGY_CODES
 # Strategy 3 uses its own 횡보장 고점 regime exit, not S1/S2/S4 peakTriggered.
 NASDAQ_PEAK_EXIT_EXEMPT_STRATEGIES: set[str] = {"3"}
 
@@ -268,6 +269,7 @@ def evaluate_buy_condition(
         and not entry_3
     )
 
+    # 같은 날 여러 진입 조건이 충족되면 전략 번호가 낮은 순서(1→7)를 우선한다.
     entry_strategy = (
         "1" if entry_1 else "2" if entry_2 else "3" if entry_3 else "4" if entry_4 else None
     )

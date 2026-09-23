@@ -292,7 +292,7 @@
       "marketEvent": "당분간 없음",
       "strategies": [],
       "category": "스윙주",
-      "industry": "레버리지·테마 ETF",
+      "industry": "Robinhood(HOOD) 단일종목 2배 레버리지 ETF(일일 2배)",
       "updatedAt": "2026-09-23T14:56:04+00:00"
     },
     {
@@ -467,8 +467,8 @@
       "opinionReason": "관망 — QQQ 과열(+11.9% > 차단선 +9%)으로 신규 매수 조건 미충족",
       "marketEvent": "당분간 없음",
       "strategies": [],
-      "category": "성장주",
-      "industry": "반도체 레버리지 ETF",
+      "category": "스윙주",
+      "industry": "NYSE 반도체 지수 3배 레버리지 ETF(일일 3배)",
       "updatedAt": "2026-09-23T14:56:11+00:00"
     },
     {
@@ -708,7 +708,7 @@
       "marketEvent": "당분간 없음",
       "strategies": [],
       "category": "스윙주",
-      "industry": "ETF, 테마·지수형 상장상품",
+      "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
       "updatedAt": "2026-09-23T14:56:22+00:00"
     },
     {
@@ -724,7 +724,7 @@
       "marketEvent": "당분간 없음",
       "strategies": [],
       "category": "스윙주",
-      "industry": "ETF, 테마·지수형 상장상품",
+      "industry": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
       "updatedAt": "2026-09-23T14:56:22+00:00"
     },
     {
@@ -740,7 +740,7 @@
       "marketEvent": "당분간 없음",
       "strategies": [],
       "category": "스윙주",
-      "industry": "ETF, 테마·지수형 상장상품",
+      "industry": "다우존스 미국 반도체 지수 2배 레버리지 ETF(일일 2배)",
       "updatedAt": "2026-09-23T14:56:23+00:00"
     },
     {

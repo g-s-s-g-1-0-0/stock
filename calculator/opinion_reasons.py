@@ -57,7 +57,7 @@ def exit_criteria_summary(code: str | None, trade: dict[str, Any] | None = None)
 
     if normalized == "3":
         target_pct = int(round(float(STRATEGY_RULES.get("TARGET_PCT_3", 0.12)) * 100))
-        parts.append(f"익절 +{target_pct}%")
+        parts.append(f"고정 익절 +{target_pct}%")
         support_stop = (trade or {}).get("supportStopPrice")
         if support_stop is not None:
             parts.append(f"지지선 이탈 { _fmt_price(support_stop, market)}")
@@ -186,6 +186,22 @@ def build_plain_watch_opinion_reason(
     return "관망 — 현재 매수/매도 조건 미충족"
 
 
+def build_post_sell_watch_reason(
+    *,
+    qqq_market_state: dict[str, Any] | None = None,
+) -> str:
+    """Explain the transition after the fixed post-sale hold window expires."""
+
+    qqq = qqq_market_state or {}
+    buy_block = qqq.get("buyBlockMax")
+    premium = qqq.get("premiumPercent")
+    if premium is not None and buy_block is not None and float(premium) > float(buy_block):
+        detail = f"QQQ 과열({float(premium):+.1f}% > 차단선 +{float(buy_block):.0f}%)"
+    else:
+        detail = "현재 신규 매수 조건 미충족"
+    return f"매도 후 대기 완료 → 관망 전환 — 재진입 필터 유지, {detail}"
+
+
 def format_sell_opinion_reason(
     reason: str,
     strategy_code: str | None,
@@ -203,6 +219,9 @@ def format_sell_opinion_reason(
         return_pct_is_percent=return_pct_is_percent,
     )
     criteria = exit_criteria_summary(strategy_code, trade)
+
+    if "횡보장 고점 확인 청산" in enriched:
+        return f"{label} · {enriched}" if label and label not in enriched else enriched
 
     if enriched.startswith(label):
         return enriched
