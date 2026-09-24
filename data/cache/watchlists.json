@@ -1,8 +1,8 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-09-24T05:33:42Z",
-    "rowCount": 3
+    "updatedAt": "2026-09-24T06:55:24Z",
+    "rowCount": 5
   },
   "rows": [
     {
@@ -126,7 +126,7 @@
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-24T05:31:55.812252+00:00"
+      "remoteUpdatedAt": "2026-09-24T06:47:07.737326+00:00"
     },
     {
       "id": "6065187b-8e56-4939-aae8-c108e1aae841",
@@ -144,6 +144,36 @@
       "remoteUpdatedAt": "2026-09-21T03:49:45.63648+00:00"
     },
     {
+      "id": "71d761c7-b0c3-4a1d-9f10-cc34d5ccb8a6",
+      "scope": "personal",
+      "ownerId": "6714de9e-647a-4ef2-9077-cb6b46671b5c",
+      "tickers": [],
+      "tickersByType": {
+        "swing": [],
+        "long_term": []
+      },
+      "watchlistSort": {
+        "primary": "registered",
+        "secondary": "registered"
+      },
+      "remoteUpdatedAt": "2026-09-24T05:53:41.640783+00:00"
+    },
+    {
+      "id": "c1b68b99-525b-4632-98ac-09f0045723ad",
+      "scope": "personal",
+      "ownerId": "9d004c30-a5f2-47c6-8ea3-40e04ea2c868",
+      "tickers": [],
+      "tickersByType": {
+        "swing": [],
+        "long_term": []
+      },
+      "watchlistSort": {
+        "primary": "registered",
+        "secondary": "registered"
+      },
+      "remoteUpdatedAt": "2026-09-24T06:33:36.272721+00:00"
+    },
+    {
       "id": "026d7675-fa4f-44d9-8792-88cb35fe276a",
       "scope": "personal",
       "ownerId": "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c",
@@ -156,7 +186,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-24T05:31:13.015996+00:00"
+      "remoteUpdatedAt": "2026-09-24T06:47:07.813482+00:00"
     }
   ]
 }
