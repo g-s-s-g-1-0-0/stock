@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15457,
-    "industryEnrichedAt": "2026-09-23T16:55:40+00:00",
-    "industryEnrichedTickers": 5,
+    "industryEnrichedAt": "2026-09-24T05:32:14+00:00",
+    "industryEnrichedTickers": 2,
     "industryReviewedAt": "2026-09-20T17:47:46+00:00",
     "industryReviewedTickers": 6
   },
@@ -52839,9 +52839,9 @@
       "valuation": "보통",
       "opinion": "관망",
       "strategies": [],
-      "category": "혼합주",
-      "industry": "-",
-      "rawIndustry": "-",
+      "category": "성장주",
+      "industry": "반도체, 광전자·포토닉스, 데이터센터",
+      "rawIndustry": "Technology | Semiconductors",
       "products": "-",
       "updatedAt": "2026-09-20T17:47:32+00:00"
     },
@@ -165220,7 +165220,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, AI GPU, 데이터센터, CUDA",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Semiconductors",
       "products": "-",
       "updatedAt": "2026-09-20T17:47:32+00:00"
     },

@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-09-24T04:55:23Z",
+    "updatedAt": "2026-09-24T05:32:01Z",
     "rowCount": 3
   },
   "rows": [
@@ -55,7 +55,8 @@
         "GNRC",
         "QQQ",
         "QLD",
-        "USD"
+        "USD",
+        "ARM"
       ],
       "tickersByType": {
         "swing": [
@@ -104,12 +105,12 @@
           "GNRC",
           "QQQ",
           "QLD",
-          "USD"
+          "USD",
+          "ARM"
         ],
         "long_term": [
           "000660",
           "NBIS",
-          "PL",
           "AAPL",
           "GOOGL",
           "BE",
@@ -117,14 +118,15 @@
           "CRDO",
           "VST",
           "QLD",
-          "USD"
+          "USD",
+          "NVDA"
         ]
       },
       "watchlistSort": {
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-24T03:18:30.267344+00:00"
+      "remoteUpdatedAt": "2026-09-24T05:31:55.812252+00:00"
     },
     {
       "id": "6065187b-8e56-4939-aae8-c108e1aae841",
@@ -154,7 +156,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-24T03:18:30.281512+00:00"
+      "remoteUpdatedAt": "2026-09-24T05:31:13.015996+00:00"
     }
   ]
 }

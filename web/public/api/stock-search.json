@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-09-24T04:56:01+00:00",
-    "lastSuccessfulRun": "2026-09-24T04:56:01+00:00",
+    "updatedAt": "2026-09-24T05:33:00+00:00",
+    "lastSuccessfulRun": "2026-09-24T05:33:00+00:00",
     "failedReason": null
   },
   "rows": [
@@ -24539,8 +24539,8 @@
       "ticker": "ARM",
       "name": "Arm Holdings",
       "market": "US",
-      "category": "혼합주",
-      "industry": "-"
+      "category": "성장주",
+      "industry": "반도체, 광전자·포토닉스, 데이터센터"
     },
     {
       "ticker": "ARMA",
