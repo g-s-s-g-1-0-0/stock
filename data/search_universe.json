@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15457,
-    "industryEnrichedAt": "2026-09-24T05:32:14+00:00",
-    "industryEnrichedTickers": 2,
+    "industryEnrichedAt": "2026-09-25T12:34:55+00:00",
+    "industryEnrichedTickers": 1,
     "industryReviewedAt": "2026-09-20T17:47:46+00:00",
     "industryReviewedTickers": 6
   },
@@ -151159,8 +151159,8 @@
       "opinion": "관망",
       "strategies": [],
       "category": "혼합주",
-      "industry": "-",
-      "rawIndustry": "-",
+      "industry": "Communication Services | Internet Content &amp; Information",
+      "rawIndustry": "Communication Services | Internet Content &amp; Information",
       "products": "-",
       "updatedAt": "2026-09-20T17:47:32+00:00"
     },

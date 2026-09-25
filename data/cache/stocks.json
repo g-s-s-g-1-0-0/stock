@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-25T10:55:57+00:00",
-    "lastSuccessfulRun": "2026-09-25T10:55:57+00:00",
+    "updatedAt": "2026-09-25T12:35:48+00:00",
+    "lastSuccessfulRun": "2026-09-25T12:35:48+00:00",
     "failedReason": null
   },
   "rows": [
@@ -763,7 +763,7 @@
       "ticker": "AAPL",
       "name": "Apple",
       "market": "US",
-      "fairPrice": "$172.46 ~ $233.32",
+      "fairPrice": "$172.08 ~ $232.82",
       "fairPriceReason": null,
       "currentPrice": "$336.00",
       "valuation": "고평가",
@@ -806,6 +806,22 @@
       "category": "성장주",
       "industry": "반도체, AI GPU, 데이터센터, CUDA",
       "updatedAt": "2026-09-25T10:55:57+00:00"
+    },
+    {
+      "ticker": "META",
+      "name": "Meta Platforms Class A",
+      "market": "US",
+      "fairPrice": "$760.13 ~ $1,028.41",
+      "fairPriceReason": null,
+      "currentPrice": "-",
+      "valuation": "보통",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "혼합주",
+      "industry": "Communication Services | Internet Content &amp; Information",
+      "updatedAt": "2026-09-25T12:35:48+00:00"
     }
   ]
 }

@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-09-25T10:55:59+00:00",
-    "lastSuccessfulRun": "2026-09-25T10:55:59+00:00",
+    "updatedAt": "2026-09-25T12:35:49+00:00",
+    "lastSuccessfulRun": "2026-09-25T12:35:49+00:00",
     "failedReason": null
   },
   "rows": [
@@ -69060,7 +69060,7 @@
       "name": "Meta Platforms Class A",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "Communication Services | Internet Content &amp; Information"
     },
     {
       "ticker": "METC",
