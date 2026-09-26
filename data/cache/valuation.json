@@ -4,8 +4,8 @@
     "schedule": "0 15 * * *",
     "updatedAt": "2026-09-26T15:00:00+00:00",
     "lastSuccessfulRun": "2026-09-26T15:00:00+00:00",
-    "failedReason": null,
-    "successfulRows": 51
+    "failedReason": "AAPL: HTTP Error 429: Too Many Requests; GOOGL: HTTP Error 429: Too Many Requests; NVDA: HTTP Error 429: Too Many Requests; META: HTTP Error 429: Too Many Requests",
+    "successfulRows": 47
   },
   "rows": {
     "000150": {
@@ -1233,5 +1233,22 @@
       "ruleOf40": "65.73%"
     }
   },
-  "errors": []
+  "errors": [
+    {
+      "ticker": "AAPL",
+      "error": "HTTP Error 429: Too Many Requests"
+    },
+    {
+      "ticker": "GOOGL",
+      "error": "HTTP Error 429: Too Many Requests"
+    },
+    {
+      "ticker": "NVDA",
+      "error": "HTTP Error 429: Too Many Requests"
+    },
+    {
+      "ticker": "META",
+      "error": "HTTP Error 429: Too Many Requests"
+    }
+  ]
 }
