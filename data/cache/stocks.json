@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-27T16:56:05+00:00",
-    "lastSuccessfulRun": "2026-09-27T16:56:05+00:00",
+    "updatedAt": "2026-09-27T18:45:58+00:00",
+    "lastSuccessfulRun": "2026-09-27T18:45:58+00:00",
     "failedReason": null
   },
   "rows": [
@@ -691,7 +691,7 @@
       "opinionReason": "매수 조건 해제 — 4. 장기선 아래 반등 초입: 장기선 아래 반등 조건 이탈 · 보유 유지 (익절 회복장 종료 청산 · 손절 -30%)",
       "marketEvent": "당분간 없음",
       "strategies": [],
-      "category": "가치주",
+      "category": "스윙주",
       "industry": "산업재, 장비·제조, 자동화",
       "updatedAt": "2026-09-27T16:56:02+00:00"
     },
