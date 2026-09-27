@@ -112,15 +112,17 @@
     "updatedAt": "2026-07-15T04:59:59.592963+00:00"
   },
   "strategySeason": {
-    "open": true,
-    "sawRecovery": false,
     "nonRecoveryStreak": 0,
+    "open": true,
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
+    "sawRecovery": false,
     "updatedAt": "2026-09-27T14:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
+      "6714de9e-647a-4ef2-9077-cb6b46671b5c:2026.09.28",
+      "9d004c30-a5f2-47c6-8ea3-40e04ea2c868:2026.09.28",
       "9fb8fefb-1fcb-4ecc-af03-0a2e5e873e52:2026.08.24",
       "9fb8fefb-1fcb-4ecc-af03-0a2e5e873e52:2026.08.31",
       "9fb8fefb-1fcb-4ecc-af03-0a2e5e873e52:2026.09.07",
@@ -134,8 +136,9 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026.09.07",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026.09.14",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026.09.21",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026.09.28",
       "e1050013-38e6-4994-aee6-9edfa60df002:2026.08.03"
     ],
-    "updatedAt": "2026-09-20T15:01:04.162103+00:00"
+    "updatedAt": "2026-09-27T15:01:19.771045+00:00"
   }
 }
