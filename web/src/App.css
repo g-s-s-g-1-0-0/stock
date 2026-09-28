@@ -1381,10 +1381,12 @@
 
 .sheet-wrap {
   position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-width: 0;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   overscroll-behavior: none;
   border: 1px solid var(--sheet-border);
   border-radius: 8px;
@@ -1392,7 +1394,11 @@
 }
 
 .sheet-x-scroll {
+  flex: 1;
   min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: none;
 }
 
 .sheet-header-freeze {
@@ -1431,7 +1437,7 @@
   flex: none;
   height: var(--trading-log-sheet-height);
   max-height: var(--trading-log-sheet-height);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .long-term-home-grid .trading-log-scroll {
@@ -1556,7 +1562,7 @@
 .value-analysis-sheet {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   overscroll-behavior: none;
   background-color: var(--sheet-bg);
 }
@@ -1966,9 +1972,7 @@
 
 .market-trends-sheet {
   height: auto;
-  overflow-x: auto;
-  overflow-y: visible;
-  overscroll-behavior-x: none;
+  overflow: hidden;
 }
 
 .market-trends-table {
@@ -5905,19 +5909,17 @@
   }
 
   .sheet-wrap {
-    overflow: auto;
+    overflow: hidden;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: auto;
     touch-action: pan-x pan-y;
   }
 
-  /* 모바일: 트레이딩 로그는 페이지와 같이 세로로 흐르고, 가로는 표 안에서만 스크롤한다.
-     overflow-y: hidden은 iOS에서 열 고정을 깨므로 auto를 쓴다. 높이가 auto면 세로 스크롤바는 생기지 않는다. */
+  /* 태블릿: 트레이딩 로그는 페이지와 같이 세로로 흐르고, 가로는 표 안에서만 스크롤한다. */
   .trading-log-scroll {
     height: auto;
     max-height: none;
-    overflow-x: auto;
-    overflow-y: auto;
+    overflow: hidden;
     touch-action: pan-x;
   }
 
@@ -6373,6 +6375,8 @@
   .market-events-sheet .sheet-x-scroll,
   .market-trends-sheet .sheet-x-scroll,
   .admin-logs-sheet .sheet-x-scroll {
+    flex: none;
+    height: auto;
     overflow-x: auto;
     overflow-y: hidden;
     overscroll-behavior: none;
