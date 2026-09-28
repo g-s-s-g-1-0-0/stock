@@ -119,6 +119,23 @@ class MarketEventsTest(unittest.TestCase):
         self.assertEqual(result[8]["date"], "2026. 8. 7")
         self.assertEqual(result[9]["date"], "2026. 9. 4")
 
+    def test_bls_wayback_fallback_skips_snapshots_without_target_year_rows(self) -> None:
+        stale = "https://web.archive.org/web/20260801if_/https://www.bls.gov/schedule/news_release/empsit.htm"
+        current = "https://web.archive.org/web/20260903if_/https://www.bls.gov/schedule/news_release/empsit.htm"
+        html = "<table><tr><td>August 2026</td><td>Sep. 04, 2026</td><td>08:30 AM</td></tr></table>"
+        forbidden = urllib.error.HTTPError("https://www.bls.gov/schedule", 403, "Forbidden", hdrs=None, fp=None)  # type: ignore[arg-type]
+        with patch("calculator.pipeline.fetch_text", side_effect=forbidden), patch(
+            "calculator.pipeline.wayback_snapshot_urls", return_value=[stale, current]
+        ), patch(
+            "calculator.pipeline.fetch_wayback_html", side_effect=["<html>old shell</html>", html]
+        ):
+            fetched, source = pipeline.fetch_bls_schedule_html(
+                "https://www.bls.gov/schedule/news_release/empsit.htm", 2026
+            )
+
+        self.assertEqual(fetched, html)
+        self.assertEqual(source, f"wayback:{current}")
+
     def test_wayback_playback_url_uses_iframe_copy(self) -> None:
         snapshot = "https://web.archive.org/web/20260903124341/https://www.bls.gov/schedule/news_release/empsit.htm"
         self.assertEqual(

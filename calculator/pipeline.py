@@ -2332,6 +2332,29 @@ def wayback_snapshot_url(url: str) -> str | None:
     return wayback_playback_url(f"https://web.archive.org/web/{timestamp}/{original}")
 
 
+def wayback_snapshot_urls(url: str, year: int) -> list[str]:
+    """Return recent archived copies, newest first, to avoid stale/shell captures."""
+
+    urls: list[str] = []
+    closest = wayback_snapshot_url(url)
+    if closest:
+        urls.append(closest)
+    encoded = urllib.parse.quote(url, safe="")
+    cdx = (
+        f"{WAYBACK_CDX_API}?url={encoded}&output=json&filter=statuscode:200"
+        f"&fl=timestamp,original&from={year - 1}&collapse=digest"
+    )
+    try:
+        rows = json.loads(fetch_text_retry(cdx, timeout=40))
+    except Exception:
+        rows = []
+    if isinstance(rows, list):
+        for row in reversed(rows[1:]):
+            if len(row) >= 2:
+                urls.append(wayback_playback_url(f"https://web.archive.org/web/{row[0]}/{row[1]}"))
+    return list(dict.fromkeys(urls))
+
+
 def fetch_wayback_html(snapshot: str) -> str:
     playback = wayback_playback_url(snapshot)
     html_text = fetch_text_retry(playback, timeout=45)
@@ -2347,19 +2370,30 @@ def fetch_wayback_html(snapshot: str) -> str:
     return html_text
 
 
-def fetch_bls_schedule_html(url: str) -> tuple[str, str]:
+def fetch_bls_schedule_html(url: str, year: int | None = None) -> tuple[str, str]:
     """Return (html, source_label). Prefer live BLS, then Wayback archive."""
 
     try:
         return fetch_text(url, timeout=20), "bls-live"
     except Exception as live_exc:  # noqa: BLE001
-        snapshot = wayback_snapshot_url(url)
-        if not snapshot:
+        snapshots = wayback_snapshot_urls(url, year or datetime.now(KST).year)
+        if not snapshots:
             raise RuntimeError(f"live={live_exc}; wayback snapshot unavailable") from live_exc
-        try:
-            return fetch_wayback_html(snapshot), f"wayback:{snapshot}"
-        except Exception as archive_exc:  # noqa: BLE001
-            raise RuntimeError(f"live={live_exc}; wayback={archive_exc}") from archive_exc
+        failures: list[str] = []
+        for snapshot in snapshots:
+            try:
+                html_text = fetch_wayback_html(snapshot)
+                rows = html_table_rows(html_text)
+                if year is None or any(
+                    len(row) >= 3 and parse_us_date_text(row[1], year) is not None
+                    and parse_us_date_text(row[1], year).year == year
+                    for row in rows
+                ):
+                    return html_text, f"wayback:{snapshot}"
+                failures.append(f"{snapshot}: no {year} release rows")
+            except Exception as archive_exc:  # noqa: BLE001
+                failures.append(f"{snapshot}: {archive_exc}")
+        raise RuntimeError(f"live={live_exc}; wayback={' | '.join(failures[:4])}") from live_exc
 
 
 def fetch_fomc_market_events(year: int, issues: list[str]) -> dict[int, dict[str, str]]:
@@ -2410,7 +2444,7 @@ def fetch_fomc_market_events(year: int, issues: list[str]) -> dict[int, dict[str
 def fetch_bls_market_events(title: str, url: str, year: int, issues: list[str]) -> dict[int, dict[str, str]]:
     result: dict[int, dict[str, str]] = {}
     try:
-        html_text, source_label = fetch_bls_schedule_html(url)
+        html_text, source_label = fetch_bls_schedule_html(url, year)
         rows = html_table_rows(html_text)
     except Exception as exc:  # noqa: BLE001 - ambiguous by design when the official page cannot be read
         issues.append(f"BLS {title} 공식 일정 조회 실패: {exc}")
