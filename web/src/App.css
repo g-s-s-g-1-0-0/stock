@@ -5976,7 +5976,7 @@
   }
 
   .technical-analysis-sheet {
-    overflow: auto;
+    overflow: hidden;
     touch-action: pan-x pan-y;
   }
 
