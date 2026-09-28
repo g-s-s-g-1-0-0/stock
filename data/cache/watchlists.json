@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-09-28T13:50:30Z",
+    "updatedAt": "2026-09-28T14:19:07Z",
     "rowCount": 5
   },
   "rows": [
@@ -56,7 +56,8 @@
         "QQQ",
         "QLD",
         "USD",
-        "ARM"
+        "ARM",
+        "SOXS"
       ],
       "tickersByType": {
         "swing": [
@@ -106,7 +107,8 @@
           "QQQ",
           "QLD",
           "USD",
-          "ARM"
+          "ARM",
+          "SOXS"
         ],
         "long_term": [
           "000660",
@@ -127,7 +129,7 @@
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-28T13:46:54.510748+00:00"
+      "remoteUpdatedAt": "2026-09-28T14:19:06.155832+00:00"
     },
     {
       "id": "6065187b-8e56-4939-aae8-c108e1aae841",
@@ -187,7 +189,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-09-28T13:46:54.509706+00:00"
+      "remoteUpdatedAt": "2026-09-28T14:19:06.163532+00:00"
     }
   ]
 }

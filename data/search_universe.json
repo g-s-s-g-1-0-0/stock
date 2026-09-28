@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15489,
-    "industryEnrichedAt": "2026-09-27T18:45:54+00:00",
-    "industryEnrichedTickers": 40,
+    "industryEnrichedAt": "2026-09-28T14:19:35+00:00",
+    "industryEnrichedTickers": 1,
     "industryReviewedAt": "2026-09-27T18:45:56+00:00",
     "industryReviewedTickers": 6
   },
@@ -202334,7 +202334,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "반도체 지수 3배 인버스 레버리지 ETF(일일 3배)",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial | Exchange Traded Fund",
       "products": "-",
       "updatedAt": "2026-09-27T18:45:34+00:00",
       "etfFlag": true
