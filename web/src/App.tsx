@@ -8819,6 +8819,8 @@ function App() {
     await ensureProfile(nextSession)
     await loadServiceData(nextSession)
     if (pendingNotificationUnsubscribeToken()) {
+      setLoginEmail('')
+      setLoginPassword('')
       setLoginError('')
       setAuthMode('login')
       return
