@@ -631,9 +631,12 @@
   text-align: right;
 }
 
-.asset-summary-item:hover .asset-summary-tooltip,
-.asset-summary-item:focus-within .asset-summary-tooltip {
+.asset-summary-item.is-tooltip-open .asset-summary-tooltip {
   opacity: 1;
+}
+
+.asset-summary-item:has(.asset-summary-tooltip) {
+  cursor: help;
 }
 
 .asset-summary-button {

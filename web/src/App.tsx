@@ -141,9 +141,18 @@ type TooltipState = {
   x: number
   y: number
   className?: string
-  /** When true, opening the same tooltip again closes it (mobile re-tap). */
+  /** When true, opening the same tooltip again closes it. */
   toggle?: boolean
   sourceKey?: string
+}
+
+function canHoverTooltip() {
+  return typeof window !== 'undefined' && window.matchMedia('(hover: hover) and (pointer: fine)').matches
+}
+
+function isSameTooltipSource(current: TooltipState, next: TooltipState) {
+  if (next.sourceKey && current.sourceKey === next.sourceKey) return true
+  return current.text === next.text && Math.abs(current.x - next.x) < 2 && Math.abs(current.y - next.y) < 2
 }
 
 type ActivePage = 'home' | 'value-analysis' | 'technical-analysis' | 'market-events' | 'market-trends' | 'board' | 'admin-logs'
@@ -3207,6 +3216,108 @@ function marketSortRank(market: Market) {
   return market === 'KR' ? 0 : 1
 }
 
+function AssetSummaryItem({
+  item,
+}: {
+  item: {
+    label: string
+    value: string
+    action?: () => void
+    clickable?: boolean
+    strong?: boolean
+    tone?: string
+    detail?: string
+    detailTooltipRows?: Array<{ label: string; value: string }>
+  }
+}) {
+  const [tooltipOpen, setTooltipOpen] = useState(false)
+  const hasTooltip = Boolean(item.detailTooltipRows)
+  const itemClassName = `asset-summary-item ${item.strong ? 'strong' : ''} ${tooltipOpen ? 'is-tooltip-open' : ''}`.trim()
+  const detailTitle = item.detailTooltipRows ? undefined : item.detail
+
+  useEffect(() => {
+    if (!tooltipOpen) return undefined
+    const close = () => setTooltipOpen(false)
+    const timer = window.setTimeout(() => document.addEventListener('click', close), 0)
+    return () => {
+      window.clearTimeout(timer)
+      document.removeEventListener('click', close)
+    }
+  }, [tooltipOpen])
+
+  const openTooltip = () => {
+    if (hasTooltip && canHoverTooltip()) setTooltipOpen(true)
+  }
+  const hideTooltip = () => setTooltipOpen(false)
+  const toggleTooltip = (event: ReactMouseEvent) => {
+    if (!hasTooltip) return
+    event.preventDefault()
+    event.stopPropagation()
+    setTooltipOpen((open) => !open)
+  }
+
+  const detailTooltip = item.detailTooltipRows ? (
+    <span className="asset-summary-tooltip" role="tooltip">
+      {item.detailTooltipRows.map((row) => (
+        <span className="asset-summary-tooltip-row" key={row.label}>
+          <span className="asset-summary-tooltip-label">{row.label}</span>
+          <strong>{row.value}</strong>
+        </span>
+      ))}
+    </span>
+  ) : null
+
+  const detail = item.detail ? (
+    <span
+      className="asset-summary-detail-wrap"
+      title={detailTitle}
+      tabIndex={hasTooltip ? 0 : undefined}
+      role={hasTooltip ? 'button' : undefined}
+      aria-label={hasTooltip ? `${item.label} 상세` : undefined}
+      onClick={hasTooltip ? toggleTooltip : undefined}
+      onKeyDown={hasTooltip ? (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return
+        event.preventDefault()
+        event.stopPropagation()
+        setTooltipOpen((open) => !open)
+      } : undefined}
+    >
+      <small className="asset-summary-detail">{item.detail}</small>
+    </span>
+  ) : null
+
+  if (item.clickable) {
+    return (
+      <button
+        className={`${itemClassName} asset-summary-action`}
+        type="button"
+        onClick={item.action}
+        onMouseEnter={openTooltip}
+        onMouseLeave={hideTooltip}
+      >
+        <span>{item.label}</span>
+        <strong className="asset-summary-value asset-summary-button">{item.value}</strong>
+        {detail}
+        {detailTooltip}
+      </button>
+    )
+  }
+
+  return (
+    <div
+      className={itemClassName}
+      onClick={hasTooltip ? toggleTooltip : undefined}
+      onMouseEnter={openTooltip}
+      onMouseLeave={hideTooltip}
+    >
+      <span>{item.label}</span>
+      <strong className={`asset-summary-value ${item.tone ?? ''}`}>{item.value}</strong>
+      {detail}
+      {detailTooltip}
+    </div>
+  )
+}
+
 function StockNameCell({
   name,
   market,
@@ -3290,7 +3401,9 @@ function StockNameCell({
             event.stopPropagation()
             openTooltip(event.currentTarget, true)
           }}
-          onMouseEnter={(event) => openTooltip(event.currentTarget)}
+          onMouseEnter={(event) => {
+            if (canHoverTooltip()) openTooltip(event.currentTarget)
+          }}
           onMouseLeave={onTooltipClose}
         >
           <span className="stock-name-text" ref={textRef}>{name}</span>
@@ -3359,7 +3472,9 @@ function StrategyTag({
         event.stopPropagation()
         openTooltip(event.currentTarget, true)
       }}
-      onMouseEnter={(event) => openTooltip(event.currentTarget)}
+      onMouseEnter={(event) => {
+        if (canHoverTooltip()) openTooltip(event.currentTarget)
+      }}
       onMouseLeave={onTooltipClose}
       tabIndex={0}
     >
@@ -3402,7 +3517,9 @@ function ResultBadge({
         event.stopPropagation()
         openTooltip(event.currentTarget, true)
       }}
-      onMouseEnter={(event) => openTooltip(event.currentTarget)}
+      onMouseEnter={(event) => {
+        if (canHoverTooltip()) openTooltip(event.currentTarget)
+      }}
       onMouseLeave={onTooltipClose}
       tabIndex={0}
     >
@@ -4931,7 +5048,9 @@ function MetricValue({
         openTooltip(event.currentTarget, true)
       }}
       onMouseEnter={(event) => {
-        if (!onlyWhenTruncated || isTruncated) openTooltip(event.currentTarget)
+        if (!onlyWhenTruncated || isTruncated) {
+          if (canHoverTooltip()) openTooltip(event.currentTarget)
+        }
       }}
       onMouseLeave={() => {
         if (!onlyWhenTruncated || isTruncated) onTooltipClose()
@@ -5957,7 +6076,9 @@ function TruncatedTrendCell({
         event.stopPropagation()
         openTooltip(event.currentTarget, true)
       }}
-      onMouseEnter={(event) => openTooltip(event.currentTarget)}
+      onMouseEnter={(event) => {
+        if (canHoverTooltip()) openTooltip(event.currentTarget)
+      }}
       onMouseLeave={onTooltipClose}
     >
       {cellBody}
@@ -6785,21 +6906,7 @@ function App() {
 
   const openFloatingTooltip = useCallback((tooltip: TooltipState) => {
     setActiveTooltip((current) => {
-      if (!tooltip.toggle) return tooltip
-      // Only dismiss on a second click/tap. Hover/focus opens must not count as the first tap.
-      const sameSource = Boolean(
-        tooltip.sourceKey
-        && current?.sourceKey
-        && current.sourceKey === tooltip.sourceKey
-        && current.toggle,
-      )
-      const sameFallback = Boolean(
-        current?.toggle
-        && current.text === tooltip.text
-        && Math.abs(current.x - tooltip.x) < 2
-        && Math.abs(current.y - tooltip.y) < 2,
-      )
-      if (sameSource || sameFallback) return null
+      if (tooltip.toggle && current && isSameTooltipSource(current, tooltip)) return null
       return tooltip
     })
   }, [])
@@ -10252,59 +10359,9 @@ function App() {
           </div>
 
           <div className="asset-summary-box" aria-label="현재 자산 요약">
-            {assetSummaryItems.map((item) => {
-              const itemClassName = `asset-summary-item ${item.strong ? 'strong' : ''}`.trim()
-              const detailTitle = item.detailTooltipRows ? undefined : item.detail
-              const detailTooltip = item.detailTooltipRows ? (
-                <span className="asset-summary-tooltip" role="tooltip">
-                  {item.detailTooltipRows.map((row) => (
-                    <span className="asset-summary-tooltip-row" key={row.label}>
-                      <span className="asset-summary-tooltip-label">{row.label}</span>
-                      <strong>{row.value}</strong>
-                    </span>
-                  ))}
-                </span>
-              ) : null
-              if (item.clickable) {
-                return (
-                  <button className={`${itemClassName} asset-summary-action`} key={item.label} type="button" onClick={item.action}>
-                    <span>{item.label}</span>
-                    <strong className="asset-summary-value asset-summary-button">{item.value}</strong>
-                    {item.detail && (
-                      <span
-                        className="asset-summary-detail-wrap"
-                        title={detailTitle}
-                        tabIndex={item.detailTooltipRows ? 0 : undefined}
-                        role={item.detailTooltipRows ? 'button' : undefined}
-                        aria-label={item.detailTooltipRows ? `${item.label} 상세` : undefined}
-                        onClick={item.detailTooltipRows ? (e) => e.stopPropagation() : undefined}
-                        onKeyDown={item.detailTooltipRows ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation() } } : undefined}
-                      >
-                        <small className="asset-summary-detail">{item.detail}</small>
-                      </span>
-                    )}
-                    {detailTooltip}
-                  </button>
-                )
-              }
-
-              return (
-                <div className={itemClassName} key={item.label}>
-                  <span>{item.label}</span>
-                  <strong className={`asset-summary-value ${item.tone ?? ''}`}>{item.value}</strong>
-                  {item.detail && (
-                    <span
-                      className="asset-summary-detail-wrap"
-                      tabIndex={0}
-                      title={detailTitle}
-                    >
-                      <small className="asset-summary-detail">{item.detail}</small>
-                    </span>
-                  )}
-                  {detailTooltip}
-                </div>
-              )
-            })}
+            {assetSummaryItems.map((item) => (
+              <AssetSummaryItem item={item} key={item.label} />
+            ))}
           </div>
 
           <SheetScrollSurface className="trading-log-scroll" wheelRef={tradingLogWheelRef} key={`trades-${homeSheetResetKey}`}>
