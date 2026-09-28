@@ -1395,6 +1395,37 @@
   min-width: 0;
 }
 
+.sheet-header-freeze {
+  position: fixed;
+  z-index: 50;
+  display: block;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--sheet-head);
+  box-shadow: 0 1px 0 var(--sheet-border), 0 6px 10px rgba(15, 23, 42, 0.08);
+  pointer-events: auto;
+}
+
+.sheet-header-freeze[hidden] {
+  display: none !important;
+}
+
+.sheet-header-freeze-inner {
+  overflow: hidden;
+  height: 100%;
+}
+
+.sheet-header-freeze table {
+  margin: 0;
+}
+
+.sheet-header-freeze th {
+  top: auto;
+}
+
 .trading-log-scroll {
   --trading-log-sheet-height: 1010px;
   flex: none;
@@ -6316,8 +6347,9 @@
     --trading-log-sheet-height: auto;
   }
 
-  /* Phone scroll belongs to the page. Horizontal scroll stays in sheet-x-scroll so
-     thead sticky can follow the viewport while the table body moves. */
+  /* Phone: page owns vertical scroll. Tables only scroll horizontally.
+     Do not use CSS sticky top here — overflow-x makes sticky attach to the
+     table box, which floats the header inside the rows. Freeze is JS. */
   .sheet-wrap.trading-log-scroll,
   .watchlist-sheet,
   .holding-sheet,
@@ -6333,14 +6365,6 @@
     background: var(--sheet-bg);
   }
 
-  .sheet-x-scroll {
-    overflow-x: auto;
-    overflow-y: visible;
-    overscroll-behavior: none;
-    -webkit-overflow-scrolling: auto;
-    touch-action: pan-x pan-y;
-  }
-
   .sheet-wrap.trading-log-scroll .sheet-x-scroll,
   .watchlist-sheet .sheet-x-scroll,
   .holding-sheet .sheet-x-scroll,
@@ -6350,33 +6374,18 @@
   .market-trends-sheet .sheet-x-scroll,
   .admin-logs-sheet .sheet-x-scroll {
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: hidden;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: auto;
     touch-action: pan-x pan-y;
   }
 
   .sheet-table th {
-    top: var(--sheet-sticky-top, 0px);
-    z-index: 6;
-  }
-
-  .value-analysis-table th:nth-child(1),
-  .technical-analysis-table th:nth-child(1),
-  .market-trends-table th:first-child,
-  .market-events-table .event-period-head,
-  .market-events-table .event-month-head,
-  .pinned-home-table th.home-name-header,
-  .pinned-home-table.trading-log-table th:nth-child(2),
-  .pinned-home-table.watchlist-table.readonly-home-table th:nth-child(2),
-  .pinned-home-table.holding-table.readonly-home-table th:nth-child(2),
-  .pinned-home-table.watchlist-table.editable-home-table th:nth-child(3),
-  .pinned-home-table.holding-table.editable-home-table th:nth-child(3) {
-    z-index: 10;
+    top: auto;
   }
 
   .market-events-table thead tr:nth-child(2) th {
-    top: calc(var(--sheet-sticky-top, 0px) + 42px);
+    top: auto;
   }
 
   .value-analysis-panel {

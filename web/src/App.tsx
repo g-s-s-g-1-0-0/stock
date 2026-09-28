@@ -2129,6 +2129,17 @@ function lockHorizontalOverscroll(event: Event) {
 
 // React의 onWheel은 루트에 passive로 등록돼 내부 preventDefault가 무시되고 경고를 쏟는다.
 // 비-passive 네이티브 wheel/touchmove 리스너를 직접 붙여 가장자리 스크롤 제어를 정상 동작시킨다.
+const MOBILE_SHEET_MAX_WIDTH = 760
+
+function isMobileSheetViewport() {
+  return typeof window !== 'undefined' && window.matchMedia(`(max-width: ${MOBILE_SHEET_MAX_WIDTH}px)`).matches
+}
+
+function appHeaderFreezeTop() {
+  const header = document.querySelector<HTMLElement>('.app-header')
+  return header ? Math.round(header.getBoundingClientRect().bottom) : 0
+}
+
 function SheetScrollSurface({
   className = '',
   wheelRef,
@@ -2138,11 +2149,193 @@ function SheetScrollSurface({
   wheelRef?: (node: HTMLDivElement | null) => void
   children: ReactNode
 }) {
+  const wrapRef = useRef<HTMLDivElement | null>(null)
+  const xScrollRef = useRef<HTMLDivElement | null>(null)
+  const freezeRef = useRef<HTMLDivElement | null>(null)
+  const freezeInnerRef = useRef<HTMLDivElement | null>(null)
+
+  const setXScrollNode = useCallback((node: HTMLDivElement | null) => {
+    xScrollRef.current = node
+    wheelRef?.(node)
+  }, [wheelRef])
+
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current
+    const scroller = xScrollRef.current
+    const freeze = freezeRef.current
+    const freezeInner = freezeInnerRef.current
+    if (!wrap || !scroller || !freeze || !freezeInner) return
+
+    let cloneTable: HTMLTableElement | null = null
+    let frame = 0
+    let touchX = 0
+
+    const sourceTable = () => scroller.querySelector<HTMLTableElement>('table.sheet-table')
+
+    const rebuildClone = () => {
+      const table = sourceTable()
+      const thead = table?.tHead
+      freezeInner.replaceChildren()
+      cloneTable = null
+      if (!table || !thead) return
+      const cloned = table.cloneNode(false) as HTMLTableElement
+      cloned.className = table.className
+      cloned.setAttribute('aria-hidden', 'true')
+      cloned.appendChild(thead.cloneNode(true))
+      freezeInner.appendChild(cloned)
+      cloneTable = cloned
+    }
+
+    const hideFreeze = () => {
+      freeze.hidden = true
+    }
+
+    const sync = () => {
+      if (!isMobileSheetViewport()) {
+        hideFreeze()
+        return
+      }
+
+      const table = sourceTable()
+      const thead = table?.tHead
+      if (!table || !thead || thead.offsetHeight === 0) {
+        hideFreeze()
+        return
+      }
+
+      const sourceCellCount = thead.querySelectorAll('th').length
+      const cloneCellCount = cloneTable?.querySelectorAll('th').length ?? 0
+      if (!cloneTable || cloneTable.className !== table.className || cloneCellCount !== sourceCellCount) {
+        rebuildClone()
+      }
+      if (!cloneTable) {
+        hideFreeze()
+        return
+      }
+
+      const freezeTop = appHeaderFreezeTop()
+      const wrapRect = wrap.getBoundingClientRect()
+      const theadRect = thead.getBoundingClientRect()
+      const tableRect = table.getBoundingClientRect()
+      const headHeight = Math.round(theadRect.height)
+      const stuck = theadRect.top < freezeTop + 0.5 && tableRect.bottom > freezeTop + headHeight + 0.5
+      if (!stuck) {
+        hideFreeze()
+        return
+      }
+
+      freeze.hidden = false
+      freeze.style.top = `${freezeTop}px`
+      freeze.style.left = `${Math.round(wrapRect.left + wrap.clientLeft)}px`
+      freeze.style.width = `${Math.round(wrap.clientWidth)}px`
+      freeze.style.height = `${headHeight}px`
+
+      cloneTable.style.width = `${table.offsetWidth}px`
+      cloneTable.style.minWidth = `${table.offsetWidth}px`
+      const sourceCells = thead.querySelectorAll('th')
+      const cloneCells = cloneTable.querySelectorAll('th')
+      sourceCells.forEach((source, index) => {
+        const target = cloneCells[index] as HTMLElement | undefined
+        if (!target) return
+        const width = source.getBoundingClientRect().width
+        target.style.boxSizing = 'border-box'
+        target.style.width = `${width}px`
+        target.style.minWidth = `${width}px`
+        target.style.maxWidth = `${width}px`
+        target.style.height = `${source.getBoundingClientRect().height}px`
+      })
+      freezeInner.scrollLeft = scroller.scrollLeft
+    }
+
+    const scheduleSync = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        sync()
+      })
+    }
+
+    rebuildClone()
+    sync()
+
+    const onFreezeClick = (event: MouseEvent) => {
+      const table = sourceTable()
+      const thead = table?.tHead
+      const cloneThead = cloneTable?.tHead
+      if (!thead || !cloneThead) return
+      const cloneTh = (event.target as HTMLElement | null)?.closest('th')
+      if (!cloneTh || !cloneThead.contains(cloneTh)) return
+      const row = cloneTh.parentElement as HTMLTableRowElement | null
+      if (!row) return
+      const rowIndex = Array.from(cloneThead.rows).indexOf(row)
+      const cellIndex = Array.from(row.cells).indexOf(cloneTh)
+      const originalTh = thead.rows[rowIndex]?.cells[cellIndex]
+      const originalButton = originalTh?.querySelector('button')
+      if (originalButton instanceof HTMLElement) {
+        event.preventDefault()
+        originalButton.click()
+      }
+    }
+
+    const onFreezeTouchStart = (event: globalThis.TouchEvent) => {
+      if (event.touches.length !== 1) return
+      touchX = event.touches[0].clientX
+    }
+    const onFreezeTouchMove = (event: globalThis.TouchEvent) => {
+      if (event.touches.length !== 1) return
+      const nextX = event.touches[0].clientX
+      scroller.scrollLeft += touchX - nextX
+      touchX = nextX
+      freezeInner.scrollLeft = scroller.scrollLeft
+    }
+
+    window.addEventListener('scroll', scheduleSync, { passive: true, capture: true })
+    window.addEventListener('resize', scheduleSync)
+    scroller.addEventListener('scroll', scheduleSync, { passive: true })
+    freeze.addEventListener('click', onFreezeClick)
+    freeze.addEventListener('touchstart', onFreezeTouchStart, { passive: true })
+    freeze.addEventListener('touchmove', onFreezeTouchMove, { passive: true })
+    window.visualViewport?.addEventListener('resize', scheduleSync)
+    window.visualViewport?.addEventListener('scroll', scheduleSync)
+    const observer = new ResizeObserver(scheduleSync)
+    observer.observe(wrap)
+    observer.observe(scroller)
+    const observedTable = sourceTable()
+    if (observedTable) observer.observe(observedTable)
+    const mutation = new MutationObserver(() => {
+      rebuildClone()
+      scheduleSync()
+    })
+    mutation.observe(scroller, { childList: true })
+    if (observedTable) mutation.observe(observedTable, { attributes: true, attributeFilter: ['class'] })
+    if (observedTable?.tHead) mutation.observe(observedTable.tHead, { childList: true, subtree: true, attributes: true })
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', scheduleSync, true)
+      window.removeEventListener('resize', scheduleSync)
+      scroller.removeEventListener('scroll', scheduleSync)
+      freeze.removeEventListener('click', onFreezeClick)
+      freeze.removeEventListener('touchstart', onFreezeTouchStart)
+      freeze.removeEventListener('touchmove', onFreezeTouchMove)
+      window.visualViewport?.removeEventListener('resize', scheduleSync)
+      window.visualViewport?.removeEventListener('scroll', scheduleSync)
+      observer.disconnect()
+      mutation.disconnect()
+    }
+  }, [wheelRef])
+
   return (
-    <div className={`sheet-wrap ${className}`.trim()}>
-      <div className="sheet-x-scroll" ref={wheelRef}>
+    <div className={`sheet-wrap ${className}`.trim()} ref={wrapRef}>
+      <div className="sheet-x-scroll" ref={setXScrollNode}>
         {children}
       </div>
+      {typeof document !== 'undefined' && createPortal(
+        <div className="sheet-header-freeze" hidden ref={freezeRef}>
+          <div className="sheet-header-freeze-inner" ref={freezeInnerRef} />
+        </div>,
+        document.body,
+      )}
     </div>
   )
 }
@@ -6848,26 +7041,6 @@ function App() {
   useEffect(() => {
     apiMetasRef.current = apiMetas
   }, [apiMetas])
-
-  useEffect(() => {
-    const updateSheetStickyTop = () => {
-      if (window.innerWidth > 760) {
-        document.documentElement.style.removeProperty('--sheet-sticky-top')
-        return
-      }
-      const header = document.querySelector<HTMLElement>('.app-header')
-      const top = header ? Math.ceil(header.getBoundingClientRect().height) : 0
-      document.documentElement.style.setProperty('--sheet-sticky-top', `${top}px`)
-    }
-
-    updateSheetStickyTop()
-    window.addEventListener('resize', updateSheetStickyTop)
-    window.addEventListener('orientationchange', updateSheetStickyTop)
-    return () => {
-      window.removeEventListener('resize', updateSheetStickyTop)
-      window.removeEventListener('orientationchange', updateSheetStickyTop)
-    }
-  }, [])
 
   async function ensureProfile(session: UserSession) {
     if (!supabase) return
