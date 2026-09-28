@@ -1435,17 +1435,6 @@
   top: auto;
 }
 
-.sheet-header-freeze .market-trends-table thead th::before {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 1px;
-  background: var(--sheet-border);
-  content: '';
-  pointer-events: none;
-}
-
 .trading-log-scroll {
   --trading-log-sheet-height: 1010px;
   flex: none;
@@ -2006,23 +1995,6 @@
   min-width: 3604px;
   border-collapse: separate;
   border-spacing: 0;
-}
-
-.market-trends-table thead th {
-  z-index: 6;
-  box-shadow: none;
-}
-
-.market-trends-table thead th::before {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 2;
-  height: 1px;
-  background: var(--sheet-border);
-  content: '';
-  pointer-events: none;
 }
 
 .admin-market-trends-table {
