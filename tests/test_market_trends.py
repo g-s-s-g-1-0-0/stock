@@ -99,6 +99,16 @@ class MarketTrendsTest(unittest.TestCase):
 
         self.assertEqual("이번 주 전체 시장 분위기는 우주항공과 로봇·자동화 분야도 주목을 받고 있습니다.", normalized)
 
+    def test_market_trend_summary_normalizes_noun_mood_endings(self) -> None:
+        summary = (
+            "인공지능과 데이터센터 인프라가 주도하며 전력·전기·네트워크 부문이 가속화되는 가운데, "
+            "전통적 성장산업은 상대적으로 둔화된 분위기."
+        )
+
+        normalized = self.pipeline.normalize_market_trend_summary(summary)
+
+        self.assertTrue(normalized.endswith("둔화된 분위기입니다."))
+
     def test_clip_market_trend_summary_keeps_one_short_sentence(self) -> None:
         summary = (
             "이번 주 전체 시장 분위기는 기술과 금융 분야에서 새로운 동향과 발전이 나타남에 따라 "

@@ -1391,6 +1391,10 @@
   background: var(--sheet-bg);
 }
 
+.sheet-x-scroll {
+  min-width: 0;
+}
+
 .trading-log-scroll {
   --trading-log-sheet-height: 1010px;
   flex: none;
@@ -6312,10 +6316,8 @@
     --trading-log-sheet-height: auto;
   }
 
-  /* Phone scroll belongs to the page. Tables grow with their rows, while retaining
-     only the horizontal viewport required to inspect their wide columns.
-     Keep overscroll locked: iOS rubber-bands a nested overflow-x scroller at the
-     left/right edge and flashes the sheet background unless this stays none. */
+  /* Phone scroll belongs to the page. Horizontal scroll stays in sheet-x-scroll so
+     thead sticky can follow the viewport while the table body moves. */
   .sheet-wrap.trading-log-scroll,
   .watchlist-sheet,
   .holding-sheet,
@@ -6327,11 +6329,54 @@
     flex: none;
     height: auto;
     max-height: none;
+    overflow: visible;
+    background: var(--sheet-bg);
+  }
+
+  .sheet-x-scroll {
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: visible;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: auto;
     touch-action: pan-x pan-y;
+  }
+
+  .sheet-wrap.trading-log-scroll .sheet-x-scroll,
+  .watchlist-sheet .sheet-x-scroll,
+  .holding-sheet .sheet-x-scroll,
+  .value-analysis-sheet .sheet-x-scroll,
+  .technical-analysis-sheet .sheet-x-scroll,
+  .market-events-sheet .sheet-x-scroll,
+  .market-trends-sheet .sheet-x-scroll,
+  .admin-logs-sheet .sheet-x-scroll {
+    overflow-x: auto;
+    overflow-y: visible;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+    touch-action: pan-x pan-y;
+  }
+
+  .sheet-table th {
+    top: var(--sheet-sticky-top, 0px);
+    z-index: 6;
+  }
+
+  .value-analysis-table th:nth-child(1),
+  .technical-analysis-table th:nth-child(1),
+  .market-trends-table th:first-child,
+  .market-events-table .event-period-head,
+  .market-events-table .event-month-head,
+  .pinned-home-table th.home-name-header,
+  .pinned-home-table.trading-log-table th:nth-child(2),
+  .pinned-home-table.watchlist-table.readonly-home-table th:nth-child(2),
+  .pinned-home-table.holding-table.readonly-home-table th:nth-child(2),
+  .pinned-home-table.watchlist-table.editable-home-table th:nth-child(3),
+  .pinned-home-table.holding-table.editable-home-table th:nth-child(3) {
+    z-index: 10;
+  }
+
+  .market-events-table thead tr:nth-child(2) th {
+    top: calc(var(--sheet-sticky-top, 0px) + 42px);
   }
 
   .value-analysis-panel {

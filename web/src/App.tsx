@@ -2129,6 +2129,24 @@ function lockHorizontalOverscroll(event: Event) {
 
 // React의 onWheel은 루트에 passive로 등록돼 내부 preventDefault가 무시되고 경고를 쏟는다.
 // 비-passive 네이티브 wheel/touchmove 리스너를 직접 붙여 가장자리 스크롤 제어를 정상 동작시킨다.
+function SheetScrollSurface({
+  className = '',
+  wheelRef,
+  children,
+}: {
+  className?: string
+  wheelRef?: (node: HTMLDivElement | null) => void
+  children: ReactNode
+}) {
+  return (
+    <div className={`sheet-wrap ${className}`.trim()}>
+      <div className="sheet-x-scroll" ref={wheelRef}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 function useEdgeScrollWheelRef(externalRef?: RefObject<HTMLDivElement | null>) {
   const cleanupRef = useRef<(() => void) | null>(null)
   return useCallback((node: HTMLDivElement | null) => {
@@ -4807,7 +4825,7 @@ function ValueAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet" ref={sheetWheelRef}>
+        <SheetScrollSurface className="value-analysis-sheet" wheelRef={sheetWheelRef}>
           <table className="sheet-table value-analysis-table">
           <thead>
             <tr>
@@ -4908,7 +4926,7 @@ function ValueAnalysisPage({
             ))}
           </tbody>
           </table>
-        </div>
+        </SheetScrollSurface>
       )}
     </section>
   )
@@ -4945,8 +4963,7 @@ function TechnicalAnalysisPage({
   const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleStocks.length, 0)
   const isEmpty = stocks.length === 0
   const sheetWheelRef = useEdgeScrollWheelRef()
-  // 펼쳐보기에는 'QQQ 이격도 N%' 근거가 붙은 전체 값을 쓰고, 접힌 요약 칩은 짧은 라벨만 남긴다.
-  const regimeSnapshot = (marketSnapshot.find(([label]) => label === '장 상태')?.[1] ?? '횡보장 고점').replace(/\s*\(.*\)\s*$/, '')
+  const regimeMarketLabel = marketSnapshot.find(([label]) => label === '장 상태')?.[1] ?? '횡보장 고점'
   const vixSnapshot = marketSnapshot.find(([label]) => label === 'VIX (변동성지수) 당일·전날')?.[1] ?? '16.99 / 16.89'
   const fearGreedSnapshot = marketSnapshot.find(([label]) => label === 'CNN 공포·탐욕지수 당일·전날')?.[1]
   const tnxSnapshot = marketSnapshot.find(([label]) => label === '미국 10년물 금리')?.[1] ?? '4.378'
@@ -4982,7 +4999,7 @@ function TechnicalAnalysisPage({
       >
         <summary>
           <span>공통 지표</span>
-          <strong>장 상태 {regimeSnapshot}</strong>
+          <strong>장 상태 {regimeMarketLabel}</strong>
           <strong>VIX (변동성지수) {vixSnapshot}</strong>
           {fearGreedSnapshot && <strong>CNN 공포·탐욕지수 {fearGreedSnapshot}</strong>}
           <strong>{qqqSummary}</strong>
@@ -5036,7 +5053,7 @@ function TechnicalAnalysisPage({
           </div>
         </div>
       ) : (
-        <div className="sheet-wrap value-analysis-sheet technical-analysis-sheet" ref={sheetWheelRef}>
+        <SheetScrollSurface className="value-analysis-sheet technical-analysis-sheet" wheelRef={sheetWheelRef}>
           <table className="sheet-table value-analysis-table technical-analysis-table">
             <thead>
               <tr>
@@ -5138,7 +5155,7 @@ function TechnicalAnalysisPage({
               ))}
             </tbody>
           </table>
-        </div>
+        </SheetScrollSurface>
       )}
       {selectedTrendChart && (
         <TrendChartModal
@@ -5566,7 +5583,7 @@ function MarketEventsPage({
         </div>
       )}
 
-      <div className="sheet-wrap market-events-sheet" ref={sheetWheelRef}>
+      <SheetScrollSurface className="market-events-sheet" wheelRef={sheetWheelRef}>
         <table className="sheet-table market-events-table">
           <thead>
             <tr>
@@ -5656,7 +5673,7 @@ function MarketEventsPage({
             ))}
           </tbody>
         </table>
-      </div>
+      </SheetScrollSurface>
     </section>
   )
 }
@@ -5836,7 +5853,7 @@ function MarketTrendsPage({
         </div>
       )}
 
-      <div className="sheet-wrap market-trends-sheet" ref={sheetWheelRef}>
+      <SheetScrollSurface className="market-trends-sheet" wheelRef={sheetWheelRef}>
         <table className={`sheet-table market-trends-table ${isAdmin ? 'admin-market-trends-table' : ''}`}>
           <colgroup>
             {isAdmin && <col className="trend-select-col" />}
@@ -5903,7 +5920,7 @@ function MarketTrendsPage({
             ))}
           </tbody>
         </table>
-      </div>
+      </SheetScrollSurface>
       {totalPages > 1 && (
         <div className="market-trends-pagination" aria-label="시장 트렌드 페이지">
           <button disabled={safePage === 1} type="button" onClick={() => setPage((current) => Math.max(1, current - 1))}>
@@ -6221,7 +6238,7 @@ function AdminLogsPage({
         <span>{activeTab.description}</span>
       </div>
 
-      <div className={`sheet-wrap admin-logs-sheet ${filteredLogs.length === 0 ? 'admin-logs-sheet-empty' : ''}`} ref={sheetWheelRef}>
+      <SheetScrollSurface className={`admin-logs-sheet ${filteredLogs.length === 0 ? 'admin-logs-sheet-empty' : ''}`} wheelRef={sheetWheelRef}>
         {filteredLogs.length === 0 ? (
           <div className="board-empty-state admin-log-empty-state">
             <strong>아직 이 작업의 실행 로그가 없습니다.</strong>
@@ -6271,7 +6288,7 @@ function AdminLogsPage({
             </tbody>
           </table>
         )}
-      </div>
+      </SheetScrollSurface>
       {filteredLogs.length > ADMIN_LOGS_PAGE_SIZE && (
         <div className="admin-log-pagination">
           <span>{filteredLogs.length}개 중 {(currentLogPage - 1) * ADMIN_LOGS_PAGE_SIZE + 1}-{Math.min(currentLogPage * ADMIN_LOGS_PAGE_SIZE, filteredLogs.length)}개 표시</span>
@@ -6831,6 +6848,26 @@ function App() {
   useEffect(() => {
     apiMetasRef.current = apiMetas
   }, [apiMetas])
+
+  useEffect(() => {
+    const updateSheetStickyTop = () => {
+      if (window.innerWidth > 760) {
+        document.documentElement.style.removeProperty('--sheet-sticky-top')
+        return
+      }
+      const header = document.querySelector<HTMLElement>('.app-header')
+      const top = header ? Math.ceil(header.getBoundingClientRect().height) : 0
+      document.documentElement.style.setProperty('--sheet-sticky-top', `${top}px`)
+    }
+
+    updateSheetStickyTop()
+    window.addEventListener('resize', updateSheetStickyTop)
+    window.addEventListener('orientationchange', updateSheetStickyTop)
+    return () => {
+      window.removeEventListener('resize', updateSheetStickyTop)
+      window.removeEventListener('orientationchange', updateSheetStickyTop)
+    }
+  }, [])
 
   async function ensureProfile(session: UserSession) {
     if (!supabase) return
@@ -10123,7 +10160,7 @@ function App() {
             })}
           </div>
 
-          <div className="sheet-wrap trading-log-scroll" key={`trades-${homeSheetResetKey}`} ref={tradingLogWheelRef}>
+          <SheetScrollSurface className="trading-log-scroll" wheelRef={tradingLogWheelRef} key={`trades-${homeSheetResetKey}`}>
             <table
               className={`sheet-table trading-log-table ${isLongTermInvestor ? 'long-term-trading-log-table' : ''} ${isTradingPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
               style={tradingPinnedStyle}
@@ -10271,7 +10308,7 @@ function App() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </SheetScrollSurface>
         </section>
 
         <div className="right-column">
@@ -10366,7 +10403,7 @@ function App() {
 
             {addStockInlineControl}
 
-            <div className="sheet-wrap watchlist-sheet" key={`watchlist-${homeSheetResetKey}`} ref={watchlistSheetWheelRef}>
+            <SheetScrollSurface className="watchlist-sheet" wheelRef={watchlistSheetWheelRef} key={`watchlist-${homeSheetResetKey}`}>
               {tableStocks.length === 0 ? (
                 <div className="watchlist-empty-panel">
                   <div className="empty-watchlist">
@@ -10521,7 +10558,7 @@ function App() {
                   </tbody>
                 </table>
               )}
-            </div>
+            </SheetScrollSurface>
           </section>
 
           <section className={`panel ${shouldDimPanelsForFirstVisitGuide ? 'dimmed-panel' : ''}`}>
@@ -10573,7 +10610,7 @@ function App() {
               </div>
             </div>
 
-            <div className="sheet-wrap holding-sheet" key={`holdings-${homeSheetResetKey}`} ref={holdingSheetWheelRef}>
+            <SheetScrollSurface className="holding-sheet" wheelRef={holdingSheetWheelRef} key={`holdings-${homeSheetResetKey}`}>
               <table
                 className={`sheet-table holding-table ${isLongTermInvestor ? 'long-term-holding-table' : ''} ${canManageHoldingTrades ? 'editable-home-table' : 'readonly-home-table'} ${isHoldingPinned ? 'pinned-home-table' : 'unpinned-home-table'}`}
                 style={holdingPinnedStyle}
@@ -10714,7 +10751,7 @@ function App() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </SheetScrollSurface>
           </section>
         </div>
       </section>

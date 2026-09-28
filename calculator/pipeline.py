@@ -1787,9 +1787,12 @@ def normalize_market_trend_summary(value: Any) -> str:
         (r"이어졌다\.$", "이어졌습니다."),
         (r"받았다\.$", "받았습니다."),
         (r"받고 있다\.$", "받고 있습니다."),
+        (r"둔화된 분위기\.$", "둔화된 분위기입니다."),
     ]
     for pattern, replacement in replacements:
         sanitized = re.sub(pattern, replacement, sanitized)
+    if sanitized.endswith(".") and not re.search(r"(습니다|입니다)\.$", sanitized):
+        sanitized = re.sub(r"분위기\.$", "분위기입니다.", sanitized)
     return sanitized
 
 
