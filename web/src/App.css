@@ -1782,8 +1782,19 @@
   font-weight: 400;
 }
 
-.market-events-sheet {
+.sheet-wrap.market-events-sheet {
+  display: block;
+  flex: none;
   height: 616px;
+  overflow: auto;
+}
+
+.market-events-sheet .sheet-x-scroll {
+  display: block;
+  flex: none;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
 }
 
 .market-events-table {
@@ -1978,6 +1989,10 @@
 .market-trends-table {
   table-layout: fixed;
   min-width: 3604px;
+}
+
+.market-trends-table thead th {
+  box-shadow: 0 1px 0 var(--sheet-border);
 }
 
 .admin-market-trends-table {
@@ -6359,7 +6374,8 @@
   .technical-analysis-sheet,
   .market-events-sheet,
   .market-trends-sheet,
-  .admin-logs-sheet {
+  .admin-logs-sheet,
+  .sheet-wrap.market-events-sheet {
     flex: none;
     height: auto;
     max-height: none;
