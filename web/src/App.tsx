@@ -844,6 +844,10 @@ function notificationSettingsDeepLinkMessage() {
   return ''
 }
 
+function pendingNotificationUnsubscribeToken() {
+  return activePageHashParams().get('unsubscribeToken') ?? ''
+}
+
 function hasNotificationSettingsDeepLink() {
   const params = activePageHashParams()
   return params.get('settings') === 'notifications' || params.get('notification') === 'unsubscribed'
@@ -6708,6 +6712,7 @@ function App() {
   const holdingSheetWheelRef = useEdgeScrollWheelRef(holdingSheetRef)
   const apiMetasRef = useRef<AppDataMetas>(apiMetas)
   const resetSyncGenerationRef = useRef(0)
+  const processingUnsubscribeTokenRef = useRef('')
   const operatorWatchlistRemoteUpdatedAtRef = useRef<number | null>(null)
   const personalWatchlistRemoteUpdatedAtRef = useRef<number | null>(null)
   // 이 세션에서 사용자가 직접 삭제한 개인 거래 키. 저장 병합 시 서버 엔진 항목이 되살아나지 않게 한다.
@@ -7764,9 +7769,12 @@ function App() {
       }
 
       const nextSession = sessionFromSupabaseUser(user)
+      const unsubscribeToken = pendingNotificationUnsubscribeToken()
+      if (unsubscribeToken && processingUnsubscribeTokenRef.current === unsubscribeToken) return
       const storedTestSession = import.meta.env.DEV && isConfiguredAdminEmail(nextSession.email)
         ? readStoredLocalTestSession()
         : null
+      if (unsubscribeToken && !storedTestSession) processingUnsubscribeTokenRef.current = unsubscribeToken
       const effectiveSession = storedTestSession ?? nextSession
       setUserSession(effectiveSession)
       setCanUseAccountSwitch(import.meta.env.DEV && isConfiguredAdminEmail(nextSession.email))
@@ -7780,7 +7788,7 @@ function App() {
       if (hasNotificationSettingsDeepLink()) {
         setIsLoginOpen(true)
         setAuthMode('login')
-        setAuthInfoMessage(notificationSettingsDeepLinkMessage())
+        setAuthInfoMessage(unsubscribeToken ? '' : notificationSettingsDeepLinkMessage())
       } else if (!keepLoginModal && !authSuccessMessage) {
         setIsLoginOpen(false)
         setAuthMode('login')
@@ -7790,6 +7798,35 @@ function App() {
         storeLocalTestSession(null, { allowProduction: true })
         await ensureProfile(nextSession)
         await loadServiceData(nextSession)
+        if (unsubscribeToken) {
+          try {
+            const { data: authData } = await authClient.auth.getSession()
+            const response = await fetch('/api/notifications/unsubscribe', {
+              method: 'POST',
+              headers: {
+                'content-type': 'application/json',
+                authorization: `Bearer ${authData.session?.access_token ?? ''}`,
+              },
+              body: JSON.stringify({ token: unsubscribeToken }),
+            })
+            const result = await response.json().catch(() => ({})) as { error?: string; key?: string; ok?: boolean }
+            if (!response.ok || !result.ok) throw new Error(result.error || '알림 해제를 완료하지 못했습니다.')
+            await loadServiceData(nextSession)
+            const preferenceName = result.key === 'weeklyTrendReport'
+              ? '주간 트렌드 리포트'
+              : result.key === 'earningsDayBefore'
+                ? '실적 발표 전날 알림'
+                : '이메일 알림'
+            setAuthInfoMessage(`${preferenceName} 설정을 해제했습니다.`)
+            setIsLoginOpen(true)
+            const params = new URLSearchParams({ settings: 'notifications', notification: 'unsubscribed' })
+            window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#home?${params.toString()}`)
+          } catch (error) {
+            processingUnsubscribeTokenRef.current = ''
+            setAuthInfoMessage(error instanceof Error ? error.message : '알림 해제를 완료하지 못했습니다.')
+            setIsLoginOpen(true)
+          }
+        }
         return
       }
       applyLocalTestSessionData(storedTestSession)
@@ -8781,6 +8818,11 @@ function App() {
     setUserSession(nextSession)
     await ensureProfile(nextSession)
     await loadServiceData(nextSession)
+    if (pendingNotificationUnsubscribeToken()) {
+      setLoginError('')
+      setAuthMode('login')
+      return
+    }
     setSelectedTickers([])
     setSelectedHoldingTradeKeys([])
     clearAuthForm()
@@ -10817,6 +10859,9 @@ function App() {
               ×
             </button>
             <h3>{userSession && authMode !== 'reset' ? '내 계정' : authMode === 'recover' ? '비밀번호 찾기' : authMode === 'reset' ? '비밀번호 변경' : '로그인'}</h3>
+            {!userSession && pendingNotificationUnsubscribeToken() && (
+              <span className="field-message field-message-note">로그인하면 이 이메일의 알림 설정을 자동으로 해제합니다.</span>
+            )}
             {userSession && authMode !== 'reset' ? (
               <>
                 {authInfoMessage && (

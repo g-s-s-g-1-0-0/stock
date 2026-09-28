@@ -131,27 +131,48 @@ function appOrigin(req) {
   return host ? `${proto}://${host}` : ''
 }
 
-function redirectToSettings(req, res, status) {
+function redirectToSettings(req, res, token) {
   const origin = appOrigin(req)
   if (!origin) {
-    return json(res, 200, { ok: status === 'unsubscribed', status })
+    return json(res, 200, { ok: true, status: 'pending' })
   }
-  const params = new URLSearchParams({ settings: 'notifications', notification: status })
+  const params = new URLSearchParams({ settings: 'notifications', unsubscribeToken: token })
   res.statusCode = 302
   res.setHeader('location', `${origin}/#home?${params.toString()}`)
   res.end()
 }
 
-export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    res.setHeader('allow', 'GET')
-    return json(res, 405, { error: 'Method not allowed.' })
-  }
+async function authenticatedUserId(req) {
+  const authorization = String(req.headers.authorization || '')
+  if (!/^Bearer\s+\S+/i.test(authorization)) throw new Error('로그인한 뒤 알림 해제를 완료해 주세요.')
+  const { supabaseUrl, serviceKey } = supabaseConfig()
+  const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    headers: { apikey: serviceKey, authorization, accept: 'application/json' },
+  })
+  const user = await response.json().catch(() => null)
+  if (!response.ok || !user?.id) throw new Error('로그인한 뒤 알림 해제를 완료해 주세요.')
+  return String(user.id)
+}
 
+export default async function handler(req, res) {
   try {
-    const { ownerId, key } = verifyToken(req.query?.token)
-    await disableNotification(ownerId, key)
-    return redirectToSettings(req, res, 'unsubscribed')
+    if (req.method === 'GET') {
+      const token = String(req.query?.token || '')
+      verifyToken(token)
+      return redirectToSettings(req, res, token)
+    }
+    if (req.method === 'POST') {
+      const { ownerId, key } = verifyToken(req.body?.token)
+      const authenticatedId = await authenticatedUserId(req)
+      if (authenticatedId !== ownerId) {
+        res.setHeader('allow', 'GET, POST')
+        return json(res, 403, { error: '메일 알림을 받은 계정으로 로그인해 주세요.' })
+      }
+      await disableNotification(ownerId, key)
+      return json(res, 200, { ok: true, status: 'unsubscribed', key })
+    }
+    res.setHeader('allow', 'GET, POST')
+    return json(res, 405, { error: 'Method not allowed.' })
   } catch (error) {
     return json(res, 400, {
       error: error instanceof Error ? error.message : '알림 수신 해제에 실패했습니다.',
