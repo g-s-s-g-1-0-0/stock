@@ -2,17 +2,14 @@
   "meta": {
     "kind": "market-events",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-09-27T18:49:28+00:00",
-    "lastSuccessfulRun": "2026-08-21T19:09:15+09:00",
-    "failedReason": "시장 주요 이벤트 검증에 수동 확인이 필요한 항목이 있습니다: BLS 고용보고서 발표 2026년 공식 일정에서 검증 가능한 발표일을 찾지 못했습니다. (source=wayback:https://web.archive.org/web/20260903124341if_/https://www.bls.gov/schedule/news_release/empsit.htm); BLS PPI 발표 공식 일정 조회 실패: live=HTTP Error 403: Forbidden; wayback snapshot unavailable",
+    "updatedAt": "2026-09-28T02:51:21+00:00",
+    "lastSuccessfulRun": "2026-09-28T02:51:21+00:00",
+    "failedReason": null,
     "verification": {
-      "checkedAt": "2026-09-27T18:49:28+00:00",
+      "checkedAt": "2026-09-28T02:51:21+00:00",
       "sourcePolicy": "official-only-auto-update",
       "autoUpdated": [],
-      "needsManualReview": [
-        "BLS 고용보고서 발표 2026년 공식 일정에서 검증 가능한 발표일을 찾지 못했습니다. (source=wayback:https://web.archive.org/web/20260903124341if_/https://www.bls.gov/schedule/news_release/empsit.htm)",
-        "BLS PPI 발표 공식 일정 조회 실패: live=HTTP Error 403: Forbidden; wayback snapshot unavailable"
-      ],
+      "needsManualReview": [],
       "sources": {
         "fomc": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm",
         "bls": [
