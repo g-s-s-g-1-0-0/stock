@@ -2041,44 +2041,18 @@ function stockSearchRank(stock: Stock, normalizedQuery: string) {
   return 99
 }
 
-const SCROLL_GESTURE_GAP_MS = 80
-let lastWheelTimestamp = 0
-let lastWheelAbsDeltaY = 0
-let releaseScrollToPage = false
-
 function releaseVerticalScrollAtEdge(event: globalThis.WheelEvent) {
   const container = event.currentTarget as HTMLElement | null
   if (!container) return
-  if (Math.abs(event.deltaY) < Math.abs(event.deltaX) || container.scrollHeight <= container.clientHeight) return
-
-  const now = event.timeStamp
-  const absDeltaY = Math.abs(event.deltaY)
-  const gap = now - lastWheelTimestamp
-  lastWheelTimestamp = now
+  if (Math.abs(event.deltaY) < Math.abs(event.deltaX)) return
+  if (container.scrollHeight - container.clientHeight <= 1) return
 
   const isAtTop = container.scrollTop <= 0
-  const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight
+  const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight - 1
   const atEdgeInScrollDirection = (event.deltaY < 0 && isAtTop) || (event.deltaY > 0 && isAtBottom)
-
-  if (!atEdgeInScrollDirection) {
-    // The table still has room: let it scroll, and require a fresh push to move the page later.
-    releaseScrollToPage = false
-    lastWheelAbsDeltaY = absDeltaY
-    return
-  }
-
-  // Pinned at the edge. Inertia from the gesture that scrolled the table here keeps firing with a
-  // steadily decaying deltaY, so we swallow it (the rows stay readable). The page only takes over
-  // on a clearly intentional new push, detected either by a brief pause or by deltaY jumping back
-  // up above the decaying momentum tail. This makes "scroll to the end, then scroll again" reliable
-  // without waiting for inertia to fully die out.
-  const isFreshPush = gap > SCROLL_GESTURE_GAP_MS || absDeltaY > lastWheelAbsDeltaY * 1.5 + 4
-  lastWheelAbsDeltaY = absDeltaY
-  if (isFreshPush) releaseScrollToPage = true
+  if (!atEdgeInScrollDirection) return
 
   event.preventDefault()
-  if (!releaseScrollToPage) return
-
   const activeElement = document.activeElement
   if (activeElement instanceof HTMLElement && container.contains(activeElement)) {
     activeElement.blur()
