@@ -6734,3 +6734,9 @@ body.guest-personal-view .sheet-header-freeze {
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 1024px) {
+  .app-header > .refresh-data-button {
+    display: none !important;
+  }
+}
