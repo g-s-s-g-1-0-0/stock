@@ -6038,6 +6038,10 @@ body.guest-personal-view .sheet-header-freeze {
     overscroll-behavior-x: none;
   }
 
+  .refresh-data-button {
+    display: none;
+  }
+
   .pull-refresh-indicator {
     display: flex;
     align-items: center;
