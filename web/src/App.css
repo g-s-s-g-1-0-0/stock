@@ -1422,6 +1422,10 @@
   display: none !important;
 }
 
+body.guest-personal-view .sheet-header-freeze {
+  display: none !important;
+}
+
 .sheet-header-freeze-inner {
   overflow: hidden;
   height: 100%;

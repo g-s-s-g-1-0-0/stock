@@ -9744,6 +9744,12 @@ function App() {
   }, [userSession?.id])
 
   useEffect(() => {
+    const guestPersonalView = !userSession && effectiveViewMode === 'personal'
+    document.body.classList.toggle('guest-personal-view', guestPersonalView)
+    return () => document.body.classList.remove('guest-personal-view')
+  }, [effectiveViewMode, userSession?.id])
+
+  useEffect(() => {
     if (hasAuthCallbackPayload()) return
     const page = normalizeActivePage(activePage)
     localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, page)
