@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-29T13:51:09+00:00",
-    "lastSuccessfulRun": "2026-09-29T13:51:09+00:00",
+    "updatedAt": "2026-09-29T14:56:31+00:00",
+    "lastSuccessfulRun": "2026-09-29T14:56:31+00:00",
     "failedReason": null
   },
   "rows": [
@@ -11,7 +11,7 @@
       "ticker": "000150",
       "name": "두산",
       "market": "KR",
-      "fairPrice": "₩385,434 ~ ₩521,469",
+      "fairPrice": "₩423,293 ~ ₩572,690",
       "fairPriceReason": null,
       "currentPrice": "₩1,398,000",
       "valuation": "고평가",
