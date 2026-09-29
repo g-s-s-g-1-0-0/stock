@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-09-29T18:56:12+00:00",
-    "lastSuccessfulRun": "2026-09-29T18:56:12+00:00",
+    "updatedAt": "2026-09-29T19:44:15+00:00",
+    "lastSuccessfulRun": "2026-09-29T19:44:15+00:00",
     "failedReason": null
   },
   "rows": [
@@ -827,7 +827,7 @@
       "ticker": "META",
       "name": "Meta Platforms Class A",
       "market": "US",
-      "fairPrice": "$761.42 ~ $1,030.16",
+      "fairPrice": "$761.85 ~ $1,030.74",
       "fairPriceReason": null,
       "currentPrice": "$734.59",
       "valuation": "저평가",
