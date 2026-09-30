@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-09-30T10:56:40+00:00",
-    "lastSuccessfulRun": "2026-09-30T10:56:40+00:00",
+    "updatedAt": "2026-09-30T11:02:13+00:00",
+    "lastSuccessfulRun": "2026-09-30T11:02:13+00:00",
     "failedReason": null
   },
   "rows": [
@@ -36139,7 +36139,7 @@
       "name": "Cohu",
       "market": "US",
       "category": "혼합주",
-      "industry": "-"
+      "industry": "산업재, 장비·제조, 자동화"
     },
     {
       "ticker": "COHX",
