@@ -5698,8 +5698,6 @@ function trendCriteria(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
   const recentChange = (closes.at(-1)! / closes.at(-20)! - 1) * 100
   const priorChange = (closes.at(-21)! / closes.at(-40)! - 1) * 100
   const current = formatTechnicalPrice(stock, closes.at(-1)!)
-  const support = formatTechnicalPrice(stock, chart.support)
-  const resistance = formatTechnicalPrice(stock, chart.resistance)
   const trendWindow = closes.slice(-60)
   const meanX = (trendWindow.length - 1) / 2
   const meanY = trendWindow.reduce((sum, value) => sum + value, 0) / trendWindow.length
@@ -5717,7 +5715,6 @@ function trendCriteria(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
   }
   return [
     `장기 추세선: 최근 60거래일 종가의 회귀선 ${linePosition}에 종가 ${current}가 있습니다.`,
-    `지지·저항: 지지 ${support}${chart.supportFrozen ? ', 종가 이탈 후 고정' : ''}. 저항 ${resistance}${chart.resistanceFrozen ? ', 종가 돌파 후 고정' : ''}.`,
     `상태 판정: ${statusReason[phase]} 직전 20일 ${priorChange >= 0 ? '+' : ''}${priorChange.toFixed(1)}%, 최근 20일 ${recentChange >= 0 ? '+' : ''}${recentChange.toFixed(1)}%로 최근 흐름이 ${direction}`,
   ]
 }
