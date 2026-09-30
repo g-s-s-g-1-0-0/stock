@@ -14,6 +14,11 @@ Yahoo's 1-minute bars leave premarket volume blank.  Those rows store null
 instead of a zero.  A later stage keeps a non-null volume captured earlier
 the same day.  Each row also stores the stock's 200-day average, the prior
 day's high, and the 20-day volume ratio from the daily bars.
+
+A separate ``gap-go-paper-trades.jsonl`` file records a hypothetical trade
+when the 5% gap and 10:00 breakout both occur.  It buys the 10:00 price, stops
+at the low from 9:30 through 10:00, sells half at twice that risk, and closes
+the rest by 11:00.  This file is research data only and is not a trading log.
 """
 
 from __future__ import annotations
@@ -411,6 +416,103 @@ def ensure_session_files(daily: pd.DataFrame, history_dir: Path = HISTORY_DIR) -
     return written
 
 
+def paper_trade(minute: pd.DataFrame, row: dict[str, Any]) -> dict[str, Any] | None:
+    """Hypothetical same-morning trade. Returns None until the 11:00 bar exists."""
+    if not row.get("gapScreen") or not row.get("tenAmBreakout"):
+        return None
+    entry = _num(row.get("tenAmPrice"))
+    stop = _num(row.get("tenAmLow"))
+    session = date.fromisoformat(str(row.get("observationDate")))
+    ticker = str(row.get("ticker") or "")
+    if entry is None or not ticker:
+        return None
+    base = {
+        "observationDate": session.isoformat(),
+        "ticker": ticker,
+        "entryPrice": entry,
+        "stopPrice": stop,
+        "schemaVersion": SCHEMA_VERSION,
+        "rule": "10시 매수, 10시까지 저점 손절, 손절폭 2배에서 절반 익절, 11시 전량 정리",
+    }
+    if stop is None or stop >= entry:
+        return {**base, "outcome": "무효", "success": False, "rMultiple": None, "returnPct": None}
+
+    intraday = _ohlcv_frame(minute, ticker)
+    if intraday.empty:
+        return None
+    index = _minute_index(intraday.index)
+    start = pd.Timestamp(session, tz=NEW_YORK)
+    window = (index > start + pd.Timedelta(hours=10)) & (index <= start + pd.Timedelta(hours=11))
+    if not bool(window.any()) or index[window].max() < start + pd.Timedelta(hours=11):
+        return None
+
+    risk = entry - stop
+    target = entry + 2 * risk
+    path = intraday.loc[window]
+    half_price = None
+    rest_price = None
+    outcome = "11시 정리"
+    for _, bar in path.iterrows():
+        low = _num(bar["Low"])
+        high = _num(bar["High"])
+        if low is None or high is None:
+            continue
+        if half_price is None:
+            if low <= stop:
+                outcome = "손절"
+                rest_price = stop
+                break
+            if high >= target:
+                half_price = target
+                continue
+        elif low <= entry:
+            outcome = "익절 후 본전"
+            rest_price = entry
+            break
+    else:
+        rest_price = _num(path["Close"].iloc[-1])
+        outcome = "익절 후 11시 정리" if half_price is not None else "11시 정리"
+
+    if outcome == "손절":
+        r_multiple = -1.0
+    elif half_price is None:
+        r_multiple = (rest_price - entry) / risk
+    else:
+        r_multiple = 1.0 + 0.5 * ((rest_price - entry) / risk)
+    return {
+        **base,
+        "targetPrice": target,
+        "riskPerShare": risk,
+        "halfExitPrice": half_price,
+        "restExitPrice": rest_price,
+        "outcome": outcome,
+        "rMultiple": r_multiple,
+        "returnPct": r_multiple * risk / entry * 100,
+        "success": r_multiple > 0,
+    }
+
+
+def merge_paper_trades(rows: list[dict[str, Any]], path: Path | None = None) -> bool:
+    """Keep the first resolved result for each date and ticker."""
+    target = path or (HISTORY_DIR / "gap-go-paper-trades.jsonl")
+    existing = {
+        (row.get("observationDate"), row.get("ticker")): row
+        for row in _read_jsonl(target)
+        if row.get("observationDate") and row.get("ticker")
+    }
+    added = False
+    for row in rows:
+        key = (row.get("observationDate"), row.get("ticker"))
+        if key not in existing:
+            existing[key] = row
+            added = True
+    if not added:
+        return False
+    ordered = [existing[key] for key in sorted(existing)]
+    _write_jsonl(target, ordered)
+    return True
+
+
 def record(now: datetime | None = None) -> int:
     current = now or datetime.now(timezone.utc)
     stage = observation_stage(current, os.environ.get("GAP_GO_SCHEDULE", ""))
@@ -441,6 +543,9 @@ def record(now: datetime | None = None) -> int:
     target = _path(date_value)
     carry_forward_premarket_volume(_read_jsonl(target), rows)
     upsert(target, rows)
+    paper_rows = [trade for row in rows if (trade := paper_trade(minute, row))]
+    if merge_paper_trades(paper_rows):
+        print(f"[gap-go] recorded {len(paper_rows)} paper trades")
     session_paths = ensure_session_files(daily)
     print(f"[gap-go] wrote {len(rows)} {stage} observations to {target.relative_to(ROOT)}")
     if session_paths:

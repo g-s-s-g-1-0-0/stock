@@ -194,6 +194,40 @@ class GapGoObservationTest(unittest.TestCase):
         self.assertEqual(18, context["vix"])
         self.assertEqual(26.2, context["breadthPct"])
 
+    def test_paper_trade_stops_before_the_target_and_keeps_the_first_result(self) -> None:
+        import tempfile
+        ny = self.module.NEW_YORK
+        row = {
+            "ticker": "AAA",
+            "observationDate": "2026-10-01",
+            "gapScreen": True,
+            "tenAmBreakout": True,
+            "tenAmPrice": 12,
+            "tenAmLow": 11.2,
+        }
+        stopped = self.module.paper_trade(_frame([
+            {"time": pd.Timestamp("2026-10-01 10:05", tz=ny), "open": 12, "high": 14, "low": 11.0, "close": 11.1, "volume": 1},
+            {"time": pd.Timestamp("2026-10-01 11:00", tz=ny), "open": 11, "high": 11, "low": 11, "close": 11, "volume": 1},
+        ]), row)
+        self.assertEqual("손절", stopped["outcome"])
+        self.assertFalse(stopped["success"])
+        self.assertEqual(-1, stopped["rMultiple"])
+
+        held = self.module.paper_trade(_frame([
+            {"time": pd.Timestamp("2026-10-01 10:05", tz=ny), "open": 12, "high": 14, "low": 11.5, "close": 13.8, "volume": 1},
+            {"time": pd.Timestamp("2026-10-01 11:00", tz=ny), "open": 14, "high": 14.2, "low": 13.8, "close": 14, "volume": 1},
+        ]), row)
+        self.assertEqual("익절 후 11시 정리", held["outcome"])
+        self.assertTrue(held["success"])
+        self.assertAlmostEqual(2.25, held["rMultiple"])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "gap-go-paper-trades.jsonl"
+            self.assertTrue(self.module.merge_paper_trades([stopped], path))
+            self.assertFalse(self.module.merge_paper_trades([held], path))
+            stored = json.loads(path.read_text().splitlines()[0])
+            self.assertEqual("손절", stored["outcome"])
+
 
 def date_of(value: pd.Timestamp):
     return value.date()
