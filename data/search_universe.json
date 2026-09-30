@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15489,
-    "industryEnrichedAt": "2026-09-30T11:01:12+00:00",
+    "industryEnrichedAt": "2026-09-30T15:45:12+00:00",
     "industryEnrichedTickers": 1,
     "industryReviewedAt": "2026-09-27T18:45:56+00:00",
     "industryReviewedTickers": 6
@@ -43365,8 +43365,8 @@
       "opinion": "관망",
       "strategies": [],
       "category": "혼합주",
-      "industry": "-",
-      "rawIndustry": "-",
+      "industry": "산업재, 장비·제조, 자동화",
+      "rawIndustry": "Technology | Semiconductor Equipment &amp; Materials",
       "products": "-",
       "updatedAt": "2026-09-27T18:45:34+00:00"
     },
