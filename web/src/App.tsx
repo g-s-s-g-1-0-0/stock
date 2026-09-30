@@ -5574,6 +5574,7 @@ function TrendChartPreview({ stock, data, onOpen }: { stock: Stock; data: TrendC
 
 function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: TrendChartData; onClose: () => void }) {
   const phase = chart.phase
+  const entryGuide = trendEntryGuide(phase, stock, chart)
   const currentPrice = formatTechnicalPrice(stock, chart.candles.at(-1)?.close ?? 0)
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow
@@ -5605,6 +5606,10 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
           <span className="legend-line down">하락 추세선</span><span className="legend-line up">상승 추세선</span><span className="legend-line support">지지선</span><span className="legend-line resistance">저항선</span>
         </div>
         <p>{trendExplanation(phase, stock, chart)}</p>
+        <div className={`trend-chart-entry ${entryGuide.tone}`}>
+          <strong>진입 가이드 · {entryGuide.label}</strong>
+          {entryGuide.text}
+        </div>
         <ol className="trend-criteria">
           {trendCriteria(phase, stock, chart).map((criterion, index) => <li key={index}>{criterion}</li>)}
         </ol>
@@ -5621,6 +5626,35 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
     </div>,
     document.body,
   )
+}
+
+function trendEntryGuide(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
+  const close = chart.candles.at(-1)?.close ?? 0
+  const support = formatTechnicalPrice(stock, chart.support)
+  const resistance = formatTechnicalPrice(stock, chart.resistance)
+  const current = formatTechnicalPrice(stock, close)
+  const nearSupport = close > 0 && close <= chart.support * 1.03
+  const extendedBreakout = close > chart.resistance * 1.03
+  if (phase === '상승 추세 유지') {
+    return nearSupport
+      ? { label: '지지 근처', tone: 'buy', text: `현재가 ${current}가 지지 ${support} 근처입니다. 상승 추세가 유지되는 동안 이 구간에서 나누어 들어가는 자리를 봅니다. 지지선 아래 종가로 마감하면 진입은 철회합니다.` }
+      : { label: '눌림 대기', tone: 'wait', text: `상승 추세입니다. 진입 기준은 지지 ${support} 근처로 눌리는 시점이고, 현재가 ${current}는 그 위에 있습니다. 저항 ${resistance} 돌파만 보고 따라가지 않습니다.` }
+  }
+  if (phase === '하락 추세 유지') {
+    return { label: '관망', tone: 'hold', text: `하락 추세에서는 관망입니다. 하락 추세선과 저항 ${resistance}를 종가로 함께 넘긴 뒤에 진입을 검토합니다. 지지 ${support} 아래 마감은 약세 확인입니다.` }
+  }
+  if (phase === '하락 추세 이탈 시도') {
+    return { label: '관망', tone: 'hold', text: `아직 관망입니다. 저항 ${resistance}를 종가로 넘기기 전에는 진입하지 않고, 가격이 다시 하락 추세선 아래로 내려오면 이탈 실패로 봅니다.` }
+  }
+  if (phase === '상승 전환 대기') {
+    return { label: '돌파 대기', tone: 'wait', text: `저항 ${resistance} 종가 돌파를 기다립니다. 돌파 전에는 따라 사지 않고, 돌파 이후에는 그 가격 근처로 되밀리는 자리를 봅니다.` }
+  }
+  if (phase === '상승 전환 초입') {
+    return extendedBreakout
+      ? { label: '되돌림 대기', tone: 'wait', text: `저항 ${resistance} 돌파 뒤 현재가 ${current}는 이미 위로 벌어져 있습니다. 진입은 돌파 가격 위 약 3% 이내로 되밀릴 때입니다. 그 가격보다 3% 아래 종가면 돌파 실패로 보고 관망으로 되돌립니다.` }
+      : { label: '돌파 근처', tone: 'buy', text: `저항 ${resistance}를 종가로 넘겼고 현재가 ${current}는 그 근처입니다. 이 가격 위에서 버티면 진입 후보이고, 돌파 가격보다 3% 아래 종가면 실패로 보고 관망으로 되돌립니다.` }
+  }
+  return { label: '매수 보류', tone: 'hold', text: `신규 매수는 보류입니다. 지지 ${support}를 회복해 추세선 위에 다시 안착할 때까지 관망합니다. 지지 아래 종가 마감이면 하락 전환이 강해진 것으로 보고 더 기다립니다.` }
 }
 
 function trendExplanation(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
@@ -5668,6 +5702,7 @@ function trendCriteria(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
 function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartData; stock: Stock; compact?: boolean }) {
   const { phase, candles } = chart
   const phaseTone = trendPhaseTones[phase]
+  const entryGuide = trendEntryGuide(phase, stock, chart)
   const closes = candles.map((candle) => candle.close)
   const width = compact ? 176 : 760
   const height = compact ? 88 : 280
@@ -5701,7 +5736,7 @@ function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartDat
       const up = close >= open
       return <g key={i}><line className={up ? 'candle-up' : 'candle-down'} x1={x(i)} x2={x(i)} y1={y(high)} y2={y(low)} /><rect className={up ? 'candle-up' : 'candle-down'} x={x(i) - candleWidth / 2} y={y(Math.max(open, close))} width={candleWidth} height={Math.max(2, Math.abs(y(open) - y(close)))} /></g>
     })}
-    {!compact && <><text className="chart-level-label resistance" x={leftPad + 8} y={y(resistance) - 8}>저항 {formatChartPrice(stock, resistance)}</text><text className="chart-level-label support" x={leftPad + 8} y={y(support) - 8}>지지 {formatChartPrice(stock, support)}</text><text className={`chart-phase-label ${phaseTone}`} x={width - rightPad} y={21} textAnchor="end">{phase}</text>{[0, Math.floor((closes.length - 1) / 3), Math.floor((closes.length - 1) * 2 / 3), closes.length - 1].map((index) => <text className="chart-axis-label" key={index} x={x(index)} y={height - 7} textAnchor={index === 0 ? 'start' : index === closes.length - 1 ? 'end' : 'middle'}>{formatChartDate(candles[index]?.date)}</text>)}</>}
+    {!compact && <><text className="chart-level-label resistance" x={leftPad + 8} y={y(resistance) - 8}>저항 {formatChartPrice(stock, resistance)}</text><text className="chart-level-label support" x={leftPad + 8} y={y(support) - 8}>지지 {formatChartPrice(stock, support)}</text><text className={`chart-phase-label ${phaseTone}`} x={width - rightPad} y={21} textAnchor="end"><tspan className={`chart-action-label ${entryGuide.tone}`}>{entryGuide.label}</tspan><tspan>{` · ${phase}`}</tspan></text>{[0, Math.floor((closes.length - 1) / 3), Math.floor((closes.length - 1) * 2 / 3), closes.length - 1].map((index) => <text className="chart-axis-label" key={index} x={x(index)} y={height - 7} textAnchor={index === 0 ? 'start' : index === closes.length - 1 ? 'end' : 'middle'}>{formatChartDate(candles[index]?.date)}</text>)}</>}
   </svg>
 }
 
