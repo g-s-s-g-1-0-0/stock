@@ -4817,7 +4817,7 @@ body.guest-personal-view .sheet-header-freeze {
 .trend-chart-svg .chart-phase-label.sustained { fill: #115e59; }
 .trend-chart-svg .chart-phase-label.warning { fill: #b91c1c; }
 .trend-chart-svg .chart-phase-label.declining { fill: #475569; }
-.trend-chart-svg .chart-action-label { font-size: 12px; font-weight: 800; }
+.trend-chart-svg .chart-action-label { font-size: 14px; font-weight: 800; }
 .trend-chart-svg .chart-action-label.buy { fill: #0f766e; }
 .trend-chart-svg .chart-action-label.wait { fill: #1d4ed8; }
 .trend-chart-svg .chart-action-label.hold { fill: #64748b; }
