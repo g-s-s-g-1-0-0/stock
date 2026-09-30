@@ -2306,9 +2306,13 @@ def market_signal_email_body(signals: dict[str, Any]) -> str:
     treasury = signals.get("treasury", {})
     credit = signals.get("credit", {})
     breadth_value = breadth.get("value")
+    breadth_count = breadth.get("count")
+    breadth_count_text = (
+        f" ({breadth_count}개 중)" if isinstance(breadth_count, int) and breadth_count > 0 else ""
+    )
     breadth_text = (
-        f"{breadth_value:.0f}% ({breadth.get('count', 0)}개 중) · {breadth.get('status', '판단 불가')}"
-        if isinstance(breadth_value, (int, float)) else "데이터 부족 · 판단 불가"
+        f"{breadth_value:.0f}%{breadth_count_text} · {breadth.get('status', '판단 불가')}"
+        if isinstance(breadth_value, (int, float)) else "데이터 수집 실패 · 판단 불가"
     )
     treasury_text = (
         f"{treasury['current']:.2f}% · 20거래일 {treasury['change']:+.2f}%p · {treasury['status']}"
@@ -2321,12 +2325,12 @@ def market_signal_email_body(signals: dict[str, Any]) -> str:
     return f"""
     <div style="font-family:Arial,sans-serif;line-height:1.65;color:#222;max-width:680px">
       <h2 style="margin-bottom:8px">미국 시장 고점 신호: {html.escape(str(signals.get('status', '판단 불가')))}</h2>
-      <p style="margin:0 0 12px">상승 종목 참여도 {html.escape(breadth_text)}<br>
+      <p style="margin:0 0 12px">미국 주식 20일선 상회 비율 {html.escape(breadth_text)}<br>
       미국 10년물 {html.escape(treasury_text)}<br>
-      하이일드 차입비용 {html.escape(credit_text)}</p>
+      저신용 회사 추가금리 {html.escape(credit_text)}</p>
       <p style="border-top:1px solid #ddd;padding-top:10px;font-size:12px;color:#666;margin-bottom:0">
-        기준: 참여도 정상 ≥60% / 주의 40–59% / 경고 &lt;40% (앱 분석 대상 미국 종목만)<br>
-        10년물 20일 상승폭 주의 +0.25%p / 경고 +0.50%p · 하이일드 스프레드 확대 주의 +0.50%p / 경고 +1.00%p<br>
+        기준: 20일선 상회 비율은 관심종목이 아니라 미국 상장주식 전체. 정상 ≥60% / 주의 40–59% / 경고 &lt;40%<br>
+        10년물 20일 상승폭 주의 +0.25%p / 경고 +0.50%p · 저신용 회사 추가금리 확대 주의 +0.50%p / 경고 +1.00%p<br>
         종합: 경고 1개 또는 주의 2개면 경고, 주의 1개면 주의. 참고용 시장 경고이며 매매 신호는 아닙니다.
       </p>
     </div>

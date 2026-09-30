@@ -1290,14 +1290,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 rows[stock["ticker"]] = preserved
             errors.append({"ticker": stock["ticker"], "error": str(exc)})
 
-    rows_by_ticker = {str(ticker).strip().upper(): row for ticker, row in rows.items()}
-    us_rows = [
-        rows_by_ticker[ticker]
-        for stock in source_universe
-        if stock.get("market") == "US"
-        and (ticker := str(stock.get("ticker") or "").strip().upper()) in rows_by_ticker
-    ]
-    market_signals = build_market_signals(us_rows)
+    market_signals = build_market_signals()
     market_snapshot.extend(market_signal_rows(market_signals))
 
     if season_open and not season.get("open"):
