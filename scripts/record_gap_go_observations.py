@@ -12,7 +12,8 @@ that following file's open.
 
 Yahoo's 1-minute bars leave premarket volume blank.  Those rows store null
 instead of a zero.  A later stage keeps a non-null volume captured earlier
-the same day.
+the same day.  Each row also stores the stock's 200-day average, the prior
+day's high, and the 20-day volume ratio from the daily bars.
 """
 
 from __future__ import annotations
@@ -125,6 +126,43 @@ def _volume_sum(volume: pd.Series, mask: pd.Series) -> float | None:
     return float(values.fillna(0).sum())
 
 
+def _setup_filters(daily_frame: pd.DataFrame, session: date, day_close: float | None, day_volume: float | None) -> dict[str, Any]:
+    """Stock trend, prior high, and 20-day volume ratio used by the gap-and-go check."""
+    empty = {
+        "previousHigh": None,
+        "ma200": None,
+        "aboveMa200": None,
+        "closeAbovePriorHigh": None,
+        "volume20Avg": None,
+        "volRatio20": None,
+        "elevatedVolume": None,
+    }
+    if daily_frame.empty:
+        return empty
+    prior = daily_frame[daily_frame["_session"] < session]
+    through = daily_frame[daily_frame["_session"] <= session]
+    previous_high = _num(prior["High"].iloc[-1]) if not prior.empty else None
+    ma_source = through if not through.empty and through["_session"].iloc[-1] == session else prior
+    ma200 = float(ma_source["Close"].tail(200).mean()) if len(ma_source) >= 200 else None
+    if not through.empty and through["_session"].iloc[-1] == session and len(through) >= 20:
+        volume_window = through["Volume"].tail(20)
+        today_volume = _num(through["Volume"].iloc[-1])
+    else:
+        volume_window = prior["Volume"].tail(20)
+        today_volume = day_volume
+    volume_avg = float(volume_window.mean()) if len(volume_window) >= 20 and bool(volume_window.notna().all()) else None
+    vol_ratio = today_volume / volume_avg if today_volume is not None and volume_avg else None
+    return {
+        "previousHigh": previous_high,
+        "ma200": ma200,
+        "aboveMa200": day_close > ma200 if day_close is not None and ma200 else None,
+        "closeAbovePriorHigh": day_close > previous_high if day_close is not None and previous_high else None,
+        "volume20Avg": volume_avg,
+        "volRatio20": vol_ratio,
+        "elevatedVolume": vol_ratio >= 1.5 if vol_ratio is not None else None,
+    }
+
+
 def _snapshot(minute: pd.DataFrame, daily: pd.DataFrame, ticker: str, today: datetime) -> dict[str, Any]:
     session = today.date()
     daily_frame = _ohlcv_frame(daily, ticker)
@@ -143,6 +181,7 @@ def _snapshot(minute: pd.DataFrame, daily: pd.DataFrame, ticker: str, today: dat
             "schemaVersion": SCHEMA_VERSION,
             "previousClose": previous_close,
             "previousCloseDate": previous_close_date,
+            **_setup_filters(daily_frame, session, None, None),
         }
 
     index = _minute_index(intraday.index)
@@ -157,6 +196,8 @@ def _snapshot(minute: pd.DataFrame, daily: pd.DataFrame, ticker: str, today: dat
     regular_open = _num(intraday.loc[regular, "Open"].dropna().iloc[0]) if regular.any() and intraday.loc[regular, "Open"].notna().any() else None
     ten_price = _num(intraday.loc[through_ten, "Close"].iloc[-1]) if through_ten.any() else None
     gap_pct = (pre_last / previous_close - 1) if pre_last and previous_close else None
+    day_close = _num(intraday.loc[regular, "Close"].iloc[-1]) if regular.any() else None
+    day_volume = _volume_sum(intraday["Volume"], regular)
     return {
         "ticker": ticker,
         "dataAvailable": True,
@@ -181,8 +222,9 @@ def _snapshot(minute: pd.DataFrame, daily: pd.DataFrame, ticker: str, today: dat
         "dayOpen": regular_open,
         "dayHigh": _num(intraday.loc[regular, "High"].max()) if regular.any() else None,
         "dayLow": _num(intraday.loc[regular, "Low"].min()) if regular.any() else None,
-        "dayClose": _num(intraday.loc[regular, "Close"].iloc[-1]) if regular.any() else None,
-        "dayVolume": _volume_sum(intraday["Volume"], regular),
+        "dayClose": day_close,
+        "dayVolume": day_volume,
+        **_setup_filters(daily_frame, session, day_close, day_volume),
         "gapPct": gap_pct,
         "gapScreen": bool(gap_pct is not None and gap_pct >= 0.05 and pre_high is not None),
         "tenAmBreakout": bool(ten_price is not None and pre_high is not None and ten_price > pre_high),

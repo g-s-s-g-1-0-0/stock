@@ -76,6 +76,48 @@ class GapGoObservationTest(unittest.TestCase):
         self.assertEqual(107, snapshot["regularOpen"])
         self.assertAlmostEqual(0.07, snapshot["gapPct"])
         self.assertTrue(snapshot["gapScreen"])
+        self.assertEqual(101, snapshot["previousHigh"])
+        self.assertTrue(snapshot["closeAbovePriorHigh"])
+        self.assertIsNone(snapshot["ma200"])
+        self.assertIsNone(snapshot["elevatedVolume"])
+
+    def test_setup_filters_use_the_200_day_average_and_20_day_volume(self) -> None:
+        rows = []
+        day = pd.Timestamp("2025-01-02")
+        while len(rows) < 210:
+            if day.dayofweek < 5:
+                rows.append({
+                    "time": day,
+                    "open": 100,
+                    "high": 110,
+                    "low": 90,
+                    "close": 100,
+                    "volume": 100,
+                })
+            day += pd.Timedelta(days=1)
+        rows[-1]["close"] = 130
+        rows[-1]["high"] = 140
+        rows[-1]["volume"] = 400
+        session = rows[-1]["time"].to_pydatetime().replace(tzinfo=self.module.NEW_YORK)
+        prior_high = rows[-2]["high"]
+        snapshot = self.module._snapshot(
+            minute=_frame([{
+                "time": pd.Timestamp(session.date().isoformat() + " 15:59", tz=self.module.NEW_YORK),
+                "open": 120,
+                "high": 135,
+                "low": 115,
+                "close": 130,
+                "volume": 50,
+            }]),
+            daily=_frame(rows),
+            ticker="AAA",
+            today=session,
+        )
+        self.assertEqual(prior_high, snapshot["previousHigh"])
+        self.assertTrue(snapshot["aboveMa200"])
+        self.assertTrue(snapshot["closeAbovePriorHigh"])
+        self.assertAlmostEqual(400 / ((100 * 19 + 400) / 20), snapshot["volRatio20"])
+        self.assertTrue(snapshot["elevatedVolume"])
 
     def test_session_files_keep_the_first_bar_and_the_next_open_separate(self) -> None:
         import tempfile
