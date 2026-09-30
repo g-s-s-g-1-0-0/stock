@@ -5628,6 +5628,15 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
   )
 }
 
+function trendLineAtClose(chart: TrendChartData) {
+  const closes = chart.candles.slice(-60).map((candle) => candle.close)
+  const meanX = (closes.length - 1) / 2
+  const meanY = closes.reduce((sum, value) => sum + value, 0) / closes.length
+  const denominator = closes.reduce((sum, _, index) => sum + (index - meanX) ** 2, 0)
+  const slope = closes.reduce((sum, value, index) => sum + (index - meanX) * (value - meanY), 0) / denominator
+  return meanY + slope * meanX
+}
+
 function trendEntryGuide(phase: TrendPhase, stock: Stock, chart: TrendChartData) {
   const close = chart.candles.at(-1)?.close ?? 0
   const support = formatTechnicalPrice(stock, chart.support)
@@ -5636,9 +5645,29 @@ function trendEntryGuide(phase: TrendPhase, stock: Stock, chart: TrendChartData)
   const nearSupport = close > 0 && close <= chart.support * 1.03
   const extendedBreakout = close > chart.resistance * 1.03
   if (phase === '상승 추세 유지') {
-    return nearSupport
-      ? { label: '지지 근처', tone: 'buy', text: `현재가 ${current}가 지지 ${support} 근처입니다. 상승 추세가 유지되는 동안 이 구간에서 나누어 들어가는 자리를 봅니다. 지지선 아래 종가로 마감하면 진입은 철회합니다.` }
-      : { label: '눌림 대기', tone: 'wait', text: `상승 추세입니다. 진입 기준은 지지 ${support} 근처로 눌리는 시점이고, 현재가 ${current}는 그 위에 있습니다. 저항 ${resistance} 돌파만 보고 따라가지 않습니다.` }
+    const trendLine = trendLineAtClose(chart)
+    const trend = formatTechnicalPrice(stock, trendLine)
+    const supportGap = chart.support > 0 ? close / chart.support - 1 : 1
+    const nearBrokenResistance = chart.resistanceFrozen && close >= chart.resistance * 0.97 && close <= chart.resistance * 1.03
+    const aboveBrokenResistance = chart.resistanceFrozen && close > chart.resistance * 1.03
+    const nearTrend = trendLine > 0 && close <= trendLine * 1.03
+    const supportIsFar = supportGap > 0.08
+    if (nearSupport) {
+      return { label: '지지 근처', tone: 'buy', text: `현재가 ${current}가 지지 ${support} 근처입니다. 상승 추세가 유지되는 동안 이 구간에서 나누어 들어가는 자리를 봅니다. 지지선 아래 종가로 마감하면 진입은 철회합니다.` }
+    }
+    if (nearBrokenResistance) {
+      return { label: '진입 구간', tone: 'buy', text: `상승 추세이고 현재가 ${current}는 돌파해 둔 저항 ${resistance} 근처입니다. 이 가격과 상승 추세선(${trend})이 유지되는 동안을 진입 구간으로 봅니다. 지지 ${support}는 여기까지 내려오면 상승이 깨졌다고 보는 가격입니다.` }
+    }
+    if (aboveBrokenResistance) {
+      return { label: '되돌림 대기', tone: 'wait', text: `상승 추세이지만 현재가 ${current}는 돌파 저항 ${resistance} 위로 올라가 있습니다. 진입은 ${resistance} 근처로 되밀릴 때입니다. 지지 ${support}는 상승이 깨지는 가격입니다.` }
+    }
+    if (supportIsFar && nearTrend) {
+      return { label: '추세선 근처', tone: 'buy', text: `현재가 ${current}가 상승 추세선(${trend}) 근처에 있습니다. 이 선이 유지되는 동안을 진입 구간으로 봅니다. 지지 ${support}는 상승이 깨졌다고 보는 가격입니다.` }
+    }
+    if (supportIsFar) {
+      return { label: '추세선 대기', tone: 'wait', text: `상승 추세입니다. 현재가 ${current}는 상승 추세선(${trend})보다 위에 있어, 진입은 그 선 근처로 눌릴 때입니다. 지지 ${support}는 상승이 깨지는 가격입니다.` }
+    }
+    return { label: '눌림 대기', tone: 'wait', text: `상승 추세입니다. 현재가 ${current}에서 지지 ${support}까지 거리가 짧아, 그 지지 근처로 눌릴 때를 진입으로 봅니다.` }
   }
   if (phase === '하락 추세 유지') {
     return { label: '관망', tone: 'hold', text: `하락 추세에서는 관망입니다. 하락 추세선과 저항 ${resistance}를 종가로 함께 넘긴 뒤에 진입을 검토합니다. 지지 ${support} 아래 마감은 약세 확인입니다.` }
