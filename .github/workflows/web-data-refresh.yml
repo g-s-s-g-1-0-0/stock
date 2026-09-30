@@ -266,6 +266,10 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
         run: python scripts/web_refresh_notifications.py nasdaq-warn
 
+      - name: Send market high-signal emails to admins
+        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
+        run: python scripts/web_refresh_notifications.py market-signals
+
       - name: Send earnings D-1 emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'valuation') }}
         run: python scripts/web_refresh_notifications.py earnings

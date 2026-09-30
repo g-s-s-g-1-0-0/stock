@@ -5264,8 +5264,8 @@ function TechnicalAnalysisPage({
     ? ((qqqPriceValue / qqqMa200Value - 1) * 100).toFixed(1)
     : null
   const qqqSummary = qqqMa200Distance === null
-    ? `나스닥(QQQ) ${qqqPrice} / 200일선 ${qqqMa200}`
-    : `나스닥(QQQ) ${qqqPrice} / 200일선 ${qqqMa200} (200일선 대비 ${Number(qqqMa200Distance) >= 0 ? '+' : ''}${qqqMa200Distance}%)`
+    ? `QQQ ${qqqPrice} / 200일선 ${qqqMa200}`
+    : `QQQ ${qqqPrice} / 200일선 ${qqqMa200} (200일선 대비 ${Number(qqqMa200Distance) >= 0 ? '+' : ''}${qqqMa200Distance}%)`
 
   return (
     <section className="panel value-analysis-panel technical-analysis-panel">

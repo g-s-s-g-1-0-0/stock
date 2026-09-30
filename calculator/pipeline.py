@@ -28,6 +28,7 @@ from zoneinfo import ZoneInfo
 from .industry_classification import CATEGORY_VALUES, classify_stock, is_curated_ticker, looks_like_etf, summarize_industry
 from .industry_review import reviewed_industry_is_fresh
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
+from .market_signals import build_market_signals, market_signal_rows
 from .trend_strategies import build_trend_chart, trend_market_blocked
 from .opinion_reasons import (
     build_held_watch_opinion_reason,
@@ -1289,6 +1290,16 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 rows[stock["ticker"]] = preserved
             errors.append({"ticker": stock["ticker"], "error": str(exc)})
 
+    rows_by_ticker = {str(ticker).strip().upper(): row for ticker, row in rows.items()}
+    us_rows = [
+        rows_by_ticker[ticker]
+        for stock in source_universe
+        if stock.get("market") == "US"
+        and (ticker := str(stock.get("ticker") or "").strip().upper()) in rows_by_ticker
+    ]
+    market_signals = build_market_signals(us_rows)
+    market_snapshot.extend(market_signal_rows(market_signals))
+
     if season_open and not season.get("open"):
         save_strategy_season_state(
             {
@@ -1325,6 +1336,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
         },
         "marketSnapshot": market_snapshot,
         "qqqMarketState": qqq_market_state,
+        "marketSignals": market_signals,
         "rows": rows,
         "errors": errors,
     }
