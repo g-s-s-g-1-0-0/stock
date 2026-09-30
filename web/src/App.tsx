@@ -5657,16 +5657,16 @@ function trendEntryGuide(phase: TrendPhase, stock: Stock, chart: TrendChartData)
     if (atResistance) {
       return chart.resistanceFrozen
         ? { label: '진입 구간', tone: 'buy', situation: `상승 추세입니다. 지금 종가는 ${current}, 돌파한 저항은 ${resistance}, 추세선은 ${trend}입니다.`, action: `종가가 ${resistance}과 추세선 ${trend} 위에 있으면 들어갑니다. ${support} 아래 종가면 들어가지 않습니다.` }
-        : { label: '진입 구간', tone: 'buy', situation: `상승 추세입니다. 지금 종가는 ${current}, 저항은 ${resistance}, 추세선은 ${trend}입니다.`, action: `지금은 추세선 ${trend} 위에서 들어갑니다. 저항 ${resistance}을 넘긴 뒤에는 그 가격으로 다시 눌릴 때 들어갑니다.` }
+        : { label: '진입 구간', tone: 'buy', situation: `상승 추세입니다. 지금 종가는 ${current}, 저항은 ${resistance}, 추세선은 ${trend}입니다.`, action: `지금은 추세선 ${trend} 위에서 들어갑니다. 저항 ${resistance}을 넘긴 다음에는, 그 가격으로 다시 내려오면 들어갑니다.` }
     }
     if (resistanceDrop > 0.04 && resistanceDrop <= 0.08) {
-      return { label: '되돌림 대기', tone: 'wait', situation: `상승 추세입니다. 지금 종가 ${current}은 저항 ${resistance}보다 위에 있습니다.`, action: `${resistance}으로 다시 눌릴 때 들어갑니다. 지금 가격에서는 따라가지 않습니다.` }
+      return { label: '되돌림 대기', tone: 'wait', situation: `상승 추세입니다. 지금 종가 ${current}은 저항 ${resistance}보다 위에 있습니다.`, action: `${resistance}으로 다시 내려오면 들어갑니다.` }
     }
     if (trendDrop <= 0.04) {
       return { label: '추세선 근처', tone: 'buy', situation: `상승 추세입니다. 지금 종가는 ${current}, 추세선은 ${trend}입니다.`, action: `종가가 추세선 ${trend} 위에 있으면 들어갑니다. ${support} 아래 종가면 들어가지 않습니다.` }
     }
     if (trendDrop <= 0.08) {
-      return { label: '추세선 대기', tone: 'wait', situation: `상승 추세입니다. 지금 종가 ${current}은 추세선 ${trend}보다 위에 있습니다.`, action: `추세선 ${trend}까지 다시 눌릴 때 들어갑니다. 지금 가격에서는 따라가지 않습니다.` }
+      return { label: '추세선 대기', tone: 'wait', situation: `상승 추세입니다. 지금 종가 ${current}은 추세선 ${trend}보다 위에 있습니다.`, action: `추세선 ${trend}으로 다시 내려오면 들어갑니다.` }
     }
     if (supportDrop <= 0.08) {
       return { label: '눌림 대기', tone: 'wait', situation: `상승 추세입니다. 지금 종가는 ${current}, 지지는 ${support}입니다.`, action: `지지 ${support}까지 다시 눌릴 때 들어갑니다.` }
@@ -5674,21 +5674,21 @@ function trendEntryGuide(phase: TrendPhase, stock: Stock, chart: TrendChartData)
     return { label: '진입 구간', tone: 'buy', situation: `상승 추세입니다. 지금 종가는 ${current}, 추세선은 ${trend}입니다.`, action: `종가가 추세선 ${trend} 위에 있으면 들어갑니다. 그 아래 종가면 들어가지 않습니다.` }
   }
   if (phase === '하락 추세 유지') {
-    return { label: '관망', tone: 'hold', situation: `하락 추세입니다. 지금 종가는 ${current}, 추세선은 ${trend}, 저항은 ${resistance}입니다.`, action: `지금은 사지 않습니다. 추세선 ${trend}과 저항 ${resistance}을 넘긴 뒤, ${resistance}으로 다시 눌릴 때 들어갑니다.` }
+    return { label: '관망', tone: 'hold', situation: `하락 추세입니다. 지금 종가는 ${current}, 추세선은 ${trend}, 저항은 ${resistance}입니다.`, action: `지금은 사지 않습니다. 추세선 ${trend}과 저항 ${resistance}을 넘긴 다음, ${resistance}으로 다시 내려오면 들어갑니다.` }
   }
   if (phase === '하락 추세 이탈 시도') {
-    return { label: '관망', tone: 'hold', situation: `지금 종가 ${current}은 추세선 ${trend} 위이고, 저항 ${resistance}은 아직 못 넘겼습니다.`, action: `지금은 사지 않습니다. ${resistance}을 종가로 넘긴 뒤, 그 가격으로 다시 눌릴 때 들어갑니다. 넘긴 날은 따라가지 않습니다.` }
+    return { label: '관망', tone: 'hold', situation: `지금 종가 ${current}은 추세선 ${trend} 위이고, 저항 ${resistance}은 아직 못 넘겼습니다.`, action: `지금은 사지 않습니다. 종가가 ${resistance}을 넘긴 다음, 그 가격으로 다시 내려오면 들어갑니다.` }
   }
   if (phase === '상승 전환 대기') {
-    return { label: '돌파 대기', tone: 'wait', situation: `지금 종가 ${current}은 추세선 ${trend} 위이고, 저항 ${resistance}은 아직 못 넘겼습니다.`, action: `${resistance}을 넘긴 뒤, 그 가격으로 다시 눌릴 때 들어갑니다. 넘긴 날은 따라가지 않습니다.` }
+    return { label: '돌파 대기', tone: 'wait', situation: `지금 종가 ${current}은 추세선 ${trend} 위이고, 저항 ${resistance}은 아직 못 넘겼습니다.`, action: `종가가 ${resistance}을 넘긴 다음, 그 가격으로 다시 내려오면 들어갑니다.` }
   }
   if (phase === '상승 전환 초입') {
     if (dropFromClose(chart.resistance) > 0.08) {
       return { label: '진입 구간', tone: 'buy', situation: `지금 종가 ${current}은 돌파한 저항 ${resistance}보다 많이 위에 있습니다. 추세선은 ${trend}입니다.`, action: `종가가 추세선 ${trend} 위에 있으면 들어갑니다. 그 아래 종가면 들어가지 않습니다.` }
     }
     return extendedBreakout
-      ? { label: '되돌림 대기', tone: 'wait', situation: `지금 종가 ${current}은 돌파한 저항 ${resistance}보다 위에 있습니다.`, action: `${resistance}으로 다시 눌릴 때 들어갑니다. 넘긴 날은 따라가지 않습니다.` }
-      : { label: '돌파 근처', tone: 'buy', situation: `지금 종가 ${current}은 저항 ${resistance}을 막 넘긴 자리입니다.`, action: `넘긴 날은 들어가지 않습니다. 그 뒤 ${resistance}으로 다시 눌릴 때 들어갑니다.` }
+      ? { label: '되돌림 대기', tone: 'wait', situation: `지금 종가 ${current}은 돌파한 저항 ${resistance}보다 위에 있습니다.`, action: `${resistance}으로 다시 내려오면 들어갑니다.` }
+      : { label: '돌파 근처', tone: 'buy', situation: `지금 종가 ${current}은 저항 ${resistance}을 막 넘긴 자리입니다.`, action: `${resistance}으로 다시 내려오면 들어갑니다.` }
   }
   return { label: '매수 보류', tone: 'hold', situation: `지금 종가 ${current}이 지지 ${support} 또는 추세선 ${trend} 아래로 내려왔습니다.`, action: `지금은 사지 않습니다. 종가가 지지 ${support}과 추세선 ${trend} 위로 올라오면 다시 봅니다.` }
 }
