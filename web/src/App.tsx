@@ -5658,8 +5658,8 @@ function trendEntryGuide(phase: TrendPhase, stock: Stock, chart: TrendChartData)
     }
     if (atResistance) {
       return chart.resistanceFrozen
-        ? { label: '진입 구간', tone: 'buy', situation: `상승 추세입니다. 지금 종가는 ${current}이고, 돌파 저항 ${resistance} 근처, 60거래일 추세선은 ${trend}입니다.`, action: `돌파 뒤 최대 20거래일 동안 종가가 ${resistance}과 추세선 ${trend} 위에 있으면 들어갑니다. ${support} 아래 종가이거나, 저항보다 3% 낮은 ${breakFail} 아래 종가면 들어가지 않습니다.` }
-        : { label: '진입 구간', tone: 'buy', situation: `상승 추세입니다. 지금 종가는 ${current}이고, 저항 ${resistance} 바로 아래, 60거래일 추세선은 ${trend}입니다.`, action: `종가가 추세선 ${trend} 위에 있는 동안 들어갑니다. ${resistance}을 종가로 넘기면 그 가격은 최대 20거래일 고정됩니다. ${support} 아래 종가면 들어가지 않습니다.` }
+        ? { label: '진입 구간', tone: 'buy', situation: `상승 추세입니다. 지금 종가는 ${current}이고, 이미 돌파한 저항 ${resistance} 근처, 60거래일 추세선은 ${trend}입니다.`, action: `지금처럼 종가가 ${resistance}과 추세선 ${trend} 위에 있으면 들어갑니다. 20거래일을 채울 때까지 기다리지 않습니다. ${breakFail} 아래 종가면 돌파 실패, ${support} 아래 종가면 상승 종료입니다.` }
+        : { label: '진입 구간', tone: 'buy', situation: `상승 추세입니다. 지금 종가는 ${current}이고, 저항 ${resistance} 바로 아래, 60거래일 추세선은 ${trend}입니다.`, action: `지금은 종가가 추세선 ${trend} 위에 있으면 들어갑니다. ${resistance}을 종가로 넘긴 뒤부터는 조건이 바뀝니다. 넘긴 날은 따라가지 말고, 그 가격으로 다시 눌릴 때 들어갑니다.` }
     }
     if (resistanceDrop > 0.04 && resistanceDrop <= 0.08) {
       return { label: '되돌림 대기', tone: 'wait', situation: `상승 추세입니다. 지금 종가 ${current}은 저항 ${resistance}보다 4~8% 위입니다.`, action: `종가가 ${resistance}~${retestTop}으로 다시 눌릴 때 들어갑니다. 그 위에서는 따라가지 않습니다. ${support} 아래 종가면 상승은 끝입니다.` }
@@ -5676,21 +5676,21 @@ function trendEntryGuide(phase: TrendPhase, stock: Stock, chart: TrendChartData)
     return { label: '진입 구간', tone: 'buy', situation: `상승 추세입니다. 지금 종가 ${current}은 추세선 ${trend}과 지지 ${support}보다 8% 넘게 위에 있습니다.`, action: `${trend}이나 ${support}까지 눌리는 것을 진입 조건으로 두지 않습니다. 종가가 추세선 ${trend} 위에 있는 동안 들어갈 수 있고, 그 아래 종가면 멈춥니다.` }
   }
   if (phase === '하락 추세 유지') {
-    return { label: '관망', tone: 'hold', situation: `하락 추세입니다. 지금 종가는 ${current}, 60거래일 추세선은 ${trend}, 저항은 ${resistance}, 지지는 ${support}입니다.`, action: `지금은 사지 않습니다. 종가가 추세선 ${trend}과 저항 ${resistance}을 함께 넘긴 뒤에 진입을 다시 봅니다. ${support} 아래 종가면 하락이 이어진 것입니다.` }
+    return { label: '관망', tone: 'hold', situation: `하락 추세입니다. 지금 종가는 ${current}, 60거래일 추세선은 ${trend}, 저항은 ${resistance}, 지지는 ${support}입니다.`, action: `지금은 사지 않습니다. 종가가 추세선 ${trend}과 저항 ${resistance}을 함께 넘기면 조건이 바뀝니다. 넘긴 날은 따라가지 말고, ${resistance}으로 다시 눌릴 때 들어갑니다.` }
   }
   if (phase === '하락 추세 이탈 시도') {
-    return { label: '관망', tone: 'hold', situation: `지금 종가 ${current}은 60거래일 추세선 ${trend} 위이고, 저항 ${resistance}은 아직 못 넘겼습니다.`, action: `${resistance}을 종가로 넘긴 뒤 최대 20거래일 그 가격이 유지될 때 진입을 봅니다. 그 전에 종가가 추세선 ${trend} 아래로 내려오면 실패입니다.` }
+    return { label: '관망', tone: 'hold', situation: `지금 종가 ${current}은 60거래일 추세선 ${trend} 위이고, 저항 ${resistance}은 아직 못 넘겼습니다.`, action: `지금은 사지 않습니다. 종가가 ${resistance}을 넘기면 조건이 바뀝니다. 넘긴 날은 따라가지 말고, 그 가격 근처로 다시 눌릴 때 들어갑니다. 20거래일은 이 눌림을 보는 기한이지, 그 날을 채워야 들어가는 조건이 아닙니다. 종가가 추세선 ${trend} 아래로 먼저 내려오면 실패입니다.` }
   }
   if (phase === '상승 전환 대기') {
-    return { label: '돌파 대기', tone: 'wait', situation: `지금 종가 ${current}은 60거래일 추세선 ${trend} 위에서 반등 중이고, 저항 ${resistance}은 아직 못 넘겼습니다.`, action: `${resistance}을 종가로 넘긴 뒤, ${resistance}~${retestTop}으로 다시 눌릴 때 들어갑니다. 넘기기 전에는 따라가지 않습니다.` }
+    return { label: '돌파 대기', tone: 'wait', situation: `지금 종가 ${current}은 60거래일 추세선 ${trend} 위에서 반등 중이고, 저항 ${resistance}은 아직 못 넘겼습니다.`, action: `넘기기 전에는 들어가지 않습니다. 종가가 ${resistance}을 넘긴 날도 따라가지 말고, 그 뒤 ${resistance}~${retestTop}으로 다시 눌릴 때 들어갑니다.` }
   }
   if (phase === '상승 전환 초입') {
     if (dropFromClose(chart.resistance) > 0.08) {
-      return { label: '진입 구간', tone: 'buy', situation: `지금 종가 ${current}은 돌파 저항 ${resistance}보다 8% 넘게 위에 있습니다. 이 저항은 최대 20거래일 고정됩니다.`, action: `${resistance}까지 다시 내려오기를 기다리지 않습니다. 종가가 돌파가보다 3% 낮은 ${breakFail} 아래로 마감하기 전에는 이 흐름에서 들어갈 수 있습니다.` }
+      return { label: '진입 구간', tone: 'buy', situation: `지금 종가 ${current}은 돌파 저항 ${resistance}보다 8% 넘게 위에 있습니다.`, action: `이미 많이 올라 있어 ${resistance}까지 다시 눌리기를 조건으로 두지 않습니다. 종가가 ${breakFail} 아래로 마감하기 전에는 들어갈 수 있습니다.` }
     }
     return extendedBreakout
-      ? { label: '되돌림 대기', tone: 'wait', situation: `지금 종가 ${current}은 돌파 저항 ${resistance} 위 3~8%입니다. 이 저항은 최대 20거래일 고정됩니다.`, action: `종가가 ${resistance}~${retestTop}으로 다시 눌릴 때 들어갑니다. ${breakFail} 아래 종가면 돌파 실패입니다.` }
-      : { label: '돌파 근처', tone: 'buy', situation: `지금 종가 ${current}은 돌파 저항 ${resistance}을 막 넘긴 자리입니다. 이 가격은 최대 20거래일 고정됩니다.`, action: `그 기간에 종가가 ${resistance} 위에 있으면 들어갑니다. ${breakFail} 아래 종가면 돌파 실패로 보고 사지 않습니다.` }
+      ? { label: '되돌림 대기', tone: 'wait', situation: `지금 종가 ${current}은 돌파 저항 ${resistance}보다 3~8% 위입니다.`, action: `넘긴 날은 따라가지 않습니다. 그 뒤 종가가 ${resistance}~${retestTop}으로 다시 눌릴 때 들어갑니다. ${breakFail} 아래 종가면 돌파 실패입니다.` }
+      : { label: '돌파 근처', tone: 'buy', situation: `지금 종가 ${current}은 저항 ${resistance}을 막 넘긴 자리입니다.`, action: `넘긴 날은 들어가지 않습니다. 그 뒤 종가가 ${resistance}~${retestTop}에 다시 있을 때 들어갑니다. 20거래일을 채울 필요는 없습니다. ${breakFail} 아래 종가면 돌파 실패입니다.` }
   }
   return { label: '매수 보류', tone: 'hold', situation: `지금 종가 ${current}이 지지 ${support} 또는 60거래일 추세선 ${trend} 아래로 내려왔습니다.`, action: `지금은 사지 않습니다. 종가가 지지 ${support}을 되찾고 추세선 ${trend} 위로 마감할 때까지 기다립니다.` }
 }
