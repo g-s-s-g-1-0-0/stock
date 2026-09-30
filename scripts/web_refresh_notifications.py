@@ -2301,6 +2301,83 @@ def send_nasdaq_warn_notifications() -> int:
     return sent
 
 
+def market_signal_email_body(signals: dict[str, Any]) -> str:
+    breadth = signals.get("breadth", {})
+    treasury = signals.get("treasury", {})
+    credit = signals.get("credit", {})
+    breadth_value = breadth.get("value")
+    breadth_text = (
+        f"{breadth_value:.0f}% ({breadth.get('count', 0)}개 중) · {breadth.get('status', '판단 불가')}"
+        if isinstance(breadth_value, (int, float)) else "데이터 부족 · 판단 불가"
+    )
+    treasury_text = (
+        f"{treasury['current']:.2f}% · 20거래일 {treasury['change']:+.2f}%p · {treasury['status']}"
+        if isinstance(treasury.get("change"), (int, float)) else "수집 실패 · 판단 불가"
+    )
+    credit_text = (
+        f"{credit['current']:.2f}%p · 20거래일 {credit['change']:+.2f}%p · {credit['status']}"
+        if isinstance(credit.get("change"), (int, float)) else "수집 실패 · 판단 불가"
+    )
+    return f"""
+    <div style="font-family:Arial,sans-serif;line-height:1.65;color:#222;max-width:680px">
+      <h2 style="margin-bottom:8px">미국 시장 고점 신호: {html.escape(str(signals.get('status', '판단 불가')))}</h2>
+      <p style="margin:0 0 12px">상승 종목 참여도 {html.escape(breadth_text)}<br>
+      미국 10년물 {html.escape(treasury_text)}<br>
+      하이일드 차입비용 {html.escape(credit_text)}</p>
+      <p style="border-top:1px solid #ddd;padding-top:10px;font-size:12px;color:#666;margin-bottom:0">
+        기준: 참여도 정상 ≥60% / 주의 40–59% / 경고 &lt;40% (앱 분석 대상 미국 종목만)<br>
+        10년물 20일 상승폭 주의 +0.25%p / 경고 +0.50%p · 하이일드 스프레드 확대 주의 +0.50%p / 경고 +1.00%p<br>
+        종합: 경고 1개 또는 주의 2개면 경고, 주의 1개면 주의. 참고용 시장 경고이며 매매 신호는 아닙니다.
+      </p>
+    </div>
+    """
+
+
+def send_market_signal_notifications() -> int:
+    payload = read_json(DEFAULT_TECHNICAL)
+    signals = payload.get("marketSignals") if isinstance(payload, dict) else None
+    if not isinstance(signals, dict):
+        print("Market signal data is unavailable.")
+        return 0
+
+    state = read_json(NOTIFICATION_STATE)
+    if not isinstance(state, dict):
+        state = {}
+    keys = ("breadth", "treasury", "credit")
+    previous = state.get("marketHighSignals") if isinstance(state.get("marketHighSignals"), dict) else {}
+    rank = {"정상": 0, "주의": 1, "경고": 2, "판단 불가": -1}
+    current = {key: str(signals.get(key, {}).get("status") or "판단 불가") for key in keys}
+    escalated = [
+        key for key in keys
+        if rank.get(current[key], -1) > rank.get(str(previous.get(key) or "정상"), 0)
+    ]
+    if not escalated:
+        state["marketHighSignals"] = current
+        write_json(NOTIFICATION_STATE, state)
+        print("No market signal escalation.")
+        return 0
+
+    recipients = dedupe_recipients([
+        recipient for recipient in load_recipients()
+        if recipient.is_admin and recipient.email
+    ])
+    if not recipients:
+        recipients = dedupe_recipients(fallback_admin_recipients())
+    if not recipients:
+        print("No admin recipients for market signal alert.")
+        return 0
+
+    subject = f"미국 시장 고점 신호 {signals.get('status', '판단 불가')} 알림"
+    body = market_signal_email_body(signals)
+    for recipient in recipients:
+        send_email(recipient.email, subject, body)
+    state["marketHighSignals"] = current
+    state["marketHighSignalsSentAt"] = datetime.now().astimezone().isoformat()
+    write_json(NOTIFICATION_STATE, state)
+    print(f"Sent market signal notifications to admins: {len(recipients)}")
+    return len(recipients)
+
+
 
 
 def earnings_candidates(
@@ -2847,6 +2924,7 @@ def main() -> int:
 
     subparsers.add_parser("nasdaq-peak")
     subparsers.add_parser("nasdaq-warn")
+    subparsers.add_parser("market-signals")
     subparsers.add_parser("weekly-trend")
     stock_universe_parser = subparsers.add_parser("stock-universe-report")
     stock_universe_parser.add_argument("--previous", type=Path, default=DEFAULT_PREVIOUS_SEARCH_UNIVERSE)
@@ -2877,6 +2955,9 @@ def main() -> int:
         return 0
     if args.command == "nasdaq-warn":
         send_nasdaq_warn_notifications()
+        return 0
+    if args.command == "market-signals":
+        send_market_signal_notifications()
         return 0
     if args.command == "weekly-trend":
         send_weekly_trend_notifications()
