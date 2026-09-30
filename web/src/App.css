@@ -4856,7 +4856,9 @@ body.guest-personal-view .sheet-header-freeze {
 .trend-chart-modal header strong { color: var(--text-h); font-size: 19px; }
 .trend-chart-modal header span { color: var(--muted); font-size: 12px; }
 .trend-chart-modal header button { width: 32px; height: 32px; border: 0; border-radius: 50%; background: #eef2f7; color: #475569; font-size: 23px; cursor: pointer; }
-.trend-chart-modal > p { margin: 15px 0 5px; padding: 12px 14px; border-radius: 10px; background: #f5f8fc; color: #3f5067; font-size: 13px; line-height: 1.7; }
+.trend-chart-note { margin: 15px 0 5px; padding: 12px 14px; border-radius: 10px; background: #f5f8fc; color: #3f5067; font-size: 13px; line-height: 1.65; }
+.trend-chart-note p { margin: 0; }
+.trend-chart-note p + p { margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
 
 .trend-criteria { display: grid; gap: 7px; margin: 10px 0 5px; padding: 0; list-style: none; color: #526277; font-size: 12px; line-height: 1.55; }
 .trend-criteria li { position: relative; padding-left: 15px; }.trend-criteria li::before { position: absolute; left: 0; color: #3b82f6; content: '•'; font-weight: 900; }
@@ -4887,7 +4889,7 @@ body.guest-personal-view .sheet-header-freeze {
   .trend-chart-svg .chart-axis-label { font-size: 10px; }
   .trend-chart-svg .chart-level-label { font-size: 11px; }
   .trend-chart-legend { gap: 8px; font-size: 11px; }
-  .trend-chart-modal > p { margin-top: 12px; font-size: 12px; }
+  .trend-chart-note { margin-top: 12px; font-size: 12px; }
   .trend-chart-guide { margin-top: 12px; padding: 10px 0 0; font-size: 11px; }
 }
 
