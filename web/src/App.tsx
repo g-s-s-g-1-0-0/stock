@@ -5605,11 +5605,7 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
         <div className="trend-chart-legend">
           <span className="legend-line down">하락 추세선</span><span className="legend-line up">상승 추세선</span><span className="legend-line support">지지선</span><span className="legend-line resistance">저항선</span>
         </div>
-        <p>{trendExplanation(phase, stock, chart)}</p>
-        <div className={`trend-chart-entry ${entryGuide.tone}`}>
-          <strong>진입 가이드 · {entryGuide.label}</strong>
-          {entryGuide.text}
-        </div>
+        <p>{trendExplanation(phase, stock, chart)} {entryGuide.text}</p>
         <ol className="trend-criteria">
           {trendCriteria(phase, stock, chart).map((criterion, index) => <li key={index}>{criterion}</li>)}
         </ol>
