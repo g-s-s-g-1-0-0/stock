@@ -2,8 +2,9 @@ name: Gap-and-go research collection
 
 on:
   schedule:
-    # Both DST and standard-time UTC windows. The script itself only records
-    # when New York time is 09:20–09:35, 10:00–10:15, or 16:05–16:20.
+    # Both DST and standard-time UTC windows. A late start still records that
+    # slot's New York session, then fills the 10:00–11:00 paper trade if the
+    # minute bars are already available.
     - cron: "20,25,30 13,14 * * 1-5"
     - cron: "0,5,10 14,15 * * 1-5"
     - cron: "5,10,15 20,21 * * 1-5"

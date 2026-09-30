@@ -39,6 +39,48 @@ class GapGoObservationTest(unittest.TestCase):
 
     def test_manual_run_still_uses_the_local_time_window(self) -> None:
         self.assertIsNone(self.module.observation_stage(self.now))
+        self.assertIsNone(self.module.session_moment(self.now))
+
+    def test_late_job_keeps_the_scheduled_session(self) -> None:
+        ny = self.module.NEW_YORK
+        close = "5,10,15 20,21 * * 1-5"
+        on_time = datetime(2026, 10, 1, 16, 10, tzinfo=ny)
+        self.assertEqual(datetime(2026, 10, 1, 16, 5, tzinfo=ny), self.module.session_moment(on_time, close))
+        next_morning = datetime(2026, 10, 2, 8, 0, tzinfo=ny)
+        self.assertEqual(datetime(2026, 10, 1, 16, 5, tzinfo=ny), self.module.session_moment(next_morning, close))
+        monday = datetime(2026, 10, 5, 9, 0, tzinfo=ny)
+        self.assertEqual(datetime(2026, 10, 2, 16, 5, tzinfo=ny), self.module.session_moment(monday, close))
+        slightly_early = datetime(2026, 10, 1, 16, 4, tzinfo=ny)
+        self.assertEqual(datetime(2026, 10, 1, 16, 5, tzinfo=ny), self.module.session_moment(slightly_early, close))
+
+    def test_later_run_fills_the_morning_paper_trade(self) -> None:
+        import tempfile
+        ny = self.module.NEW_YORK
+        row = {
+            "ticker": "AAA",
+            "stage": "ten_am",
+            "gapScreen": True,
+            "tenAmBreakout": True,
+            "tenAmPrice": 12,
+            "tenAmLow": 11.2,
+            "observationDate": "2026-10-01",
+        }
+        bars = [
+            {"time": pd.Timestamp("2026-10-01 10:05", tz=ny), "open": 12, "high": 14, "low": 11.5, "close": 13.8, "volume": 1},
+            {"time": pd.Timestamp("2026-10-01 11:00", tz=ny), "open": 14, "high": 14.2, "low": 13.8, "close": 14, "volume": 1},
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            history = Path(tmp)
+            obs = history / "gap-go-observations-2026-10-01.jsonl"
+            obs.write_text(json.dumps(row) + "\n", encoding="utf-8")
+            early = _frame(bars[:1])
+            self.assertEqual(0, self.module.resolve_pending_paper_trades(early, history))
+            self.assertFalse((history / "gap-go-paper-trades.jsonl").exists())
+            self.assertEqual(1, self.module.resolve_pending_paper_trades(_frame(bars), history))
+            self.assertEqual(0, self.module.resolve_pending_paper_trades(_frame(bars), history))
+            stored = json.loads((history / "gap-go-paper-trades.jsonl").read_text().splitlines()[0])
+            self.assertEqual("익절 후 11시 정리", stored["outcome"])
+            self.assertEqual("2026-10-01", stored["observationDate"])
 
     def test_previous_close_ignores_the_session_bar_and_blank_premarket_volume(self) -> None:
         ny = self.module.NEW_YORK

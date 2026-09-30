@@ -19,6 +19,10 @@ A separate ``gap-go-paper-trades.jsonl`` file records a hypothetical trade
 when the 5% gap and 10:00 breakout both occur.  It buys the 10:00 price, stops
 at the low from 9:30 through 10:00, sells half at twice that risk, and closes
 the rest by 11:00.  This file is research data only and is not a trading log.
+
+A delayed job still records the New York session of the slot it was scheduled
+for.  Minute bars cover five days, and a later run fills any paper trade whose
+11:00 bar was not available yet.
 """
 
 from __future__ import annotations
@@ -26,7 +30,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -49,6 +53,14 @@ SCHEDULE_STAGE = {
     "0,5,10 14,15 * * 1-5": "ten_am",
     "5,10,15 20,21 * * 1-5": "close",
 }
+STAGE_CLOCK = {
+    "premarket": (9, 20),
+    "ten_am": (10, 0),
+    "close": (16, 5),
+}
+STAGE_RANK = {"ten_am": 2, "close": 1, "premarket": 0}
+MINUTE_PERIOD = "5d"
+SLOT_GRACE = timedelta(minutes=30)
 
 
 def stage_at(now: datetime) -> str | None:
@@ -69,6 +81,21 @@ def stage_at(now: datetime) -> str | None:
 def observation_stage(now: datetime, scheduled_expression: str = "") -> str | None:
     """Use the intended slot when GitHub starts a scheduled job late."""
     return SCHEDULE_STAGE.get(scheduled_expression.strip()) or stage_at(now)
+
+
+def session_moment(now: datetime, scheduled_expression: str = "") -> datetime | None:
+    """New York time of the slot this run belongs to, even if the job starts late."""
+    stage = observation_stage(now, scheduled_expression)
+    if stage is None:
+        return None
+    local = now.astimezone(NEW_YORK)
+    hour, minute = STAGE_CLOCK[stage]
+    candidate = local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if candidate - local > SLOT_GRACE:
+        candidate -= timedelta(days=1)
+    while candidate.weekday() >= 5:
+        candidate -= timedelta(days=1)
+    return candidate
 
 
 def load_us_tickers(path: Path = STOCKS_PATH) -> list[str]:
@@ -353,7 +380,11 @@ def upsert(path: Path, rows: list[dict[str, Any]]) -> None:
         if row.get("ticker") and row.get("stage"):
             existing[(row["ticker"], row["stage"])] = row
     for row in rows:
-        existing[(row["ticker"], row["stage"])] = row
+        key = (row["ticker"], row["stage"])
+        previous = existing.get(key)
+        if previous and previous.get("dataAvailable") and not row.get("dataAvailable"):
+            continue
+        existing[key] = row
     path.parent.mkdir(parents=True, exist_ok=True)
     ordered = sorted(existing.values(), key=lambda row: (row["stage"], row["ticker"]))
     _write_jsonl(path, ordered)
@@ -492,6 +523,47 @@ def paper_trade(minute: pd.DataFrame, row: dict[str, Any]) -> dict[str, Any] | N
     }
 
 
+def _signal_row(rows: list[dict[str, Any]], session: str) -> dict[str, Any] | None:
+    candidates = [
+        row for row in rows
+        if row.get("gapScreen") and row.get("tenAmBreakout") and row.get("tenAmPrice") is not None and row.get("ticker")
+    ]
+    if not candidates:
+        return None
+    chosen = max(candidates, key=lambda row: STAGE_RANK.get(str(row.get("stage")), -1))
+    return {**chosen, "observationDate": chosen.get("observationDate") or session}
+
+
+def resolve_pending_paper_trades(minute: pd.DataFrame, history_dir: Path = HISTORY_DIR) -> int:
+    """Fill hypothetical trades once the 10:00–11:00 bars exist. The first result stays."""
+    path = history_dir / "gap-go-paper-trades.jsonl"
+    existing = {
+        (row.get("observationDate"), row.get("ticker"))
+        for row in _read_jsonl(path)
+        if row.get("observationDate") and row.get("ticker")
+    }
+    pending: list[dict[str, Any]] = []
+    for obs_path in sorted(history_dir.glob("gap-go-observations-*.jsonl")):
+        session = obs_path.stem.removeprefix("gap-go-observations-")
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        for row in _read_jsonl(obs_path):
+            ticker = str(row.get("ticker") or "")
+            if ticker:
+                grouped.setdefault(ticker, []).append(row)
+        for ticker, group in grouped.items():
+            if (session, ticker) in existing:
+                continue
+            chosen = _signal_row(group, session)
+            if chosen is None:
+                continue
+            trade = paper_trade(minute, chosen)
+            if trade:
+                pending.append(trade)
+    if not pending or not merge_paper_trades(pending, path):
+        return 0
+    return len(pending)
+
+
 def merge_paper_trades(rows: list[dict[str, Any]], path: Path | None = None) -> bool:
     """Keep the first resolved result for each date and ticker."""
     target = path or (HISTORY_DIR / "gap-go-paper-trades.jsonl")
@@ -515,10 +587,12 @@ def merge_paper_trades(rows: list[dict[str, Any]], path: Path | None = None) -> 
 
 def record(now: datetime | None = None) -> int:
     current = now or datetime.now(timezone.utc)
-    stage = observation_stage(current, os.environ.get("GAP_GO_SCHEDULE", ""))
-    if stage is None:
+    scheduled = os.environ.get("GAP_GO_SCHEDULE", "")
+    moment = session_moment(current, scheduled)
+    if moment is None:
         print("[gap-go] outside observation window; skipped")
         return 0
+    stage = observation_stage(current, scheduled)
     tickers = load_us_tickers()
     if not tickers:
         raise RuntimeError("no US tickers found in data/cache/stocks.json")
@@ -526,14 +600,14 @@ def record(now: datetime | None = None) -> int:
     import yfinance as yf
 
     symbols = list(dict.fromkeys([*tickers, "QQQ", "^VIX"]))
-    minute = yf.download(tickers, period="1d", interval="1m", prepost=True, auto_adjust=False, progress=False, threads=True)
+    minute = yf.download(tickers, period=MINUTE_PERIOD, interval="1m", prepost=True, auto_adjust=False, progress=False, threads=True)
     daily = yf.download(symbols, period="2y", interval="1d", auto_adjust=False, progress=False, threads=True)
     local = current.astimezone(NEW_YORK)
-    date_value = local.date().isoformat()
+    date_value = moment.date().isoformat()
     captured_at = current.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
-    context = market_context(daily, local.date())
+    context = market_context(daily, moment.date())
     rows = [{
-        **_snapshot(minute, daily, ticker, local),
+        **_snapshot(minute, daily, ticker, moment),
         **context,
         "stage": stage,
         "observationDate": date_value,
@@ -543,9 +617,9 @@ def record(now: datetime | None = None) -> int:
     target = _path(date_value)
     carry_forward_premarket_volume(_read_jsonl(target), rows)
     upsert(target, rows)
-    paper_rows = [trade for row in rows if (trade := paper_trade(minute, row))]
-    if merge_paper_trades(paper_rows):
-        print(f"[gap-go] recorded {len(paper_rows)} paper trades")
+    filled = resolve_pending_paper_trades(minute)
+    if filled:
+        print(f"[gap-go] recorded {filled} paper trades")
     session_paths = ensure_session_files(daily)
     print(f"[gap-go] wrote {len(rows)} {stage} observations to {target.relative_to(ROOT)}")
     if session_paths:
