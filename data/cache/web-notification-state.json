@@ -75,6 +75,11 @@
     ],
     "updatedAt": "2026-07-20T00:02:15.464806+00:00"
   },
+  "marketHighSignals": {
+    "breadth": "정상",
+    "credit": "판단 불가",
+    "treasury": "판단 불가"
+  },
   "nasdaqPeak": {
     "resetAt": "2026-05-14T20:55:50.998617+00:00",
     "sent": false
@@ -114,12 +119,12 @@
     "updatedAt": "2026-07-15T04:59:59.592963+00:00"
   },
   "strategySeason": {
-    "open": true,
-    "sawRecovery": false,
     "nonRecoveryStreak": 0,
+    "open": true,
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
-    "updatedAt": "2026-09-30T03:00:00+00:00"
+    "sawRecovery": false,
+    "updatedAt": "2026-09-30T05:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
