@@ -19,7 +19,7 @@ import time
 from typing import Any
 from urllib.parse import urlparse
 
-from .sheet_sources import fetch_us_ohlcv
+from .sheet_sources import fetch_text, fetch_us_ohlcv
 
 BREADTH_LABEL = "미국 주식 20일선 상회 비율"
 TREASURY_LABEL = "미국 10년물 금리 20일 변화"
@@ -222,6 +222,19 @@ def _tradingview_closes(symbol: str, bars: int) -> list[float]:
         sock.close()
 
 
+def _nyse_stock_count() -> int | None:
+    """Count NYSE listings behind the breadth percentage, excluding ETFs and test issues."""
+    text = fetch_text("https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt")
+    count = 0
+    for line in text.splitlines()[1:]:
+        parts = line.split("|")
+        if len(parts) < 7 or parts[0].startswith("File Creation"):
+            continue
+        if parts[2] == "N" and parts[4] == "N" and parts[6] == "N":
+            count += 1
+    return count or None
+
+
 def _breadth() -> dict[str, Any]:
     try:
         closes = _tradingview_closes("INDEX:MMTW", 5)
@@ -230,7 +243,14 @@ def _breadth() -> dict[str, Any]:
     if not closes or not 0 <= closes[-1] <= 100:
         return {"status": "판단 불가", "value": None}
     percent = closes[-1]
-    return {"status": _breadth_status(percent), "value": percent}
+    signal: dict[str, Any] = {"status": _breadth_status(percent), "value": percent}
+    try:
+        count = _nyse_stock_count()
+    except Exception:  # noqa: BLE001 - the percentage still stands without the count
+        count = None
+    if count:
+        signal["count"] = count
+    return signal
 
 
 def _treasury() -> dict[str, Any]:
@@ -270,7 +290,7 @@ def _breadth_text(breadth: dict[str, Any]) -> str:
     if not isinstance(value, (int, float)):
         return "데이터 수집 실패 · 판단 불가"
     count = breadth.get("count")
-    count_text = f" ({count}개 중)" if isinstance(count, int) and count > 0 else ""
+    count_text = f" ({count:,}개 중)" if isinstance(count, int) and count > 0 else ""
     return f"{value:.0f}%{count_text} · {breadth.get('status', '판단 불가')}"
 
 

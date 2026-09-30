@@ -24,15 +24,16 @@ def test_signal_rows_use_market_breadth_and_plain_credit_name(monkeypatch):
         "FRED:BAMLH0A0HYM2": [2.0] * 20 + [2.4],
     }[symbol])
     monkeypatch.setattr(market_signals, "_yahoo_closes", lambda symbol: [4.0] * 20 + [4.3])
+    monkeypatch.setattr(market_signals, "_nyse_stock_count", lambda: 2838)
 
     signals = market_signals.build_market_signals()
     rows = dict(market_signals.market_signal_rows(signals))
 
     assert signals["status"] == "주의"
-    assert rows["미국 주식 20일선 상회 비율"] == "61% · 정상"
+    assert rows["미국 주식 20일선 상회 비율"] == "61% (2,838개 중) · 정상"
+    assert signals["breadth"]["count"] == 2838
     assert rows["미국 10년물 금리 20일 변화"] == "4.30% · 20거래일 +0.30%p · 주의"
     assert rows["미국 저신용 회사 추가금리 20일 변화"] == "2.40%p · 20거래일 +0.40%p · 정상"
-    assert "count" not in signals["breadth"]
 
 
 def test_breadth_warning_sets_the_combined_signal(monkeypatch):
@@ -41,6 +42,7 @@ def test_breadth_warning_sets_the_combined_signal(monkeypatch):
         "FRED:BAMLH0A0HYM2": [3.0] * 21,
     }[symbol])
     monkeypatch.setattr(market_signals, "_yahoo_closes", lambda symbol: [5.0] * 21)
+    monkeypatch.setattr(market_signals, "_nyse_stock_count", lambda: None)
 
     signals = market_signals.build_market_signals()
 
