@@ -23,7 +23,7 @@ from .sheet_sources import fetch_text, fetch_us_ohlcv
 
 BREADTH_LABEL = "미국 주식 20일선 상회 비율"
 TREASURY_LABEL = "미국 10년물 금리 20일 변화"
-CREDIT_LABEL = "미국 저신용 회사 추가금리 20일 변화"
+CREDIT_LABEL = "미국 저신용 회사채 금리 차이 (20일)"
 _TV_URL = "wss://data.tradingview.com/socket.io/websocket?type=chart"
 _UNAVAILABLE = {"status": "판단 불가", "change": None, "current": None}
 
