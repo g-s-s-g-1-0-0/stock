@@ -192,7 +192,10 @@ def test_existing_strategy_wins_over_both_new_signals():
 
 
 @pytest.mark.parametrize('code,price,days,peak,recovery,expected', [
-    ('5',112,0,False,False,None), ('5',92,0,False,False,'손절'),
+    ('5',109.9,0,False,False,None), ('5',110,0,False,False,'익절'),
+    ('5',110,0,True,False,'익절'), ('5',92,0,False,False,'손절'),
+    ('7',109.9,0,False,False,None), ('7',110,0,False,False,'익절'),
+    ('7',110,0,False,True,'회복장'), ('7',91,0,False,False,'손절'),
     ('6',112,0,False,False,'익절'), ('6',94,0,False,False,'손절'),
     ('6',94.01,0,False,False,None), ('5',100,60,False,False,'보유기간'),
     ('6',100,59,False,False,None), ('5',100,0,True,False,'나스닥'),
@@ -277,5 +280,11 @@ def test_pipeline_exposes_new_strategy_to_stocks_and_notifications(monkeypatch):
     assert pipeline.stock_strategies_from_technical(result)==['5. 저항선 돌파 후 눌림']
     assert '전략5' in result['decisionLog']
     assert '눌림' in notifications.buy_reason({},result)
-    assert logs.target_return_pct('5')==0
+    assert logs.target_return_pct('5')==10
     assert logs.target_return_pct('6')==12
+    assert logs.target_return_pct('7')==10
+    for code in ('5', '7'):
+        trade = {'strategy': code}
+        assert logs.trade_status_for_exit(trade, 5.0) == '익절'
+        assert logs.trade_status_for_exit(trade, 10.0) == '익절'
+        assert logs.trade_status_for_exit(trade, -3.0) == '손절'

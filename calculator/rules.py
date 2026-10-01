@@ -28,12 +28,13 @@ STRATEGY_RULES: dict[str, float | int] = {
     "CIRCUIT_PCT_5": 0.08,
     "CIRCUIT_PCT_6": 0.08,
     "CIRCUIT_PCT_7": 0.08,
-    "TARGET_PCT_5": 0.0,
+    "TARGET_PCT_5": 0.10,
     "TARGET_PCT_6": 0.12,
+    "TARGET_PCT_7": 0.10,
     "MAX_HOLD_DAYS_5": 60,
     "MAX_HOLD_DAYS_6": 60,
-    # Strategies 1 and 2 judge success at recovery-end. Strategy 4 also
-    # takes profit at +15%, and still exits on recovery-end or a Nasdaq peak.
+    # Strategies 1 and 2 judge success at recovery-end. Strategies 4, 5, and 7
+    # also take profit at a fixed gain, and still exit on recovery-end or a Nasdaq peak.
     "TARGET_PCT_1": 0.0,
     "TARGET_PCT_2": 0.0,
     "TARGET_PCT_3": 0.12,
@@ -364,8 +365,8 @@ def strategy_target_criterion_label(strategy_type: str) -> str:
     if code in {"3", "6"}:
         target = float(STRATEGY_RULES.get(f"TARGET_PCT_{code}", 0.12))
         return f"{base} 기준 +{int(round(target * 100))}%"
-    if code == "4":
-        target = int(round(float(STRATEGY_RULES.get("TARGET_PCT_4", 0.15)) * 100))
+    if code in {"4", "5", "7"}:
+        target = int(round(float(STRATEGY_RULES.get(f"TARGET_PCT_{code}", 0)) * 100))
         return f"{base} 기준 +{target}% 또는 회복장 종료 청산"
     return f"{base} 기준 회복장 종료 청산"
 
@@ -436,7 +437,8 @@ def evaluate_exit_condition(
         stop_price = ind.entry_price * .92 if code == "5" else ind.support_stop_price
         if stop_price is not None and ind.current_price <= stop_price:
             return {"shouldExit": True, "reason": f"손절 기준 도달 {return_signed} [{stop_label}]"}
-        if code == "6" and return_pct >= float(STRATEGY_RULES["TARGET_PCT_6"]) - 1e-12:
+        target_pct = float(STRATEGY_RULES.get(f"TARGET_PCT_{code}", 0))
+        if target_pct > 0 and return_pct >= target_pct - 1e-12:
             return {"shouldExit": True, "reason": f"익절 기준 도달 {return_signed} [{strategy_target_criterion_label(code)}]"}
         if trading_days >= int(STRATEGY_RULES[f"MAX_HOLD_DAYS_{code}"]):
             return {"shouldExit": True, "reason": f"보유기간 만료 청산 {return_signed} [60거래일]"}
@@ -478,8 +480,8 @@ def evaluate_exit_condition(
     if return_pct <= -circuit_pct:
         return {"shouldExit": True, "reason": f"손절 기준 도달 {return_signed} [{stop_label}]"}
 
-    if code == "4":
-        target_pct = float(STRATEGY_RULES.get("TARGET_PCT_4", 0.15))
+    if code in {"4", "7"}:
+        target_pct = float(STRATEGY_RULES.get(f"TARGET_PCT_{code}", 0))
         if target_pct > 0 and return_pct >= target_pct - 1e-12:
             return {
                 "shouldExit": True,
