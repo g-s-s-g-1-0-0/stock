@@ -519,9 +519,12 @@ def target_return_pct(strategy: str) -> float:
 
 
 def trade_status_for_exit(trade: dict[str, Any], result: float) -> str:
-    # Strategy 1/2: + = 성공(익절), - = 실패(손절). No mid profit-target band.
+    # Strategy 1/2/4: + = 성공(익절), - = 실패(손절). Strategy 4's +15% target
+    # is an extra exit, not a band that relabels a profitable market exit.
     if result <= 0:
         return "손절"
+    if strategy_code(str(trade.get("strategy") or "")) == "4":
+        return "익절"
     target = target_return_pct(str(trade.get("strategy") or ""))
     if target <= 0:
         return "익절"

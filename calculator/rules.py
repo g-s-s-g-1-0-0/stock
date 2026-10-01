@@ -32,11 +32,12 @@ STRATEGY_RULES: dict[str, float | int] = {
     "TARGET_PCT_6": 0.12,
     "MAX_HOLD_DAYS_5": 60,
     "MAX_HOLD_DAYS_6": 60,
-    # Success/fail is judged at recovery-end exit; no profit target for 1/2/4.
+    # Strategies 1 and 2 judge success at recovery-end. Strategy 4 also
+    # takes profit at +15%, and still exits on recovery-end or a Nasdaq peak.
     "TARGET_PCT_1": 0.0,
     "TARGET_PCT_2": 0.0,
     "TARGET_PCT_3": 0.12,
-    "TARGET_PCT_4": 0.0,
+    "TARGET_PCT_4": 0.15,
     "MAX_HOLD_DAYS_3": 20,
     "S3_PCT_B_LOW_MAX": 10,
     "S3_RSI_MAX": 45,
@@ -363,6 +364,9 @@ def strategy_target_criterion_label(strategy_type: str) -> str:
     if code in {"3", "6"}:
         target = float(STRATEGY_RULES.get(f"TARGET_PCT_{code}", 0.12))
         return f"{base} 기준 +{int(round(target * 100))}%"
+    if code == "4":
+        target = int(round(float(STRATEGY_RULES.get("TARGET_PCT_4", 0.15)) * 100))
+        return f"{base} 기준 +{target}% 또는 회복장 종료 청산"
     return f"{base} 기준 회복장 종료 청산"
 
 
@@ -473,6 +477,14 @@ def evaluate_exit_condition(
     circuit_pct = float(STRATEGY_RULES.get(f"CIRCUIT_PCT_{code}", STRATEGY_RULES["CIRCUIT_PCT_1"]))
     if return_pct <= -circuit_pct:
         return {"shouldExit": True, "reason": f"손절 기준 도달 {return_signed} [{stop_label}]"}
+
+    if code == "4":
+        target_pct = float(STRATEGY_RULES.get("TARGET_PCT_4", 0.15))
+        if target_pct > 0 and return_pct >= target_pct - 1e-12:
+            return {
+                "shouldExit": True,
+                "reason": f"익절 기준 도달 {return_signed} [{strategy_target_criterion_label(code)}]",
+            }
 
     return {"shouldExit": False, "reason": None}
 

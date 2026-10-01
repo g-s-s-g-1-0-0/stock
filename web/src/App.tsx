@@ -2634,9 +2634,10 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
       {
         label: '청산',
         value: [
+          '매수가 대비 +15%에 도달하면 익절합니다.',
           '처음엔 회복장에서 사지 않지만, 산 뒤에 시장이 회복장으로 들어갔다가 그 회복장이 끝났다고 2거래일 연속 확인되면 전량 매도합니다. (전략 1·2와 같은 시장 사이클 청산)',
           NASDAQ_PEAK_EXIT_DESCRIPTION,
-          '청산 시점 수익률이 플러스면 성공, 마이너스면 실패로 기록합니다.',
+          '회복장 종료나 고점 청산 시점의 수익률이 플러스면 성공, 마이너스면 실패로 기록합니다.',
         ],
       },
       {
@@ -2789,8 +2790,11 @@ function tradeResultLabel(trade: TradeLog) {
 
 function tradeCriteriaInfo(strategy: string) {
   const code = strategyCode(strategy)
-  if (code === '1' || code === '2' || code === '4') {
+  if (code === '1' || code === '2') {
     return `전략 ${code} 기준: 회복장 종료(2거래일 확정) 시 전량매도하며, 그때 수익률이 +면 성공(익절), −면 실패(손절)입니다. -30% 하드 손절도 유지합니다. 목표가·시간 청산은 없습니다.`
+  }
+  if (code === '4') {
+    return '전략 4 기준: 매수가 대비 +15% 익절, 또는 회복장 종료(2거래일 확정)·나스닥 고점 알람 시 전량매도. 시장 청산 때 수익률이 +면 성공(익절), −면 실패(손절)입니다. -30% 하드 손절도 유지합니다.'
   }
   if (code === '3') {
     return '전략 3 기준: +12% 익절, 진입 지지선 이탈 손절(-25% 하드 손절), 최대 20거래일, QQQ +10.5% 2거래일 확인 후 횡보장 고점 청산(보유 3일 이후). 스윙 전용이며 회복장 종료 전량매도는 적용하지 않습니다.'
@@ -2945,8 +2949,9 @@ function formatTradePrice(trade: TradeLog, value: number | null, fallback: strin
 }
 
 function strategyTargetReturnPct(strategy: string) {
-  // Strategy 1/2 have no profit target; strategy 3 uses +12%.
+  // Strategy 1/2 have no profit target. Strategy 3 and 6 use +12%, strategy 4 uses +15%.
   const code = strategyCode(strategy)
+  if (code === '4') return 0.15
   if (code === '3' || code === '6') return 0.12
   return 0
 }
@@ -2963,8 +2968,11 @@ function recommendedSellPriceNote(strategy: string) {
     return '전략과 무관한 직접 기입 항목은 자동 청산 없이 직접 청산으로 정리합니다.'
   }
   const code = strategyCode(strategy)
-  if (code === '1' || code === '2' || code === '4') {
+  if (code === '1' || code === '2') {
     return '목표가 익절 없음. 회복장 종료 전량매도 또는 -30% 손절.'
+  }
+  if (code === '4') {
+    return '권장 매도가 = 매수가 +15%. 회복장 종료·나스닥 고점 알람·-30% 손절도 함께 적용.'
   }
   if (code === '3') {
     return '권장 매도가 = 매수가 +12%. 손절은 진입 지지선 이탈(-25% 하드), 20거래일·QQQ +10.5% 2일 확인 청산도 함께 적용.'

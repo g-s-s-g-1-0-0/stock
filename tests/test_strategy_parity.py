@@ -322,3 +322,29 @@ def test_strategy_4_yields_to_strategy_1_and_uses_s1_style_exits():
     peak_exit = evaluate_exit_condition(held, strategy_type="4", nasdaq_peak_alert=True)
     assert peak_exit["shouldExit"] is True
     assert "고점" in peak_exit["reason"]
+
+    below_target = evaluate_exit_condition(
+        IndicatorRow(stock_name="AMD", current_price=114.9, entry_price=100),
+        strategy_type="4",
+    )
+    assert below_target["shouldExit"] is False
+
+    target_exit = evaluate_exit_condition(
+        IndicatorRow(stock_name="AMD", current_price=115, entry_price=100),
+        strategy_type="4",
+    )
+    assert target_exit["shouldExit"] is True
+    assert "+15%" in target_exit["reason"]
+
+    market_still_first = evaluate_exit_condition(
+        IndicatorRow(stock_name="AMD", current_price=115, entry_price=100),
+        strategy_type="4",
+        recovery_ended=True,
+    )
+    assert "회복장 종료" in market_still_first["reason"]
+
+    other_strategy = evaluate_exit_condition(
+        IndicatorRow(stock_name="AMD", current_price=115, entry_price=100),
+        strategy_type="1",
+    )
+    assert other_strategy["shouldExit"] is False

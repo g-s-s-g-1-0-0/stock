@@ -813,6 +813,14 @@ def test_profitable_exit_before_strategy_target_is_failure_profit(monkeypatch, t
     assert row["status"] == "실패 익절"
 
 
+def test_strategy4_market_exit_stays_success_below_fifteen_percent():
+    trade = {"strategy": "4. 장기선 아래 반등 초입"}
+
+    assert logs.trade_status_for_exit(trade, 8.0) == "익절"
+    assert logs.trade_status_for_exit(trade, 15.0) == "익절"
+    assert logs.trade_status_for_exit(trade, -3.0) == "손절"
+
+
 def test_h_strategy_twelve_percent_target_is_success_profit():
     trade = {"strategy": "2. 상승 추세 이평선 눌림목"}
 
