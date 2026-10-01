@@ -5365,7 +5365,7 @@ function TechnicalAnalysisPage({
                 </th>
                 <th>
                   <MetricValue
-                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 클릭하면 크게 볼 수 있습니다.', '초록: 상승 추세 · 파랑: 하락 추세 · 보라: 전환 감지 · 빨강: 이탈 위험.')}
+                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 클릭하면 크게 볼 수 있습니다.', '초록: 상승 추세\n파랑: 하락 추세\n보라: 전환 감지\n빨강: 이탈 위험')}
                     onTooltipClose={onTooltipClose}
                     onTooltipOpen={onTooltipOpen}
                   >
