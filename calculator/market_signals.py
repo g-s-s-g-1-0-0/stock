@@ -16,6 +16,7 @@ import ssl
 import string
 import struct
 import time
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -26,6 +27,9 @@ TREASURY_LABEL = "미국 10년물 금리 20일 변화"
 CREDIT_LABEL = "미국 저신용 회사채 금리 차이 (20일)"
 _TV_URL = "wss://data.tradingview.com/socket.io/websocket?type=chart"
 _UNAVAILABLE = {"status": "판단 불가", "change": None, "current": None}
+_RULES_PATH = Path(__file__).resolve().parents[1] / "data" / "market_signal_rules.json"
+MARKET_SIGNAL_RULES = json.loads(_RULES_PATH.read_text(encoding="utf-8"))
+_DISPLAY_DECIMALS = int(MARKET_SIGNAL_RULES["displayDecimals"])
 
 
 def _status(value: float, caution: float, warning: float) -> str:
@@ -33,13 +37,14 @@ def _status(value: float, caution: float, warning: float) -> str:
 
 
 def _breadth_status(percent: float) -> str:
-    return "경고" if percent < 40 else "주의" if percent < 60 else "정상"
+    rules = MARKET_SIGNAL_RULES["breadth"]
+    return "경고" if percent < rules["warningBelow"] else "주의" if percent < rules["cautionBelow"] else "정상"
 
 
 def _change_signal(closes: list[float], caution: float, warning: float) -> dict[str, Any]:
     if len(closes) < 21:
         return dict(_UNAVAILABLE)
-    change = closes[-1] - closes[-21]
+    change = round(closes[-1] - closes[-21], _DISPLAY_DECIMALS)
     return {
         "status": _status(change, caution, warning),
         "change": change,
@@ -250,6 +255,7 @@ def _breadth() -> dict[str, Any]:
         count = None
     if count:
         signal["count"] = count
+        signal["numerator"] = round(percent * count / 100)
     return signal
 
 
@@ -258,7 +264,8 @@ def _treasury() -> dict[str, Any]:
         closes = _yahoo_closes("^TNX")
     except Exception:  # noqa: BLE001 - market signals remain best-effort
         return dict(_UNAVAILABLE)
-    return _change_signal(closes, 0.25, 0.50)
+    rules = MARKET_SIGNAL_RULES["treasury"]
+    return _change_signal(closes, rules["caution"], rules["warning"])
 
 
 def _credit() -> dict[str, Any]:
@@ -266,7 +273,8 @@ def _credit() -> dict[str, Any]:
         closes = _tradingview_closes("FRED:BAMLH0A0HYM2", 40)
     except Exception:  # noqa: BLE001 - market signals remain best-effort
         return dict(_UNAVAILABLE)
-    return _change_signal(closes, 0.50, 1.00)
+    rules = MARKET_SIGNAL_RULES["credit"]
+    return _change_signal(closes, rules["caution"], rules["warning"])
 
 
 def build_market_signals() -> dict[str, Any]:
@@ -277,7 +285,7 @@ def build_market_signals() -> dict[str, Any]:
     }
     statuses = [signals[key]["status"] for key in ("breadth", "treasury", "credit")]
     signals["status"] = (
-        "경고" if "경고" in statuses or statuses.count("주의") >= 2
+        "경고" if statuses.count("경고") >= MARKET_SIGNAL_RULES["combined"]["warningSignalCount"] or statuses.count("주의") >= MARKET_SIGNAL_RULES["combined"]["cautionCountForWarning"]
         else "주의" if "주의" in statuses
         else "정상" if "정상" in statuses
         else "판단 불가"
@@ -290,7 +298,8 @@ def _breadth_text(breadth: dict[str, Any]) -> str:
     if not isinstance(value, (int, float)):
         return "데이터 수집 실패 · 판단 불가"
     count = breadth.get("count")
-    count_text = f" ({count:,}개 중)" if isinstance(count, int) and count > 0 else ""
+    numerator = breadth.get("numerator")
+    count_text = f" ({numerator:,}/{count:,})" if isinstance(count, int) and count > 0 and isinstance(numerator, int) else ""
     return f"{value:.0f}%{count_text} · {breadth.get('status', '판단 불가')}"
 
 

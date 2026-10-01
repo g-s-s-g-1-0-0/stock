@@ -1,0 +1,19 @@
+{
+  "displayDecimals": 2,
+  "breadth": {
+    "warningBelow": 40,
+    "cautionBelow": 60
+  },
+  "treasury": {
+    "caution": 0.25,
+    "warning": 0.5
+  },
+  "credit": {
+    "caution": 0.5,
+    "warning": 1
+  },
+  "combined": {
+    "warningSignalCount": 1,
+    "cautionCountForWarning": 2
+  }
+}

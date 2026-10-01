@@ -39,6 +39,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from calculator.market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
+from calculator.market_signals import MARKET_SIGNAL_RULES
 from calculator.portfolio_risk import RISK_GROUP_MAX_PERCENT, swing_entry_decision
 from calculator.opinion_reasons import format_sell_opinion_reason
 from calculator.rules import STRATEGY_RULES, enrich_profit_exit_reason
@@ -2307,8 +2308,10 @@ def market_signal_email_body(signals: dict[str, Any]) -> str:
     credit = signals.get("credit", {})
     breadth_value = breadth.get("value")
     breadth_count = breadth.get("count")
+    breadth_numerator = breadth.get("numerator")
     breadth_count_text = (
-        f" ({breadth_count:,}개 중)" if isinstance(breadth_count, int) and breadth_count > 0 else ""
+        f" ({breadth_numerator:,}/{breadth_count:,})"
+        if isinstance(breadth_count, int) and breadth_count > 0 and isinstance(breadth_numerator, int) else ""
     )
     breadth_text = (
         f"{breadth_value:.0f}%{breadth_count_text} · {breadth.get('status', '판단 불가')}"
@@ -2329,9 +2332,9 @@ def market_signal_email_body(signals: dict[str, Any]) -> str:
       미국 10년물 {html.escape(treasury_text)}<br>
       저신용 회사채 금리 차이 {html.escape(credit_text)}</p>
       <p style="border-top:1px solid #ddd;padding-top:10px;font-size:12px;color:#666;margin-bottom:0">
-        기준: 20일선 상회 비율은 관심종목이 아니라 뉴욕증권거래소 상장 종목(ETF·테스트 제외). 정상 ≥60% / 주의 40–59% / 경고 &lt;40%<br>
-        10년물 20일 상승폭 주의 +0.25%p / 경고 +0.50%p · 회사채와 국채의 금리 차이 확대 주의 +0.50%p / 경고 +1.00%p<br>
-        종합: 경고 1개 또는 주의 2개면 경고, 주의 1개면 주의. 참고용 시장 경고이며 매매 신호는 아닙니다.
+        기준: 20일선 상회 비율은 뉴욕증권거래소 상장 종목(ETF·테스트 제외). 정상 ≥{MARKET_SIGNAL_RULES['breadth']['cautionBelow']}% / 주의 {MARKET_SIGNAL_RULES['breadth']['warningBelow']}% 이상 ~ {MARKET_SIGNAL_RULES['breadth']['cautionBelow']}% 미만 / 경고 &lt;{MARKET_SIGNAL_RULES['breadth']['warningBelow']}%<br>
+        10년물 20일 상승폭 주의 +{MARKET_SIGNAL_RULES['treasury']['caution']:.2f}%p / 경고 +{MARKET_SIGNAL_RULES['treasury']['warning']:.2f}%p · 회사채와 국채의 금리 차이 확대 주의 +{MARKET_SIGNAL_RULES['credit']['caution']:.2f}%p / 경고 +{MARKET_SIGNAL_RULES['credit']['warning']:.2f}%p<br>
+        종합: 경고 {MARKET_SIGNAL_RULES['combined']['warningSignalCount']}개 이상 또는 주의 {MARKET_SIGNAL_RULES['combined']['cautionCountForWarning']}개 이상이면 경고, 주의가 하나면 주의. 참고용 시장 경고이며 매매 신호는 아닙니다.
       </p>
     </div>
     """
