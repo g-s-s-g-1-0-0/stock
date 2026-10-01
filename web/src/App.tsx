@@ -5028,9 +5028,11 @@ function MetricValue({
 
   const openTooltip = (element: HTMLElement, toggle = false) => {
     const rect = element.getBoundingClientRect()
-    const tooltipHalfWidth = Math.min(130, (window.innerWidth - 32) / 2)
-    const minX = tooltipHalfWidth + 16
-    const maxX = window.innerWidth - tooltipHalfWidth - 16
+    const edgePadding = Math.max(16, Math.min(32, window.innerWidth * 0.014))
+    const tooltipWidth = Math.min(280, window.innerWidth - edgePadding * 2)
+    const tooltipHalfWidth = tooltipWidth / 2
+    const minX = tooltipHalfWidth + edgePadding
+    const maxX = window.innerWidth - tooltipHalfWidth - edgePadding
     const centeredX = rect.left + rect.width / 2
 
     onTooltipOpen({
