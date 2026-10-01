@@ -39,7 +39,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from calculator.market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
-from calculator.market_signals import MARKET_SIGNAL_RULES
+from calculator.market_signals import MARKET_SIGNAL_RULES, aggregate_market_signal_status
 from calculator.portfolio_risk import RISK_GROUP_MAX_PERCENT, swing_entry_decision
 from calculator.opinion_reasons import format_sell_opinion_reason
 from calculator.rules import STRATEGY_RULES, enrich_profit_exit_reason
@@ -2325,17 +2325,25 @@ def market_signal_email_body(signals: dict[str, Any]) -> str:
         f"{credit['current']:.2f}%p · 20거래일 {credit['change']:+.2f}%p · {credit['status']}"
         if isinstance(credit.get("change"), (int, float)) else "수집 실패 · 판단 불가"
     )
+    overall_status = str(signals.get("status", "판단 불가"))
+    recommended_action = {
+        "경고": "신규 매수는 관망하고, 보유 종목은 각 전략의 보유·청산 신호를 따르세요.",
+        "주의": "종목별 신호를 선별해 확인하고, 각 전략 기준에 따라 대응하세요.",
+        "정상": "시장 지표상 별도 경고는 없습니다. 종목별 전략 신호에 따라 대응하세요.",
+    }.get(overall_status, "판정 자료가 부족합니다. 종목별 전략 신호와 기준을 확인하세요.")
     return f"""
     <style>
       @media only screen and (max-width:600px) {{
         .market-signal-shell {{ padding:16px !important; }}
         .market-signal-title {{ font-size:18px !important; line-height:1.3 !important; }}
+        .market-signal-action {{ font-size:13px !important; padding:8px 10px !important; }}
         .market-signal-table td {{ padding:8px 6px !important; font-size:13px !important; }}
         .market-signal-rules {{ font-size:11px !important; line-height:1.45 !important; }}
       }}
     </style>
     <div class="market-signal-shell" style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:680px;padding:20px">
       <h2 class="market-signal-title" style="font-size:24px;line-height:1.35;margin:0 0 12px">미국 시장 고점 신호: {html.escape(str(signals.get('status', '판단 불가')))}</h2>
+      <div class="market-signal-action" style="margin:0 0 12px;padding:10px 12px;background:#f3f6fa;border-radius:8px;font-size:15px;line-height:1.5"><strong>권장 행동</strong> · {html.escape(recommended_action)}</div>
       <table class="market-signal-table" role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 14px">
         <tr><td width="38%" style="padding:10px 8px;border-bottom:1px solid #e7eaf0;color:#596579;font-size:15px">20일선 상회율</td><td style="padding:10px 8px;border-bottom:1px solid #e7eaf0;font-size:16px;font-weight:600">{html.escape(breadth_text)}</td></tr>
         <tr><td style="padding:10px 8px;border-bottom:1px solid #e7eaf0;color:#596579;font-size:15px">미국 10년물</td><td style="padding:10px 8px;border-bottom:1px solid #e7eaf0;font-size:16px;font-weight:600">{html.escape(treasury_text.replace(' · 20거래일 ', ' · '))}</td></tr>
@@ -2364,16 +2372,17 @@ def send_market_signal_notifications() -> int:
         state = {}
     keys = ("breadth", "treasury", "credit")
     previous = state.get("marketHighSignals") if isinstance(state.get("marketHighSignals"), dict) else {}
-    rank = {"정상": 0, "주의": 1, "경고": 2, "판단 불가": -1}
     current = {key: str(signals.get(key, {}).get("status") or "판단 불가") for key in keys}
-    escalated = [
-        key for key in keys
-        if rank.get(current[key], -1) > rank.get(str(previous.get(key) or "정상"), 0)
-    ]
-    if not escalated:
-        state["marketHighSignals"] = current
+    current_status = str(signals.get("status") or "판단 불가")
+    previous_status = state.get("marketHighSignalStatus")
+    if not isinstance(previous_status, str):
+        previous_parts = [str(previous[key]) for key in keys if previous.get(key) in {"정상", "주의", "경고", "판단 불가"}]
+        previous_status = aggregate_market_signal_status(previous_parts) if previous_parts else current_status
+    if current_status == previous_status:
+        state["marketHighSignals"] = {**current, "overallStatus": current_status}
+        state["marketHighSignalStatus"] = current_status
         write_json(NOTIFICATION_STATE, state)
-        print("No market signal escalation.")
+        print("Market signal status has not changed.")
         return 0
 
     admin_recipients = dedupe_recipients([
@@ -2387,14 +2396,18 @@ def send_market_signal_notifications() -> int:
     if not admin_recipients:
         recipients = dedupe_recipients(fallback_admin_recipients())
     if not recipients:
-        print("No admin recipients for market signal alert.")
+        state["marketHighSignals"] = {**current, "overallStatus": current_status}
+        state["marketHighSignalStatus"] = current_status
+        write_json(NOTIFICATION_STATE, state)
+        print("No enabled admin recipients for market signal alert.")
         return 0
 
     subject = f"미국 시장 고점 신호 {signals.get('status', '판단 불가')} 알림"
     body = market_signal_email_body(signals)
     for recipient in recipients:
         send_email(recipient.email, subject, body)
-    state["marketHighSignals"] = current
+    state["marketHighSignals"] = {**current, "overallStatus": current_status}
+    state["marketHighSignalStatus"] = current_status
     state["marketHighSignalsSentAt"] = datetime.now().astimezone().isoformat()
     write_json(NOTIFICATION_STATE, state)
     print(f"Sent market signal notifications to admins: {len(recipients)}")

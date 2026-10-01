@@ -277,6 +277,17 @@ def _credit() -> dict[str, Any]:
     return _change_signal(closes, rules["caution"], rules["warning"])
 
 
+def aggregate_market_signal_status(statuses: list[str]) -> str:
+    rules = MARKET_SIGNAL_RULES["combined"]
+    if statuses.count("경고") >= rules["warningSignalCount"] or statuses.count("주의") >= rules["cautionCountForWarning"]:
+        return "경고"
+    if "주의" in statuses:
+        return "주의"
+    if "정상" in statuses:
+        return "정상"
+    return "판단 불가"
+
+
 def build_market_signals() -> dict[str, Any]:
     signals: dict[str, Any] = {
         "breadth": _breadth(),
@@ -284,12 +295,7 @@ def build_market_signals() -> dict[str, Any]:
         "credit": _credit(),
     }
     statuses = [signals[key]["status"] for key in ("breadth", "treasury", "credit")]
-    signals["status"] = (
-        "경고" if statuses.count("경고") >= MARKET_SIGNAL_RULES["combined"]["warningSignalCount"] or statuses.count("주의") >= MARKET_SIGNAL_RULES["combined"]["cautionCountForWarning"]
-        else "주의" if "주의" in statuses
-        else "정상" if "정상" in statuses
-        else "판단 불가"
-    )
+    signals["status"] = aggregate_market_signal_status(statuses)
     return signals
 
 
