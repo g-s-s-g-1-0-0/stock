@@ -2326,16 +2326,28 @@ def market_signal_email_body(signals: dict[str, Any]) -> str:
         if isinstance(credit.get("change"), (int, float)) else "수집 실패 · 판단 불가"
     )
     return f"""
-    <div style="font-family:Arial,sans-serif;line-height:1.65;color:#222;max-width:680px">
-      <h2 style="margin-bottom:8px">미국 시장 고점 신호: {html.escape(str(signals.get('status', '판단 불가')))}</h2>
-      <p style="margin:0 0 12px">미국 주식 20일선 상회 비율 {html.escape(breadth_text)}<br>
-      미국 10년물 {html.escape(treasury_text)}<br>
-      저신용 회사채 금리 차이 {html.escape(credit_text)}</p>
-      <p style="border-top:1px solid #ddd;padding-top:10px;font-size:12px;color:#666;margin-bottom:0">
-        기준: 20일선 상회 비율은 뉴욕증권거래소 상장 종목(ETF·테스트 제외). 정상 ≥{MARKET_SIGNAL_RULES['breadth']['cautionBelow']}% / 주의 {MARKET_SIGNAL_RULES['breadth']['warningBelow']}% 이상 ~ {MARKET_SIGNAL_RULES['breadth']['cautionBelow']}% 미만 / 경고 &lt;{MARKET_SIGNAL_RULES['breadth']['warningBelow']}%<br>
-        10년물 20일 상승폭 주의 +{MARKET_SIGNAL_RULES['treasury']['caution']:.2f}%p / 경고 +{MARKET_SIGNAL_RULES['treasury']['warning']:.2f}%p · 회사채와 국채의 금리 차이 확대 주의 +{MARKET_SIGNAL_RULES['credit']['caution']:.2f}%p / 경고 +{MARKET_SIGNAL_RULES['credit']['warning']:.2f}%p<br>
-        종합: 경고 {MARKET_SIGNAL_RULES['combined']['warningSignalCount']}개 이상 또는 주의 {MARKET_SIGNAL_RULES['combined']['cautionCountForWarning']}개 이상이면 경고, 주의가 하나면 주의. 참고용 시장 경고이며 매매 신호는 아닙니다.
-      </p>
+    <style>
+      @media only screen and (max-width:600px) {{
+        .market-signal-shell {{ padding:16px !important; }}
+        .market-signal-title {{ font-size:18px !important; line-height:1.3 !important; }}
+        .market-signal-table td {{ padding:8px 6px !important; font-size:13px !important; }}
+        .market-signal-rules {{ font-size:11px !important; line-height:1.45 !important; }}
+      }}
+    </style>
+    <div class="market-signal-shell" style="font-family:Arial,sans-serif;line-height:1.55;color:#222;max-width:680px;padding:20px">
+      <h2 class="market-signal-title" style="font-size:24px;line-height:1.35;margin:0 0 12px">미국 시장 고점 신호: {html.escape(str(signals.get('status', '판단 불가')))}</h2>
+      <table class="market-signal-table" role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin:0 0 14px">
+        <tr><td width="38%" style="padding:10px 8px;border-bottom:1px solid #e7eaf0;color:#596579;font-size:15px">20일선 상회율</td><td style="padding:10px 8px;border-bottom:1px solid #e7eaf0;font-size:16px;font-weight:600">{html.escape(breadth_text)}</td></tr>
+        <tr><td style="padding:10px 8px;border-bottom:1px solid #e7eaf0;color:#596579;font-size:15px">미국 10년물</td><td style="padding:10px 8px;border-bottom:1px solid #e7eaf0;font-size:16px;font-weight:600">{html.escape(treasury_text.replace(' · 20거래일 ', ' · '))}</td></tr>
+        <tr><td style="padding:10px 8px;border-bottom:1px solid #e7eaf0;color:#596579;font-size:15px">저신용 추가금리</td><td style="padding:10px 8px;border-bottom:1px solid #e7eaf0;font-size:16px;font-weight:600">{html.escape(credit_text.replace(' · 20거래일 ', ' · '))}</td></tr>
+      </table>
+      <div class="market-signal-rules" style="border-top:1px solid #ddd;padding-top:10px;font-size:12px;color:#666;line-height:1.6">
+        <strong>판정 기준</strong><br>
+        상회율: 정상 ≥{MARKET_SIGNAL_RULES['breadth']['cautionBelow']}% · 주의 {MARKET_SIGNAL_RULES['breadth']['warningBelow']}–{MARKET_SIGNAL_RULES['breadth']['cautionBelow']}% · 경고 &lt;{MARKET_SIGNAL_RULES['breadth']['warningBelow']}%<br>
+        10년물: 주의 ≥+{MARKET_SIGNAL_RULES['treasury']['caution']:.2f}%p · 경고 ≥+{MARKET_SIGNAL_RULES['treasury']['warning']:.2f}%p<br>
+        추가금리: 주의 ≥+{MARKET_SIGNAL_RULES['credit']['caution']:.2f}%p · 경고 ≥+{MARKET_SIGNAL_RULES['credit']['warning']:.2f}%p<br>
+        종합: 경고 {MARKET_SIGNAL_RULES['combined']['warningSignalCount']}개 이상 또는 주의 {MARKET_SIGNAL_RULES['combined']['cautionCountForWarning']}개 이상이면 경고. 참고용 시장 지표입니다.
+      </div>
     </div>
     """
 
@@ -2364,11 +2376,15 @@ def send_market_signal_notifications() -> int:
         print("No market signal escalation.")
         return 0
 
-    recipients = dedupe_recipients([
+    admin_recipients = dedupe_recipients([
         recipient for recipient in load_recipients()
         if recipient.is_admin and recipient.email
     ])
-    if not recipients:
+    recipients = [
+        recipient for recipient in admin_recipients
+        if enabled(recipient, "marketHighSignalsEmail", default=True)
+    ]
+    if not admin_recipients:
         recipients = dedupe_recipients(fallback_admin_recipients())
     if not recipients:
         print("No admin recipients for market signal alert.")
