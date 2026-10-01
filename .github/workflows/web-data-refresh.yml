@@ -286,6 +286,33 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'market-events') }}
         run: python scripts/web_refresh_notifications.py market-events-review
 
+      - name: Catch up gap-and-go observations
+        if: ${{ env.SKIP_REFRESH != 'true' }}
+        continue-on-error: true
+        run: |
+          pip install --disable-pip-version-check yfinance
+          python scripts/record_gap_go_observations.py
+          git add data/history/gap-go
+          if git diff --cached --quiet; then
+            echo "No gap-and-go changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Collect gap-and-go observations"
+          BRANCH="${GITHUB_REF_NAME:-main}"
+          for attempt in 1 2 3; do
+            git fetch origin "$BRANCH"
+            git rebase -X theirs --autostash "origin/$BRANCH"
+            if git push origin "HEAD:$BRANCH"; then
+              exit 0
+            fi
+            echo "Push failed; retrying after syncing remote changes (attempt $attempt/3)."
+            sleep $((attempt * 5))
+          done
+          echo "Failed to push gap-and-go observations after retries."
+          exit 1
+
       - name: Commit notification send state
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' }}
         run: |

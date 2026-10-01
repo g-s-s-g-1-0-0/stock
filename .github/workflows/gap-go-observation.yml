@@ -14,7 +14,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: main-writers
+  group: gap-go-observations
   cancel-in-progress: false
 
 jobs:

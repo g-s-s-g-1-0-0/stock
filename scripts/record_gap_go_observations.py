@@ -98,6 +98,20 @@ def session_moment(now: datetime, scheduled_expression: str = "") -> datetime | 
     return candidate
 
 
+def due_stages(now: datetime) -> list[str]:
+    """Slots whose New York clock has passed. A manual run uses these to catch up."""
+    local = now.astimezone(NEW_YORK)
+    if local.weekday() >= 5:
+        return []
+    due = []
+    for stage in ("premarket", "ten_am", "close"):
+        hour, minute = STAGE_CLOCK[stage]
+        slot = local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        if local >= slot:
+            due.append(stage)
+    return due
+
+
 def load_us_tickers(path: Path = STOCKS_PATH) -> list[str]:
     try:
         rows = json.loads(path.read_text(encoding="utf-8")).get("rows", [])
@@ -585,14 +599,29 @@ def merge_paper_trades(rows: list[dict[str, Any]], path: Path | None = None) -> 
     return True
 
 
+def _stages_for_run(current: datetime, scheduled: str) -> list[tuple[str, datetime]]:
+    """One scheduled slot, or every slot whose clock has already passed."""
+    if scheduled.strip():
+        moment = session_moment(current, scheduled)
+        stage = observation_stage(current, scheduled)
+        if moment is None or stage is None:
+            return []
+        return [(stage, moment)]
+    local = current.astimezone(NEW_YORK)
+    return [
+        (stage, local.replace(hour=hour, minute=minute, second=0, microsecond=0))
+        for stage in due_stages(current)
+        for hour, minute in (STAGE_CLOCK[stage],)
+    ]
+
+
 def record(now: datetime | None = None) -> int:
     current = now or datetime.now(timezone.utc)
     scheduled = os.environ.get("GAP_GO_SCHEDULE", "")
-    moment = session_moment(current, scheduled)
-    if moment is None:
+    stages = _stages_for_run(current, scheduled)
+    if not stages:
         print("[gap-go] outside observation window; skipped")
         return 0
-    stage = observation_stage(current, scheduled)
     tickers = load_us_tickers()
     if not tickers:
         raise RuntimeError("no US tickers found in data/cache/stocks.json")
@@ -603,28 +632,31 @@ def record(now: datetime | None = None) -> int:
     minute = yf.download(tickers, period=MINUTE_PERIOD, interval="1m", prepost=True, auto_adjust=False, progress=False, threads=True)
     daily = yf.download(symbols, period="2y", interval="1d", auto_adjust=False, progress=False, threads=True)
     local = current.astimezone(NEW_YORK)
-    date_value = moment.date().isoformat()
     captured_at = current.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
-    context = market_context(daily, moment.date())
-    rows = [{
-        **_snapshot(minute, daily, ticker, moment),
-        **context,
-        "stage": stage,
-        "observationDate": date_value,
-        "capturedAt": captured_at,
-        "capturedAtNewYork": local.isoformat(timespec="seconds"),
-    } for ticker in tickers]
-    target = _path(date_value)
-    carry_forward_premarket_volume(_read_jsonl(target), rows)
-    upsert(target, rows)
+    written = 0
+    for stage, moment in stages:
+        date_value = moment.date().isoformat()
+        context = market_context(daily, moment.date())
+        rows = [{
+            **_snapshot(minute, daily, ticker, moment),
+            **context,
+            "stage": stage,
+            "observationDate": date_value,
+            "capturedAt": captured_at,
+            "capturedAtNewYork": local.isoformat(timespec="seconds"),
+        } for ticker in tickers]
+        target = _path(date_value)
+        carry_forward_premarket_volume(_read_jsonl(target), rows)
+        upsert(target, rows)
+        written += len(rows)
+        print(f"[gap-go] wrote {len(rows)} {stage} observations to {target.relative_to(ROOT)}")
     filled = resolve_pending_paper_trades(minute)
     if filled:
         print(f"[gap-go] recorded {filled} paper trades")
     session_paths = ensure_session_files(daily)
-    print(f"[gap-go] wrote {len(rows)} {stage} observations to {target.relative_to(ROOT)}")
     if session_paths:
         print(f"[gap-go] updated {len(session_paths)} session files")
-    return len(rows)
+    return written
 
 
 if __name__ == "__main__":

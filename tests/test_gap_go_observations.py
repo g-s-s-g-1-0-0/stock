@@ -41,6 +41,17 @@ class GapGoObservationTest(unittest.TestCase):
         self.assertIsNone(self.module.observation_stage(self.now))
         self.assertIsNone(self.module.session_moment(self.now))
 
+    def test_unscheduled_run_catches_slots_whose_clock_has_passed(self) -> None:
+        ny = self.module.NEW_YORK
+        late_morning = datetime(2026, 10, 1, 11, 14, tzinfo=ny)
+        self.assertEqual(["premarket", "ten_am"], self.module.due_stages(late_morning))
+        before_open = datetime(2026, 10, 1, 9, 0, tzinfo=ny)
+        self.assertEqual([], self.module.due_stages(before_open))
+        after_close = datetime(2026, 10, 1, 16, 5, tzinfo=ny)
+        self.assertEqual(["premarket", "ten_am", "close"], self.module.due_stages(after_close))
+        saturday = datetime(2026, 10, 3, 12, 0, tzinfo=ny)
+        self.assertEqual([], self.module.due_stages(saturday))
+
     def test_late_job_keeps_the_scheduled_session(self) -> None:
         ny = self.module.NEW_YORK
         close = "5,10,15 20,21 * * 1-5"
