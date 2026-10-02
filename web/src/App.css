@@ -498,6 +498,7 @@
 
 .log-sub-row {
   display: grid;
+  align-items: stretch;
   gap: 8px;
 }
 
@@ -6313,7 +6314,7 @@ body.guest-personal-view .sheet-header-freeze {
 
   .log-criteria-line {
     color: var(--muted);
-    font-size: 12px;
+    font-size: 11px;
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
