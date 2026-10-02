@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-10-02T18:55:24Z",
+    "updatedAt": "2026-10-02T19:06:09Z",
     "rowCount": 5
   },
   "rows": [
@@ -57,7 +57,8 @@
         "ARM",
         "SOXS",
         "COHU",
-        "ACMR"
+        "ACMR",
+        "SPCX"
       ],
       "tickersByType": {
         "swing": [
@@ -108,7 +109,8 @@
           "ARM",
           "SOXS",
           "COHU",
-          "ACMR"
+          "ACMR",
+          "SPCX"
         ],
         "long_term": [
           "000660",
@@ -129,7 +131,7 @@
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-10-02T14:40:31.949928+00:00"
+      "remoteUpdatedAt": "2026-10-02T19:05:52.817362+00:00"
     },
     {
       "id": "6065187b-8e56-4939-aae8-c108e1aae841",
@@ -189,7 +191,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-10-02T14:40:31.917942+00:00"
+      "remoteUpdatedAt": "2026-10-02T19:02:44.320806+00:00"
     }
   ]
 }

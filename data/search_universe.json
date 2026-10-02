@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15489,
-    "industryEnrichedAt": "2026-09-30T15:45:12+00:00",
+    "industryEnrichedAt": "2026-10-02T19:06:31+00:00",
     "industryEnrichedTickers": 1,
     "industryReviewedAt": "2026-09-27T18:45:56+00:00",
     "industryReviewedTickers": 6
@@ -202778,7 +202778,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 발사체, 위성통신, Starlink",
-      "rawIndustry": "-",
+      "rawIndustry": "Industrials | Aerospace &amp; Defense",
       "products": "-",
       "updatedAt": "2026-09-27T18:45:34+00:00"
     },
