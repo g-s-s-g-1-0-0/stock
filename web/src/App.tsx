@@ -709,7 +709,6 @@ function resolvedStoredWatchlistForType(
   return remoteTickers ?? localTickers ?? []
 }
 
-const APP_DATA_CACHE_STORAGE_KEY = 'gssg-app-data-cache-v1'
 const APP_DATA_AUTO_REFRESH_INTERVAL_MS = 3 * 60 * 1000
 const PENDING_WATCHLIST_MAX_AGE_MS = 24 * 60 * 60 * 1000
 const MOBILE_PULL_REFRESH_MAX_WIDTH = 760
@@ -724,24 +723,6 @@ type AppDataMetas = {
   marketEvents?: RuntimeMeta
   marketTrends?: RuntimeMeta
   tradeLogs?: RuntimeMeta
-}
-
-function readCachedAppData() {
-  try {
-    const cached = JSON.parse(localStorage.getItem(APP_DATA_CACHE_STORAGE_KEY) ?? 'null') as GssgAppData | null
-    if (!cached || typeof cached !== 'object') return null
-    return cached
-  } catch {
-    return null
-  }
-}
-
-function storeCachedAppData(data: GssgAppData) {
-  try {
-    localStorage.setItem(APP_DATA_CACHE_STORAGE_KEY, JSON.stringify(data))
-  } catch {
-    // Cache is an optimization only; keep rendering with in-memory data.
-  }
 }
 
 function wait(ms: number) {
@@ -4614,117 +4595,6 @@ function marketEventDisplayTooltip(value: string) {
     .replaceAll('PCE', '개인소비지출물가지수 (PCE)')
 }
 
-const marketEventGroups: MarketEventGroup[] = [
-  {
-    title: '금리 발표',
-    tooltip: '미국 기준금리 방향을 확인하는 발표입니다. 금리 예상이 바뀌면 성장주, 달러, 지수가 함께 크게 움직일 수 있습니다.',
-    entries: [
-      { month: '1월', date: '2026. 1. 29', dday: '101', time: '4:00' },
-      { month: '2월', date: '-', dday: '-', time: '-' },
-      { month: '3월', date: '2026. 3. 19', dday: '45', time: '3:00' },
-      { month: '4월', date: '2026. 4. 30', dday: '3', time: '3:00' },
-      { month: '5월', date: '-', dday: '-', time: '-' },
-      { month: '6월', date: '2026. 6. 18', dday: '-46', time: '3:00', highlighted: true },
-      { month: '7월', date: '2026. 7. 30', dday: '-88', time: '3:00', highlighted: true },
-      { month: '8월', date: '-', dday: '-', time: '-' },
-      { month: '9월', date: '2026. 9. 17', dday: '-137', time: '3:00', highlighted: true },
-      { month: '10월', date: '2026. 10. 29', dday: '-179', time: '3:00', highlighted: true },
-      { month: '11월', date: '-', dday: '-', time: '-' },
-      { month: '12월', date: '2026. 12. 10', dday: '-221', time: '4:00', highlighted: true },
-    ],
-  },
-  {
-    title: '고용보고서 발표',
-    tooltip: '미국 일자리 상황을 보여주는 발표입니다. 예상보다 좋거나 나쁘면 금리와 경기 전망이 바뀌어 지수가 흔들릴 수 있습니다.',
-    entries: [
-      { month: '1월', date: '2026. 1. 9', dday: '114', time: '22:30' },
-      { month: '2월', date: '2026. 2. 11', dday: '88', time: '22:30' },
-      { month: '3월', date: '2026. 3. 6', dday: '58', time: '22:30' },
-      { month: '4월', date: '2026. 4. 3', dday: '30', time: '22:30' },
-      { month: '5월', date: '2026. 5. 8', dday: '0', time: '22:30', status: 'today' },
-      { month: '6월', date: '2026. 6. 5', dday: '-33', time: '22:30', highlighted: true },
-      { month: '7월', date: '2026. 7. 2', dday: '-60', time: '22:30', highlighted: true },
-      { month: '8월', date: '2026. 8. 7', dday: '-96', time: '22:30', highlighted: true },
-      { month: '9월', date: '2026. 9. 4', dday: '-124', time: '22:30', highlighted: true },
-      { month: '10월', date: '2026. 10. 2', dday: '-152', time: '22:30', highlighted: true },
-      { month: '11월', date: '2026. 11. 6', dday: '-187', time: '22:30', highlighted: true },
-      { month: '12월', date: '2026. 12. 4', dday: '-215', time: '22:30', highlighted: true },
-    ],
-  },
-  {
-    title: '소비자물가지수 발표 (CPI)',
-    tooltip: '소비자 물가가 얼마나 올랐는지 보는 지표입니다. 예상과 다르면 금리 전망이 바뀌어 주식과 달러가 크게 움직일 수 있습니다.',
-    entries: [
-      { month: '1월', date: '2026. 1. 13', dday: '110', time: '22:30' },
-      { month: '2월', date: '2026. 2. 13', dday: '86', time: '22:30' },
-      { month: '3월', date: '2026. 3. 11', dday: '53', time: '21:30' },
-      { month: '4월', date: '2026. 4. 10', dday: '23', time: '21:30' },
-      { month: '5월', date: '2026. 5. 12', dday: '0', time: '21:30', status: 'today' },
-      { month: '6월', date: '2026. 6. 10', dday: '-38', time: '21:30', highlighted: true },
-      { month: '7월', date: '2026. 7. 14', dday: '-72', time: '21:30', highlighted: true },
-      { month: '8월', date: '2026. 8. 12', dday: '-101', time: '21:30', highlighted: true },
-      { month: '9월', date: '2026. 9. 11', dday: '-131', time: '21:30', highlighted: true },
-      { month: '10월', date: '2026. 10. 14', dday: '-164', time: '21:30', highlighted: true },
-      { month: '11월', date: '2026. 11. 10', dday: '-191', time: '22:30', highlighted: true },
-      { month: '12월', date: '2026. 12. 10', dday: '-221', time: '22:30', highlighted: true },
-    ],
-  },
-  {
-    title: '생산자물가지수 발표 (PPI)',
-    tooltip: '기업이 물건을 만들 때 드는 비용 변화를 봅니다. 비용 부담이 커지면 물가 걱정이 커져 시장 변동성이 커질 수 있습니다.',
-    entries: [
-      { month: '1월', date: '2026. 1. 30', dday: '100', time: '22:30' },
-      { month: '2월', date: '2026. 2. 27', dday: '65', time: '22:30' },
-      { month: '3월', date: '2026. 3. 18', dday: '46', time: '21:30' },
-      { month: '4월', date: '2026. 4. 14', dday: '19', time: '21:30' },
-      { month: '5월', date: '2026. 5. 13', dday: '0', time: '21:30', status: 'today' },
-      { month: '6월', date: '2026. 6. 11', dday: '-39', time: '21:30', highlighted: true },
-      { month: '7월', date: '2026. 7. 15', dday: '-73', time: '21:30', highlighted: true },
-      { month: '8월', date: '2026. 8. 13', dday: '-102', time: '21:30', highlighted: true },
-      { month: '9월', date: '2026. 9. 10', dday: '-130', time: '21:30', highlighted: true },
-      { month: '10월', date: '2026. 10. 15', dday: '-', time: '21:30', highlighted: true },
-      { month: '11월', date: '2026. 11. 13', dday: '-194', time: '22:30', highlighted: true },
-      { month: '12월', date: '2026. 12. 15', dday: '-226', time: '22:30', highlighted: true },
-    ],
-  },
-  {
-    title: '개인소비지출물가지수 발표 (PCE)',
-    tooltip: '미국 중앙은행이 중요하게 보는 물가 지표입니다. 예상과 다르면 금리 전망이 바뀌어 시장이 흔들릴 수 있습니다.',
-    entries: [
-      { month: '1월', date: '2026. 1. 29', dday: '94', time: '22:30' },
-      { month: '2월', date: '2026. 2. 26', dday: '66', time: '22:30' },
-      { month: '3월', date: '2026. 3. 26', dday: '24', time: '21:30' },
-      { month: '4월', date: '2026. 4. 30', dday: '3', time: '21:30' },
-      { month: '5월', date: '2026. 5. 28', dday: '-25', time: '21:30', highlighted: true },
-      { month: '6월', date: '2026. 6. 25', dday: '-53', time: '21:30', highlighted: true },
-      { month: '7월', date: '2026. 7. 30', dday: '-88', time: '21:30', highlighted: true },
-      { month: '8월', date: '2026. 8. 26', dday: '-115', time: '21:30', highlighted: true },
-      { month: '9월', date: '2026. 9. 30', dday: '-150', time: '21:30', highlighted: true },
-      { month: '10월', date: '2026. 10. 29', dday: '-179', time: '21:30', highlighted: true },
-      { month: '11월', date: '2026. 11. 25', dday: '-206', time: '22:30', highlighted: true },
-      { month: '12월', date: '2026. 12. 23', dday: '-234', time: '22:30', highlighted: true },
-    ],
-  },
-  {
-    title: '네마녀의 날',
-    tooltip: '여러 파생상품 만기가 한꺼번에 겹치는 날입니다. 큰 자금 이동이 생겨 거래량과 가격 변동이 커질 수 있습니다.',
-    entries: [
-      { month: '1월', date: '-', dday: '-', time: '-' },
-      { month: '2월', date: '-', dday: '-', time: '-' },
-      { month: '3월', date: '2026. 3. 21', dday: '50', time: '5:00' },
-      { month: '4월', date: '-', dday: '-', time: '-' },
-      { month: '5월', date: '-', dday: '-', time: '-' },
-      { month: '6월', date: '2026. 6. 19', dday: '-40', time: '5:00', highlighted: true },
-      { month: '7월', date: '-', dday: '-', time: '-' },
-      { month: '8월', date: '-', dday: '-', time: '-' },
-      { month: '9월', date: '2026. 9. 19', dday: '-139', time: '5:00', highlighted: true },
-      { month: '10월', date: '-', dday: '-', time: '-' },
-      { month: '11월', date: '-', dday: '-', time: '-' },
-      { month: '12월', date: '2026. 12. 19', dday: '-230', time: '6:00', highlighted: true },
-    ],
-  },
-]
-
 const valueMetricColumns: Array<{ label: string; value: (metric: ValuationMetric) => string; tooltip?: string }> = [
   { label: 'Market Cap', value: (metric) => metric.marketCap, tooltip: metricTooltip('회사의 전체 몸값입니다. 큰 회사일수록 안정적일 수 있지만, 같은 업종 대비 너무 비싼지는 함께 봅니다.', '긍정: 10조↑ 규모 안정 · 일반: 1조↑ · 부정: 미만 소형·유동성 취약.') },
   { label: 'Sales', value: (metric) => metric.sales, tooltip: metricTooltip('최근에 벌어들인 매출 규모입니다. 매출이 크더라도 성장률이 낮으면 투자 매력은 줄 수 있습니다.', '긍정: 1조↑ 매출 체력 · 일반: 1,000억↑ · 부정: 미만 규모 작음.') },
@@ -6939,7 +6809,6 @@ function BoardPage({
 }
 
 function App() {
-  const cachedAppData = useMemo(() => readCachedAppData(), [])
   const initialLocalTestSession = useMemo(() => readStoredLocalTestSession(), [])
   const initialUserSettings = useMemo(() => (
     initialLocalTestSession
@@ -7010,7 +6879,7 @@ function App() {
   const [personalTradeLogs, setPersonalTradeLogs] = useState<TradeLog[]>(() => (
     initialLocalTestSession ? resolveLocalTestPersonalTrades(initialLocalTestSession) : readStoredPersonalTradeLogs()
   ))
-  const [systemTradeLogs, setSystemTradeLogs] = useState<TradeLog[]>(() => cachedAppData?.tradeLogs?.rows ?? operatorTrades)
+  const [systemTradeLogs, setSystemTradeLogs] = useState<TradeLog[]>(operatorTrades)
   const [isAddingStock, setIsAddingStock] = useState(false)
   const [viewMode, setViewMode] = useState<'personal' | 'operator'>(() => readStoredViewMode())
   const [showViewModeHint, setShowViewModeHint] = useState(() => localStorage.getItem(VIEW_MODE_HINT_STORAGE_KEY) !== 'true')
@@ -7059,24 +6928,18 @@ function App() {
   const [canUseAccountSwitch, setCanUseAccountSwitch] = useState(Boolean(initialLocalTestSession))
   const [authInfoMessage, setAuthInfoMessage] = useState(() => authCallbackMessage() || notificationSettingsDeepLinkMessage())
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
-  const [apiStocks, setApiStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? cachedAppData.stocks.rows.map(withDisplayStockName) : searchUniverse.map(stockSearchShell))
-  const [apiSearchStocks, setApiSearchStocks] = useState<Stock[]>(() => cachedAppData?.stocks?.rows?.length ? mergeStocks(cachedAppData.stocks.rows, searchUniverse) : searchUniverse.map(stockSearchShell))
+  const [isInitialAppDataLoaded, setIsInitialAppDataLoaded] = useState(false)
+  const [apiStocks, setApiStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
+  const [apiSearchStocks, setApiSearchStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
   const [isStockSearchLoaded, setIsStockSearchLoaded] = useState(false)
-  const [apiValuationMetrics, setApiValuationMetrics] = useState<Record<string, ValuationMetric>>(() => withCanonicalTickerKeys(cachedAppData?.valuation?.rows ?? {}))
-  const [apiTechnicalRows, setApiTechnicalRows] = useState<Record<string, Record<string, string>>>(() => withCanonicalTickerKeys(cachedAppData?.technical?.rows ?? {}))
-  const [apiMarketSnapshot, setApiMarketSnapshot] = useState<string[][]>(() => cachedAppData?.technical?.marketSnapshot && isMeaningfulMarketSnapshot(cachedAppData.technical.marketSnapshot) ? mergeMarketSnapshot(cachedAppData.technical.marketSnapshot) : technicalMarketSnapshot)
-  const [apiMarketEventGroups, setApiMarketEventGroups] = useState<MarketEventGroup[]>(() => cachedAppData?.marketEvents?.groups?.length ? cachedAppData.marketEvents.groups : marketEventGroups)
-  const [marketEventYearLabel, setMarketEventYearLabel] = useState(() => cachedAppData?.marketEvents?.yearLabel ?? '2026년')
-  const [marketEventMonths, setMarketEventMonths] = useState(() => cachedAppData?.marketEvents?.months?.length ? cachedAppData.marketEvents.months : eventMonths)
-  const [apiMarketTrendRows, setApiMarketTrendRows] = useState<MarketTrendRow[]>(() => cachedAppData?.marketTrends?.rows ?? [])
-  const [apiMetas, setApiMetas] = useState(() => ({
-    stocks: cachedAppData?.stocks?.meta,
-    valuation: cachedAppData?.valuation?.meta,
-    technical: cachedAppData?.technical?.meta,
-    marketEvents: cachedAppData?.marketEvents?.meta,
-    marketTrends: cachedAppData?.marketTrends?.meta,
-    tradeLogs: cachedAppData?.tradeLogs?.meta,
-  }))
+  const [apiValuationMetrics, setApiValuationMetrics] = useState<Record<string, ValuationMetric>>({})
+  const [apiTechnicalRows, setApiTechnicalRows] = useState<Record<string, Record<string, string>>>({})
+  const [apiMarketSnapshot, setApiMarketSnapshot] = useState<string[][]>([])
+  const [apiMarketEventGroups, setApiMarketEventGroups] = useState<MarketEventGroup[]>([])
+  const [marketEventYearLabel, setMarketEventYearLabel] = useState('2026년')
+  const [marketEventMonths, setMarketEventMonths] = useState<string[]>(eventMonths)
+  const [apiMarketTrendRows, setApiMarketTrendRows] = useState<MarketTrendRow[]>([])
+  const [apiMetas, setApiMetas] = useState<AppDataMetas>({})
   const [marketEventsMeta, setMarketEventsMeta] = useState<RuntimeMeta | undefined>()
   const [isSavingMarketEvents, setIsSavingMarketEvents] = useState(false)
   const [isMarketEventsDirty, setIsMarketEventsDirty] = useState(false)
@@ -7190,7 +7053,6 @@ function App() {
   }
 
   const applyLoadedData = (data: GssgAppData) => {
-    storeCachedAppData(data)
     setApiMetas({
       stocks: data.stocks?.meta,
       valuation: data.valuation?.meta,
@@ -8067,6 +7929,7 @@ function App() {
         }
       } finally {
         isCheckingLatestData = false
+        if (isMounted) setIsInitialAppDataLoaded(true)
       }
     }
 
@@ -10439,7 +10302,11 @@ function App() {
         </button>
       </header>
 
-      {currentActivePage === 'home' ? (
+      {!isInitialAppDataLoaded ? (
+        <section className="panel app-data-loading" role="status" aria-live="polite">
+          최신 데이터를 불러오는 중입니다…
+        </section>
+      ) : currentActivePage === 'home' ? (
       <section className={`dashboard-grid ${isLongTermInvestor ? 'long-term-home-grid' : 'swing-home-grid'}`}>
         <section className={`panel trading-log-panel ${shouldDimPanelsForFirstVisitGuide ? 'dimmed-panel' : ''}`}>
           <div className="log-header">
