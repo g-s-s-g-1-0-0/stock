@@ -453,10 +453,6 @@
   gap: 32px;
 }
 
-.long-term-home-grid .right-column {
-  gap: 52px;
-}
-
 .section-heading {
   display: flex;
   align-items: center;
@@ -1549,10 +1545,6 @@ body.guest-personal-view .sheet-header-freeze {
   overflow: hidden;
 }
 
-.long-term-home-grid .trading-log-scroll {
-  --trading-log-sheet-height: 1054px;
-}
-
 .watchlist-sheet {
   flex: none;
   height: 482px;
@@ -1561,6 +1553,23 @@ body.guest-personal-view .sheet-header-freeze {
 .holding-sheet {
   flex: none;
   height: 570px;
+}
+
+@media (min-width: 1025px) {
+  .dashboard-grid {
+    align-items: stretch;
+  }
+
+  .dashboard-grid .trading-log-scroll {
+    flex: 1;
+    min-height: 1010px;
+    max-height: none;
+  }
+
+  .dashboard-grid .holding-sheet {
+    flex: 1;
+    min-height: 570px;
+  }
 }
 
 .sheet-table {
