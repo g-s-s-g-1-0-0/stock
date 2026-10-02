@@ -2118,6 +2118,7 @@ function SheetScrollSurface({
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const xScrollRef = useRef<HTMLDivElement | null>(null)
+  const scaleFrameRef = useRef<HTMLDivElement | null>(null)
   const freezeRef = useRef<HTMLDivElement | null>(null)
   const freezeInnerRef = useRef<HTMLDivElement | null>(null)
 
@@ -2125,6 +2126,34 @@ function SheetScrollSurface({
     xScrollRef.current = node
     wheelRef?.(node)
   }, [wheelRef])
+
+  useLayoutEffect(() => {
+    const frame = scaleFrameRef.current
+    const table = frame?.querySelector<HTMLTableElement>('table.sheet-table')
+    if (!frame || !table) return
+    const resize = () => {
+      frame.style.width = ''
+      frame.style.height = ''
+      table.style.width = ''
+      if (!isMobileSheetViewport()) return
+      const scale = parseFloat(window.getComputedStyle(frame).getPropertyValue('--mobile-view-scale')) || 1
+      const width = table.offsetWidth
+      const height = table.offsetHeight
+      table.style.width = `${width}px`
+      frame.style.width = `${width * scale}px`
+      frame.style.height = `${height * scale}px`
+    }
+    resize()
+    const observer = new ResizeObserver(resize)
+    observer.observe(table)
+    window.addEventListener('resize', resize)
+    window.addEventListener('mobile-table-zoom-change', resize)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', resize)
+      window.removeEventListener('mobile-table-zoom-change', resize)
+    }
+  }, [children])
 
   useLayoutEffect(() => {
     const wrap = wrapRef.current
@@ -2199,8 +2228,11 @@ function SheetScrollSurface({
 
       cloneTable.style.width = `${table.offsetWidth}px`
       cloneTable.style.minWidth = `${table.offsetWidth}px`
-      const tableScale = parseFloat(window.getComputedStyle(table).zoom) || 1
-      cloneTable.style.zoom = String(tableScale)
+      const tableScale = isMobileSheetViewport()
+        ? parseFloat(window.getComputedStyle(table).getPropertyValue('--mobile-view-scale')) || 1
+        : 1
+      cloneTable.style.transform = `scale(${tableScale})`
+      cloneTable.style.transformOrigin = 'top left'
       const sourceCells = thead.querySelectorAll('th')
       const cloneCells = cloneTable.querySelectorAll('th')
       sourceCells.forEach((source, index) => {
@@ -2299,7 +2331,7 @@ function SheetScrollSurface({
   return (
     <div className={`sheet-wrap ${className}`.trim()} ref={wrapRef}>
       <div className="sheet-x-scroll" ref={setXScrollNode}>
-        {children}
+        <div className="sheet-scale-frame" ref={scaleFrameRef}>{children}</div>
       </div>
       {typeof document !== 'undefined' && createPortal(
         <div className="sheet-header-freeze" hidden ref={freezeRef}>

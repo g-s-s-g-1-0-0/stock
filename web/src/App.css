@@ -11,6 +11,7 @@
 }
 
 .mobile-view-zoom { display: none; }
+.sheet-scale-frame { display: contents; }
 
 @media (max-width: 760px) {
   .home-skeleton .sheet-wrap.loading-table {
@@ -19,9 +20,22 @@
     min-width: 0;
   }
 
-  .app-shell .sheet-x-scroll > .sheet-table,
   .app-shell .loading-table-row {
     zoom: var(--mobile-view-scale, 1);
+  }
+
+  .sheet-scale-frame {
+    display: block;
+    position: relative;
+    overflow: clip;
+  }
+
+  .sheet-scale-frame > .sheet-table {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: scale(var(--mobile-view-scale, 1));
+    transform-origin: top left;
   }
 
   html {
