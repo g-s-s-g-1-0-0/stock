@@ -39,6 +39,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
 
+  if (url.pathname.startsWith('/api/cache/')) {
+    event.respondWith(fetch(request, { cache: 'no-store' }))
+    return
+  }
+
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(request, DATA_CACHE))
     return

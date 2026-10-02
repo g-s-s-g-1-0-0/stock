@@ -36,7 +36,7 @@ async function fromRaw(name) {
   const { repo, ref } = repoRef()
   const response = await fetch(
     `https://raw.githubusercontent.com/${repo}/${ref}/${CACHE_DIR}/${name}`,
-    { headers: { accept: 'application/json' } },
+    { cache: 'no-store', headers: { accept: 'application/json', 'cache-control': 'no-cache' } },
   )
   if (!response.ok) throw new Error(`raw responded ${response.status}`)
   return response.json()
@@ -49,6 +49,7 @@ async function fromContentsApi(name) {
     accept: 'application/vnd.github.raw+json',
     'user-agent': 'gongsuseongga-cache-reader',
     'x-github-api-version': '2022-11-28',
+    'cache-control': 'no-cache',
   }
   if (token) headers.authorization = `Bearer ${token}`
 
@@ -88,10 +89,8 @@ export default async function handler(req, res) {
     return res.end(JSON.stringify({ error: 'Cache source unavailable.', failures }))
   }
 
-  // Refreshes land every two hours at most, so a minute of edge cache costs no
-  // freshness while absorbing every page load in that window.
   res.statusCode = 200
   res.setHeader('content-type', 'application/json; charset=utf-8')
-  res.setHeader('cache-control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=600')
+  res.setHeader('cache-control', 'no-store, max-age=0')
   return res.end(JSON.stringify(payload))
 }

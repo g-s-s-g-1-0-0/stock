@@ -56,13 +56,9 @@ export type AppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog = unknown> = {
 async function fetchJson<T>(paths: string[]): Promise<T | null> {
   for (const path of paths) {
     try {
-      // The edge-cached reader is keyed by URL, so a per-load cache-buster would
-      // make every visit miss the cache and hit GitHub again — the exact problem
-      // it exists to solve. Everything else still gets one.
-      const bustable = !path.startsWith(CACHE_READER_BASE)
       const separator = path.includes('?') ? '&' : '?'
-      const url = bustable ? `${path}${separator}v=${Date.now()}` : path
-      const response = await fetch(url, bustable ? { cache: 'no-store' } : undefined)
+      const url = `${path}${separator}v=${Date.now()}`
+      const response = await fetch(url, { cache: 'no-store' })
       if (response.ok) return await response.json() as T
     } catch {
       // Try the next cache location.
@@ -77,12 +73,12 @@ async function fetchJson<T>(paths: string[]): Promise<T | null> {
 // gets rate limited per client IP, and when it does, the app silently falls back
 // to the JSON baked into the last build, which is exactly the stale data the
 // GitHub-published copy was meant to avoid.
-const CACHE_READER_BASE = '/api/cache/'
-
 const publishedCacheBase = (
   (import.meta.env.VITE_PUBLISHED_CACHE_BASE as string | undefined)?.trim()
   || 'https://raw.githubusercontent.com/g-s-s-g-1-0-0/stock/main/web/public/api'
 ).replace(/\/$/, '')
+
+const CACHE_READER_BASE = '/api/cache/'
 
 function productionCachePaths(fileName: string): string[] {
   return [
