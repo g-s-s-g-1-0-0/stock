@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-10-02T13:51:08+00:00",
-    "lastSuccessfulRun": "2026-10-02T13:51:08+00:00",
+    "updatedAt": "2026-10-02T14:56:27+00:00",
+    "lastSuccessfulRun": "2026-10-02T14:56:27+00:00",
     "failedReason": null
   },
   "rows": [
@@ -11,7 +11,7 @@
       "ticker": "000150",
       "name": "두산",
       "market": "KR",
-      "fairPrice": "₩423,293 ~ ₩572,690",
+      "fairPrice": "₩460,875 ~ ₩623,537",
       "fairPriceReason": null,
       "currentPrice": "₩1,338,000",
       "valuation": "고평가",
@@ -139,7 +139,7 @@
       "ticker": "278470",
       "name": "에이피알",
       "market": "KR",
-      "fairPrice": "₩368,730 ~ ₩498,870",
+      "fairPrice": "₩368,312 ~ ₩498,304",
       "fairPriceReason": null,
       "currentPrice": "₩367,000",
       "valuation": "저평가",
@@ -779,7 +779,7 @@
       "ticker": "AAPL",
       "name": "Apple",
       "market": "US",
-      "fairPrice": "$172.08 ~ $232.82",
+      "fairPrice": "$172.46 ~ $233.32",
       "fairPriceReason": null,
       "currentPrice": "$331.60",
       "valuation": "고평가",
