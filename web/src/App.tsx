@@ -10330,19 +10330,19 @@ function App() {
               <div className="log-meta">
                 <p>총 투자 기간 {investingDays}일</p>
                 {!isLongTermInvestor && <p className="log-win-rate">승률: {visibleWinRates}</p>}
-                <div className="log-criteria-sort-row">
-                  {isLongTermInvestor
-                    ? <p className="log-criteria-line">{longTermCriteriaLine}</p>
-                    : <StrategyCriteriaSentence investmentType={displayedInvestmentType} />}
-                  <button
-                    className="sort-button"
-                    type="button"
-                    onClick={() => setSortDirection((current) => current === 'desc' ? 'asc' : 'desc')}
-                  >
-                    정렬
-                    <span aria-hidden="true">{sortDirection === 'desc' ? '↓' : '↑'}</span>
-                  </button>
-                </div>
+              </div>
+              <div className="log-criteria-sort-row">
+                {isLongTermInvestor
+                  ? <p className="log-criteria-line">{longTermCriteriaLine}</p>
+                  : <StrategyCriteriaSentence investmentType={displayedInvestmentType} />}
+                <button
+                  className="sort-button"
+                  type="button"
+                  onClick={() => setSortDirection((current) => current === 'desc' ? 'asc' : 'desc')}
+                >
+                  정렬
+                  <span aria-hidden="true">{sortDirection === 'desc' ? '↓' : '↑'}</span>
+                </button>
               </div>
             </div>
           </div>
