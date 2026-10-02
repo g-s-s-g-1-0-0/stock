@@ -2131,6 +2131,20 @@ function SheetScrollSurface({
     const frame = scaleFrameRef.current
     const table = frame?.querySelector<HTMLTableElement>('table.sheet-table')
     if (!frame || !table) return
+    const scroller = xScrollRef.current
+    const stickyCells = Array.from(table.querySelectorAll<HTMLElement>('th, td'))
+      .filter(cell => window.getComputedStyle(cell).position === 'sticky')
+      .map(cell => ({ cell, left: parseFloat(window.getComputedStyle(cell).left) }))
+      .filter(({ left }) => Number.isFinite(left))
+    const alignPinnedColumns = () => {
+      const scale = isMobileSheetViewport()
+        ? parseFloat(window.getComputedStyle(frame).getPropertyValue('--mobile-view-scale')) || 1
+        : 1
+      const correction = (scroller?.scrollLeft || 0) * (1 / scale - 1)
+      stickyCells.forEach(({ cell, left }) => {
+        cell.style.left = isMobileSheetViewport() ? `${left + correction}px` : ''
+      })
+    }
     const resize = () => {
       frame.style.width = ''
       frame.style.height = ''
@@ -2142,16 +2156,20 @@ function SheetScrollSurface({
       table.style.width = `${width}px`
       frame.style.width = `${width * scale}px`
       frame.style.height = `${height * scale}px`
+      alignPinnedColumns()
     }
     resize()
     const observer = new ResizeObserver(resize)
     observer.observe(table)
     window.addEventListener('resize', resize)
     window.addEventListener('mobile-table-zoom-change', resize)
+    scroller?.addEventListener('scroll', alignPinnedColumns, { passive: true })
     return () => {
       observer.disconnect()
       window.removeEventListener('resize', resize)
       window.removeEventListener('mobile-table-zoom-change', resize)
+      scroller?.removeEventListener('scroll', alignPinnedColumns)
+      stickyCells.forEach(({ cell }) => { cell.style.left = '' })
     }
   }, [children])
 
@@ -2244,6 +2262,7 @@ function SheetScrollSurface({
         target.style.minWidth = `${width}px`
         target.style.maxWidth = `${width}px`
         target.style.height = `${source.getBoundingClientRect().height / tableScale}px`
+        target.style.left = (source as HTMLElement).style.left
       })
       freezeInner.scrollLeft = scroller.scrollLeft
     }
