@@ -2039,11 +2039,10 @@ function releaseVerticalScrollAtEdge(event: globalThis.WheelEvent) {
   const container = event.currentTarget as HTMLElement | null
   if (!container) return
   if (Math.abs(event.deltaY) < Math.abs(event.deltaX)) return
-  if (container.scrollHeight - container.clientHeight <= 1) return
-
+  const hasVerticalOverflow = container.scrollHeight - container.clientHeight > 1
   const isAtTop = container.scrollTop <= 0
   const isAtBottom = Math.ceil(container.scrollTop + container.clientHeight) >= container.scrollHeight - 1
-  const atEdgeInScrollDirection = (event.deltaY < 0 && isAtTop) || (event.deltaY > 0 && isAtBottom)
+  const atEdgeInScrollDirection = !hasVerticalOverflow || (event.deltaY < 0 && isAtTop) || (event.deltaY > 0 && isAtBottom)
   if (!atEdgeInScrollDirection) return
 
   event.preventDefault()
