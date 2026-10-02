@@ -5856,7 +5856,7 @@ function MarketTrendsPage({
       <div className="section-heading value-analysis-heading">
         <div>
           <h2>시장 트렌드</h2>
-          <p>주간 시장에서 자주 언급된 핵심 테마와 섹터를 순위별로 확인합니다.</p>
+          <p>주간 시장에서 자주 언급된 테마와 섹터를 순위별로 확인합니다.</p>
           <p className="page-update-note">매주 월요일 자정(한국시간)에 1회 업데이트됩니다.</p>
         </div>
         <span className="section-heading-meta">총 {rows.length}개 <b>|</b> {updateLabel}</span>
