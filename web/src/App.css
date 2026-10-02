@@ -498,14 +498,20 @@
 
 .log-sub-row {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   gap: 8px;
+  width: 100%;
+}
+
+.log-sub-row > * {
+  width: 100%;
 }
 
 .log-criteria-sort-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   width: 100%;
   min-width: 0;
@@ -6312,7 +6318,7 @@ body.guest-personal-view .sheet-header-freeze {
     padding: 2px 0;
   }
 
-  .log-criteria-line {
+  .log-criteria-sort-row .log-criteria-line {
     color: var(--muted);
     font-size: 11px;
     white-space: normal;
