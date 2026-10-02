@@ -6949,6 +6949,39 @@ function App() {
         : readStoredUserSettings(null)
   ), [initialLocalTestSession])
   const [query, setQuery] = useState('')
+  useEffect(() => {
+    let lockedScrollY: number | null = null
+    const syncModalScrollLock = () => {
+      const hasModal = Boolean(document.querySelector('.modal-backdrop'))
+      if (hasModal && lockedScrollY === null) {
+        lockedScrollY = window.scrollY
+        document.body.style.position = 'fixed'
+        document.body.style.top = `-${lockedScrollY}px`
+        document.body.style.width = '100%'
+        document.body.style.overflow = 'hidden'
+      } else if (!hasModal && lockedScrollY !== null) {
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.width = ''
+        document.body.style.overflow = ''
+        window.scrollTo(0, lockedScrollY)
+        lockedScrollY = null
+      }
+    }
+    const observer = new MutationObserver(syncModalScrollLock)
+    observer.observe(document.body, { childList: true, subtree: true })
+    syncModalScrollLock()
+    return () => {
+      observer.disconnect()
+      if (lockedScrollY !== null) {
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.width = ''
+        document.body.style.overflow = ''
+        window.scrollTo(0, lockedScrollY)
+      }
+    }
+  }, [])
   const [watchlist, setWatchlist] = useState<string[]>(() => (
     initialLocalTestSession ? resolveLocalTestWatchlist(initialLocalTestSession) : readStoredWatchlist()
   ))
@@ -10429,19 +10462,21 @@ function App() {
             <div className="log-sub-row">
               <div className="log-meta">
                 <p>총 투자 기간 {investingDays}일</p>
-                {!isLongTermInvestor && <p>승률: {visibleWinRates}</p>}
-                {isLongTermInvestor
-                  ? <p className="log-criteria-line">{longTermCriteriaLine}</p>
-                  : <StrategyCriteriaSentence investmentType={displayedInvestmentType} />}
+                {!isLongTermInvestor && <p className="log-win-rate">승률: {visibleWinRates}</p>}
+                <div className="log-criteria-sort-row">
+                  {isLongTermInvestor
+                    ? <p className="log-criteria-line">{longTermCriteriaLine}</p>
+                    : <StrategyCriteriaSentence investmentType={displayedInvestmentType} />}
+                  <button
+                    className="sort-button"
+                    type="button"
+                    onClick={() => setSortDirection((current) => current === 'desc' ? 'asc' : 'desc')}
+                  >
+                    정렬
+                    <span aria-hidden="true">{sortDirection === 'desc' ? '↓' : '↑'}</span>
+                  </button>
+                </div>
               </div>
-              <button
-                className="sort-button"
-                type="button"
-                onClick={() => setSortDirection((current) => current === 'desc' ? 'asc' : 'desc')}
-              >
-                정렬
-                <span aria-hidden="true">{sortDirection === 'desc' ? '↓' : '↑'}</span>
-              </button>
             </div>
           </div>
 

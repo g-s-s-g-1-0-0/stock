@@ -1344,6 +1344,16 @@
   .strategy-criteria-modal-table-wrap {
     max-height: none;
   }
+
+  .strategy-criteria-modal-table > thead th:nth-child(2),
+  .strategy-criteria-modal-table > tbody > tr > td:nth-child(2) {
+    width: 140px;
+    min-width: 140px;
+  }
+
+  .strategy-criteria-modal-table > tbody > tr > td:nth-child(3) {
+    padding-left: 8px;
+  }
 }
 
 .sort-button {
@@ -3467,6 +3477,8 @@ body.guest-personal-view .sheet-header-freeze {
   place-items: center;
   background: rgba(15, 23, 42, 0.28);
   padding: 24px;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .confirm-modal {
@@ -6256,6 +6268,31 @@ body.guest-personal-view .sheet-header-freeze {
   .log-meta p {
     margin: 0;
     line-height: 1.4;
+  }
+
+  .log-meta .log-win-rate {
+    font-size: 9px;
+    white-space: nowrap;
+    letter-spacing: -0.035em;
+  }
+
+  .log-criteria-sort-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .log-criteria-sort-row > :first-child {
+    min-width: 0;
+  }
+
+  .log-criteria-sort-row .sort-button {
+    flex: 0 0 auto;
+    font-size: 11px;
+    gap: 4px;
+    padding: 2px 0;
   }
 
   .log-criteria-line {
