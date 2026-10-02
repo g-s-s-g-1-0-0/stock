@@ -63,3 +63,25 @@ test('the authenticated fallback keeps the same immutable revision', async () =>
   assert.equal(fallbackUrls.length, 6)
   assert.ok(fallbackUrls.every((url) => url.endsWith(`?ref=${sha}`)))
 })
+
+test('reuse is allowed only after checking that the head is still current', async () => {
+  const sha = 'd'.repeat(40)
+  let headReads = 0
+  let fileReads = 0
+  mock.method(globalThis, 'fetch', async (url) => {
+    if (url.includes('/commits/')) {
+      headReads += 1
+      return Response.json({ sha })
+    }
+    fileReads += 1
+    return Response.json({ rows: [] })
+  })
+  for (let reload = 0; reload < 2; reload += 1) {
+    const res = response()
+    await handler({ method: 'GET' }, res)
+    assert.equal(res.statusCode, 200)
+    assert.equal(res.body.sourceRevision, sha)
+  }
+  assert.equal(headReads, 2)
+  assert.equal(fileReads, 6)
+})

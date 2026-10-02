@@ -7,6 +7,33 @@ const FILES = {
   tradeLogs: 'trade-logs.json',
 }
 
+let snapshotKey
+let snapshotPromise
+
+function readSnapshot(repo, sha, headers) {
+  const key = `${repo}:${sha}`
+  if (snapshotKey === key && snapshotPromise) return snapshotPromise
+  snapshotKey = key
+  snapshotPromise = Promise.all(Object.entries(FILES).map(async ([key, name]) => {
+    const path = `web/public/api/${name}`
+    let response = await fetch(`https://raw.githubusercontent.com/${repo}/${sha}/${path}`)
+    if (!response.ok) {
+      response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${sha}`, {
+        cache: 'no-store',
+        headers: { ...headers, accept: 'application/vnd.github.raw+json' },
+      })
+    }
+    if (!response.ok) throw new Error(`${name}: ${response.status}`)
+    const payload = await response.json()
+    if (!payload || typeof payload !== 'object') throw new Error(`${name}: Invalid payload.`)
+    return [key, payload]
+  })).then((entries) => ({ ...Object.fromEntries(entries), sourceRevision: sha })).catch((error) => {
+    if (snapshotKey === key) snapshotPromise = undefined
+    throw error
+  })
+  return snapshotPromise
+}
+
 export default async function handler(req, res) {
   res.setHeader('cache-control', 'no-store')
   res.setHeader('content-type', 'application/json; charset=utf-8')
@@ -30,22 +57,9 @@ export default async function handler(req, res) {
     const { sha } = await head.json()
     if (!/^[a-f0-9]{40}$/i.test(sha || '')) throw new Error('Invalid source revision.')
 
-    const entries = await Promise.all(Object.entries(FILES).map(async ([key, name]) => {
-      const path = `web/public/api/${name}`
-      let response = await fetch(`https://raw.githubusercontent.com/${repo}/${sha}/${path}`)
-      if (!response.ok) {
-        response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${sha}`, {
-          cache: 'no-store',
-          headers: { ...headers, accept: 'application/vnd.github.raw+json' },
-        })
-      }
-      if (!response.ok) throw new Error(`${name}: ${response.status}`)
-      const payload = await response.json()
-      if (!payload || typeof payload !== 'object') throw new Error(`${name}: Invalid payload.`)
-      return [key, payload]
-    }))
+    const snapshot = await readSnapshot(repo, sha, headers)
     res.statusCode = 200
-    return res.end(JSON.stringify({ ...Object.fromEntries(entries), sourceRevision: sha }))
+    return res.end(JSON.stringify(snapshot))
   } catch (error) {
     console.error('[app-data]', error instanceof Error ? error.message : 'Source unavailable.')
     res.statusCode = 502
