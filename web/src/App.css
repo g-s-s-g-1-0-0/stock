@@ -1582,18 +1582,25 @@ body.guest-personal-view .sheet-header-freeze {
 
 @media (min-width: 1025px) {
   .dashboard-grid {
-    align-items: stretch;
+    align-items: start;
   }
 
   .dashboard-grid .trading-log-scroll {
-    flex: 1;
-    min-height: 1010px;
-    max-height: none;
+    flex: none;
+    height: var(--home-trading-height, 1012px);
+    max-height: var(--home-trading-height, 1012px);
+    min-height: 0;
   }
 
   .dashboard-grid .holding-sheet {
-    flex: 1;
-    min-height: 570px;
+    flex: none;
+    height: var(--home-holding-height, 572px);
+    max-height: var(--home-holding-height, 572px);
+    min-height: 0;
+  }
+
+  .dashboard-grid .holding-heading {
+    margin-bottom: calc(12px + var(--home-holding-offset, 0px));
   }
 }
 

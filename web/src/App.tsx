@@ -7042,6 +7042,7 @@ function App() {
   const watchlistSheetWheelRef = useEdgeScrollWheelRef(watchlistSheetRef)
   const holdingSheetWheelRef = useEdgeScrollWheelRef(holdingSheetRef)
   const [holdingVisibleRowCapacity, setHoldingVisibleRowCapacity] = useState(12)
+  const [tradingVisibleRowCapacity, setTradingVisibleRowCapacity] = useState(22)
   const apiMetasRef = useRef<AppDataMetas>(apiMetas)
   const resetSyncGenerationRef = useRef(0)
   const processingUnsubscribeTokenRef = useRef('')
@@ -9981,27 +9982,43 @@ function App() {
   const industryPendingLabel = nextTwoHourUpdateLabel()
   const showEmptyTradeExample = tableStocks.length > 0 && scopedTrades.length === 0
   const showEmptyHoldingExample = tableStocks.length > 0 && scopedOpenTrades.length === 0
-  const tradeBlankRows = Math.max(3, (isLongTermInvestor ? 23 : 22) - filteredTrades.length - (showEmptyTradeExample ? 1 : 0))
+  const tradeBlankRows = Math.max(0, tradingVisibleRowCapacity - filteredTrades.length - (showEmptyTradeExample ? 1 : 0))
   const watchlistBlankRows = Math.max(0, 10 - tableStocks.length)
   const holdingBlankRows = Math.max(0, holdingVisibleRowCapacity - scopedOpenTrades.length - (showEmptyHoldingExample ? 1 : 0))
   useLayoutEffect(() => {
     const scroller = holdingSheetRef.current
-    if (!scroller) return
+    const tradingScroller = tradingLogScrollRef.current
+    const grid = scroller?.closest<HTMLElement>('.dashboard-grid')
+    if (!scroller || !tradingScroller || !grid) return
     const updateCapacity = () => {
       if (window.innerWidth <= 1024) {
         setHoldingVisibleRowCapacity(12)
+        setTradingVisibleRowCapacity(isLongTermInvestor ? 23 : 22)
+        grid.style.removeProperty('--home-trading-height')
+        grid.style.removeProperty('--home-holding-height')
+        grid.style.removeProperty('--home-holding-offset')
         return
       }
-      const table = scroller.querySelector('table')
-      const row = table?.tBodies[0]?.rows[0]
-      const rowHeight = row?.getBoundingClientRect().height ?? 44
-      const headerHeight = table?.tHead?.getBoundingClientRect().height ?? 42
-      if (rowHeight <= 0) return
-      setHoldingVisibleRowCapacity(Math.max(12, Math.ceil((scroller.clientHeight - headerHeight) / rowHeight)))
+      const tradingTop = tradingScroller.parentElement!.getBoundingClientRect().top
+      const previousOffset = parseFloat(grid.style.getPropertyValue('--home-holding-offset')) || 0
+      const holdingTop = scroller.parentElement!.getBoundingClientRect().top - previousOffset
+      const rowHeight = 44
+      const headerAndBorder = 44
+      const baseTradingRows = isLongTermInvestor ? 23 : 22
+      const targetBottom = Math.max(tradingTop + headerAndBorder + baseTradingRows * rowHeight, holdingTop + headerAndBorder + 12 * rowHeight)
+      const tradingRows = Math.ceil((targetBottom - tradingTop - headerAndBorder) / rowHeight - 0.001)
+      const bottom = tradingTop + headerAndBorder + tradingRows * rowHeight
+      const holdingRows = Math.max(12, Math.floor((bottom - holdingTop - headerAndBorder) / rowHeight + 0.001))
+      const holdingOffset = bottom - holdingTop - headerAndBorder - holdingRows * rowHeight
+      grid.style.setProperty('--home-trading-height', `${headerAndBorder + tradingRows * rowHeight}px`)
+      grid.style.setProperty('--home-holding-height', `${headerAndBorder + holdingRows * rowHeight}px`)
+      grid.style.setProperty('--home-holding-offset', `${Math.max(0, holdingOffset)}px`)
+      setTradingVisibleRowCapacity(tradingRows)
+      setHoldingVisibleRowCapacity(holdingRows)
     }
     updateCapacity()
     const observer = new ResizeObserver(updateCapacity)
-    observer.observe(scroller)
+    grid.querySelectorAll('.log-header, .asset-summary-box, .watchlist-panel, .holding-heading-main').forEach((element) => observer.observe(element))
     window.addEventListener('resize', updateCapacity)
     return () => {
       observer.disconnect()
