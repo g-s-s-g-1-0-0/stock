@@ -6870,6 +6870,8 @@ function AppDataSkeleton({ page, isLongTermInvestor }: { page: ActivePage; isLon
 }
 
 function App() {
+  const [mobileViewScale, setMobileViewScale] = useState(100)
+  const [isMobileZoomOpen, setIsMobileZoomOpen] = useState(false)
   const initialLocalTestSession = useMemo(() => readStoredLocalTestSession(), [])
   const initialUserSettings = useMemo(() => (
     initialLocalTestSession
@@ -10141,6 +10143,7 @@ function App() {
   return (
     <main
       className={`app-shell ${showViewModeHint ? 'onboarding-active' : ''} ${isPullRefreshing ? 'pull-refreshing' : ''}`}
+      style={{ '--mobile-view-scale': mobileViewScale / 100 } as CSSProperties}
       onTouchCancel={() => {
         if (!isPullRefreshing) resetPullRefresh()
       }}
@@ -11969,6 +11972,20 @@ function App() {
           <a href="/privacy.html" target="_blank" rel="noreferrer">개인정보처리방침</a>
         </div>
       </footer>
+      {createPortal(
+        <div className={`mobile-view-zoom ${isMobileZoomOpen ? 'is-open' : ''}`}>
+          {isMobileZoomOpen && (
+            <div className="mobile-view-zoom-controls" role="group" aria-label="화면 배율">
+              <button type="button" aria-label="화면 축소" disabled={mobileViewScale <= 80} onClick={() => setMobileViewScale((scale) => Math.max(80, scale - 10))}>−</button>
+              <button className="mobile-view-zoom-reset" type="button" aria-label={`현재 ${mobileViewScale}%, 기본 배율로 복원`} onClick={() => setMobileViewScale(100)}>{mobileViewScale}%</button>
+              <button type="button" aria-label="화면 확대" disabled={mobileViewScale >= 120} onClick={() => setMobileViewScale((scale) => Math.min(120, scale + 10))}>+</button>
+            </div>
+          )}
+          <button className="mobile-view-zoom-toggle" type="button" aria-label={isMobileZoomOpen ? '배율 조절 닫기' : '화면 확대·축소'} aria-expanded={isMobileZoomOpen} onClick={() => setIsMobileZoomOpen((open) => !open)}>
+            {isMobileZoomOpen ? <span aria-hidden="true">×</span> : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="10" cy="10" r="6.5" /><path d="m15 15 5 5M7 10h6M10 7v6" /></svg>}
+          </button>
+        </div>, document.body,
+      )}
     </main>
   )
 }
