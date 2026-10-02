@@ -6808,6 +6808,58 @@ function BoardPage({
   )
 }
 
+function LoadingTable({ rows = 12 }: { rows?: number }) {
+  return (
+    <div className="loading-table" aria-hidden="true">
+      {Array.from({ length: rows + 1 }, (_, row) => (
+        <div className={`loading-table-row ${row === 0 ? 'loading-table-heading' : ''}`} key={row}>
+          {Array.from({ length: 5 }, (_, column) => <span className="skeleton-block" key={column} />)}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function AppDataSkeleton({ page, isLongTermInvestor }: { page: ActivePage; isLongTermInvestor: boolean }) {
+  if (page !== 'home') {
+    return (
+      <section className="panel page-skeleton" aria-busy="true" aria-label="데이터 로딩">
+        <div className="loading-heading" aria-hidden="true"><span className="skeleton-block loading-title" /><span className="skeleton-block loading-action" /></div>
+        <div className="loading-metadata" aria-hidden="true"><span className="skeleton-block" /><span className="skeleton-block" /></div>
+        <LoadingTable rows={20} />
+      </section>
+    )
+  }
+
+  return (
+    <section className={`dashboard-grid ${isLongTermInvestor ? 'long-term-home-grid' : 'swing-home-grid'}`} aria-busy="true" aria-label="데이터 로딩">
+      <section className="panel trading-log-panel home-skeleton">
+        <div className="loading-heading" aria-hidden="true">
+          <span className="skeleton-block loading-title" />
+          <div className="loading-filters">{Array.from({ length: 8 }, (_, index) => <span className="skeleton-block" key={index} />)}</div>
+        </div>
+        <div className="loading-metadata" aria-hidden="true"><span className="skeleton-block" /><span className="skeleton-block" /><div className="loading-criteria"><span className="skeleton-block" /><span className="skeleton-block loading-sort" /></div></div>
+        <div className="asset-summary-box" aria-hidden="true">
+          {Array.from({ length: 5 }, (_, index) => (
+            <div className={`asset-summary-item loading-summary ${index === 4 ? 'strong' : ''}`} key={index}>
+              <span className="skeleton-block" /><span className="skeleton-block" /><span className="skeleton-block" />
+            </div>
+          ))}
+        </div>
+        <LoadingTable rows={isLongTermInvestor ? 23 : 22} />
+      </section>
+      <div className="right-column">
+        {[10, 12].map((rows) => (
+          <section className="panel" key={rows}>
+            <div className="loading-heading" aria-hidden="true"><span className="skeleton-block loading-title" /><span className="skeleton-block loading-action" /></div>
+            <LoadingTable rows={rows} />
+          </section>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function App() {
   const initialLocalTestSession = useMemo(() => readStoredLocalTestSession(), [])
   const initialUserSettings = useMemo(() => (
@@ -10289,14 +10341,14 @@ function App() {
       </header>
 
       {!isInitialAppDataLoaded || !isRemoteDataReady ? (
+        initialDataError ? (
         <section className="panel app-data-loading" role="status" aria-live="polite">
-          {initialDataError ? (
             <div>
               <p>{initialDataError}</p>
               <button type="button" onClick={() => window.location.reload()}>다시 시도</button>
             </div>
-          ) : '최신 데이터를 불러오는 중입니다…'}
         </section>
+        ) : <AppDataSkeleton page={currentActivePage} isLongTermInvestor={isLongTermInvestor} />
       ) : currentActivePage === 'home' ? (
       <section className={`dashboard-grid ${isLongTermInvestor ? 'long-term-home-grid' : 'swing-home-grid'}`}>
         <section className={`panel trading-log-panel ${shouldDimPanelsForFirstVisitGuide ? 'dimmed-panel' : ''}`}>

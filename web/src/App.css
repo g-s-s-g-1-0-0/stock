@@ -31,6 +31,65 @@
   font-size: 14px;
 }
 
+.skeleton-block {
+  display: block;
+  height: 16px;
+  border-radius: 5px;
+  background: linear-gradient(100deg, #e8edf3 25%, #f5f7fa 45%, #e8edf3 65%);
+  background-size: 240% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+.loading-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 48px;
+  margin-bottom: 20px;
+}
+
+.loading-title { width: 180px; height: 28px; flex-shrink: 0; }
+.loading-action { width: 100px; height: 32px; }
+.loading-filters { display: flex; gap: 12px; }
+.loading-filters .skeleton-block { width: 34px; height: 36px; }
+.loading-metadata { display: grid; gap: 14px; margin: 12px 0 22px; }
+.loading-metadata > .skeleton-block:first-child { width: 160px; }
+.loading-metadata > .skeleton-block:nth-child(2) { width: 80%; max-width: 600px; }
+.loading-criteria { display: flex; justify-content: space-between; gap: 20px; }
+.loading-criteria > .skeleton-block:first-child { width: 230px; }
+.loading-sort { width: 48px; }
+.loading-summary { min-height: 92px; }
+.loading-summary .skeleton-block:first-child { width: 55%; height: 14px; }
+.loading-summary .skeleton-block:nth-child(2) { width: 80%; height: 22px; }
+.loading-summary .skeleton-block:last-child { width: 90%; height: 12px; }
+.loading-table { overflow: hidden; border: 1px solid var(--border); border-radius: 10px; }
+.loading-table-row { display: grid; grid-template-columns: 1.6fr repeat(4, 1fr); gap: 24px; align-items: center; min-height: 46px; padding: 0 16px; border-bottom: 1px solid var(--border); }
+.loading-table-row:last-child { border-bottom: 0; }
+.loading-table-heading { min-height: 48px; background: #f3f6f9; }
+.loading-table-row .skeleton-block { width: 80%; }
+.page-skeleton { min-height: 100vh; }
+
+@keyframes skeleton-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+@media (max-width: 760px) {
+  .home-skeleton .loading-heading { flex-wrap: wrap; gap: 16px; }
+  .loading-title { width: 145px; height: 24px; }
+  .loading-filters { width: 100%; justify-content: space-between; gap: 8px; }
+  .loading-filters .skeleton-block { width: 28px; height: 32px; }
+  .loading-metadata { gap: 12px; }
+  .loading-metadata .skeleton-block { height: 12px; }
+  .loading-summary { min-height: 68px; }
+  .loading-table-row { min-width: 600px; min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block { animation: none; }
+}
+
 .app-header {
   position: sticky;
   top: 0;
