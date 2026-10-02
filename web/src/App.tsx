@@ -2199,17 +2199,19 @@ function SheetScrollSurface({
 
       cloneTable.style.width = `${table.offsetWidth}px`
       cloneTable.style.minWidth = `${table.offsetWidth}px`
+      const tableScale = parseFloat(window.getComputedStyle(table).zoom) || 1
+      cloneTable.style.zoom = String(tableScale)
       const sourceCells = thead.querySelectorAll('th')
       const cloneCells = cloneTable.querySelectorAll('th')
       sourceCells.forEach((source, index) => {
         const target = cloneCells[index] as HTMLElement | undefined
         if (!target) return
-        const width = source.getBoundingClientRect().width
+        const width = source.getBoundingClientRect().width / tableScale
         target.style.boxSizing = 'border-box'
         target.style.width = `${width}px`
         target.style.minWidth = `${width}px`
         target.style.maxWidth = `${width}px`
-        target.style.height = `${source.getBoundingClientRect().height}px`
+        target.style.height = `${source.getBoundingClientRect().height / tableScale}px`
       })
       freezeInner.scrollLeft = scroller.scrollLeft
     }
@@ -2258,6 +2260,7 @@ function SheetScrollSurface({
 
     window.addEventListener('scroll', scheduleSync, { passive: true, capture: true })
     window.addEventListener('resize', scheduleSync)
+    window.addEventListener('mobile-table-zoom-change', scheduleSync)
     scroller.addEventListener('scroll', scheduleSync, { passive: true })
     freeze.addEventListener('click', onFreezeClick)
     freeze.addEventListener('touchstart', onFreezeTouchStart, { passive: true })
@@ -2281,6 +2284,7 @@ function SheetScrollSurface({
       if (frame) window.cancelAnimationFrame(frame)
       window.removeEventListener('scroll', scheduleSync, true)
       window.removeEventListener('resize', scheduleSync)
+      window.removeEventListener('mobile-table-zoom-change', scheduleSync)
       scroller.removeEventListener('scroll', scheduleSync)
       freeze.removeEventListener('click', onFreezeClick)
       freeze.removeEventListener('touchstart', onFreezeTouchStart)
@@ -6872,6 +6876,9 @@ function AppDataSkeleton({ page, isLongTermInvestor }: { page: ActivePage; isLon
 function App() {
   const [mobileViewScale, setMobileViewScale] = useState(100)
   const [isMobileZoomOpen, setIsMobileZoomOpen] = useState(false)
+  useEffect(() => {
+    window.dispatchEvent(new Event('mobile-table-zoom-change'))
+  }, [mobileViewScale])
   const initialLocalTestSession = useMemo(() => readStoredLocalTestSession(), [])
   const initialUserSettings = useMemo(() => (
     initialLocalTestSession
