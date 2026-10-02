@@ -99,6 +99,15 @@ const dataPaths = {
 }
 
 export async function fetchAppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog = unknown>() {
+  if (import.meta.env.PROD) {
+    const response = await fetch(`/api/app-data?v=${Date.now()}`, { cache: 'no-store' })
+    if (!response.ok) throw new Error('최신 데이터를 불러오지 못했습니다. 다시 시도해 주세요.')
+    const data = await response.json() as AppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog>
+    if (!data.stocks || !data.valuation || !data.technical || !data.marketEvents || !data.marketTrends || !data.tradeLogs) {
+      throw new Error('최신 데이터가 완전하지 않습니다. 다시 시도해 주세요.')
+    }
+    return data
+  }
   const [stocks, valuation, technical, marketEvents, marketTrends, tradeLogs] = await Promise.all([
     fetchJson<ApiStocksPayload<TStock>>(dataPaths.stocks),
     fetchJson<ApiValuationPayload<TMetric>>(dataPaths.valuation),

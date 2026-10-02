@@ -6929,6 +6929,7 @@ function App() {
   const [authInfoMessage, setAuthInfoMessage] = useState(() => authCallbackMessage() || notificationSettingsDeepLinkMessage())
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
   const [isInitialAppDataLoaded, setIsInitialAppDataLoaded] = useState(false)
+  const [initialDataError, setInitialDataError] = useState('')
   const [apiStocks, setApiStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
   const [apiSearchStocks, setApiSearchStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
   const [isStockSearchLoaded, setIsStockSearchLoaded] = useState(false)
@@ -7119,38 +7120,26 @@ function App() {
     }
   }
 
-  async function loadUserSettings(session: UserSession | null) {
+  async function loadAccountRow(session: UserSession) {
+    const read = () => supabase!
+      .from('user_settings').select('*').eq('owner_id', session.id).maybeSingle()
+    const result = await read()
+    if (result.error || result.data) return result
+    await ensureProfile(session)
+    return read()
+  }
+
+  async function loadUserSettings(session: UserSession | null, accountRow?: ReturnType<typeof loadAccountRow>) {
     if (!session || !supabase) return readStoredUserSettings(session)
 
     const storedSettings = readStoredUserSettings(session)
-    const { data, error } = await supabase
-      .from('user_settings')
-      .select('watchlist_sort, notification_preferences, investment_type')
-      .eq('owner_id', session.id)
-      .maybeSingle()
-
-    if (error) {
-      const fallback = await supabase
-        .from('user_settings')
-        .select('watchlist_sort, notification_preferences')
-        .eq('owner_id', session.id)
-        .maybeSingle()
-
-      if (fallback.error) return storedSettings
-      const nextSettings = {
-        watchlistSort: normalizeWatchlistSortSettings(fallback.data?.watchlist_sort),
-        notificationPreferences: normalizeNotificationPreferences(fallback.data?.notification_preferences),
-        investmentType: storedSettings.investmentType,
-      }
-      storeUserSettings(session, nextSettings.watchlistSort, nextSettings.notificationPreferences, nextSettings.investmentType)
-      storeCachedRemoteUserSettings(nextSettings)
-      return nextSettings
-    }
+    const { data, error } = await (accountRow ?? loadAccountRow(session))
+    if (error) throw error
 
     const nextSettings = {
       watchlistSort: normalizeWatchlistSortSettings(data?.watchlist_sort),
       notificationPreferences: normalizeNotificationPreferences(data?.notification_preferences),
-      investmentType: normalizeInvestmentType(data?.investment_type),
+      investmentType: data && 'investment_type' in data ? normalizeInvestmentType(data.investment_type) : storedSettings.investmentType,
     }
     storeUserSettings(session, nextSettings.watchlistSort, nextSettings.notificationPreferences, nextSettings.investmentType)
     storeCachedRemoteUserSettings(nextSettings)
@@ -7197,7 +7186,7 @@ function App() {
     }
   }
 
-  async function loadPortfolioState(session: UserSession | null): Promise<StoredPortfolioState> {
+  async function loadPortfolioState(session: UserSession | null, accountRow?: ReturnType<typeof loadAccountRow>): Promise<StoredPortfolioState> {
     const localTrades = readStoredPersonalTradeLogs(session)
     const localContributionSettings = readStoredContributionSettings(session)
     const localState: StoredPortfolioState = {
@@ -7209,17 +7198,12 @@ function App() {
     if (!session || !supabase) return localState
 
     try {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('personal_trade_logs, contribution_settings, portfolio_state_initialized')
-        .eq('owner_id', session.id)
-        .maybeSingle()
-
-      if (error) return localState
+      const { data, error } = await (accountRow ?? loadAccountRow(session))
+      if (error) throw error
 
       const remoteInitialized = Boolean(data?.portfolio_state_initialized)
       const remoteTrades = Array.isArray(data?.personal_trade_logs)
-        ? data.personal_trade_logs.map(normalizeTradeLog).filter((trade): trade is TradeLog => Boolean(trade))
+        ? (data.personal_trade_logs as unknown[]).map(normalizeTradeLog).filter((trade): trade is TradeLog => Boolean(trade))
         : []
       const remoteContributionSettings = data?.contribution_settings && typeof data.contribution_settings === 'object'
         ? normalizeContributionSettings(data.contribution_settings)
@@ -7238,8 +7222,8 @@ function App() {
       storePersonalTradeLogs(session, remoteState.personalTradeLogs)
       storeContributionSettings(session, remoteState.contributionSettings)
       return remoteState
-    } catch {
-      return localState
+    } catch (error) {
+      throw error
     }
   }
 
@@ -7789,19 +7773,16 @@ function App() {
 
   async function loadServiceData(session: UserSession | null) {
     try {
+      const accountRow = session && supabase ? loadAccountRow(session) : undefined
       const personalTickersPromise = session ? loadWatchlist('personal', session) : Promise.resolve(null)
-      const loadedSettingsPromise = loadUserSettings(session)
-      const loadedPortfolioStatePromise = loadPortfolioState(session)
+      const loadedSettingsPromise = loadUserSettings(session, accountRow)
+      const loadedPortfolioStatePromise = loadPortfolioState(session, accountRow)
       if (ADMIN_BOARD_FEATURE_ENABLED) {
         void loadBoardPosts().catch(() => undefined)
       }
-      void loadedSettingsPromise.then((settings) => {
-        setWatchlistSortSettings(settings.watchlistSort)
-        setNotificationPreferences(settings.notificationPreferences)
-        setInvestmentType(settings.investmentType)
-      }).catch(() => undefined)
-
-      const operatorTickersFromDb = await loadWatchlist('operator', session)
+      const [operatorTickersFromDb, personalTickers, loadedSettings, loadedPortfolioState] = await Promise.all([
+        loadWatchlist('operator', session), personalTickersPromise, loadedSettingsPromise, loadedPortfolioStatePromise,
+      ])
       const operatorDefaultSort = operatorTickersFromDb?.watchlistSort
       const remoteOperatorTickers = operatorTickersFromDb?.tickers ?? null
       operatorWatchlistRemoteUpdatedAtRef.current = operatorTickersFromDb?.updatedAt ?? null
@@ -7813,16 +7794,11 @@ function App() {
         clearPendingOperatorWatchlist()
       }
 
-      const [personalTickers, loadedSettings, loadedPortfolioState] = await Promise.all([
-        personalTickersPromise,
-        loadedSettingsPromise,
-        loadedPortfolioStatePromise,
-      ])
       const nextSortSettings = session ? loadedSettings.watchlistSort : operatorDefaultSort ?? loadedSettings.watchlistSort
       personalWatchlistRemoteUpdatedAtRef.current = personalTickers?.updatedAt ?? null
       setWatchlistSortSettings(nextSortSettings)
       if (session && isConfiguredAdminEmail(session.email)) {
-        await persistOperatorWatchlistSort(loadedSettings.watchlistSort, session)
+        void persistOperatorWatchlistSort(loadedSettings.watchlistSort, session)
       } else if (operatorDefaultSort) {
         storeOperatorWatchlistSortSettings(operatorDefaultSort)
       }
@@ -7909,8 +7885,10 @@ function App() {
           await persistWatchlist('personal', resolvedActivePersonalTickers, session, nextPersonalByType)
         }
       }
-    } finally {
       setIsRemoteDataReady(true)
+    } catch {
+      setIsRemoteDataReady(false)
+      setInitialDataError('최신 계정 데이터를 불러오지 못했습니다. 다시 시도해 주세요.')
     }
   }
 
@@ -7927,9 +7905,11 @@ function App() {
         if (forceApply || appDataMetaChanged(data, apiMetasRef.current)) {
           applyLoadedData(data)
         }
+        setIsInitialAppDataLoaded(true)
+      } catch (error) {
+        if (isMounted && forceApply) setInitialDataError(error instanceof Error ? error.message : '최신 데이터를 불러오지 못했습니다.')
       } finally {
         isCheckingLatestData = false
-        if (isMounted) setIsInitialAppDataLoaded(true)
       }
     }
 
@@ -8014,11 +7994,16 @@ function App() {
       }
     }
     const authClient = supabase
+    let syncingUserId: string | null | undefined
 
     const authErrorMessage = authCallbackMessage()
     const authSuccessMessage = authCallbackSuccessMessage()
     const syncAuthUser = async (user: User | null, keepLoginModal = false) => {
       if (!isMounted) return
+      const nextUserId = user?.id ?? null
+      if (syncingUserId === nextUserId && !keepLoginModal) return
+      syncingUserId = nextUserId
+      setIsRemoteDataReady(false)
       if (!user) {
         const storedTestSession = readStoredLocalTestSession()
         if (storedTestSession) {
@@ -8064,7 +8049,6 @@ function App() {
       localStorage.removeItem(LEGACY_AUTH_SESSION_STORAGE_KEY)
       if (!storedTestSession) {
         storeLocalTestSession(null, { allowProduction: true })
-        await ensureProfile(nextSession)
         await loadServiceData(nextSession)
         if (unsubscribeToken) {
           try {
@@ -8115,6 +8099,8 @@ function App() {
     } else {
       authClient.auth.getSession().then(({ data }) => {
         void syncAuthUser(data.session?.user ?? null)
+      }).catch(() => {
+        if (isMounted) setInitialDataError('계정 정보를 확인하지 못했습니다. 다시 시도해 주세요.')
       })
     }
 
@@ -10302,9 +10288,14 @@ function App() {
         </button>
       </header>
 
-      {!isInitialAppDataLoaded ? (
+      {!isInitialAppDataLoaded || !isRemoteDataReady ? (
         <section className="panel app-data-loading" role="status" aria-live="polite">
-          최신 데이터를 불러오는 중입니다…
+          {initialDataError ? (
+            <div>
+              <p>{initialDataError}</p>
+              <button type="button" onClick={() => window.location.reload()}>다시 시도</button>
+            </div>
+          ) : '최신 데이터를 불러오는 중입니다…'}
         </section>
       ) : currentActivePage === 'home' ? (
       <section className={`dashboard-grid ${isLongTermInvestor ? 'long-term-home-grid' : 'swing-home-grid'}`}>
