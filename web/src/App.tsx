@@ -6808,12 +6808,12 @@ function BoardPage({
   )
 }
 
-function LoadingTable({ rows = 12 }: { rows?: number }) {
+function LoadingTable({ rows = 12, columns = 5, className = '' }: { rows?: number; columns?: number; className?: string }) {
   return (
-    <div className="loading-table" aria-hidden="true">
+    <div className={`sheet-wrap loading-table ${className}`} aria-hidden="true">
       {Array.from({ length: rows + 1 }, (_, row) => (
         <div className={`loading-table-row ${row === 0 ? 'loading-table-heading' : ''}`} key={row}>
-          {Array.from({ length: 5 }, (_, column) => <span className="skeleton-block" key={column} />)}
+          {Array.from({ length: columns }, (_, column) => <span className="skeleton-block" key={column} />)}
         </div>
       ))}
     </div>
@@ -6832,13 +6832,18 @@ function AppDataSkeleton({ page, isLongTermInvestor }: { page: ActivePage; isLon
   }
 
   return (
-    <section className={`dashboard-grid ${isLongTermInvestor ? 'long-term-home-grid' : 'swing-home-grid'}`} aria-busy="true" aria-label="데이터 로딩">
-      <section className="panel trading-log-panel home-skeleton">
-        <div className="loading-heading" aria-hidden="true">
-          <span className="skeleton-block loading-title" />
-          <div className="loading-filters">{Array.from({ length: 8 }, (_, index) => <span className="skeleton-block" key={index} />)}</div>
+    <section className={`dashboard-grid home-skeleton ${isLongTermInvestor ? 'long-term-home-grid' : 'swing-home-grid'}`} aria-busy="true" aria-label="데이터 로딩">
+      <section className="panel trading-log-panel">
+        <div className="log-header" aria-hidden="true">
+          <div className="log-title-row">
+            <span className="skeleton-block loading-title" />
+            <div className="strategy-filter loading-filters">{Array.from({ length: 8 }, (_, index) => <span className="skeleton-block" key={index} />)}</div>
+          </div>
+          <div className="log-sub-row">
+            <div className="log-meta"><span className="skeleton-block loading-days" />{!isLongTermInvestor && <span className="skeleton-block loading-win-rate" />}</div>
+            <div className="log-criteria-sort-row"><span className="skeleton-block loading-criteria-text" /><span className="skeleton-block loading-sort" /></div>
+          </div>
         </div>
-        <div className="loading-metadata" aria-hidden="true"><span className="skeleton-block" /><span className="skeleton-block" /><div className="loading-criteria"><span className="skeleton-block" /><span className="skeleton-block loading-sort" /></div></div>
         <div className="asset-summary-box" aria-hidden="true">
           {Array.from({ length: 5 }, (_, index) => (
             <div className={`asset-summary-item loading-summary ${index === 4 ? 'strong' : ''}`} key={index}>
@@ -6846,15 +6851,20 @@ function AppDataSkeleton({ page, isLongTermInvestor }: { page: ActivePage; isLon
             </div>
           ))}
         </div>
-        <LoadingTable rows={isLongTermInvestor ? 23 : 22} />
+        <LoadingTable className="trading-log-scroll" rows={isLongTermInvestor ? 23 : 22} columns={isLongTermInvestor ? 13 : 15} />
       </section>
       <div className="right-column">
-        {[10, 12].map((rows) => (
-          <section className="panel" key={rows}>
-            <div className="loading-heading" aria-hidden="true"><span className="skeleton-block loading-title" /><span className="skeleton-block loading-action" /></div>
-            <LoadingTable rows={rows} />
-          </section>
-        ))}
+        <section className="panel watchlist-panel">
+          <div className="section-heading" aria-hidden="true"><span className="skeleton-block loading-title" /><span className="skeleton-block loading-action" /></div>
+          <LoadingTable className="watchlist-sheet" rows={10} columns={10} />
+        </section>
+        <section className="panel">
+          <div className="section-heading holding-heading" aria-hidden="true">
+            <div className="holding-heading-main"><span className="skeleton-block loading-title" /><span className="skeleton-block loading-holding-note" /></div>
+            <span className="skeleton-block loading-action" />
+          </div>
+          <LoadingTable className="holding-sheet" rows={12} columns={isLongTermInvestor ? 9 : 10} />
+        </section>
       </div>
     </section>
   )
