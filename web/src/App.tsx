@@ -7031,6 +7031,7 @@ function App() {
   const tradingLogWheelRef = useEdgeScrollWheelRef(tradingLogScrollRef)
   const watchlistSheetWheelRef = useEdgeScrollWheelRef(watchlistSheetRef)
   const holdingSheetWheelRef = useEdgeScrollWheelRef(holdingSheetRef)
+  const [holdingVisibleRowCapacity, setHoldingVisibleRowCapacity] = useState(12)
   const apiMetasRef = useRef<AppDataMetas>(apiMetas)
   const resetSyncGenerationRef = useRef(0)
   const processingUnsubscribeTokenRef = useRef('')
@@ -9972,7 +9973,31 @@ function App() {
   const showEmptyHoldingExample = tableStocks.length > 0 && scopedOpenTrades.length === 0
   const tradeBlankRows = Math.max(3, (isLongTermInvestor ? 23 : 22) - filteredTrades.length - (showEmptyTradeExample ? 1 : 0))
   const watchlistBlankRows = Math.max(0, 10 - tableStocks.length)
-  const holdingBlankRows = Math.max(0, 12 - scopedOpenTrades.length - (showEmptyHoldingExample ? 1 : 0))
+  const holdingBlankRows = Math.max(0, holdingVisibleRowCapacity - scopedOpenTrades.length - (showEmptyHoldingExample ? 1 : 0))
+  useLayoutEffect(() => {
+    const scroller = holdingSheetRef.current
+    if (!scroller) return
+    const updateCapacity = () => {
+      if (window.innerWidth <= 1024) {
+        setHoldingVisibleRowCapacity(12)
+        return
+      }
+      const table = scroller.querySelector('table')
+      const row = table?.tBodies[0]?.rows[0]
+      const rowHeight = row?.getBoundingClientRect().height ?? 44
+      const headerHeight = table?.tHead?.getBoundingClientRect().height ?? 42
+      if (rowHeight <= 0) return
+      setHoldingVisibleRowCapacity(Math.max(12, Math.ceil((scroller.clientHeight - headerHeight) / rowHeight)))
+    }
+    updateCapacity()
+    const observer = new ResizeObserver(updateCapacity)
+    observer.observe(scroller)
+    window.addEventListener('resize', updateCapacity)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateCapacity)
+    }
+  }, [currentActivePage, isInitialAppDataLoaded, isRemoteDataReady, isLongTermInvestor, homeSheetResetKey, scopedOpenTrades.length, showEmptyHoldingExample])
   const visibleWatchlistSortOptions = isLongTermInvestor
     ? watchlistSortOptions.filter((option) => option.value !== 'opinion_sell_first')
     : watchlistSortOptions
