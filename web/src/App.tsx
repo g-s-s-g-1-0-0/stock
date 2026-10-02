@@ -2132,44 +2132,24 @@ function SheetScrollSurface({
     const table = frame?.querySelector<HTMLTableElement>('table.sheet-table')
     if (!frame || !table) return
     const scroller = xScrollRef.current
-    const stickyCells = Array.from(table.querySelectorAll<HTMLElement>('th, td'))
-      .filter(cell => window.getComputedStyle(cell).position === 'sticky')
-      .map(cell => ({ cell, left: parseFloat(window.getComputedStyle(cell).left) }))
-      .filter(({ left }) => Number.isFinite(left))
-    const alignPinnedColumns = () => {
-      const scale = isMobileSheetViewport()
-        ? parseFloat(window.getComputedStyle(frame).getPropertyValue('--mobile-view-scale')) || 1
-        : 1
-      const correction = (scroller?.scrollLeft || 0) * (1 / scale - 1)
-      stickyCells.forEach(({ cell, left }) => {
-        cell.style.left = isMobileSheetViewport() ? `${left + correction}px` : ''
-      })
-    }
+    const wrap = wrapRef.current
+    if (!scroller || !wrap) return
     const resize = () => {
-      frame.style.width = ''
-      frame.style.height = ''
-      table.style.width = ''
+      wrap.style.height = ''
       if (!isMobileSheetViewport()) return
       const scale = parseFloat(window.getComputedStyle(frame).getPropertyValue('--mobile-view-scale')) || 1
-      const width = table.offsetWidth
-      const height = table.offsetHeight
-      table.style.width = `${width}px`
-      frame.style.width = `${width * scale}px`
-      frame.style.height = `${height * scale}px`
-      alignPinnedColumns()
+      wrap.style.height = `${scroller.offsetHeight * scale}px`
     }
     resize()
     const observer = new ResizeObserver(resize)
-    observer.observe(table)
+    observer.observe(scroller)
     window.addEventListener('resize', resize)
     window.addEventListener('mobile-table-zoom-change', resize)
-    scroller?.addEventListener('scroll', alignPinnedColumns, { passive: true })
     return () => {
       observer.disconnect()
       window.removeEventListener('resize', resize)
       window.removeEventListener('mobile-table-zoom-change', resize)
-      scroller?.removeEventListener('scroll', alignPinnedColumns)
-      stickyCells.forEach(({ cell }) => { cell.style.left = '' })
+      wrap.style.height = ''
     }
   }, [children])
 
@@ -2249,8 +2229,10 @@ function SheetScrollSurface({
       const tableScale = isMobileSheetViewport()
         ? parseFloat(window.getComputedStyle(table).getPropertyValue('--mobile-view-scale')) || 1
         : 1
-      cloneTable.style.transform = `scale(${tableScale})`
-      cloneTable.style.transformOrigin = 'top left'
+      freezeInner.style.width = `${100 / tableScale}%`
+      freezeInner.style.height = `${headHeight / tableScale}px`
+      freezeInner.style.transform = `scale(${tableScale})`
+      freezeInner.style.transformOrigin = 'top left' 
       const sourceCells = thead.querySelectorAll('th')
       const cloneCells = cloneTable.querySelectorAll('th')
       sourceCells.forEach((source, index) => {
@@ -2262,7 +2244,6 @@ function SheetScrollSurface({
         target.style.minWidth = `${width}px`
         target.style.maxWidth = `${width}px`
         target.style.height = `${source.getBoundingClientRect().height / tableScale}px`
-        target.style.left = (source as HTMLElement).style.left
       })
       freezeInner.scrollLeft = scroller.scrollLeft
     }
@@ -2304,7 +2285,8 @@ function SheetScrollSurface({
     const onFreezeTouchMove = (event: globalThis.TouchEvent) => {
       if (event.touches.length !== 1) return
       const nextX = event.touches[0].clientX
-      scroller.scrollLeft += touchX - nextX
+      const scale = parseFloat(window.getComputedStyle(scroller).getPropertyValue('--mobile-view-scale')) || 1
+      scroller.scrollLeft += (touchX - nextX) / scale
       touchX = nextX
       freezeInner.scrollLeft = scroller.scrollLeft
     }

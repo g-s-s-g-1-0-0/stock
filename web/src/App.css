@@ -24,16 +24,8 @@
     zoom: var(--mobile-view-scale, 1);
   }
 
-  .sheet-scale-frame {
-    display: block;
-    position: relative;
-    overflow: clip;
-  }
-
-  .sheet-scale-frame > .sheet-table {
-    position: absolute;
-    top: 0;
-    left: 0;
+  .sheet-x-scroll {
+    width: calc(100% / var(--mobile-view-scale, 1));
     transform: scale(var(--mobile-view-scale, 1));
     transform-origin: top left;
   }
