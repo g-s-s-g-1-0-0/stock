@@ -1755,6 +1755,16 @@ body.guest-personal-view .sheet-header-freeze {
   min-height: 520px;
 }
 
+.market-events-panel {
+  height: auto;
+  min-height: 0;
+}
+
+.market-events-panel > .section-heading,
+.market-events-panel > .admin-event-toolbar {
+  flex-shrink: 0;
+}
+
 .value-analysis-heading {
   align-items: flex-start;
 }
