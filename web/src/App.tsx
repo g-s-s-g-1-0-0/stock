@@ -10766,7 +10766,7 @@ function App() {
                       <th>현재가</th>
                       <th>가치 분석</th>
                       <th>기술 분석</th>
-                      <th>시스템 보유</th>
+                      <th>보유 여부</th>
                       <th>매수 전략</th>
                     </tr>
                   </thead>
@@ -10821,7 +10821,7 @@ function App() {
                         <td><span className={`status-badge ${valuationBadgeClass(displayValuation)}`}>{displayValuation}</span></td>
                         <td><span className={`status-badge ${statusClass(displayOpinion)}`}>{displayOpinion}</span></td>
                         <td>
-                          {isHolding ? '보유 중' : '미보유'}
+                          <span className={`status-badge ${isHolding ? 'positive' : 'neutral'}`}>{isHolding ? '보유중' : '미보유'}</span>
                         </td>
                         <td className={isHolding ? 'strategy-data-cell' : 'strategy-data-cell dash-cell'}>
                           {isHolding && buyStrategies.length > 0 ? buyStrategies.map((strategy) => (
