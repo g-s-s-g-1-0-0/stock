@@ -5812,9 +5812,8 @@ function MarketEventsPage({
         </div>
         <span className="section-heading-meta">{formatCurrentDateLabel()}</span>
       </div>
-      {canEdit && (
+      {canEdit && isDirty && (
         <div className="admin-event-toolbar">
-          <span>어드민 모드: 연도, 월, 발표일, 발표 시간을 직접 수정할 수 있습니다. D-day는 현재 날짜 기준으로 자동 계산됩니다.</span>
           {isDirty && (
             <button disabled={isSaving} type="button" onClick={onSave}>
               {isSaving ? '저장 중...' : '저장'}
