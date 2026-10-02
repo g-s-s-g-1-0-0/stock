@@ -5181,7 +5181,7 @@ function TechnicalAnalysisPage({
       >
         <summary>
           <span>공통 지표</span>
-          <strong>장 상태 {regimeMarketLabel}</strong>
+          <strong>{regimeMarketLabel}</strong>
           <strong>VIX (변동성지수) {vixSnapshot}</strong>
           {fearGreedSnapshot && <strong>CNN 공포·탐욕지수 {fearGreedSnapshot}</strong>}
           <strong>{qqqSummary}</strong>
