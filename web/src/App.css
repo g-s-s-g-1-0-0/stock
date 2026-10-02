@@ -13,6 +13,12 @@
 .mobile-view-zoom { display: none; }
 
 @media (max-width: 760px) {
+  .home-skeleton .sheet-wrap.loading-table {
+    overflow: hidden;
+    max-width: 100%;
+    min-width: 0;
+  }
+
   .app-shell .sheet-x-scroll > .sheet-table,
   .app-shell .loading-table-row {
     zoom: var(--mobile-view-scale, 1);

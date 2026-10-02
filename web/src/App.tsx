@@ -6873,9 +6873,21 @@ function AppDataSkeleton({ page, isLongTermInvestor }: { page: ActivePage; isLon
 }
 
 function App() {
-  const [mobileViewScale, setMobileViewScale] = useState(100)
+  const [mobileViewScale, setMobileViewScale] = useState(() => {
+    try {
+      const savedScale = Number(localStorage.getItem('mobile-table-view-scale'))
+      return savedScale >= 70 && savedScale <= 130 && savedScale % 10 === 0 ? savedScale : 100
+    } catch {
+      return 100
+    }
+  })
   const [isMobileZoomOpen, setIsMobileZoomOpen] = useState(false)
   useEffect(() => {
+    try {
+      localStorage.setItem('mobile-table-view-scale', String(mobileViewScale))
+    } catch {
+      // Storage can be unavailable in private browsing.
+    }
     window.dispatchEvent(new Event('mobile-table-zoom-change'))
   }, [mobileViewScale])
   const initialLocalTestSession = useMemo(() => readStoredLocalTestSession(), [])
@@ -11982,9 +11994,9 @@ function App() {
         <div className={`mobile-view-zoom ${isMobileZoomOpen ? 'is-open' : ''}`}>
           {isMobileZoomOpen && (
             <div className="mobile-view-zoom-controls" role="group" aria-label="화면 배율">
-              <button type="button" aria-label="화면 축소" disabled={mobileViewScale <= 80} onClick={() => setMobileViewScale((scale) => Math.max(80, scale - 10))}>−</button>
+              <button type="button" aria-label="화면 축소" disabled={mobileViewScale <= 70} onClick={() => setMobileViewScale((scale) => Math.max(70, scale - 10))}>−</button>
               <button className="mobile-view-zoom-reset" type="button" aria-label={`현재 ${mobileViewScale}%, 기본 배율로 복원`} onClick={() => setMobileViewScale(100)}>{mobileViewScale}%</button>
-              <button type="button" aria-label="화면 확대" disabled={mobileViewScale >= 120} onClick={() => setMobileViewScale((scale) => Math.min(120, scale + 10))}>+</button>
+              <button type="button" aria-label="화면 확대" disabled={mobileViewScale >= 130} onClick={() => setMobileViewScale((scale) => Math.min(130, scale + 10))}>+</button>
             </div>
           )}
           <button className="mobile-view-zoom-toggle" type="button" aria-label={isMobileZoomOpen ? '배율 조절 닫기' : '화면 확대·축소'} aria-expanded={isMobileZoomOpen} onClick={() => setIsMobileZoomOpen((open) => !open)}>
