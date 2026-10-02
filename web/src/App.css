@@ -6364,6 +6364,16 @@ body.guest-personal-view .sheet-header-freeze {
 
   .log-meta .log-win-rate {
     white-space: nowrap;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .log-meta .log-win-rate::-webkit-scrollbar {
+    display: none;
   }
 
   .log-criteria-sort-row {
