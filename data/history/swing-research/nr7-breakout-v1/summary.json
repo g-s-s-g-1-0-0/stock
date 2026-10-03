@@ -1,15 +1,15 @@
 {
-  "version": "bb-breakout-v1",
+  "version": "nr7-breakout-v1",
   "startSession": "2026-10-05",
   "lastSession": null,
   "observations": 0,
   "signalCounts": {
-    "bb_squeeze_breakout": 0
+    "s8_nr7_breakout": 0
   },
   "filteredClosed": 0,
   "filteredEntryDates": 0,
   "earliestReviewKST": "2026-12-08",
-  "sampleReady": false,
+  "sampleReady": null,
   "status": "awaiting_first_session",
   "collectorHash": "30fe66c96ff9343cfb8d3b7b44daf370441e6d8ecaf2064f92ae6b53f1fc633a"
 }

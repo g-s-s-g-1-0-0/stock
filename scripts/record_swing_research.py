@@ -57,6 +57,27 @@ BB_PROTOCOL = {
     "purpose": "independent paper candidate only; no live priority, positions, public API or alerts",
 }
 
+NR7_HISTORY = HISTORY / "nr7-breakout-v1"
+NR7_PROTOCOL = {
+    "version": "nr7-breakout-v1",
+    "startSession": "2026-10-05",
+    "earliestReviewKST": "2026-12-08",
+    "minimumCalendarMonths": 2,
+    "minimumClosedFilteredTrades": None,
+    "minimumFilteredEntryDates": None,
+    "reviewArm": "s8_nr7_breakout",
+    "arms": ["s8_nr7_breakout"],
+    "entry": "D-1 high-low <= minimum of seven sessions ending D-1; D close > D-1 high and MA200; D volume >=1.3 prior 20-session mean; current market allowed; D+1 open",
+    "exit": "close-confirmed -8%/+12%/20 sessions, QQQ peak or two-day recovery end; next open",
+    "recoveryBuyCap": 14.0,
+    "recoveryExit": 18.0,
+    "normalBuyCap": 9.0,
+    "roundTripCost": 0.004,
+    "excludedKnownETFs": sorted(ETF),
+    "review": "calendar review only; no fixed trade-count sufficiency or automatic live adoption",
+    "purpose": "research strategy 8 only; independently retain overlapping signals; no live priority, orders or alerts",
+}
+
 
 def read_lines(path):
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()] if path.exists() else []
@@ -124,6 +145,26 @@ def bb_flags(features, market, eligible=True):
               and features["close"] > features["priorHigh20"] and features["close"] > features["ma200"]
               and features["volumePriorRatio"] >= 1.2)
     return {"bb_squeeze_breakout": bool(passed)}
+
+
+def nr7_features(frame):
+    prior = frame.iloc[:-1]
+    ranges = prior.High - prior.Low
+    mean_volume = number(prior.Volume.tail(20).mean()) if len(prior) >= 20 else None
+    return {"priorRange": number(ranges.iloc[-1]) if len(prior) else None,
+            "priorMinRange7": number(ranges.tail(7).min()) if len(prior) >= 7 and ranges.tail(7).notna().all() else None,
+            "priorHigh": number(prior.High.iloc[-1]) if len(prior) else None,
+            "volumePriorRatio": number(frame.Volume.iloc[-1] / mean_volume) if mean_volume and mean_volume > 0 else None}
+
+
+def nr7_flags(features, market, eligible=True):
+    fields = ("priorRange", "priorMinRange7", "priorHigh", "volumePriorRatio", "close", "ma200")
+    known = all(features.get(k) is not None for k in fields)
+    passed = (known and eligible and market["buyAllowed"]
+              and features["priorRange"] <= features["priorMinRange7"]
+              and features["close"] > features["priorHigh"] and features["close"] > features["ma200"]
+              and features["volumePriorRatio"] >= 1.3)
+    return {"s8_nr7_breakout": bool(passed)}
 
 
 def market_rows(frame):
@@ -243,9 +284,9 @@ def replay(observations, sessions):
                 nonrecovery = 0 if market["recovery"] else nonrecovery + 1 if seen_recovery else 0
                 if gain <= -.08:
                     pending = "stop_8_close"
-                elif gain >= (.12 if arm in {"laggard_rebound", "bb_squeeze_breakout"} else .10):
+                elif gain >= (.12 if arm in {"laggard_rebound", "bb_squeeze_breakout", "s8_nr7_breakout"} else .10):
                     pending = "target_close"
-                elif arm in {"laggard_rebound", "bb_squeeze_breakout"} and count >= 20:
+                elif arm in {"laggard_rebound", "bb_squeeze_breakout", "s8_nr7_breakout"} and count >= 20:
                     pending = "time_20"
                 elif arm != "laggard_rebound" and (market["peak"] or nonrecovery >= 2):
                     pending = "market_peak" if market["peak"] else "recovery_end_2"
@@ -328,7 +369,7 @@ def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names
                "signalCounts": {a: sum(r["forwardEligible"] and r["signals"][a] for r in observations) for a in protocol["arms"]},
                "filteredClosed": len(filtered), "filteredEntryDates": len({r["entry"] for r in filtered}),
                "earliestReviewKST": protocol["earliestReviewKST"],
-               "sampleReady": len(filtered) >= protocol["minimumClosedFilteredTrades"] and len({r["entry"] for r in filtered}) >= protocol["minimumFilteredEntryDates"],
+               "sampleReady": None if protocol["minimumClosedFilteredTrades"] is None else len(filtered) >= protocol["minimumClosedFilteredTrades"] and len({r["entry"] for r in filtered}) >= protocol["minimumFilteredEntryDates"],
                "status": "collecting" if observations else "awaiting_first_session",
                "collectorHash": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
     write_json(history / "summary.json", summary)
@@ -339,6 +380,11 @@ def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names
 def collect_bb(daily, tickers, now=None, history=BB_HISTORY, event_payload=None, names=None):
     return collect(daily, tickers, now, history, event_payload, names,
                    protocol=BB_PROTOCOL, flags=bb_flags, feature_enricher=bb_features)
+
+
+def collect_nr7(daily, tickers, now=None, history=NR7_HISTORY, event_payload=None, names=None):
+    return collect(daily, tickers, now, history, event_payload, names,
+                   protocol=NR7_PROTOCOL, flags=nr7_flags, feature_enricher=nr7_features)
 
 
 if __name__ == "__main__":
@@ -353,3 +399,4 @@ if __name__ == "__main__":
     events = json.loads((ROOT / "data/cache/market-events.json").read_text())
     collect(daily, list(names), event_payload=events, names=names)
     collect_bb(daily, list(names), event_payload=events, names=names)
+    collect_nr7(daily, list(names), event_payload=events, names=names)

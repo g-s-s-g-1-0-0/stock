@@ -30,6 +30,45 @@ def session(open_=100., close=100., split=1., **kwargs):
 
 
 class SwingResearchTest(unittest.TestCase):
+    def test_nr7_boundaries_and_independent_predicate(self):
+        f = {**features(None), "low": 99., "movingAverages": {}, "priorRange": 2.,
+             "priorMinRange7": 2., "priorHigh": 99., "volumePriorRatio": 1.3}
+        self.assertTrue(sr.nr7_flags(f, market())["s8_nr7_breakout"])
+        for change in ({"priorRange": 2.01}, {"priorHigh": 100.}, {"ma200": 100.},
+                       {"volumePriorRatio": 1.29}, {"priorMinRange7": None}):
+            self.assertFalse(sr.nr7_flags({**f, **change}, market())["s8_nr7_breakout"])
+        self.assertFalse(sr.nr7_flags(f, market(buyAllowed=False))["s8_nr7_breakout"])
+        self.assertFalse(sr.nr7_flags(f, market(), eligible=False)["s8_nr7_breakout"])
+
+    def test_nr7_reference_windows_exclude_signal_day(self):
+        frame = pd.DataFrame({"High": [110.] * 21, "Low": [100.] * 21, "Volume": [100.] * 21})
+        frame.loc[12, "Low"] = 109.
+        frame.loc[19, "Low"] = 108.
+        frame.loc[20] = [200., 200., 130.]
+        f = sr.nr7_features(frame)
+        self.assertEqual(2., f["priorMinRange7"])
+        self.assertEqual(2., f["priorRange"])
+        self.assertEqual(110., f["priorHigh"])
+        self.assertEqual(1.3, f["volumePriorRatio"])
+        self.assertIsNone(sr.nr7_features(frame.tail(7))["priorMinRange7"])
+
+    def test_nr7_uses_twelve_percent_and_twenty_sessions(self):
+        signal = obs(signals={"s8_nr7_breakout": True})
+        sessions = {"2026-10-06": session(100, 111), "2026-10-07": session(111, 113),
+                    "2026-10-08": session(114, 114)}
+        trades, _ = sr.replay([signal], sessions)
+        self.assertEqual("2026-10-08", trades[0]["exit"])
+        self.assertAlmostEqual(.136, trades[0]["net"])
+        days = pd.bdate_range("2026-10-06", periods=21).strftime("%Y-%m-%d")
+        sessions = {day: session() for day in days}
+        trades, _ = sr.replay([signal], sessions)
+        self.assertEqual(days[20], trades[0]["exit"])
+        self.assertEqual("time_20", trades[0]["reason"])
+        sessions[days[0]]["market"]["peak"] = True
+        trades, _ = sr.replay([signal], sessions)
+        self.assertEqual(days[1], trades[0]["exit"])
+        self.assertEqual("market_peak", trades[0]["reason"])
+
     def test_bb_breakout_requires_prior_compression_and_fresh_high(self):
         f = {**features(None), "priorSqueeze": .7, "priorHigh20": 99., "volumePriorRatio": 1.2}
         self.assertTrue(sr.bb_flags(f, market())["bb_squeeze_breakout"])
@@ -149,6 +188,15 @@ class SwingResearchTest(unittest.TestCase):
             self.assertIn("priorSqueeze", bb_obs["features"])
             self.assertEqual(sr.PROTOCOL, json.loads((history / "protocol.json").read_text()))
             self.assertEqual(sr.BB_PROTOCOL, json.loads((bb_history / "protocol.json").read_text()))
+            nr7_history = history / "nr7-breakout-v1"
+            result = sr.collect_nr7(frame, ["AAA"], now, nr7_history, {"groups": []})
+            nr7_obs = sr.read_lines(nr7_history / "observations.jsonl")[0]
+            self.assertEqual({"s8_nr7_breakout": False}, nr7_obs["signals"])
+            self.assertIn("priorMinRange7", nr7_obs["features"])
+            self.assertIsNone(result["sampleReady"])
+            self.assertEqual(sr.NR7_PROTOCOL, json.loads((nr7_history / "protocol.json").read_text()))
+            self.assertEqual(before, (history / "observations.jsonl").read_text())
+
 
 
 if __name__ == "__main__":

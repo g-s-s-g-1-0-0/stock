@@ -1,0 +1,28 @@
+{
+  "version": "nr7-breakout-v1",
+  "startSession": "2026-10-05",
+  "earliestReviewKST": "2026-12-08",
+  "minimumCalendarMonths": 2,
+  "minimumClosedFilteredTrades": null,
+  "minimumFilteredEntryDates": null,
+  "reviewArm": "s8_nr7_breakout",
+  "arms": [
+    "s8_nr7_breakout"
+  ],
+  "entry": "D-1 high-low <= minimum of seven sessions ending D-1; D close > D-1 high and MA200; D volume >=1.3 prior 20-session mean; current market allowed; D+1 open",
+  "exit": "close-confirmed -8%/+12%/20 sessions, QQQ peak or two-day recovery end; next open",
+  "recoveryBuyCap": 14.0,
+  "recoveryExit": 18.0,
+  "normalBuyCap": 9.0,
+  "roundTripCost": 0.004,
+  "excludedKnownETFs": [
+    "HOOG",
+    "QLD",
+    "QQQ",
+    "SOXL",
+    "SOXS",
+    "USD"
+  ],
+  "review": "calendar review only; no fixed trade-count sufficiency or automatic live adoption",
+  "purpose": "research strategy 8 only; independently retain overlapping signals; no live priority, orders or alerts"
+}

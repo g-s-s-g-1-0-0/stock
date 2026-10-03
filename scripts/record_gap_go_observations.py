@@ -662,13 +662,14 @@ def record(now: datetime | None = None) -> int:
     if session_paths:
         print(f"[gap-go] updated {len(session_paths)} session files")
     if research_enabled:
-        from scripts.record_swing_research import collect, collect_bb
+        from scripts.record_swing_research import collect, collect_bb, collect_nr7
         stocks = json.loads(STOCKS_PATH.read_text()).get("rows", [])
         names = {row["ticker"]: row.get("name", "") for row in stocks if row.get("market") == "US"}
         event_path = ROOT / "data/cache/market-events.json"
         events = json.loads(event_path.read_text()) if event_path.exists() else None
         collect(daily, tickers, now=current, event_payload=events, names=names)
         collect_bb(daily, tickers, now=current, event_payload=events, names=names)
+        collect_nr7(daily, tickers, now=current, event_payload=events, names=names)
     return written
 
 
