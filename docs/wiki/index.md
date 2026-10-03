@@ -82,5 +82,6 @@
 
 - [[swing-risk-operations]] — 10슬롯, 동일 종목 1포지션, 위험군 20%, 레버리지 ETF 5%, 메일 권장 행동·중복 방지 기준
 - [[web-data-refresh]] — 즉시갱신 scope, 2시간 갱신은 캐시 push 후 메일 발송 순서
+- [[signal-snapshot-history]] — 기술·가치 연구 패널은 2026-05-12~2026-10-03 하루 1장. 2시간 슬롯은 git 캐시 커밋에만 있음
 - [[qqq-etf-classification]] — ETF 자가진단(나스닥 플래그·Trust/Index Fund), QQQ 오분류 수정, 유니버스 전수 재분류
 - [[market-events-verification]] — BLS 공식 일정은 라이브 403 시 Wayback iframe 원문을 읽고, 날짜가 확실할 때만 자동 반영
