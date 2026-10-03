@@ -4,8 +4,8 @@
     "schedule": "0 15 * * *",
     "updatedAt": "2026-10-03T15:00:00+00:00",
     "lastSuccessfulRun": "2026-10-03T15:00:00+00:00",
-    "failedReason": "GOOGL: HTTP Error 429: Too Many Requests; NVDA: HTTP Error 429: Too Many Requests; META: HTTP Error 429: Too Many Requests",
-    "successfulRows": 50
+    "failedReason": null,
+    "successfulRows": 53
   },
   "rows": {
     "000150": {
@@ -1209,17 +1209,17 @@
       "ruleOf40": "47.41%"
     },
     "GOOGL": {
-      "marketCap": "$ 4176.16B",
+      "marketCap": "$ 4183.59B",
       "sales": "$ 446.31B",
       "salesQoq": "23.98%",
       "salesYoyTtm": "20.23%",
       "salesPastYears": "12.78% 17.18%",
       "currentRatio": "2.72",
       "debtToEquity": "0.18",
-      "priceToFreeCashFlow": "78.39",
-      "priceToSales": "9.36",
-      "per": "17.23",
-      "pbr": "6.74",
+      "priceToFreeCashFlow": "78.53",
+      "priceToSales": "9.37",
+      "per": "17.26",
+      "pbr": "6.75",
       "roe": "48.68%",
       "peg": "1.22",
       "sharesOutstanding": "5.87B",
@@ -1233,17 +1233,17 @@
       "ruleOf40": "54.19%"
     },
     "NVDA": {
-      "marketCap": "$ 5650.97B",
+      "marketCap": "$ 5638.19B",
       "sales": "$ 302.97B",
       "salesQoq": "105.85%",
       "salesYoyTtm": "83.38%",
       "salesPastYears": "100.05% 66.90%",
       "currentRatio": "4.59",
       "debtToEquity": "0.17",
-      "priceToFreeCashFlow": "44.49",
-      "priceToSales": "18.65",
-      "per": "29.64",
-      "pbr": "24.73",
+      "priceToFreeCashFlow": "44.39",
+      "priceToSales": "18.61",
+      "per": "29.57",
+      "pbr": "24.67",
       "roe": "117.21%",
       "peg": "0.23",
       "sharesOutstanding": "24.15B",
@@ -1257,17 +1257,17 @@
       "ruleOf40": "148.59%"
     },
     "META": {
-      "marketCap": "$ 1851.81B",
+      "marketCap": "$ 1854.79B",
       "sales": "$ 228.25B",
       "salesQoq": "27.96%",
       "salesYoyTtm": "27.65%",
       "salesPastYears": "19.89% 18.51%",
       "currentRatio": "2.23",
       "debtToEquity": "0.43",
-      "priceToFreeCashFlow": "45.19",
-      "priceToSales": "8.11",
-      "per": "27.38",
-      "pbr": "7.09",
+      "priceToFreeCashFlow": "45.27",
+      "priceToSales": "8.13",
+      "per": "27.43",
+      "pbr": "7.10",
       "roe": "29.85%",
       "peg": "1.14",
       "sharesOutstanding": "2.21B",
@@ -1281,18 +1281,5 @@
       "ruleOf40": "65.73%"
     }
   },
-  "errors": [
-    {
-      "ticker": "GOOGL",
-      "error": "HTTP Error 429: Too Many Requests"
-    },
-    {
-      "ticker": "NVDA",
-      "error": "HTTP Error 429: Too Many Requests"
-    },
-    {
-      "ticker": "META",
-      "error": "HTTP Error 429: Too Many Requests"
-    }
-  ]
+  "errors": []
 }
