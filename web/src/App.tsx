@@ -2460,6 +2460,7 @@ type StrategyCriteriaRow = { label: string; value: string | string[] }
 const strategyMarketGuide = [
   'QQQ 이격도는 현재가가 200일 평균선보다 몇 % 높거나 낮은지를 뜻합니다.',
   '회복장은 최근 60거래일 안에 QQQ 이격도가 -5% 이하였고, 현재 0% 이상으로 오른 상태입니다.',
+  '신규 매수 차단은 회복장 +14%, 그 외 +9%입니다. 이 선을 넘으면 새 매수를 하지 않습니다.',
 ]
 const strategyPeakGuide = 'RSI 둔화는 주봉·일봉 RSI가 모두 65 이상이고 일봉 RSI가 전일보다 낮아진 상태입니다. MACD 둔화는 히스토그램이 2거래일 연속 줄어든 상태입니다.'
 const trendStrategyMarketGuide = [
@@ -4445,7 +4446,7 @@ const technicalMarketSnapshot: string[][] = [
   ['QQQ 일봉 RSI (14, 전날)', '82.78'],
   ['QQQ MACD Histogram (D/D-1/D-2)', '+12.34 / +13.21 / +14.02'],
   ['QQQ 60거래일 최저 이격도', '-5.20%'],
-  ['QQQ 매수 차단 기준', '>+18.00%'],
+  ['QQQ 매수 차단 기준', '>+14.00%'],
   ['나스닥 (QQQ, 당일)', '674.18'],
   ['나스닥 (QQQ, 20일 이동평균선)', '638.20'],
   ['나스닥 (QQQ, 60일 이동평균선)', '611.53'],
