@@ -1,0 +1,34 @@
+{
+  "version": "swing-paired-v1",
+  "startSession": "2026-10-05",
+  "earliestReviewKST": "2026-12-08",
+  "minimumCalendarMonths": 2,
+  "minimumClosedFilteredTrades": 30,
+  "minimumFilteredEntryDates": 15,
+  "recoveryBuyCap": 14.0,
+  "recoveryExit": 18.0,
+  "normalBuyCap": 9.0,
+  "roundTripCost": 0.004,
+  "entry": "D completed daily bar, next QQQ regular session open",
+  "s7Exit": "close-confirmed -8%/+10%, recovery end twice, or market peak; next open",
+  "laggardExit": "close-confirmed -8%/+12%/20 sessions; next open; market block ignored only in paper",
+  "arms": [
+    "s7_base",
+    "s7_rs_positive",
+    "laggard_rebound"
+  ],
+  "s7Priority": "independent S7 predicate, no 1-6 priority or account slot limits",
+  "pairedCoverage": "both S7 arms require available rs20; missing values are not classified as negative",
+  "excludedKnownETFs": [
+    "HOOG",
+    "QLD",
+    "QQQ",
+    "SOXL",
+    "SOXS",
+    "USD"
+  ],
+  "reentry": "new eligible signal strictly after prior exit session; no overlapping same-ticker arm positions",
+  "missingPrices": "invalidate affected trade; never substitute a later entry/exit open",
+  "dividends": "price returns only; cash dividends excluded",
+  "purpose": "research only; no orders, public API, alerts or live trade-log writes"
+}

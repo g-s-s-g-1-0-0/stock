@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GAP_GO_SCHEDULE: ${{ github.event.schedule }}
+      SWING_RESEARCH_ENABLED: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,13 +34,13 @@ jobs:
         run: python scripts/record_gap_go_observations.py
       - name: Commit internal research data
         run: |
-          git add data/history/gap-go
+          git add data/history/gap-go data/history/swing-research
           if git diff --cached --quiet; then
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Collect gap-and-go observations"
+          git commit -m "Collect gap-and-go and swing research observations"
           BRANCH="${GITHUB_REF_NAME:-main}"
           for attempt in 1 2 3; do
             git fetch origin "$BRANCH"

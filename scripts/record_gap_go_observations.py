@@ -628,9 +628,14 @@ def record(now: datetime | None = None) -> int:
 
     import yfinance as yf
 
-    symbols = list(dict.fromkeys([*tickers, "QQQ", "^VIX"]))
+    research_enabled = os.environ.get("SWING_RESEARCH_ENABLED") == "true"
+    research_tickers = []
+    if research_enabled:
+        from scripts.record_swing_research import tracked_tickers
+        research_tickers = tracked_tickers()
+    symbols = list(dict.fromkeys([*tickers, *research_tickers, "QQQ", "^VIX"]))
     minute = yf.download(tickers, period=MINUTE_PERIOD, interval="1m", prepost=True, auto_adjust=False, progress=False, threads=True)
-    daily = yf.download(symbols, period="2y", interval="1d", auto_adjust=False, progress=False, threads=True)
+    daily = yf.download(symbols, period="2y", interval="1d", auto_adjust=False, actions=True, progress=False, threads=True)
     local = current.astimezone(NEW_YORK)
     captured_at = current.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
     written = 0
@@ -656,6 +661,13 @@ def record(now: datetime | None = None) -> int:
     session_paths = ensure_session_files(daily)
     if session_paths:
         print(f"[gap-go] updated {len(session_paths)} session files")
+    if research_enabled:
+        from scripts.record_swing_research import collect
+        stocks = json.loads(STOCKS_PATH.read_text()).get("rows", [])
+        names = {row["ticker"]: row.get("name", "") for row in stocks if row.get("market") == "US"}
+        event_path = ROOT / "data/cache/market-events.json"
+        events = json.loads(event_path.read_text()) if event_path.exists() else None
+        collect(daily, tickers, now=current, event_payload=events, names=names)
     return written
 
 
