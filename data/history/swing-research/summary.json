@@ -1,0 +1,17 @@
+{
+  "version": "swing-paired-v1",
+  "startSession": "2026-10-05",
+  "lastSession": null,
+  "observations": 0,
+  "signalCounts": {
+    "s7_base": 0,
+    "s7_rs_positive": 0,
+    "laggard_rebound": 0
+  },
+  "filteredClosed": 0,
+  "filteredEntryDates": 0,
+  "earliestReviewKST": "2026-12-08",
+  "sampleReady": false,
+  "status": "awaiting_first_session",
+  "collectorHash": "df4be86438db32929e4df9bb83e915db93e3417b4cf41b2cfc21dab973447b95"
+}
