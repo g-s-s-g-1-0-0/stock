@@ -627,6 +627,12 @@ def build_market_snapshot() -> tuple[list[list[str]], dict[str, Any], float | No
         rows.append(["미국 10년물 금리", f"수집 실패: {exc}"])
 
     try:
+        tyx_rows = fetch_ohlcv("^TYX")
+        rows.append(["미국 30년물 금리", fmt_number(tyx_rows[-1]["close"], 3)])
+    except Exception as exc:  # noqa: BLE001
+        rows.append(["미국 30년물 금리", f"수집 실패: {exc}"])
+
+    try:
         dollar_rows = fetch_ohlcv("DX-Y.NYB")
         rows.append(["달러 인덱스", fmt_number(dollar_rows[-1]["close"])])
     except Exception as exc:  # noqa: BLE001
