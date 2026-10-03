@@ -1,0 +1,27 @@
+{
+  "version": "bb-breakout-v1",
+  "startSession": "2026-10-05",
+  "earliestReviewKST": "2026-12-08",
+  "minimumCalendarMonths": 2,
+  "minimumClosedFilteredTrades": 20,
+  "minimumFilteredEntryDates": 10,
+  "reviewArm": "bb_squeeze_breakout",
+  "arms": [
+    "bb_squeeze_breakout"
+  ],
+  "entry": "D completed close > prior 20-session high and MA200; D-1 BB width < .75 of prior 60-session mean; D volume >=1.2 prior 20-session mean; current market allowed; D+1 open",
+  "exit": "close-confirmed -8%/+12%/20 sessions, QQQ peak or two-day recovery end; next open",
+  "recoveryBuyCap": 14.0,
+  "recoveryExit": 18.0,
+  "normalBuyCap": 9.0,
+  "roundTripCost": 0.004,
+  "excludedKnownETFs": [
+    "HOOG",
+    "QLD",
+    "QQQ",
+    "SOXL",
+    "SOXS",
+    "USD"
+  ],
+  "purpose": "independent paper candidate only; no live priority, positions, public API or alerts"
+}

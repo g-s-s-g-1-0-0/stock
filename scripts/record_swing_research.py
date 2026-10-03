@@ -37,6 +37,25 @@ PROTOCOL = {
     "dividends": "price returns only; cash dividends excluded",
     "purpose": "research only; no orders, public API, alerts or live trade-log writes",
 }
+BB_HISTORY = HISTORY / "bb-breakout-v1"
+BB_PROTOCOL = {
+    "version": "bb-breakout-v1",
+    "startSession": "2026-10-05",
+    "earliestReviewKST": "2026-12-08",
+    "minimumCalendarMonths": 2,
+    "minimumClosedFilteredTrades": 20,
+    "minimumFilteredEntryDates": 10,
+    "reviewArm": "bb_squeeze_breakout",
+    "arms": ["bb_squeeze_breakout"],
+    "entry": "D completed close > prior 20-session high and MA200; D-1 BB width < .75 of prior 60-session mean; D volume >=1.2 prior 20-session mean; current market allowed; D+1 open",
+    "exit": "close-confirmed -8%/+12%/20 sessions, QQQ peak or two-day recovery end; next open",
+    "recoveryBuyCap": 14.0,
+    "recoveryExit": 18.0,
+    "normalBuyCap": 9.0,
+    "roundTripCost": 0.004,
+    "excludedKnownETFs": sorted(ETF),
+    "purpose": "independent paper candidate only; no live priority, positions, public API or alerts",
+}
 
 
 def read_lines(path):
@@ -65,11 +84,11 @@ def number(value):
     return float(value) if value is not None and math.isfinite(float(value)) else None
 
 
-def initialize(history=HISTORY):
+def initialize(history=HISTORY, protocol=PROTOCOL):
     path = history / "protocol.json"
-    if path.exists() and json.loads(path.read_text()) != PROTOCOL:
+    if path.exists() and json.loads(path.read_text()) != protocol:
         raise RuntimeError("research protocol changed; start a new version instead of mixing rules")
-    write_json(path, PROTOCOL)
+    write_json(path, protocol)
 
 
 def tracked_tickers(history=HISTORY):
@@ -86,6 +105,25 @@ def signal_flags(features, market, eligible=True):
     laggard = bool(eligible and market["premium"] > 14 and close < features["ma200"]
                    and features.get("histChange") is not None and features["histChange"] > 0)
     return {"s7_base": base, "s7_rs_positive": base and features["rs20"] > 0, "laggard_rebound": laggard}
+
+
+def bb_features(frame):
+    prior = frame.iloc[:-1]
+    widths = prior.Close.rolling(20).std() * 4
+    mean_width = number(widths.tail(60).mean())
+    mean_volume = number(prior.Volume.tail(20).mean())
+    return {"priorSqueeze": number(widths.iloc[-1] / mean_width) if mean_width and mean_width > 0 else None,
+            "priorHigh20": number(prior.High.tail(20).max()),
+            "volumePriorRatio": number(frame.Volume.iloc[-1] / mean_volume) if mean_volume and mean_volume > 0 else None}
+
+
+def bb_flags(features, market, eligible=True):
+    fields = ("priorSqueeze", "priorHigh20", "volumePriorRatio", "close", "ma200")
+    known = all(features.get(k) is not None for k in fields)
+    passed = (known and eligible and market["buyAllowed"] and features["priorSqueeze"] < .75
+              and features["close"] > features["priorHigh20"] and features["close"] > features["ma200"]
+              and features["volumePriorRatio"] >= 1.2)
+    return {"bb_squeeze_breakout": bool(passed)}
 
 
 def market_rows(frame):
@@ -205,9 +243,9 @@ def replay(observations, sessions):
                 nonrecovery = 0 if market["recovery"] else nonrecovery + 1 if seen_recovery else 0
                 if gain <= -.08:
                     pending = "stop_8_close"
-                elif gain >= (.12 if arm == "laggard_rebound" else .10):
+                elif gain >= (.12 if arm in {"laggard_rebound", "bb_squeeze_breakout"} else .10):
                     pending = "target_close"
-                elif arm == "laggard_rebound" and count >= 20:
+                elif arm in {"laggard_rebound", "bb_squeeze_breakout"} and count >= 20:
                     pending = "time_20"
                 elif arm != "laggard_rebound" and (market["peak"] or nonrecovery >= 2):
                     pending = "market_peak" if market["peak"] else "recovery_end_2"
@@ -219,8 +257,9 @@ def replay(observations, sessions):
     return trades, labels
 
 
-def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names=None):
-    initialize(history)
+def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names=None,
+            *, protocol=PROTOCOL, flags=signal_flags, feature_enricher=None):
+    initialize(history, protocol)
     current = (now or datetime.now(timezone.utc)).astimezone(NY)
     frames = extract_frames(daily, sorted(set(tickers) | set(tracked_tickers(history)) | {"QQQ"}))
     qqq = frames.get("QQQ")
@@ -228,7 +267,7 @@ def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names
         raise RuntimeError("swing research: QQQ daily bars missing")
     complete = [d for d in qqq.index if d < current.date().isoformat() or
                 d == current.date().isoformat() and current.time() >= time(16, 5)]
-    complete = [d for d in complete if d >= PROTOCOL["startSession"]]
+    complete = [d for d in complete if d >= protocol["startSession"]]
     observations = read_lines(history / "observations.jsonl")
     sessions = {r["session"]: r for r in read_lines(history / "sessions.jsonl")}
     capture = current.astimezone(timezone.utc).isoformat()
@@ -269,30 +308,37 @@ def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names
             features = {"close": float(closes.iloc[-1]), "open": float(f.Open.iloc[-1]), "low": float(f.Low.iloc[-1]),
                         "previousClose": float(closes.iloc[-2]), "ma200": averages["200"], "movingAverages": averages,
                         "rs20": number(rs), "histChange": number(hist.diff().iloc[-1])}
+            if feature_enricher is not None:
+                features.update(feature_enricher(f))
             name = (names or {}).get(ticker, "")
             excluded = ticker in ETF or any(word in name.upper() for word in ("ETF", "DIREXION", "PROSHARES", "LEVERAGED", "2X", "3X"))
             market = {**states[day], "event": event, "buyAllowed": states[day]["buyAllowed"] and event == "당분간 없음"}
             observations.append({"session": day, "ticker": ticker, "capturedAt": capture, "forwardEligible": forward,
                                  "excludedETF": excluded, "features": features, "market": market,
-                                 "signals": signal_flags(features, market, eligible=not excluded),
-                                 "source": "Yahoo completed daily OHLCV", "version": PROTOCOL["version"]})
+                                 "signals": flags(features, market, eligible=not excluded),
+                                 "source": "Yahoo completed daily OHLCV", "version": protocol["version"]})
     write_lines(history / "sessions.jsonl", [sessions[d] for d in sorted(sessions)])
     write_lines(history / "observations.jsonl", sorted(observations, key=lambda r: (r["session"], r["ticker"])))
     trades, labels = replay(observations, sessions)
     write_lines(history / "paper-trades.jsonl", trades)
     write_lines(history / "forward-outcomes.jsonl", labels)
-    filtered = [r for r in trades if r["arm"] == "s7_rs_positive" and r["status"] == "closed"]
-    summary = {"version": PROTOCOL["version"], "startSession": PROTOCOL["startSession"],
+    filtered = [r for r in trades if r["arm"] == protocol.get("reviewArm", "s7_rs_positive") and r["status"] == "closed"]
+    summary = {"version": protocol["version"], "startSession": protocol["startSession"],
                "lastSession": max(sessions) if sessions else None, "observations": len(observations),
-               "signalCounts": {a: sum(r["forwardEligible"] and r["signals"][a] for r in observations) for a in PROTOCOL["arms"]},
+               "signalCounts": {a: sum(r["forwardEligible"] and r["signals"][a] for r in observations) for a in protocol["arms"]},
                "filteredClosed": len(filtered), "filteredEntryDates": len({r["entry"] for r in filtered}),
-               "earliestReviewKST": PROTOCOL["earliestReviewKST"],
-               "sampleReady": len(filtered) >= 30 and len({r["entry"] for r in filtered}) >= 15,
+               "earliestReviewKST": protocol["earliestReviewKST"],
+               "sampleReady": len(filtered) >= protocol["minimumClosedFilteredTrades"] and len({r["entry"] for r in filtered}) >= protocol["minimumFilteredEntryDates"],
                "status": "collecting" if observations else "awaiting_first_session",
                "collectorHash": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
     write_json(history / "summary.json", summary)
     print(f"[swing-research] {summary['status']}; observations={len(observations)}, paper trades={len(trades)}")
     return summary
+
+
+def collect_bb(daily, tickers, now=None, history=BB_HISTORY, event_payload=None, names=None):
+    return collect(daily, tickers, now, history, event_payload, names,
+                   protocol=BB_PROTOCOL, flags=bb_flags, feature_enricher=bb_features)
 
 
 if __name__ == "__main__":
@@ -306,3 +352,4 @@ if __name__ == "__main__":
     daily = yf.download(symbols, period="2y", interval="1d", auto_adjust=False, actions=True, progress=False, threads=True)
     events = json.loads((ROOT / "data/cache/market-events.json").read_text())
     collect(daily, list(names), event_payload=events, names=names)
+    collect_bb(daily, list(names), event_payload=events, names=names)

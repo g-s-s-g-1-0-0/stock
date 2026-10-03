@@ -1,12 +1,10 @@
 {
-  "version": "swing-paired-v1",
+  "version": "bb-breakout-v1",
   "startSession": "2026-10-05",
   "lastSession": null,
   "observations": 0,
   "signalCounts": {
-    "s7_base": 0,
-    "s7_rs_positive": 0,
-    "laggard_rebound": 0
+    "bb_squeeze_breakout": 0
   },
   "filteredClosed": 0,
   "filteredEntryDates": 0,

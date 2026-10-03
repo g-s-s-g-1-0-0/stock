@@ -30,6 +30,42 @@ def session(open_=100., close=100., split=1., **kwargs):
 
 
 class SwingResearchTest(unittest.TestCase):
+    def test_bb_breakout_requires_prior_compression_and_fresh_high(self):
+        f = {**features(None), "priorSqueeze": .7, "priorHigh20": 99., "volumePriorRatio": 1.2}
+        self.assertTrue(sr.bb_flags(f, market())["bb_squeeze_breakout"])
+        for change in ({"priorSqueeze": .75}, {"priorHigh20": 100.}, {"volumePriorRatio": 1.19}, {"priorSqueeze": None}):
+            self.assertFalse(sr.bb_flags({**f, **change}, market())["bb_squeeze_breakout"])
+        self.assertFalse(sr.bb_flags(f, market(buyAllowed=False))["bb_squeeze_breakout"])
+
+    def test_bb_features_exclude_signal_day_from_reference_windows(self):
+        f = pd.DataFrame({"Close": [100 + i % 7 for i in range(200)], "High": [108.] * 200,
+                          "Volume": [100.] * 200})
+        baseline = sr.bb_features(f)
+        f.loc[199] = [200, 210, 120]
+        changed = sr.bb_features(f)
+        self.assertEqual(baseline["priorSqueeze"], changed["priorSqueeze"])
+        self.assertEqual(108, changed["priorHigh20"])
+        self.assertEqual(1.2, changed["volumePriorRatio"])
+
+    def test_bb_target_is_twelve_percent_not_s7_ten(self):
+        sessions = {"2026-10-06": session(100, 111), "2026-10-07": session(111, 113),
+                    "2026-10-08": session(114, 114)}
+        trades, _ = sr.replay([obs(signals={"bb_squeeze_breakout": True})], sessions)
+        self.assertEqual("2026-10-08", trades[0]["exit"])
+        self.assertAlmostEqual(.136, trades[0]["net"])
+
+    def test_bb_twenty_day_cap_and_market_exit(self):
+        days = pd.bdate_range("2026-10-06", periods=21).strftime("%Y-%m-%d")
+        sessions = {day: session() for day in days}
+        signal = obs(signals={"bb_squeeze_breakout": True})
+        trades, _ = sr.replay([signal], sessions)
+        self.assertEqual(days[20], trades[0]["exit"])
+        self.assertEqual("time_20", trades[0]["reason"])
+        sessions[days[0]]["market"]["peak"] = True
+        trades, _ = sr.replay([signal], sessions)
+        self.assertEqual(days[1], trades[0]["exit"])
+        self.assertEqual("market_peak", trades[0]["reason"])
+
     def test_relative_strength_is_only_paired_difference(self):
         self.assertEqual(sr.signal_flags(features(), market()),
                          {"s7_base": True, "s7_rs_positive": True, "laggard_rebound": False})
@@ -106,6 +142,13 @@ class SwingResearchTest(unittest.TestCase):
             summary = json.loads((history / "summary.json").read_text())
             self.assertEqual("2026-10-05", summary["lastSession"])
             self.assertFalse(summary["sampleReady"])
+            bb_history = history / "bb-breakout-v1"
+            sr.collect_bb(frame, ["AAA"], now, bb_history, {"groups": []})
+            bb_obs = sr.read_lines(bb_history / "observations.jsonl")[0]
+            self.assertEqual({"bb_squeeze_breakout": False}, bb_obs["signals"])
+            self.assertIn("priorSqueeze", bb_obs["features"])
+            self.assertEqual(sr.PROTOCOL, json.loads((history / "protocol.json").read_text()))
+            self.assertEqual(sr.BB_PROTOCOL, json.loads((bb_history / "protocol.json").read_text()))
 
 
 if __name__ == "__main__":
