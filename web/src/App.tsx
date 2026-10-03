@@ -4482,7 +4482,7 @@ const technicalSummaryTooltips: Record<string, string> = {
   '고점 신호 종합': `주식 상승의 폭, 미국 국채 금리, 저신용 회사채 부담을 합쳐 시장이 얼마나 부담스러운지 보여줍니다. 매매 신호가 아니라 참고용 경고입니다.\n\n경고: 세 항목 중 경고가 ${marketSignalRules.combined.warningSignalCount}개 이상이거나 주의가 ${marketSignalRules.combined.cautionCountForWarning}개 이상\n주의: 주의가 하나\n정상: 모두 정상`,
   '미국 주식 20일선 상회 비율': `뉴욕증권거래소 주식 중 현재 주가가 각 회사의 최근 20거래일 평균 가격보다 높은 비율입니다. 예를 들어 26%면 100개 중 약 26개만 평균 가격 위에 있다는 뜻입니다. 괄호의 N/전체는 평균 가격 위에 있는 종목 수와 계산 대상 종목 수입니다. ETF와 테스트 종목은 제외합니다. 비율이 낮으면 시장 상승을 함께 따라가는 주식이 적다는 뜻입니다.\n\n정상: ${marketSignalRules.breadth.cautionBelow}% 이상\n주의: ${marketSignalRules.breadth.warningBelow}% 이상 ${marketSignalRules.breadth.cautionBelow}% 미만\n경고: ${marketSignalRules.breadth.warningBelow}% 미만`,
   '미국 10년물 금리 20일 변화': `미국 정부가 10년 만기 국채를 발행할 때의 대표 금리입니다. 여기 표시된 변화는 이 금리가 최근 20거래일 동안 몇 %포인트 올랐는지입니다. 금리가 빠르게 오르면 성장주 가치에 부담이 될 수 있습니다. 화면에 표시된 소수 둘째 자리 값으로 등급을 정합니다.\n\n정상: +${marketSignalRules.treasury.caution.toFixed(2)}%p 미만\n주의: +${marketSignalRules.treasury.caution.toFixed(2)}%p 이상\n경고: +${marketSignalRules.treasury.warning.toFixed(2)}%p 이상`,
-  '미국 저신용 회사채 금리 차이 (20일)': `신용도가 낮은 미국 회사는 미국 국채보다 더 높은 이자를 내야 합니다. 이 값은 그 추가 이자 차이가 최근 20거래일 동안 얼마나 커졌는지 보여줍니다. 예를 들어 +0.50%p면 회사채와 국채 사이의 금리 차이가 0.50%p 더 벌어진 것입니다. 실제 한 회사의 대출 금리가 아니라 저신용 회사채 시장 전반의 부담을 나타냅니다. 화면에 표시된 소수 둘째 자리 값으로 등급을 정합니다.\n\n정상: +${marketSignalRules.credit.caution.toFixed(2)}%p 미만\n주의: +${marketSignalRules.credit.caution.toFixed(2)}%p 이상\n경고: +${marketSignalRules.credit.warning.toFixed(2)}%p 이상`,
+  '미국 저신용 회사채 금리 차이': `신용도가 낮은 미국 회사는 미국 국채보다 더 높은 이자를 내야 합니다. 이 값은 그 추가 이자 차이가 최근 20거래일 동안 얼마나 커졌는지 보여줍니다. 예를 들어 +0.50%p면 회사채와 국채 사이의 금리 차이가 0.50%p 더 벌어진 것입니다. 실제 한 회사의 대출 금리가 아니라 저신용 회사채 시장 전반의 부담을 나타냅니다. 화면에 표시된 소수 둘째 자리 값으로 등급을 정합니다.\n\n정상: +${marketSignalRules.credit.caution.toFixed(2)}%p 미만\n주의: +${marketSignalRules.credit.caution.toFixed(2)}%p 이상\n경고: +${marketSignalRules.credit.warning.toFixed(2)}%p 이상`,
 }
 
 function isMeaningfulMarketSnapshot(snapshot: string[][]) {
@@ -4527,6 +4527,7 @@ function technicalSummaryDisplayLabel(label: string) {
     '나스닥 (QQQ, 144일 이동평균선)': 'QQQ 144일선',
     '나스닥 (QQQ, 200일 이동평균선)': 'QQQ 200일선',
     '나스닥 (QQQ, 200일선 이격도)': 'QQQ 이격 N%',
+    '미국 저신용 회사채 금리 차이 (20일)': '미국 저신용 회사채 금리 차이',
   }
   return compactLabels[label] ?? label
 }
@@ -5017,7 +5018,7 @@ function TechnicalAnalysisPage({
             <div className="technical-summary-item" key={label}>
               <span>
                 <MetricValue
-                  tooltip={technicalSummaryTooltips[label]}
+                  tooltip={technicalSummaryTooltips[label] ?? technicalSummaryTooltips[technicalSummaryDisplayLabel(label)]}
                   onTooltipClose={onTooltipClose}
                   onTooltipOpen={onTooltipOpen}
                 >
