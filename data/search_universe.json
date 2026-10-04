@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15506,
-    "industryEnrichedAt": "2026-10-04T15:01:19+00:00",
-    "industryEnrichedTickers": 43,
+    "industryEnrichedAt": "2026-10-04T16:55:32+00:00",
+    "industryEnrichedTickers": 1,
     "industryReviewedAt": "2026-10-04T15:01:22+00:00",
     "industryReviewedTickers": 9
   },
@@ -202568,8 +202568,7 @@
       "rawIndustry": "Financial | Exchange Traded Fund",
       "products": "-",
       "updatedAt": "2026-10-04T15:00:48+00:00",
-      "etfFlag": true,
-      "industryReviewedAt": "2026-10-04T15:01:22+00:00"
+      "etfFlag": true
     },
     {
       "ticker": "SOXX",
