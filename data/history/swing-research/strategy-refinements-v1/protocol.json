@@ -1,0 +1,60 @@
+{
+  "version": "strategy-refinements-v1",
+  "startSession": "2026-10-05",
+  "earliestReviewKST": "2026-12-08",
+  "minimumCalendarMonths": 2,
+  "minimumClosedFilteredTrades": null,
+  "minimumFilteredEntryDates": null,
+  "reviewArm": "refine_s2_volume",
+  "arms": [
+    "refine_s1_base",
+    "refine_s1_ma200_rising",
+    "refine_s2_base",
+    "refine_s2_volume",
+    "refine_s4_base",
+    "refine_s4_ma200_rising",
+    "refine_s6_base",
+    "refine_s6_ma50_above200"
+  ],
+  "pairs": {
+    "s1_ma200_rising": [
+      "refine_s1_base",
+      "refine_s1_ma200_rising"
+    ],
+    "s2_volume": [
+      "refine_s2_base",
+      "refine_s2_volume"
+    ],
+    "s4_ma200_rising": [
+      "refine_s4_base",
+      "refine_s4_ma200_rising"
+    ],
+    "s6_ma50_above200": [
+      "refine_s6_base",
+      "refine_s6_ma50_above200"
+    ]
+  },
+  "entry": "D completed close predicates, next QQQ regular session open; no priority or account slots",
+  "s1": "below MA200; VIX>=22; RSI<35 or CCI<-150; LR120 low slope>0; low<=LR*1.05; QQQ premium<-3; filter MA200>MA200[D-20]",
+  "s2": "recorded season open; recovery; premium<=14; low<=MA*1.003 and close>=MA*.995 for MA20/60/144/200; filter volume>=1.2 prior20 mean",
+  "s4": "below MA200 but distance>=-25%; MACD histogram crosses above0; QQQ nonrecovery premium<=9; filter MA200>MA200[D-20]",
+  "s6": "causal downtrend escape attempt; market allowed; signal and next-open support risk<=8%; next-open gap<=3%; filter MA50>MA200",
+  "exit": "paired common research exit: close -8%/+12%/20 sessions, QQQ peak or recovery end twice; next open; NOT operating exit replication",
+  "recoveryBuyCap": 14.0,
+  "recoveryExit": 18.0,
+  "normalBuyCap": 9.0,
+  "roundTripCost": 0.004,
+  "pairedCoverage": "both arms require available filter values; rejected base signals retained",
+  "season": "freeze raw strategySeason; known only when updated on signal NY date and no later than capture; missing/stale blocks S2, never assume season open",
+  "events": "all pairs require known no-event state; market exceptions for S1 and S4 retained",
+  "review": "calendar checkpoint only; no automatic sufficiency threshold; S1/S6 lower priority",
+  "excludedKnownETFs": [
+    "HOOG",
+    "QLD",
+    "QQQ",
+    "SOXL",
+    "SOXS",
+    "USD"
+  ],
+  "purpose": "private paper only, independent pairs, no orders or alerts; existing paper protocols unchanged"
+}

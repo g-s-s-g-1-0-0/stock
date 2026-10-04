@@ -670,6 +670,8 @@ def record(now: datetime | None = None) -> int:
         collect(daily, tickers, now=current, event_payload=events, names=names)
         collect_bb(daily, tickers, now=current, event_payload=events, names=names)
         collect_nr7(daily, tickers, now=current, event_payload=events, names=names)
+        from scripts.record_strategy_refinements import collect_refinements, load_season
+        collect_refinements(daily, tickers, now=current, event_payload=events, names=names, season=load_season())
     return written
 
 

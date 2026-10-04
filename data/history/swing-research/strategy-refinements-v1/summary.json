@@ -1,15 +1,22 @@
 {
-  "version": "bb-breakout-v1",
+  "version": "strategy-refinements-v1",
   "startSession": "2026-10-05",
   "lastSession": null,
   "observations": 0,
   "signalCounts": {
-    "bb_squeeze_breakout": 0
+    "refine_s1_base": 0,
+    "refine_s1_ma200_rising": 0,
+    "refine_s2_base": 0,
+    "refine_s2_volume": 0,
+    "refine_s4_base": 0,
+    "refine_s4_ma200_rising": 0,
+    "refine_s6_base": 0,
+    "refine_s6_ma50_above200": 0
   },
   "filteredClosed": 0,
   "filteredEntryDates": 0,
   "earliestReviewKST": "2026-12-08",
-  "sampleReady": false,
+  "sampleReady": null,
   "status": "awaiting_first_session",
   "collectorHash": "7caca6818c1a9bbe6aa1b54aabb7d732e9b82aa31448becc81422e16e5e32806"
 }

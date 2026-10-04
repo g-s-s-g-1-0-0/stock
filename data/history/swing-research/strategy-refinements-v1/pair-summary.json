@@ -1,0 +1,54 @@
+{
+  "pairs": {
+    "s1_ma200_rising": {
+      "refine_s1_base": {
+        "closed": 0,
+        "entryDates": 0,
+        "signals": 0
+      },
+      "refine_s1_ma200_rising": {
+        "closed": 0,
+        "entryDates": 0,
+        "signals": 0
+      }
+    },
+    "s2_volume": {
+      "refine_s2_base": {
+        "closed": 0,
+        "entryDates": 0,
+        "signals": 0
+      },
+      "refine_s2_volume": {
+        "closed": 0,
+        "entryDates": 0,
+        "signals": 0
+      }
+    },
+    "s4_ma200_rising": {
+      "refine_s4_base": {
+        "closed": 0,
+        "entryDates": 0,
+        "signals": 0
+      },
+      "refine_s4_ma200_rising": {
+        "closed": 0,
+        "entryDates": 0,
+        "signals": 0
+      }
+    },
+    "s6_ma50_above200": {
+      "refine_s6_base": {
+        "closed": 0,
+        "entryDates": 0,
+        "signals": 0
+      },
+      "refine_s6_ma50_above200": {
+        "closed": 0,
+        "entryDates": 0,
+        "signals": 0
+      }
+    }
+  },
+  "seasonUnknownObservations": 0,
+  "review": "2026-12-08"
+}

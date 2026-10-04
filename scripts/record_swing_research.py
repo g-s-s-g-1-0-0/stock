@@ -216,6 +216,19 @@ def extract_frames(daily, tickers):
     return frames
 
 
+def entry_block_reason(arm, observation, bar):
+    if not arm.startswith("refine_s6_") or bar is None:
+        return None
+    split = bar.get("split", 1.0)
+    close = observation["features"]["close"] / split
+    support = observation["features"].get("supportStop")
+    if bar["open"] > close * 1.03:
+        return "entry_gap_above_3"
+    if support is None or not 0 < (bar["open"] - support / split) / bar["open"] <= .08:
+        return "entry_support_risk_above_8"
+    return None
+
+
 def replay(observations, sessions):
     days = sorted(sessions)
     trades = []
@@ -244,6 +257,7 @@ def replay(observations, sessions):
                     entry = entry_bar["open"]
                     labels.append({"signal": signal, "ticker": ticker, "entry": entry_day, "horizon": horizon,
                                    "through": day, "signals": obs["signals"],
+                                   **({"entryBlocks": {a: entry_block_reason(a, obs, entry_bar) for a, passed in obs["signals"].items() if passed}} if any(a.startswith("refine_") for a in obs["signals"]) else {}),
                                    "net": path[-1]["close"] / entry - 1 - .004,
                                    "mae": min(b["low"] for b in path) / entry - 1,
                                    "mfe": max(b["high"] for b in path) / entry - 1})
@@ -254,6 +268,11 @@ def replay(observations, sessions):
                      "signal": signal, "entry": entry_day, "status": "open", "rs20": obs["features"]["rs20"]}
             if entry_bar is None:
                 trade.update(status="invalid", reason="missing_next_session_open")
+                trades.append(trade)
+                continue
+            block = entry_block_reason(arm, obs, entry_bar)
+            if block:
+                trade.update(status="skipped", reason=block)
                 trades.append(trade)
                 continue
             entry = entry_bar["open"]
@@ -284,9 +303,9 @@ def replay(observations, sessions):
                 nonrecovery = 0 if market["recovery"] else nonrecovery + 1 if seen_recovery else 0
                 if gain <= -.08:
                     pending = "stop_8_close"
-                elif gain >= (.12 if arm in {"laggard_rebound", "bb_squeeze_breakout", "s8_nr7_breakout"} else .10):
+                elif gain >= (.12 if (arm.startswith("refine_") or arm in {"laggard_rebound", "bb_squeeze_breakout", "s8_nr7_breakout"}) else .10):
                     pending = "target_close"
-                elif arm in {"laggard_rebound", "bb_squeeze_breakout", "s8_nr7_breakout"} and count >= 20:
+                elif (arm.startswith("refine_") or arm in {"laggard_rebound", "bb_squeeze_breakout", "s8_nr7_breakout"}) and count >= 20:
                     pending = "time_20"
                 elif arm != "laggard_rebound" and (market["peak"] or nonrecovery >= 2):
                     pending = "market_peak" if market["peak"] else "recovery_end_2"
@@ -394,9 +413,11 @@ if __name__ == "__main__":
     import yfinance as yf
     stocks = json.loads((ROOT / "data/cache/stocks.json").read_text())["rows"]
     names = {r["ticker"]: r.get("name", "") for r in stocks if r.get("market") == "US"}
-    symbols = sorted(set(names) | set(tracked_tickers()) | {"QQQ"})
+    symbols = sorted(set(names) | set(tracked_tickers()) | {"QQQ", "^VIX"})
     daily = yf.download(symbols, period="2y", interval="1d", auto_adjust=False, actions=True, progress=False, threads=True)
     events = json.loads((ROOT / "data/cache/market-events.json").read_text())
     collect(daily, list(names), event_payload=events, names=names)
     collect_bb(daily, list(names), event_payload=events, names=names)
     collect_nr7(daily, list(names), event_payload=events, names=names)
+    from scripts.record_strategy_refinements import collect_refinements, load_season
+    collect_refinements(daily, list(names), event_payload=events, names=names, season=load_season())
