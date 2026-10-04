@@ -2,8 +2,8 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-10-04T15:01:28+00:00",
-    "lastSuccessfulRun": "2026-10-04T15:01:28+00:00",
+    "updatedAt": "2026-10-04T18:27:52+00:00",
+    "lastSuccessfulRun": "2026-10-04T18:27:52+00:00",
     "failedReason": null
   },
   "rows": [
@@ -421,7 +421,7 @@
         "Communication | Communication, Services, Internet, Content, Information",
         "방산·드론 | 방산, 드론, 무인체계, 유도무기, 레이더"
       ],
-      "summary": "주식 시장은 인공지능과 데이터센터 인프라, 로봇·자동화에 집중돼 상승세를 이어가고 있다"
+      "summary": "주식 시장은 인공지능과 데이터센터, 로봇·자동화 등 고성장 기술 섹터에 자금이 집중되며, 전력·우주·광통신 등 인프라 부문도 견고한 상승세를."
     }
   ]
 }
