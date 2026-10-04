@@ -1,0 +1,75 @@
+{
+  "initial_stock_rows": 2893,
+  "excluded_symbols": [
+    "HOOG",
+    "QLD",
+    "QQQ",
+    "SOXL",
+    "SOXS",
+    "USD"
+  ],
+  "exclusion_note": "five ETFs and HOOG (existing duplicate share-class convention)",
+  "excluded_incomplete": 6,
+  "rows": 2887,
+  "tickers": 48,
+  "dates": 105,
+  "first": "2026-05-04",
+  "last": "2026-10-01",
+  "valuation_known": 2839,
+  "technical_commits": 123,
+  "intraday_price_rows": 2671,
+  "season_unknown": 1187,
+  "inferred_candle_dates": 769,
+  "inputs": {
+    "research/observed_signals_20261003/phase2/results/panel.pkl": "e3bb51aae42b265ea89c36112dee057c9e5a668039d02e5174ca387e167d38af",
+    "research/observed_signals_20261003/phase2/results/extra_inputs.pkl": "c2ce84c6147633fc95ffaebf132c1d993750b4c265751cb5365f24f27cbd5384",
+    "research/observed_signals_20261003/phase2/results/warmup_bars.pkl": "31846e2c18961d2c62b9f04a0497ce25c2c177d96438370d57e1a933892a7001",
+    "research/observed_signals_20261003/results/technical_observations.pkl": "11264ee2e417948505397181e069bb162b144d7b8129976b42b2174a0e417220",
+    "research/observed_signals_20261003/results/valuation_versions.csv": "264dfe2ff008492fcd735cad04a85a4fba31c4e135aecc9cccc633404a9bbe85",
+    "research/final_review_20261004/2026_signals.pkl": "2eabb235b6cde10d01306a6931bbc8c610455df61bfe7115be97fbedd522da33"
+  },
+  "supplements": [
+    {
+      "ticker": "SPY",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/SPY?period1=1735689600&period2=1790985600&interval=1d&events=div%2Csplit",
+      "sha256": "200678bcd29394d831d5c97bfc5374eda36735c2a7c0bbc3ef8387c1aa27c6bb",
+      "rows": 439
+    },
+    {
+      "ticker": "IWM",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/IWM?period1=1735689600&period2=1790985600&interval=1d&events=div%2Csplit",
+      "sha256": "403d4656eec9a835b84ec0d24fb20a445ae1620be902ec2adc8fe70e564db698",
+      "rows": 439
+    },
+    {
+      "ticker": "SMH",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/SMH?period1=1735689600&period2=1790985600&interval=1d&events=div%2Csplit",
+      "sha256": "4d4759ba221ab3e637dc16c1a72d7d302aa2f0a5b2ccc1b6e895a798e46aef70",
+      "rows": 439
+    },
+    {
+      "ticker": "RSP",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/RSP?period1=1735689600&period2=1790985600&interval=1d&events=div%2Csplit",
+      "sha256": "13e23db72dd92bc68e646a44075483ddcde062947182c28ced53a90a879ede44",
+      "rows": 439
+    },
+    {
+      "ticker": "HYG",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/HYG?period1=1735689600&period2=1790985600&interval=1d&events=div%2Csplit",
+      "sha256": "d1d340358dab105888beeaf110be2f58ab22740d5433126bd00d9dee70aec358",
+      "rows": 439
+    },
+    {
+      "ticker": "IEF",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/IEF?period1=1735689600&period2=1790985600&interval=1d&events=div%2Csplit",
+      "sha256": "1cddbbc8ae6b24ca13de895fe99fd3f384baca9a7e3ec658ac7da4ef48c50119",
+      "rows": 439
+    },
+    {
+      "ticker": "TLT",
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/TLT?period1=1735689600&period2=1790985600&interval=1d&events=div%2Csplit",
+      "sha256": "4cb9cbb986f0cc89ee0e08b147309c0b338ceed24eb15c7063ba49d3977c5298",
+      "rows": 439
+    }
+  ]
+}

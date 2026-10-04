@@ -1,0 +1,27 @@
+{
+  "version": "facts-v1",
+  "startSession": "2026-10-05",
+  "earliestReviewKST": "2026-12-08",
+  "purpose": "freeze original inputs for the data-first audit; no orders, no new paper fills, no alteration of the existing69 arms",
+  "availability": "verified matching Git revision commit and source timestamps; otherwise actual capture; never infer prior availability from a source timestamp alone",
+  "financialCutoff": "strictly before signal D close, source snapshot age<=7 calendar days; preserved vendor values may be older than the snapshot",
+  "technicalCutoff": "complete D candle saved before D+1 open; preserve original values separately from reconstructed daily indicators",
+  "intradayCutoff": "source and independently evidenced availability before D close; first source at/before11:00 and last at/after14:00 NY, >=2 distinct prices",
+  "fundamentalSource": "archived vendor snapshot, not audited SEC event data; SalesQ/Q and EPSQ/Q mean latest-quarter year-over-year for US stocks",
+  "forecastFieldsExcludedFromFactTests": [
+    "peg",
+    "epsNextYear"
+  ],
+  "calendar": "earningsDate is a stored calendar string, not a verified announcement timestamp or surprise",
+  "marketPrices": "completed unadjusted Yahoo/yfinance daily ETF price history, split-adjusted price returns, cash dividends excluded; HYG/IEF is a price proxy, not a credit spread",
+  "benchmarks": [
+    "SPY",
+    "IWM",
+    "SMH",
+    "RSP",
+    "HYG",
+    "IEF",
+    "TLT"
+  ],
+  "missing": "unknown is retained; failed/missing source never becomes a failing strategy condition"
+}

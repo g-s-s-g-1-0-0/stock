@@ -1,0 +1,99 @@
+{
+  "version": "data-first-review-20261005",
+  "earliestReviewKST": "2026-12-08",
+  "mode": "frozen hypotheses and source snapshots; not new daily paper fills",
+  "candidates": {
+    "S3_ma200_distance25": [
+      "S3",
+      [
+        "premium_le_25"
+      ]
+    ],
+    "S3_rsi35": [
+      "S3",
+      [
+        "rsi_le_35"
+      ]
+    ],
+    "S3_size100b": [
+      "S3",
+      [
+        "fund_market_cap_le_100000000000.0"
+      ]
+    ],
+    "S3_intraday_positive": [
+      "S3",
+      [
+        "intraday_recovery_gt_0"
+      ]
+    ],
+    "S4_debt1": [
+      "S4",
+      [
+        "fund_debtToEquity_le_1"
+      ]
+    ],
+    "S4_eps_growth": [
+      "S4",
+      [
+        "fund_epsQoq_gt_0"
+      ]
+    ],
+    "S7_obv_positive": [
+      "S7",
+      [
+        "obv20_gt_0"
+      ]
+    ],
+    "S7_high52_drawdown30": [
+      "S7",
+      [
+        "high52_distance_le_-30"
+      ]
+    ],
+    "S7_volume_ratio_falling5": [
+      "S7",
+      [
+        "observed_vol20_change5_le_0"
+      ]
+    ],
+    "S7_quality": [
+      "S7",
+      [
+        "fund_debtToEquity_le_1",
+        "fund_operatingMargin_gt_0"
+      ]
+    ],
+    "N_expanded_below200": [
+      "allowed",
+      [
+        "squeeze_gt_1.25",
+        "premium_le_0"
+      ]
+    ],
+    "N_rsi_ahead_macd": [
+      "allowed",
+      [
+        "rsi_gt_50",
+        "hist_le_0"
+      ]
+    ],
+    "N_expanded_profitable_roe": [
+      "allowed",
+      [
+        "squeeze_gt_1.25",
+        "fund_roe_gt_0"
+      ]
+    ],
+    "N_value_laggard": [
+      "allowed",
+      [
+        "fund_pbr_le_5",
+        "peer_rs20_le_0"
+      ]
+    ]
+  },
+  "definitions": "research/data_first_review_20261005/protocol.json",
+  "existingPaperArms": 69,
+  "newPaperArms": 0
+}

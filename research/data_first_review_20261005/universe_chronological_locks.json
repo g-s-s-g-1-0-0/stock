@@ -1,0 +1,149 @@
+[
+  {
+    "test_start": "2026-07-01",
+    "train_last_exit": "2026-06-30",
+    "tested_unique_eligible": 6197,
+    "chosen": [
+      {
+        "ids": [
+          29,
+          85
+        ],
+        "conditions": "adx_le_25 & fund_sales_le_1000000000.0",
+        "raw_n": 57,
+        "dates": 25,
+        "tickers": 10,
+        "date_net": 0.2144441525930817,
+        "matched_delta": 0.17504178451968813,
+        "mean": 0.10698539686536332,
+        "score": 0.12376994602237545
+      },
+      {
+        "ids": [
+          29,
+          81
+        ],
+        "conditions": "adx_le_25 & fund_epsTtm_le_0",
+        "raw_n": 64,
+        "dates": 25,
+        "tickers": 9,
+        "date_net": 0.2057007128558179,
+        "matched_delta": 0.1662983447824244,
+        "mean": 0.10852809159872587,
+        "score": 0.1146256892659541
+      },
+      {
+        "ids": [
+          29,
+          103
+        ],
+        "conditions": "adx_le_25 & width_change_le_0",
+        "raw_n": 73,
+        "dates": 28,
+        "tickers": 21,
+        "date_net": 0.17137307093685475,
+        "matched_delta": 0.1432682343376535,
+        "mean": 0.09268918663280326,
+        "score": 0.09294417815806666
+      }
+    ]
+  },
+  {
+    "test_start": "2026-08-01",
+    "train_last_exit": "2026-07-31",
+    "tested_unique_eligible": 7863,
+    "chosen": [
+      {
+        "ids": [
+          29,
+          135
+        ],
+        "conditions": "adx_le_25 & ctx_iwm_qqq_rs20_le_0",
+        "raw_n": 92,
+        "dates": 25,
+        "tickers": 19,
+        "date_net": 0.14418179946806148,
+        "matched_delta": 0.10715583181918,
+        "mean": 0.10378634805381626,
+        "score": 0.07107073902700169
+      },
+      {
+        "ids": [
+          1,
+          77
+        ],
+        "conditions": "rsi_le_35 & fund_epsQoq_le_0",
+        "raw_n": 68,
+        "dates": 29,
+        "tickers": 9,
+        "date_net": 0.0201006107421268,
+        "matched_delta": 0.08792485629622811,
+        "mean": -0.00443241577598711,
+        "score": 0.06046020361813166
+      },
+      {
+        "ids": [
+          14,
+          23
+        ],
+        "conditions": "squeeze_gt_1.25 & premium_le_0",
+        "raw_n": 34,
+        "dates": 32,
+        "tickers": 6,
+        "date_net": 0.041661483245536896,
+        "matched_delta": 0.08318504577401489,
+        "mean": 0.04874969456237956,
+        "score": 0.05505688072038076
+      }
+    ]
+  },
+  {
+    "test_start": "2026-09-01",
+    "train_last_exit": "2026-08-31",
+    "tested_unique_eligible": 9570,
+    "chosen": [
+      {
+        "ids": [
+          29,
+          135
+        ],
+        "conditions": "adx_le_25 & ctx_iwm_qqq_rs20_le_0",
+        "raw_n": 152,
+        "dates": 29,
+        "tickers": 31,
+        "date_net": 0.1174070583161526,
+        "matched_delta": 0.09698420424868762,
+        "mean": 0.03865968129035907,
+        "score": 0.06278551817349919
+      },
+      {
+        "ids": [
+          2,
+          37
+        ],
+        "conditions": "rsi_gt_50 & high52_distance_le_-30",
+        "raw_n": 94,
+        "dates": 17,
+        "tickers": 18,
+        "date_net": 0.1181766008753421,
+        "matched_delta": 0.10726738768749215,
+        "mean": -0.03646102829185864,
+        "score": 0.05857157232390084
+      },
+      {
+        "ids": [
+          14,
+          23
+        ],
+        "conditions": "squeeze_gt_1.25 & premium_le_0",
+        "raw_n": 68,
+        "dates": 48,
+        "tickers": 15,
+        "date_net": 0.055066701722860774,
+        "matched_delta": 0.07577326939155725,
+        "mean": 0.1022398866642667,
+        "score": 0.0499768303181022
+      }
+    ]
+  }
+]

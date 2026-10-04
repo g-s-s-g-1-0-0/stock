@@ -1,0 +1,69 @@
+[
+  {
+    "test_start": "2026-07-01",
+    "test_end": "2026-07-31",
+    "train_rows": 45,
+    "train_last_exit": "2026-06-25",
+    "tested_unique_eligible": 0,
+    "chosen": []
+  },
+  {
+    "test_start": "2026-08-01",
+    "test_end": "2026-08-31",
+    "train_rows": 121,
+    "train_last_exit": "2026-07-31",
+    "tested_unique_eligible": 0,
+    "chosen": []
+  },
+  {
+    "test_start": "2026-09-01",
+    "test_end": "2026-10-02",
+    "train_rows": 358,
+    "train_last_exit": "2026-08-17",
+    "tested_unique_eligible": 4593,
+    "chosen": [
+      {
+        "ids": [
+          2,
+          54
+        ],
+        "conditions": "rsi_gt_50 & fund_salesQoq_gt_20",
+        "raw_n": 52,
+        "dates": 12,
+        "tickers": 17,
+        "date_net": 0.1897704026556278,
+        "matched_delta": 0.13696163566363007,
+        "mean": 0.08421702247316037,
+        "score": 0.09731687446425409
+      },
+      {
+        "ids": [
+          14,
+          23
+        ],
+        "conditions": "squeeze_gt_1.25 & premium_le_0",
+        "raw_n": 32,
+        "dates": 13,
+        "tickers": 13,
+        "date_net": 0.1568076138925458,
+        "matched_delta": 0.09926135211652687,
+        "mean": 0.19122319537842244,
+        "score": 0.08327637844790531
+      },
+      {
+        "ids": [
+          23,
+          99
+        ],
+        "conditions": "premium_le_0 & hist_le_0",
+        "raw_n": 71,
+        "dates": 12,
+        "tickers": 16,
+        "date_net": 0.14624041399327573,
+        "matched_delta": 0.09270277673351819,
+        "mean": 0.1469450309842102,
+        "score": 0.07769177460982865
+      }
+    ]
+  }
+]

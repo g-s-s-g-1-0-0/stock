@@ -471,7 +471,8 @@ if __name__ == "__main__":
     import yfinance as yf
     stocks = json.loads((ROOT / "data/cache/stocks.json").read_text())["rows"]
     names = {r["ticker"]: r.get("name", "") for r in stocks if r.get("market") == "US"}
-    symbols = sorted(set(names) | set(tracked_tickers()) | {"QQQ", "^VIX"})
+    from scripts.record_research_facts import BENCHMARKS, collect_facts
+    symbols = sorted(set(names) | set(tracked_tickers()) | {"QQQ", "^VIX", *BENCHMARKS})
     daily = yf.download(symbols, period="2y", interval="1d", auto_adjust=False, actions=True, progress=False, threads=True)
     events = json.loads((ROOT / "data/cache/market-events.json").read_text())
     collect(daily, list(names), event_payload=events, names=names)
@@ -483,3 +484,4 @@ if __name__ == "__main__":
     collect_lab(daily, list(names), event_payload=events, names=names, season=load_season())
     from scripts.record_final_candidates import collect_final
     collect_final(daily, list(names), event_payload=events, names=names, season=load_season())
+    collect_facts(daily, list(names))

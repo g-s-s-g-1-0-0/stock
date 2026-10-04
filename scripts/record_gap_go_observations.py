@@ -632,8 +632,9 @@ def record(now: datetime | None = None) -> int:
     research_tickers = []
     if research_enabled:
         from scripts.record_swing_research import tracked_tickers
+        from scripts.record_research_facts import BENCHMARKS
         research_tickers = tracked_tickers()
-    symbols = list(dict.fromkeys([*tickers, *research_tickers, "QQQ", "^VIX"]))
+    symbols = list(dict.fromkeys([*tickers, *research_tickers, "QQQ", "^VIX", *(BENCHMARKS if research_enabled else ())]))
     minute = yf.download(tickers, period=MINUTE_PERIOD, interval="1m", prepost=True, auto_adjust=False, progress=False, threads=True)
     daily = yf.download(symbols, period="2y", interval="1d", auto_adjust=False, actions=True, progress=False, threads=True)
     local = current.astimezone(NEW_YORK)
@@ -676,6 +677,8 @@ def record(now: datetime | None = None) -> int:
         collect_lab(daily, tickers, now=current, event_payload=events, names=names, season=load_season())
         from scripts.record_final_candidates import collect_final
         collect_final(daily, tickers, now=current, event_payload=events, names=names, season=load_season())
+        from scripts.record_research_facts import collect_facts
+        collect_facts(daily, tickers, now=current)
     return written
 
 

@@ -1,0 +1,1236 @@
+{
+  "version": "data-first-audit-v1",
+  "primary": "10-session next-open to close price return minus 0.4% costs",
+  "sensitivity_horizons": [
+    5,
+    20
+  ],
+  "coverage": "actual observed 48 stocks; not historical current-survivor backtest",
+  "features": "saved technical values, archived financial values available before D close, recorded intraday snapshots available by D close; dated supplemental prices",
+  "market_gate": "QQQ14/18 recovery and9 nonrecovery research settings, archived no-event label",
+  "strategy_flags": "prior replay of present 1..7 logic, not actual historical orders; S2 unknown excluded",
+  "search": "all one/two-atom combinations across different families; full-period descriptive and purged monthly chronological fits",
+  "minimum_search_rows": 30,
+  "minimum_search_dates": 12,
+  "minimum_search_tickers": 6,
+  "selection": "matched-date net improvement minus .25 daily dispersion minus .0005 per condition; top3 with Jaccard<=.65",
+  "leakage_note": "all these months were viewed in earlier analyses: chronological results are diagnostics, NOT untouched out-of-sample evidence",
+  "rules": [
+    {
+      "id": "rsi_gt_35",
+      "family": "rsi",
+      "col": "rsi",
+      "op": "gt",
+      "a": 35,
+      "b": null
+    },
+    {
+      "id": "rsi_le_35",
+      "family": "rsi",
+      "col": "rsi",
+      "op": "le",
+      "a": 35,
+      "b": null
+    },
+    {
+      "id": "rsi_gt_50",
+      "family": "rsi",
+      "col": "rsi",
+      "op": "gt",
+      "a": 50,
+      "b": null
+    },
+    {
+      "id": "rsi_le_50",
+      "family": "rsi",
+      "col": "rsi",
+      "op": "le",
+      "a": 50,
+      "b": null
+    },
+    {
+      "id": "rsi_gt_65",
+      "family": "rsi",
+      "col": "rsi",
+      "op": "gt",
+      "a": 65,
+      "b": null
+    },
+    {
+      "id": "rsi_le_65",
+      "family": "rsi",
+      "col": "rsi",
+      "op": "le",
+      "a": 65,
+      "b": null
+    },
+    {
+      "id": "pctB_gt_10",
+      "family": "bb_position",
+      "col": "pctB",
+      "op": "gt",
+      "a": 10,
+      "b": null
+    },
+    {
+      "id": "pctB_le_10",
+      "family": "bb_position",
+      "col": "pctB",
+      "op": "le",
+      "a": 10,
+      "b": null
+    },
+    {
+      "id": "pctB_gt_35",
+      "family": "bb_position",
+      "col": "pctB",
+      "op": "gt",
+      "a": 35,
+      "b": null
+    },
+    {
+      "id": "pctB_le_35",
+      "family": "bb_position",
+      "col": "pctB",
+      "op": "le",
+      "a": 35,
+      "b": null
+    },
+    {
+      "id": "pctB_gt_70",
+      "family": "bb_position",
+      "col": "pctB",
+      "op": "gt",
+      "a": 70,
+      "b": null
+    },
+    {
+      "id": "pctB_le_70",
+      "family": "bb_position",
+      "col": "pctB",
+      "op": "le",
+      "a": 70,
+      "b": null
+    },
+    {
+      "id": "squeeze_gt_0.75",
+      "family": "bb_width",
+      "col": "squeeze",
+      "op": "gt",
+      "a": 0.75,
+      "b": null
+    },
+    {
+      "id": "squeeze_le_0.75",
+      "family": "bb_width",
+      "col": "squeeze",
+      "op": "le",
+      "a": 0.75,
+      "b": null
+    },
+    {
+      "id": "squeeze_gt_1.25",
+      "family": "bb_width",
+      "col": "squeeze",
+      "op": "gt",
+      "a": 1.25,
+      "b": null
+    },
+    {
+      "id": "squeeze_le_1.25",
+      "family": "bb_width",
+      "col": "squeeze",
+      "op": "le",
+      "a": 1.25,
+      "b": null
+    },
+    {
+      "id": "vol20_gt_0.8",
+      "family": "volume",
+      "col": "vol20",
+      "op": "gt",
+      "a": 0.8,
+      "b": null
+    },
+    {
+      "id": "vol20_le_0.8",
+      "family": "volume",
+      "col": "vol20",
+      "op": "le",
+      "a": 0.8,
+      "b": null
+    },
+    {
+      "id": "vol20_gt_1.5",
+      "family": "volume",
+      "col": "vol20",
+      "op": "gt",
+      "a": 1.5,
+      "b": null
+    },
+    {
+      "id": "vol20_le_1.5",
+      "family": "volume",
+      "col": "vol20",
+      "op": "le",
+      "a": 1.5,
+      "b": null
+    },
+    {
+      "id": "vol20_gt_2",
+      "family": "volume",
+      "col": "vol20",
+      "op": "gt",
+      "a": 2,
+      "b": null
+    },
+    {
+      "id": "vol20_le_2",
+      "family": "volume",
+      "col": "vol20",
+      "op": "le",
+      "a": 2,
+      "b": null
+    },
+    {
+      "id": "premium_gt_0",
+      "family": "ma200",
+      "col": "premium",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "premium_le_0",
+      "family": "ma200",
+      "col": "premium",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "premium_gt_25",
+      "family": "ma200",
+      "col": "premium",
+      "op": "gt",
+      "a": 25,
+      "b": null
+    },
+    {
+      "id": "premium_le_25",
+      "family": "ma200",
+      "col": "premium",
+      "op": "le",
+      "a": 25,
+      "b": null
+    },
+    {
+      "id": "premium_gt_75",
+      "family": "ma200",
+      "col": "premium",
+      "op": "gt",
+      "a": 75,
+      "b": null
+    },
+    {
+      "id": "premium_le_75",
+      "family": "ma200",
+      "col": "premium",
+      "op": "le",
+      "a": 75,
+      "b": null
+    },
+    {
+      "id": "adx_gt_25",
+      "family": "adx",
+      "col": "adx",
+      "op": "gt",
+      "a": 25,
+      "b": null
+    },
+    {
+      "id": "adx_le_25",
+      "family": "adx",
+      "col": "adx",
+      "op": "le",
+      "a": 25,
+      "b": null
+    },
+    {
+      "id": "atr_gt_5",
+      "family": "atr",
+      "col": "atr",
+      "op": "gt",
+      "a": 5,
+      "b": null
+    },
+    {
+      "id": "atr_le_5",
+      "family": "atr",
+      "col": "atr",
+      "op": "le",
+      "a": 5,
+      "b": null
+    },
+    {
+      "id": "ma20dist_gt_0",
+      "family": "ma20",
+      "col": "ma20dist",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ma20dist_le_0",
+      "family": "ma20",
+      "col": "ma20dist",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ma20dist_gt_5",
+      "family": "ma20",
+      "col": "ma20dist",
+      "op": "gt",
+      "a": 5,
+      "b": null
+    },
+    {
+      "id": "ma20dist_le_5",
+      "family": "ma20",
+      "col": "ma20dist",
+      "op": "le",
+      "a": 5,
+      "b": null
+    },
+    {
+      "id": "high52_distance_gt_-30",
+      "family": "high52",
+      "col": "high52_distance",
+      "op": "gt",
+      "a": -30,
+      "b": null
+    },
+    {
+      "id": "high52_distance_le_-30",
+      "family": "high52",
+      "col": "high52_distance",
+      "op": "le",
+      "a": -30,
+      "b": null
+    },
+    {
+      "id": "high52_distance_gt_-10",
+      "family": "high52",
+      "col": "high52_distance",
+      "op": "gt",
+      "a": -10,
+      "b": null
+    },
+    {
+      "id": "high52_distance_le_-10",
+      "family": "high52",
+      "col": "high52_distance",
+      "op": "le",
+      "a": -10,
+      "b": null
+    },
+    {
+      "id": "high52_age_gt_20",
+      "family": "high52_age",
+      "col": "high52_age",
+      "op": "gt",
+      "a": 20,
+      "b": null
+    },
+    {
+      "id": "high52_age_le_20",
+      "family": "high52_age",
+      "col": "high52_age",
+      "op": "le",
+      "a": 20,
+      "b": null
+    },
+    {
+      "id": "close_location_gt_0.5",
+      "family": "candle",
+      "col": "close_location",
+      "op": "gt",
+      "a": 0.5,
+      "b": null
+    },
+    {
+      "id": "close_location_le_0.5",
+      "family": "candle",
+      "col": "close_location",
+      "op": "le",
+      "a": 0.5,
+      "b": null
+    },
+    {
+      "id": "close_location_gt_0.7",
+      "family": "candle",
+      "col": "close_location",
+      "op": "gt",
+      "a": 0.7,
+      "b": null
+    },
+    {
+      "id": "close_location_le_0.7",
+      "family": "candle",
+      "col": "close_location",
+      "op": "le",
+      "a": 0.7,
+      "b": null
+    },
+    {
+      "id": "lower_wick_gt_0.3",
+      "family": "wick",
+      "col": "lower_wick",
+      "op": "gt",
+      "a": 0.3,
+      "b": null
+    },
+    {
+      "id": "lower_wick_le_0.3",
+      "family": "wick",
+      "col": "lower_wick",
+      "op": "le",
+      "a": 0.3,
+      "b": null
+    },
+    {
+      "id": "fund_salesYoyTtm_gt_0",
+      "family": "growth",
+      "col": "fund_salesYoyTtm",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_salesYoyTtm_le_0",
+      "family": "growth",
+      "col": "fund_salesYoyTtm",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_salesYoyTtm_gt_20",
+      "family": "growth",
+      "col": "fund_salesYoyTtm",
+      "op": "gt",
+      "a": 20,
+      "b": null
+    },
+    {
+      "id": "fund_salesYoyTtm_le_20",
+      "family": "growth",
+      "col": "fund_salesYoyTtm",
+      "op": "le",
+      "a": 20,
+      "b": null
+    },
+    {
+      "id": "fund_salesQoq_gt_0",
+      "family": "recent_growth",
+      "col": "fund_salesQoq",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_salesQoq_le_0",
+      "family": "recent_growth",
+      "col": "fund_salesQoq",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_salesQoq_gt_20",
+      "family": "recent_growth",
+      "col": "fund_salesQoq",
+      "op": "gt",
+      "a": 20,
+      "b": null
+    },
+    {
+      "id": "fund_salesQoq_le_20",
+      "family": "recent_growth",
+      "col": "fund_salesQoq",
+      "op": "le",
+      "a": 20,
+      "b": null
+    },
+    {
+      "id": "fund_operatingMargin_gt_0",
+      "family": "margin",
+      "col": "fund_operatingMargin",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_operatingMargin_le_0",
+      "family": "margin",
+      "col": "fund_operatingMargin",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_operatingMargin_gt_20",
+      "family": "margin",
+      "col": "fund_operatingMargin",
+      "op": "gt",
+      "a": 20,
+      "b": null
+    },
+    {
+      "id": "fund_operatingMargin_le_20",
+      "family": "margin",
+      "col": "fund_operatingMargin",
+      "op": "le",
+      "a": 20,
+      "b": null
+    },
+    {
+      "id": "fund_grossMargin_gt_30",
+      "family": "gross_margin",
+      "col": "fund_grossMargin",
+      "op": "gt",
+      "a": 30,
+      "b": null
+    },
+    {
+      "id": "fund_grossMargin_le_30",
+      "family": "gross_margin",
+      "col": "fund_grossMargin",
+      "op": "le",
+      "a": 30,
+      "b": null
+    },
+    {
+      "id": "fund_roe_gt_0",
+      "family": "roe",
+      "col": "fund_roe",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_roe_le_0",
+      "family": "roe",
+      "col": "fund_roe",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_roe_gt_10",
+      "family": "roe",
+      "col": "fund_roe",
+      "op": "gt",
+      "a": 10,
+      "b": null
+    },
+    {
+      "id": "fund_roe_le_10",
+      "family": "roe",
+      "col": "fund_roe",
+      "op": "le",
+      "a": 10,
+      "b": null
+    },
+    {
+      "id": "fund_debtToEquity_gt_1",
+      "family": "debt",
+      "col": "fund_debtToEquity",
+      "op": "gt",
+      "a": 1,
+      "b": null
+    },
+    {
+      "id": "fund_debtToEquity_le_1",
+      "family": "debt",
+      "col": "fund_debtToEquity",
+      "op": "le",
+      "a": 1,
+      "b": null
+    },
+    {
+      "id": "fund_currentRatio_gt_1",
+      "family": "liquidity",
+      "col": "fund_currentRatio",
+      "op": "gt",
+      "a": 1,
+      "b": null
+    },
+    {
+      "id": "fund_currentRatio_le_1",
+      "family": "liquidity",
+      "col": "fund_currentRatio",
+      "op": "le",
+      "a": 1,
+      "b": null
+    },
+    {
+      "id": "fund_priceToSales_gt_10",
+      "family": "sales_value",
+      "col": "fund_priceToSales",
+      "op": "gt",
+      "a": 10,
+      "b": null
+    },
+    {
+      "id": "fund_priceToSales_le_10",
+      "family": "sales_value",
+      "col": "fund_priceToSales",
+      "op": "le",
+      "a": 10,
+      "b": null
+    },
+    {
+      "id": "fund_market_cap_gt_10000000000.0",
+      "family": "size",
+      "col": "fund_market_cap",
+      "op": "gt",
+      "a": 10000000000.0,
+      "b": null
+    },
+    {
+      "id": "fund_market_cap_le_10000000000.0",
+      "family": "size",
+      "col": "fund_market_cap",
+      "op": "le",
+      "a": 10000000000.0,
+      "b": null
+    },
+    {
+      "id": "fund_market_cap_gt_100000000000.0",
+      "family": "size",
+      "col": "fund_market_cap",
+      "op": "gt",
+      "a": 100000000000.0,
+      "b": null
+    },
+    {
+      "id": "fund_market_cap_le_100000000000.0",
+      "family": "size",
+      "col": "fund_market_cap",
+      "op": "le",
+      "a": 100000000000.0,
+      "b": null
+    },
+    {
+      "id": "fund_epsQoq_gt_0",
+      "family": "eps_growth",
+      "col": "fund_epsQoq",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_epsQoq_le_0",
+      "family": "eps_growth",
+      "col": "fund_epsQoq",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_pbr_gt_5",
+      "family": "book_value",
+      "col": "fund_pbr",
+      "op": "gt",
+      "a": 5,
+      "b": null
+    },
+    {
+      "id": "fund_pbr_le_5",
+      "family": "book_value",
+      "col": "fund_pbr",
+      "op": "le",
+      "a": 5,
+      "b": null
+    },
+    {
+      "id": "fund_epsTtm_gt_0",
+      "family": "earnings_profit",
+      "col": "fund_epsTtm",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_epsTtm_le_0",
+      "family": "earnings_profit",
+      "col": "fund_epsTtm",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_ruleOf40_gt_40",
+      "family": "growth_margin",
+      "col": "fund_ruleOf40",
+      "op": "gt",
+      "a": 40,
+      "b": null
+    },
+    {
+      "id": "fund_ruleOf40_le_40",
+      "family": "growth_margin",
+      "col": "fund_ruleOf40",
+      "op": "le",
+      "a": 40,
+      "b": null
+    },
+    {
+      "id": "fund_sales_gt_1000000000.0",
+      "family": "sales_size",
+      "col": "fund_sales",
+      "op": "gt",
+      "a": 1000000000.0,
+      "b": null
+    },
+    {
+      "id": "fund_sales_le_1000000000.0",
+      "family": "sales_size",
+      "col": "fund_sales",
+      "op": "le",
+      "a": 1000000000.0,
+      "b": null
+    },
+    {
+      "id": "earnings_days_gt_0",
+      "family": "earnings",
+      "col": "earnings_days",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "earnings_days_le_0",
+      "family": "earnings",
+      "col": "earnings_days",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "earnings_days_gt_10",
+      "family": "earnings",
+      "col": "earnings_days",
+      "op": "gt",
+      "a": 10,
+      "b": null
+    },
+    {
+      "id": "earnings_days_le_10",
+      "family": "earnings",
+      "col": "earnings_days",
+      "op": "le",
+      "a": 10,
+      "b": null
+    },
+    {
+      "id": "peer_breadth20_gt_0.5",
+      "family": "breadth",
+      "col": "peer_breadth20",
+      "op": "gt",
+      "a": 0.5,
+      "b": null
+    },
+    {
+      "id": "peer_breadth20_le_0.5",
+      "family": "breadth",
+      "col": "peer_breadth20",
+      "op": "le",
+      "a": 0.5,
+      "b": null
+    },
+    {
+      "id": "price_dollar_volume20_gt_100000000.0",
+      "family": "turnover",
+      "col": "price_dollar_volume20",
+      "op": "gt",
+      "a": 100000000.0,
+      "b": null
+    },
+    {
+      "id": "price_dollar_volume20_le_100000000.0",
+      "family": "turnover",
+      "col": "price_dollar_volume20",
+      "op": "le",
+      "a": 100000000.0,
+      "b": null
+    },
+    {
+      "id": "ctx_vix_close_gt_22",
+      "family": "vix",
+      "col": "ctx_vix_close",
+      "op": "gt",
+      "a": 22,
+      "b": null
+    },
+    {
+      "id": "ctx_vix_close_le_22",
+      "family": "vix",
+      "col": "ctx_vix_close",
+      "op": "le",
+      "a": 22,
+      "b": null
+    },
+    {
+      "id": "slope_gt_0",
+      "family": "slope",
+      "col": "slope",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "slope_le_0",
+      "family": "slope",
+      "col": "slope",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "hist_gt_0",
+      "family": "macd",
+      "col": "hist",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "hist_le_0",
+      "family": "macd",
+      "col": "hist",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "hist_change_gt_0",
+      "family": "macd_change",
+      "col": "hist_change",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "hist_change_le_0",
+      "family": "macd_change",
+      "col": "hist_change",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "width_change_gt_0",
+      "family": "bb_change",
+      "col": "width_change",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "width_change_le_0",
+      "family": "bb_change",
+      "col": "width_change",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "di_spread_gt_0",
+      "family": "di",
+      "col": "di_spread",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "di_spread_le_0",
+      "family": "di",
+      "col": "di_spread",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "rs20_gt_0",
+      "family": "rs",
+      "col": "rs20",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "rs20_le_0",
+      "family": "rs",
+      "col": "rs20",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "obv20_gt_0",
+      "family": "obv",
+      "col": "obv20",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "obv20_le_0",
+      "family": "obv",
+      "col": "obv20",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "rsi_change_gt_0",
+      "family": "rsi_change",
+      "col": "rsi_change",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "rsi_change_le_0",
+      "family": "rsi_change",
+      "col": "rsi_change",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "cci_change_gt_0",
+      "family": "cci_change",
+      "col": "cci_change",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "cci_change_le_0",
+      "family": "cci_change",
+      "col": "cci_change",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "observed_rsi_change5_gt_0",
+      "family": "rsi_persistence",
+      "col": "observed_rsi_change5",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "observed_rsi_change5_le_0",
+      "family": "rsi_persistence",
+      "col": "observed_rsi_change5",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "observed_slope_change5_gt_0",
+      "family": "slope_persistence",
+      "col": "observed_slope_change5",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "observed_slope_change5_le_0",
+      "family": "slope_persistence",
+      "col": "observed_slope_change5",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "observed_vol20_change5_gt_0",
+      "family": "volume_persistence",
+      "col": "observed_vol20_change5",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "observed_vol20_change5_le_0",
+      "family": "volume_persistence",
+      "col": "observed_vol20_change5",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "observed_squeeze_change5_gt_0",
+      "family": "width_persistence",
+      "col": "observed_squeeze_change5",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "observed_squeeze_change5_le_0",
+      "family": "width_persistence",
+      "col": "observed_squeeze_change5",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "intraday_recovery_gt_0",
+      "family": "intraday",
+      "col": "intraday_recovery",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "intraday_recovery_le_0",
+      "family": "intraday",
+      "col": "intraday_recovery",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "peer_rs20_gt_0",
+      "family": "peer_rs",
+      "col": "peer_rs20",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "peer_rs20_le_0",
+      "family": "peer_rs",
+      "col": "peer_rs20",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "price_rs_smh20_gt_0",
+      "family": "semiconductor_rs",
+      "col": "price_rs_smh20",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "price_rs_smh20_le_0",
+      "family": "semiconductor_rs",
+      "col": "price_rs_smh20",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "price_return3_gt_0",
+      "family": "short_return",
+      "col": "price_return3",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "price_return3_le_0",
+      "family": "short_return",
+      "col": "price_return3",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "price_return20_gt_0",
+      "family": "medium_return",
+      "col": "price_return20",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "price_return20_le_0",
+      "family": "medium_return",
+      "col": "price_return20",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_smh_qqq_rs20_gt_0",
+      "family": "semiconductor_market",
+      "col": "ctx_smh_qqq_rs20",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_smh_qqq_rs20_le_0",
+      "family": "semiconductor_market",
+      "col": "ctx_smh_qqq_rs20",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_iwm_qqq_rs20_gt_0",
+      "family": "small_market",
+      "col": "ctx_iwm_qqq_rs20",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_iwm_qqq_rs20_le_0",
+      "family": "small_market",
+      "col": "ctx_iwm_qqq_rs20",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_rsp_spy_rs20_gt_0",
+      "family": "equalweight_market",
+      "col": "ctx_rsp_spy_rs20",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_rsp_spy_rs20_le_0",
+      "family": "equalweight_market",
+      "col": "ctx_rsp_spy_rs20",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_hyg_ief_rs20_gt_0",
+      "family": "credit_proxy",
+      "col": "ctx_hyg_ief_rs20",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_hyg_ief_rs20_le_0",
+      "family": "credit_proxy",
+      "col": "ctx_hyg_ief_rs20",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_tlt_return20_gt_0",
+      "family": "bond_market",
+      "col": "ctx_tlt_return20",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_tlt_return20_le_0",
+      "family": "bond_market",
+      "col": "ctx_tlt_return20",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_qqq_return5_gt_0",
+      "family": "market_short",
+      "col": "ctx_qqq_return5",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_qqq_return5_le_0",
+      "family": "market_short",
+      "col": "ctx_qqq_return5",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_qqq_return20_gt_0",
+      "family": "market_medium",
+      "col": "ctx_qqq_return20",
+      "op": "gt",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "ctx_qqq_return20_le_0",
+      "family": "market_medium",
+      "col": "ctx_qqq_return20",
+      "op": "le",
+      "a": 0,
+      "b": null
+    },
+    {
+      "id": "fund_per_between_0_30",
+      "family": "per",
+      "col": "fund_per",
+      "op": "between",
+      "a": 0,
+      "b": 30
+    },
+    {
+      "id": "fund_priceToFreeCashFlow_between_0_40",
+      "family": "fcf_value",
+      "col": "fund_priceToFreeCashFlow",
+      "op": "between",
+      "a": 0,
+      "b": 40
+    },
+    {
+      "id": "earnings_days_between_0_10",
+      "family": "earnings_window",
+      "col": "earnings_days",
+      "op": "between",
+      "a": 0,
+      "b": 10
+    },
+    {
+      "id": "earnings_days_between_-10_-1",
+      "family": "post_earnings",
+      "col": "earnings_days",
+      "op": "between",
+      "a": -10,
+      "b": -1
+    },
+    {
+      "id": "rsi_between_35_55",
+      "family": "rsi",
+      "col": "rsi",
+      "op": "between",
+      "a": 35,
+      "b": 55
+    },
+    {
+      "id": "ma20dist_between_-5_3",
+      "family": "ma20",
+      "col": "ma20dist",
+      "op": "between",
+      "a": -5,
+      "b": 3
+    }
+  ]
+}

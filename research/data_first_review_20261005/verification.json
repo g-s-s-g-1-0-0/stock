@@ -1,0 +1,85 @@
+{
+  "panel_rows": 2887,
+  "point_in_time_checks": true,
+  "git_source_sample_matches": 60,
+  "s5_s6_entry_gates_checked": 6,
+  "outcomes_recomputed": 7587,
+  "candidate_exits": [
+    {
+      "candidate": "S3_ma200_distance25",
+      "trades": 16,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "S3_rsi35",
+      "trades": 15,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "S3_size100b",
+      "trades": 11,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "S3_intraday_positive",
+      "trades": 14,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "S4_debt1",
+      "trades": 6,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "S4_eps_growth",
+      "trades": 5,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "S7_obv_positive",
+      "trades": 16,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "S7_high52_drawdown30",
+      "trades": 29,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "S7_volume_ratio_falling5",
+      "trades": 21,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "S7_quality",
+      "trades": 25,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "N_expanded_below200",
+      "trades": 17,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "N_rsi_ahead_macd",
+      "trades": 36,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "N_expanded_profitable_roe",
+      "trades": 21,
+      "matches_existing_recorder": true
+    },
+    {
+      "candidate": "N_value_laggard",
+      "trades": 15,
+      "matches_existing_recorder": true
+    }
+  ],
+  "inputs": {
+    "panel.csv.gz": "004fac7b7e1b9cafae94e15d9f9b68df887649398b57d056ffde74d37bac7519",
+    "bars.csv.gz": "ab5cfbac876a4afedfd9f00801a55bb79b3d21a5d65c5d12df3ed0c55ff0f0aa",
+    "outcomes.csv.gz": "495ebeb22bf0707b3ae740e41cadcebe292adf1925ed0c94f961d4da12afc6de",
+    "protocol.json": "9e9640da9536b6cbd68f628abada6d64c6c147b8970c256c963eaa0593e6316c"
+  }
+}
