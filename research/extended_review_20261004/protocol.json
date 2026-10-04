@@ -1,0 +1,35 @@
+{
+  "patterns": {
+    "rsi2_pullback": "close>MA200; MA200 rising over20 sessions; RSI2<10",
+    "pocket_pivot": "close>prior high and MA50>MA200; volume>maximum prior10 down-day volume",
+    "strong_flag": "20-session gain ending D-4>=15%; D-4 to D-1 return -8..0%; close>prior high and open",
+    "volume_climax_recovery": "prior day volume>=2 prior20 and TR>=2 previous ATR, close in bottom quarter; today holds prior low and closes above prior midpoint/open/MA200",
+    "anchored_vwap_reclaim": "anchor at highest-volume prior20 bar, volume>=2 its prior20 mean; price crosses fixed-anchor typical-price VWAP; close>MA200, volume>=1.2 prior20",
+    "regression_reclaim": "prior60 causal trend residual z crosses from<=-2 yesterday to>-1 today; close>open and MA200",
+    "higher_low_breakout": "last two confirmed 2+2 pivots have rising highs and lows; first close above last confirmed high; above MA200; volume>=1.2",
+    "breakout_acceptance": "D-5 first closes above prior20 high; five later closes hold fixed level; current close within8% above level and aboveMA200",
+    "obv_leads_price": "OBV made a20-session high in last5 while price below20 high; close now crosses prior5 high aboveMA200; OBV rises over5",
+    "ma_cross_first_pullback": "MA20 crosses aboveMA50 in prior10; first subsequent MA20 touch with bullish reclaim; aboveMA200",
+    "breadth_followthrough": "same-day watchlist breadth aboveMA20>=50%, same members five sessions ago<=30%, at least10 paired names; QQQ3>1%; stock aboveMA20/MA200, volume>=1.2"
+  },
+  "filters": {
+    "efficient_trend": "positive20-return and 20-session efficiency ratio>=.3",
+    "up_volume_dominates": "prior/current5 up-day volume>=1.5 down-day volume and some down volume",
+    "resistance_room": "at least2 ATR below prior60 high OR already above prior60 high",
+    "no_range_shock": "today true range<=2 prior ATR14",
+    "above_vwap20": "close>rolling20 typical-price volume-weighted average (daily, not intraday VWAP)",
+    "broad_participation": "at least10 watched names and >=50% aboveMA20 on signal date",
+    "rs_vs_watchlist": "20-session stock return>median same-day watched stock return; at least10 names",
+    "down_day_resilience": "mean stock-minus-QQQ daily return on prior/current20 QQQ down-days>0; at least5 matched days"
+  },
+  "exit_modes": {
+    "common": "D+1 open; close -8/+12/20 + market; next open",
+    "ma20_failure": "common + after first close>=MA20, two consecutive closes below MA20 trigger next open exit",
+    "signal_low_failure": "common + two closes below frozen signal-day low trigger next open exit",
+    "half_at6": "common + sell half next open after +6% close; rest original; proportional total .4% cost",
+    "atr_2r": "stop=min(12%,max(4%,2*signal ATR/entry)); target=2*stop;20 days+market"
+  },
+  "context": "watchlist, NOT whole-market breadth; same members on D and D-5; >=10 observations; no unknown->false performance comparison",
+  "status": "exploratory follow-up on already-seen data; no threshold optimization; all tested candidates reported",
+  "price": "2026 observed watchlist;2021-25 current survivors; no actual event state/portfolio replication"
+}

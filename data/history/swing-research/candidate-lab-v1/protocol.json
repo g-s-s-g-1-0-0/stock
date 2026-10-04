@@ -1,0 +1,610 @@
+{
+  "version": "candidate-lab-v1",
+  "startSession": "2026-10-05",
+  "earliestReviewKST": "2026-12-08",
+  "minimumCalendarMonths": 2,
+  "minimumClosedFilteredTrades": null,
+  "minimumFilteredEntryDates": null,
+  "reviewArm": "lab_p_rsi2_pullback",
+  "arms": [
+    "lab_p_rsi2_pullback",
+    "lab_p_pocket_pivot",
+    "lab_p_strong_flag",
+    "lab_p_volume_climax_recovery",
+    "lab_p_anchored_vwap_reclaim",
+    "lab_p_higher_low_breakout",
+    "lab_p_breakout_acceptance",
+    "lab_p_obv_leads_price",
+    "lab_p_inside3_breakout",
+    "lab_p_dry_pullback",
+    "lab_p_vcp_breakout",
+    "lab_s3_base",
+    "lab_s5_base",
+    "lab_s7_base",
+    "lab_s1_ma50_above200",
+    "lab_s1_volume_confirm",
+    "lab_s2_rs20_positive",
+    "lab_s2_efficient_trend",
+    "lab_s3_atr_limited",
+    "lab_s3_rs20_positive",
+    "lab_s3_down_day_resilience",
+    "lab_s4_ma50_above200",
+    "lab_s4_qqq_ma20_rising",
+    "lab_s6_ma200_rising",
+    "lab_s6_qqq_ma20_rising",
+    "lab_s6_rs_vs_watchlist",
+    "lab_s7_rs20_positive",
+    "lab_s7_rs_vs_watchlist",
+    "lab_s7_both_relative_strength",
+    "lab_s7_efficient_trend",
+    "lab_s7_down_day_resilience",
+    "lab_s7_ma_cross_first_pullback",
+    "lab_s3_exit_half_at6",
+    "lab_s7_exit_half_at6",
+    "lab_rsi2_pullback_exit_half_at6",
+    "lab_s4_exit_atr_2r",
+    "lab_rsi2_pullback_exit_atr_2r",
+    "lab_s4_exit_signal_low_failure",
+    "lab_s3_entry_delay1",
+    "lab_s4_exit_time10"
+  ],
+  "registry": {
+    "lab_p_rsi2_pullback": {
+      "source": "rsi2_pullback",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_p_pocket_pivot": {
+      "source": "pocket_pivot",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_p_strong_flag": {
+      "source": "strong_flag",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_p_volume_climax_recovery": {
+      "source": "volume_climax_recovery",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_p_anchored_vwap_reclaim": {
+      "source": "anchored_vwap_reclaim",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_p_higher_low_breakout": {
+      "source": "higher_low_breakout",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_p_breakout_acceptance": {
+      "source": "breakout_acceptance",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_p_obv_leads_price": {
+      "source": "obv_leads_price",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_p_inside3_breakout": {
+      "source": "inside3_breakout",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_p_dry_pullback": {
+      "source": "dry_pullback",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_p_vcp_breakout": {
+      "source": "vcp_breakout",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_s3_base": {
+      "source": "S3",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_s5_base": {
+      "source": "S5",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_s7_base": {
+      "source": "S7",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_s1_ma50_above200": {
+      "source": "S1",
+      "filter": "ma50_above200",
+      "mode": "common"
+    },
+    "lab_s1_volume_confirm": {
+      "source": "S1",
+      "filter": "volume_confirm",
+      "mode": "common"
+    },
+    "lab_s2_rs20_positive": {
+      "source": "S2",
+      "filter": "rs20_positive",
+      "mode": "common"
+    },
+    "lab_s2_efficient_trend": {
+      "source": "S2",
+      "filter": "efficient_trend",
+      "mode": "common"
+    },
+    "lab_s3_atr_limited": {
+      "source": "S3",
+      "filter": "atr_limited",
+      "mode": "common"
+    },
+    "lab_s3_rs20_positive": {
+      "source": "S3",
+      "filter": "rs20_positive",
+      "mode": "common"
+    },
+    "lab_s3_down_day_resilience": {
+      "source": "S3",
+      "filter": "down_day_resilience",
+      "mode": "common"
+    },
+    "lab_s4_ma50_above200": {
+      "source": "S4",
+      "filter": "ma50_above200",
+      "mode": "common"
+    },
+    "lab_s4_qqq_ma20_rising": {
+      "source": "S4",
+      "filter": "qqq_ma20_rising",
+      "mode": "common"
+    },
+    "lab_s6_ma200_rising": {
+      "source": "S6",
+      "filter": "ma200_rising",
+      "mode": "common"
+    },
+    "lab_s6_qqq_ma20_rising": {
+      "source": "S6",
+      "filter": "qqq_ma20_rising",
+      "mode": "common"
+    },
+    "lab_s6_rs_vs_watchlist": {
+      "source": "S6",
+      "filter": "rs_vs_watchlist",
+      "mode": "common"
+    },
+    "lab_s7_rs20_positive": {
+      "source": "S7",
+      "filter": "rs20_positive",
+      "mode": "common"
+    },
+    "lab_s7_rs_vs_watchlist": {
+      "source": "S7",
+      "filter": "rs_vs_watchlist",
+      "mode": "common"
+    },
+    "lab_s7_both_relative_strength": {
+      "source": "S7",
+      "filter": "both_relative_strength",
+      "mode": "common"
+    },
+    "lab_s7_efficient_trend": {
+      "source": "S7",
+      "filter": "efficient_trend",
+      "mode": "common"
+    },
+    "lab_s7_down_day_resilience": {
+      "source": "S7",
+      "filter": "down_day_resilience",
+      "mode": "common"
+    },
+    "lab_s7_ma_cross_first_pullback": {
+      "source": "S7",
+      "filter": "ma_cross_first_pullback",
+      "mode": "common"
+    },
+    "lab_s3_exit_half_at6": {
+      "source": "S3",
+      "filter": null,
+      "mode": "half_at6"
+    },
+    "lab_s7_exit_half_at6": {
+      "source": "S7",
+      "filter": null,
+      "mode": "half_at6"
+    },
+    "lab_rsi2_pullback_exit_half_at6": {
+      "source": "rsi2_pullback",
+      "filter": null,
+      "mode": "half_at6"
+    },
+    "lab_s4_exit_atr_2r": {
+      "source": "S4",
+      "filter": null,
+      "mode": "atr_2r"
+    },
+    "lab_rsi2_pullback_exit_atr_2r": {
+      "source": "rsi2_pullback",
+      "filter": null,
+      "mode": "atr_2r"
+    },
+    "lab_s4_exit_signal_low_failure": {
+      "source": "S4",
+      "filter": null,
+      "mode": "signal_low_failure"
+    },
+    "lab_s3_entry_delay1": {
+      "source": "S3",
+      "filter": null,
+      "mode": "common"
+    },
+    "lab_s4_exit_time10": {
+      "source": "S4",
+      "filter": null,
+      "mode": "common"
+    }
+  },
+  "armRules": {
+    "lab_p_rsi2_pullback": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_p_pocket_pivot": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_p_strong_flag": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_p_volume_climax_recovery": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_p_anchored_vwap_reclaim": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_p_higher_low_breakout": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_p_breakout_acceptance": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_p_obv_leads_price": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_p_inside3_breakout": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_p_dry_pullback": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_p_vcp_breakout": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s3_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s5_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": "5"
+    },
+    "lab_s7_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s1_ma50_above200": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s1_volume_confirm": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s2_rs20_positive": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s2_efficient_trend": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s3_atr_limited": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s3_rs20_positive": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s3_down_day_resilience": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s4_ma50_above200": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s4_qqq_ma20_rising": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s6_ma200_rising": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": "6"
+    },
+    "lab_s6_qqq_ma20_rising": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": "6"
+    },
+    "lab_s6_rs_vs_watchlist": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": "6"
+    },
+    "lab_s7_rs20_positive": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s7_rs_vs_watchlist": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s7_both_relative_strength": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s7_efficient_trend": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s7_down_day_resilience": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s7_ma_cross_first_pullback": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "lab_s3_exit_half_at6": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "half_at6",
+      "entryStrategy": null
+    },
+    "lab_s7_exit_half_at6": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "half_at6",
+      "entryStrategy": null
+    },
+    "lab_rsi2_pullback_exit_half_at6": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "half_at6",
+      "entryStrategy": null
+    },
+    "lab_s4_exit_atr_2r": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "atr_2r",
+      "entryStrategy": null
+    },
+    "lab_rsi2_pullback_exit_atr_2r": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "atr_2r",
+      "entryStrategy": null
+    },
+    "lab_s4_exit_signal_low_failure": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "signal_low_failure",
+      "entryStrategy": null
+    },
+    "lab_s3_entry_delay1": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryDelaySessions": 1
+    },
+    "lab_s4_exit_time10": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 10,
+      "mode": "common"
+    }
+  },
+  "diagnosticPatterns": {
+    "range_breakout": "20-high breakout, volume>=1.5, close top quarter, aboveMA200",
+    "squeeze_breakout": "prior BBwidth<.75 prior60 mean,20-high breakout,volume>=1.2,aboveMA200",
+    "failed_breakdown": "low below prior20 low, close recovers it and open, close location>=.65",
+    "panic_reversal": "prior3 return<=-8%, close>prior high/open,volume>=1.2",
+    "gap_hold": "open gap>=3%,close>open,low>=prior close,volume>=1.5,aboveMA200",
+    "market_divergence": "QQQ5<=-2%,stock5>=0,5-high breakout,volume>=1.2",
+    "narrow_range_breakout": "prior range minimum7, close>prior high/MA200,volume>=1.3",
+    "ma200_reclaim": "cross aboveMA200,close>open,volume>=1.3",
+    "oversold_reversal": "prior RSI14<=30,close>prior high/open",
+    "inside3_breakout": "prior3 bars inside D-4 range, close>D-4 high,volume>=1.3,aboveMA200",
+    "dry_pullback": "prior3 volume<.7 prior20 mean, priorclose<=MA20, close>MA20/MA200,MA50>MA200",
+    "rs_leader_pullback": "RS20vsQQQ>0,MA50>MA200,MA20 bullish touch/reclaim",
+    "ma50_reclaim": "MA50 recross, aboveMA200 and MA200 rising20,volume>=1.2",
+    "high252_breakout": "252-high breakout,volume>=1.3,aboveMA200",
+    "high55_breakout": "55-high breakout,volume>=1.3,aboveMA200",
+    "vcp_breakout": "prior10 range<.6 previous10 range,20-high breakout,volume>=1.3,aboveMA200",
+    "gap_down_reclaim": "open gap<=-3%,close>priorclose/open/MA200,close location>=.7",
+    "double_bottom_reclaim": "prior10 low within3% preceding10 low,5-high breakout,volume>=1.2,aboveMA200",
+    "rs_first_breakout": "stock/QQQ ratio20 high before price20 high,close>prior high/MA200,volume>=1.2",
+    "rsi2_pullback": "close>MA200; MA200 rising over20 sessions; RSI2<10",
+    "pocket_pivot": "close>prior high and MA50>MA200; volume>maximum prior10 down-day volume",
+    "strong_flag": "20-session gain ending D-4>=15%; D-4 to D-1 return -8..0%; close>prior high and open",
+    "volume_climax_recovery": "prior day volume>=2 prior20 and TR>=2 previous ATR, close in bottom quarter; today holds prior low and closes above prior midpoint/open/MA200",
+    "anchored_vwap_reclaim": "anchor at highest-volume prior20 bar, volume>=2 its prior20 mean; price crosses fixed-anchor typical-price VWAP; close>MA200, volume>=1.2 prior20",
+    "regression_reclaim": "prior60 causal trend residual z crosses from<=-2 yesterday to>-1 today; close>open and MA200",
+    "higher_low_breakout": "last two confirmed 2+2 pivots have rising highs and lows; first close above last confirmed high; above MA200; volume>=1.2",
+    "breakout_acceptance": "D-5 first closes above prior20 high; five later closes hold fixed level; current close within8% above level and aboveMA200",
+    "obv_leads_price": "OBV made a20-session high in last5 while price below20 high; close now crosses prior5 high aboveMA200; OBV rises over5",
+    "ma_cross_first_pullback": "MA20 crosses aboveMA50 in prior10; first subsequent MA20 touch with bullish reclaim; aboveMA200",
+    "breadth_followthrough": "same-day watchlist breadth aboveMA20>=50%, same members five sessions ago<=30%, at least10 paired names; QQQ3>1%; stock aboveMA20/MA200, volume>=1.2"
+  },
+  "newDiagnosticFilters": {
+    "efficient_trend": "positive20-return and 20-session efficiency ratio>=.3",
+    "up_volume_dominates": "prior/current5 up-day volume>=1.5 down-day volume and some down volume",
+    "resistance_room": "at least2 ATR below prior60 high OR already above prior60 high",
+    "no_range_shock": "today true range<=2 prior ATR14",
+    "above_vwap20": "close>rolling20 typical-price volume-weighted average (daily, not intraday VWAP)",
+    "broad_participation": "at least10 watched names and >=50% aboveMA20 on signal date",
+    "rs_vs_watchlist": "20-session stock return>median same-day watched stock return; at least10 names",
+    "down_day_resilience": "mean stock-minus-QQQ daily return on prior/current20 QQQ down-days>0; at least5 matched days"
+  },
+  "legacyDiagnosticFilters": [
+    "rs20_positive",
+    "rs60_positive",
+    "ma50_above200",
+    "ma200_rising",
+    "volume_confirm",
+    "volume_not_extreme",
+    "strong_close",
+    "not_extended",
+    "atr_limited",
+    "qqq_above20",
+    "qqq_ma20_rising",
+    "macd_improving"
+  ],
+  "entry": "completed D close, D+1 regular open; independent predicates, no priority/account slots; S5/6 gap and S6 support checks at entry",
+  "delayedEntry": "S3 delay1 freezes D signal and enters D+2 open without a new signal or intervening market/event recheck; diagnostic comparison only; all forward-outcomes remain D+1 reference paths",
+  "exit": "common close -8/+12/20 plus market, next open; separate explicit exit variants; no operating-exit replication",
+  "exitVariants": {
+    "half_at6": "half next open after+6% close; remaining original exits; total proportional roundtrip cost .4%",
+    "atr_2r": "initial stop=2*signal ATR/entry clipped4..12%; target twice stop;20-day and market exits remain",
+    "signal_low_failure": "common plus two consecutive closes below frozen signal low; next open"
+  },
+  "reentry": "signal must be strictly later than prior exit session; no signal from exit day reused",
+  "recoveryBuyCap": 14.0,
+  "recoveryExit": 18.0,
+  "normalBuyCap": 9.0,
+  "roundTripCost": 0.004,
+  "season": "freeze raw strategySeason; known only when updated on signal NY date and no later than capture; missing/stale blocks S2, never assume season open",
+  "watchlist": "exclude known ETFs; same current observed members on D and D-5; >=10 names required; watchlist is not whole market",
+  "comparisonControls": "S1/2/4/6 bases in strategy-refinements-v1; S3/5/7 common-exit bases here; legacy S7 has different exits",
+  "missingFilters": "null means unknown; paired evaluation must restrict BOTH arms to known feature dates",
+  "diagnostics": "all30 pattern and20 single-filter pass/fail values frozen; five/ten/twenty-session paths for diagnostic signals, even blocked ones, labelled diagnosticOnly; no implied fill",
+  "review": "first review date only, not automatic adoption; evaluate dates/regimes, open trades, costs, concentration and incremental value; inadequate evidence means extend",
+  "purpose": "private history only, no UI, public API, alerts, orders or operating strategy edits"
+}

@@ -216,20 +216,22 @@ def extract_frames(daily, tickers):
     return frames
 
 
-def entry_block_reason(arm, observation, bar):
-    if not arm.startswith("refine_s6_") or bar is None:
+def entry_block_reason(arm, observation, bar, rule=None):
+    strategy = (rule or {}).get("entryStrategy", "6" if arm.startswith("refine_s6_") else None)
+    if strategy not in {"5", "6"} or bar is None:
         return None
     split = bar.get("split", 1.0)
     close = observation["features"]["close"] / split
     support = observation["features"].get("supportStop")
     if bar["open"] > close * 1.03:
         return "entry_gap_above_3"
-    if support is None or not 0 < (bar["open"] - support / split) / bar["open"] <= .08:
+    if strategy == "6" and (support is None or not 0 < (bar["open"] - support / split) / bar["open"] <= .08):
         return "entry_support_risk_above_8"
     return None
 
 
-def replay(observations, sessions):
+def replay(observations, sessions, arm_rules=None):
+    arm_rules = arm_rules or {}
     days = sorted(sessions)
     trades = []
     last = {}
@@ -242,7 +244,7 @@ def replay(observations, sessions):
         entry_day = following[0]
         entry_bar = sessions[entry_day]["bars"].get(ticker)
         # All S7 signals get labels, including those rejected by relative strength.
-        if entry_bar and any(obs["signals"].values()):
+        if entry_bar and (any(obs["signals"].values()) or obs["features"].get("diagnosticSignal")):
             factor = 1.0
             path = []
             for day in following[:20]:
@@ -257,30 +259,61 @@ def replay(observations, sessions):
                     entry = entry_bar["open"]
                     labels.append({"signal": signal, "ticker": ticker, "entry": entry_day, "horizon": horizon,
                                    "through": day, "signals": obs["signals"],
-                                   **({"entryBlocks": {a: entry_block_reason(a, obs, entry_bar) for a, passed in obs["signals"].items() if passed}} if any(a.startswith("refine_") for a in obs["signals"]) else {}),
+                                   **({"entryBlocks": {a: entry_block_reason(a, obs, entry_bar, arm_rules.get(a)) for a, passed in obs["signals"].items() if passed}} if any(a.startswith(("refine_", "lab_")) for a in obs["signals"]) else {}),
+                                   **({"diagnosticOnly": not any(obs["signals"].values())} if obs["features"].get("diagnosticSignal") else {}),
                                    "net": path[-1]["close"] / entry - 1 - .004,
                                    "mae": min(b["low"] for b in path) / entry - 1,
                                    "mfe": max(b["high"] for b in path) / entry - 1})
         for arm, passed in obs["signals"].items():
             if not passed or signal <= last.get((arm, ticker), ""):
                 continue
+            rule = arm_rules.get(arm, {})
+            delay = rule.get("entryDelaySessions", 0)
+            if len(following) <= delay:
+                continue
+            arm_following = following[delay:]
+            arm_entry_day = arm_following[0]
+            arm_entry_bar = sessions[arm_entry_day]["bars"].get(ticker)
             trade = {"id": f"{arm}:{ticker}:{signal}", "arm": arm, "ticker": ticker,
-                     "signal": signal, "entry": entry_day, "status": "open", "rs20": obs["features"]["rs20"]}
-            if entry_bar is None:
+                     "signal": signal, "entry": arm_entry_day, "status": "open", "rs20": obs["features"]["rs20"]}
+            if arm_entry_bar is None:
                 trade.update(status="invalid", reason="missing_next_session_open")
                 trades.append(trade)
                 continue
-            block = entry_block_reason(arm, obs, entry_bar)
+            before_bars = [sessions[d]["bars"].get(ticker) for d in following[:delay + 1]]
+            if any(b is None for b in before_bars):
+                trade.update(status="invalid", reason="missing_delayed_entry_bar")
+                trades.append(trade)
+                continue
+            entry_split = math.prod(b.get("split", 1.0) for b in before_bars)
+            block = entry_block_reason(arm, obs, {**arm_entry_bar, "split": entry_split}, rule)
             if block:
                 trade.update(status="skipped", reason=block)
                 trades.append(trade)
                 continue
-            entry = entry_bar["open"]
-            trade.update(entryPrice=entry, entryGap=entry / (obs["features"]["close"] / entry_bar.get("split", 1.0)) - 1)
+            entry = arm_entry_bar["open"]
+            trade.update(entryPrice=entry, entryGap=entry / (obs["features"]["close"] / entry_split) - 1)
             factor, seen_recovery, nonrecovery = 1.0, bool(obs.get("market", {}).get("recovery")), 0
             pending = None
+            common12 = arm.startswith("refine_") or arm in {"laggard_rebound", "bb_squeeze_breakout", "s8_nr7_breakout"}
+            stop = rule.get("stop", .08)
+            target = rule.get("target", .12 if common12 else .10)
+            max_hold = rule.get("days", 20 if common12 else None)
+            mode = rule.get("mode", "common")
+            if mode == "atr_2r":
+                atr = obs["features"].get("atr14")
+                if atr is None:
+                    trade.update(status="invalid", reason="missing_signal_atr")
+                    trades.append(trade)
+                    continue
+                stop = min(.12, max(.04, 2 * atr / entry_split / entry))
+                target = 2 * stop
+            remaining, realized, partial_pending, partial_done = 1.0, 0.0, False, False
+            signal_low = obs["features"].get("low", 0) / entry_split
+            below_low, below_ma = 0, 0
+            ma_armed = bool(obs["features"].get("ma20") is not None and obs["features"]["close"] >= obs["features"]["ma20"])
             lows, highs = [], []
-            for count, day in enumerate(following, 1):
+            for count, day in enumerate(arm_following, 1):
                 session = sessions[day]
                 bar = session["bars"].get(ticker)
                 if bar is None:
@@ -292,25 +325,46 @@ def replay(observations, sessions):
                 if pending:
                     px = bar["open"] * factor
                     trade.update(status="closed", exit=day, exitPrice=bar["open"], splitFactor=factor,
-                                 net=px / entry - 1 - .004, reason=pending, holdingSessions=count - 1)
+                                 net=realized + remaining * (px / entry - 1) - .004, reason=pending, holdingSessions=count - 1)
                     last[arm, ticker] = day
                     break
+                if partial_pending:
+                    realized += .5 * (bar["open"] * factor / entry - 1)
+                    remaining, partial_pending, partial_done = .5, False, True
+                    trade["partialFill"] = {"session": day, "price": bar["open"], "splitFactor": factor, "weight": .5}
                 lows.append(bar["low"] * factor)
                 highs.append(bar["high"] * factor)
                 gain = bar["close"] * factor / entry - 1
                 market = session["market"]
                 seen_recovery |= market["recovery"]
                 nonrecovery = 0 if market["recovery"] else nonrecovery + 1 if seen_recovery else 0
-                if gain <= -.08:
-                    pending = "stop_8_close"
-                elif gain >= (.12 if (arm.startswith("refine_") or arm in {"laggard_rebound", "bb_squeeze_breakout", "s8_nr7_breakout"}) else .10):
+                below_low = below_low + 1 if bar["close"] * factor < signal_low else 0
+                if mode == "ma20_failure":
+                    ma20 = bar.get("ma20")
+                    if ma20 is None:
+                        trade.update(status="invalid", reason="missing_ma20")
+                        last[arm, ticker] = day
+                        break
+                    ma_armed |= bar["close"] >= ma20
+                    below_ma = below_ma + 1 if ma_armed and bar["close"] < ma20 else 0
+                if gain <= -stop:
+                    pending = "stop_8_close" if stop == .08 else "atr_stop_close"
+                elif gain >= target:
                     pending = "target_close"
-                elif (arm.startswith("refine_") or arm in {"laggard_rebound", "bb_squeeze_breakout", "s8_nr7_breakout"}) and count >= 20:
-                    pending = "time_20"
+                elif max_hold is not None and count >= max_hold:
+                    pending = "time_20" if max_hold == 20 else "time_limit"
                 elif arm != "laggard_rebound" and (market["peak"] or nonrecovery >= 2):
                     pending = "market_peak" if market["peak"] else "recovery_end_2"
-                trade.update(markSession=day, markNet=gain - .004, pendingExit=pending,
+                elif mode == "signal_low_failure" and below_low >= 2:
+                    pending = "signal_low_failure"
+                elif mode == "ma20_failure" and below_ma >= 2:
+                    pending = "ma20_failure"
+                if mode == "half_at6" and not partial_done and gain >= .06 and pending is None:
+                    partial_pending = True
+                trade.update(markSession=day, markNet=realized + remaining * gain - .004, pendingExit=pending,
                              holdingSessions=count, splitFactor=factor)
+                if rule:
+                    trade.update(remainingWeight=remaining, pendingPartial=partial_pending)
                 last[arm, ticker] = day
             trade.update(mae=min(lows) / entry - 1 if lows else None, mfe=max(highs) / entry - 1 if highs else None)
             trades.append(trade)
@@ -318,7 +372,7 @@ def replay(observations, sessions):
 
 
 def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names=None,
-            *, protocol=PROTOCOL, flags=signal_flags, feature_enricher=None):
+            *, protocol=PROTOCOL, flags=signal_flags, feature_enricher=None, context_enricher=None, arm_rules=None, store_ma20=False):
     initialize(history, protocol)
     current = (now or datetime.now(timezone.utc)).astimezone(NY)
     frames = extract_frames(daily, sorted(set(tickers) | set(tracked_tickers(history)) | {"QQQ"}))
@@ -342,6 +396,8 @@ def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names
                 bar = {k.lower(): number(row[k]) for k in ("Open", "High", "Low", "Close")}
                 if all(v is not None and v > 0 for v in bar.values()):
                     bars[ticker] = {**bar, "split": float(row["split"])}
+                    if store_ma20:
+                        bars[ticker]["ma20"] = number(frame.loc[:day, "Close"].tail(20).mean())
         sessions[day] = {"session": day, "capturedAt": capture, "market": states[day], "bars": bars}
     if complete:
         day = complete[-1]
@@ -370,6 +426,8 @@ def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names
                         "rs20": number(rs), "histChange": number(hist.diff().iloc[-1])}
             if feature_enricher is not None:
                 features.update(feature_enricher(f))
+            if context_enricher is not None:
+                features.update(context_enricher(ticker, f))
             name = (names or {}).get(ticker, "")
             excluded = ticker in ETF or any(word in name.upper() for word in ("ETF", "DIREXION", "PROSHARES", "LEVERAGED", "2X", "3X"))
             market = {**states[day], "event": event, "buyAllowed": states[day]["buyAllowed"] and event == "당분간 없음"}
@@ -379,7 +437,7 @@ def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names
                                  "source": "Yahoo completed daily OHLCV", "version": protocol["version"]})
     write_lines(history / "sessions.jsonl", [sessions[d] for d in sorted(sessions)])
     write_lines(history / "observations.jsonl", sorted(observations, key=lambda r: (r["session"], r["ticker"])))
-    trades, labels = replay(observations, sessions)
+    trades, labels = replay(observations, sessions, arm_rules)
     write_lines(history / "paper-trades.jsonl", trades)
     write_lines(history / "forward-outcomes.jsonl", labels)
     filtered = [r for r in trades if r["arm"] == protocol.get("reviewArm", "s7_rs_positive") and r["status"] == "closed"]
@@ -421,3 +479,5 @@ if __name__ == "__main__":
     collect_nr7(daily, list(names), event_payload=events, names=names)
     from scripts.record_strategy_refinements import collect_refinements, load_season
     collect_refinements(daily, list(names), event_payload=events, names=names, season=load_season())
+    from scripts.record_candidate_lab import collect_lab
+    collect_lab(daily, list(names), event_payload=events, names=names, season=load_season())

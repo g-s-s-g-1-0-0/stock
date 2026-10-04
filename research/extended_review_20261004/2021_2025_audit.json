@@ -1,0 +1,14 @@
+[
+  {
+    "ticker": "ACLS",
+    "prefix_invariant": true
+  },
+  {
+    "ticker": "AEHR",
+    "prefix_invariant": true
+  },
+  {
+    "ticker": "AMD",
+    "prefix_invariant": true
+  }
+]

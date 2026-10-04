@@ -1,0 +1,168 @@
+{
+  "simulators": [
+    {
+      "name": "rsi2_pullback",
+      "mode": "common",
+      "trades": 62,
+      "match": true
+    },
+    {
+      "name": "rsi2_pullback",
+      "mode": "half_at6",
+      "trades": 62,
+      "match": true
+    },
+    {
+      "name": "rsi2_pullback",
+      "mode": "atr_2r",
+      "trades": 57,
+      "match": true
+    },
+    {
+      "name": "rsi2_pullback",
+      "mode": "signal_low_failure",
+      "trades": 64,
+      "match": true
+    },
+    {
+      "name": "rsi2_pullback",
+      "mode": "ma20_failure",
+      "trades": 65,
+      "match": true
+    },
+    {
+      "name": "pocket_pivot",
+      "mode": "common",
+      "trades": 19,
+      "match": true
+    },
+    {
+      "name": "pocket_pivot",
+      "mode": "half_at6",
+      "trades": 19,
+      "match": true
+    },
+    {
+      "name": "pocket_pivot",
+      "mode": "atr_2r",
+      "trades": 19,
+      "match": true
+    },
+    {
+      "name": "pocket_pivot",
+      "mode": "signal_low_failure",
+      "trades": 21,
+      "match": true
+    },
+    {
+      "name": "pocket_pivot",
+      "mode": "ma20_failure",
+      "trades": 19,
+      "match": true
+    },
+    {
+      "name": "higher_low_breakout",
+      "mode": "common",
+      "trades": 6,
+      "match": true
+    },
+    {
+      "name": "higher_low_breakout",
+      "mode": "half_at6",
+      "trades": 6,
+      "match": true
+    },
+    {
+      "name": "higher_low_breakout",
+      "mode": "atr_2r",
+      "trades": 6,
+      "match": true
+    },
+    {
+      "name": "higher_low_breakout",
+      "mode": "signal_low_failure",
+      "trades": 6,
+      "match": true
+    },
+    {
+      "name": "higher_low_breakout",
+      "mode": "ma20_failure",
+      "trades": 6,
+      "match": true
+    },
+    {
+      "name": "obv_leads_price",
+      "mode": "common",
+      "trades": 10,
+      "match": true
+    },
+    {
+      "name": "obv_leads_price",
+      "mode": "half_at6",
+      "trades": 10,
+      "match": true
+    },
+    {
+      "name": "obv_leads_price",
+      "mode": "atr_2r",
+      "trades": 10,
+      "match": true
+    },
+    {
+      "name": "obv_leads_price",
+      "mode": "signal_low_failure",
+      "trades": 10,
+      "match": true
+    },
+    {
+      "name": "obv_leads_price",
+      "mode": "ma20_failure",
+      "trades": 10,
+      "match": true
+    },
+    {
+      "name": "S7",
+      "mode": "common",
+      "trades": 51,
+      "match": true
+    },
+    {
+      "name": "S7",
+      "mode": "half_at6",
+      "trades": 51,
+      "match": true
+    },
+    {
+      "name": "S7",
+      "mode": "atr_2r",
+      "trades": 48,
+      "match": true
+    },
+    {
+      "name": "S7",
+      "mode": "signal_low_failure",
+      "trades": 53,
+      "match": true
+    },
+    {
+      "name": "S7",
+      "mode": "ma20_failure",
+      "trades": 55,
+      "match": true
+    }
+  ],
+  "features": [
+    {
+      "ticker": "AAPL",
+      "legacy22_patterns_match": true
+    },
+    {
+      "ticker": "NVDA",
+      "legacy22_patterns_match": true
+    },
+    {
+      "ticker": "CRDO",
+      "legacy22_patterns_match": true
+    }
+  ]
+}
