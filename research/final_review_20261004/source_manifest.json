@@ -1,0 +1,177 @@
+{
+  "python": "3.12.4",
+  "pandas": "3.0.0",
+  "numpy": "2.3.5",
+  "sources": [
+    {
+      "path": "research/extended_review_20261004/2026_signals.pkl",
+      "sha256": "3d43c2a6ab1447fdabeecbd3ebdbc16bc854594b4a357951a34c6ae97aa7fc56"
+    },
+    {
+      "path": "research/extended_review_20261004/2021_2025_signals.pkl",
+      "sha256": "da03d5475f64f95297cacd731b7e1ade09e476c4d2cf522c6244bc6bef53f05c"
+    },
+    {
+      "path": ".bt_cache/QQQ.pkl",
+      "sha256": "6e7ac09681e8b5a564d66fcffcef9d9bd5f82e88c98683b024b19aa52c9604ae"
+    },
+    {
+      "path": ".bt_cache/ACLS.pkl",
+      "sha256": "8eeeb8d940e388b3219799b05d23406cec1836e3c72ab0fce6c58b6e67f74be9"
+    },
+    {
+      "path": ".bt_cache/AEHR.pkl",
+      "sha256": "ab0d4f5ff35f275445dfc1dedc48f66bae0b00eb045d737bee5efca5f93adac8"
+    },
+    {
+      "path": ".bt_cache/AMD.pkl",
+      "sha256": "c0dff7279eff0499bc23f7945a70f43030430cc0e4642e21305bbf6531c30587"
+    },
+    {
+      "path": ".bt_cache/ASTS.pkl",
+      "sha256": "bfbc44d7205b94b0583b3d4a71d92a86859c34f48f9ce32286bed1942fe21747"
+    },
+    {
+      "path": ".bt_cache/ASX.pkl",
+      "sha256": "4203274ccd2071f9229cf0849a20b749b0236c5a2237adabf0002f2f62b4878b"
+    },
+    {
+      "path": ".bt_cache/AVGO.pkl",
+      "sha256": "0c5b55ec929066a5132ff69f287087ba94594e5b95f4c5496818ac9d2ad2c67b"
+    },
+    {
+      "path": ".bt_cache/BE.pkl",
+      "sha256": "8fc67b9012e1896f07af11b18e0b83aecdc5a8c43b0c6c53e5d886e94bf6c377"
+    },
+    {
+      "path": ".bt_cache/CIFR.pkl",
+      "sha256": "45a0d9453c594cd51b8f6043aa8226ad46231267159c471c40c6aa0f54dd961c"
+    },
+    {
+      "path": ".bt_cache/CRDO.pkl",
+      "sha256": "a8a676447c8dbf900ee406371c951d0816a1eadcf801134be05e465c18a0e162"
+    },
+    {
+      "path": ".bt_cache/ETN.pkl",
+      "sha256": "89459e7642a8c9f860f8e21ccf83d07e595c24e4b8b5abc705dfdfa7ae8916ef"
+    },
+    {
+      "path": ".bt_cache/GOOGL.pkl",
+      "sha256": "a66b4c38a8c80165d2179ff76a3d01cf5047cee39e8eb874d6593cdd8ebb82c4"
+    },
+    {
+      "path": ".bt_cache/INTC.pkl",
+      "sha256": "656940c9b8c5596f04245e8bc13936b6a9198a31a8f7e206e362c0347507c3f1"
+    },
+    {
+      "path": ".bt_cache/IONQ.pkl",
+      "sha256": "6e11faf390b0b678f342f2565d0601e585c6aac3232672f949f4f4ab36d258f9"
+    },
+    {
+      "path": ".bt_cache/IREN.pkl",
+      "sha256": "801afe321780634a850a6904c0449e6c4daa4f82808bc6a8a1c15cfb856a2e58"
+    },
+    {
+      "path": ".bt_cache/LITE.pkl",
+      "sha256": "f6c5ffee98ff7118d25c7f9d8c6e49c45718c53e73070befbc28a8143bbd2e56"
+    },
+    {
+      "path": ".bt_cache/LPTH.pkl",
+      "sha256": "71da1be211ca01b661e57b77abe368403c683d5723fa459b2f6faf96492d3b4d"
+    },
+    {
+      "path": ".bt_cache/MP.pkl",
+      "sha256": "6d0945cc4ab204e72a057874733dcab4dcb114f0aec825ef4fba66e8288fdcf0"
+    },
+    {
+      "path": ".bt_cache/MU.pkl",
+      "sha256": "e03dee892ea066ceb216e79151288c64d14bef57cabb7e251649359528b9ae5c"
+    },
+    {
+      "path": ".bt_cache/NBIS.pkl",
+      "sha256": "3b0359e7debb91a7ff0722fcb91b461f2b2af57493fcd747518e1ac1172dd88f"
+    },
+    {
+      "path": ".bt_cache/NVDA.pkl",
+      "sha256": "3eb0ce555208854d0375bae9b8e107c9dfae55359789889e838f70e54a265124"
+    },
+    {
+      "path": ".bt_cache/PL.pkl",
+      "sha256": "d4ab7e50da6bbb32ca12c3a5a2b3be652d1dac6dc72badd497e1fe911b631f13"
+    },
+    {
+      "path": ".bt_cache/RKLB.pkl",
+      "sha256": "e6e17a08028bee12a6af7a230cc8710961144a867c33b6e998fac117c2413efb"
+    },
+    {
+      "path": ".bt_cache/SGML.pkl",
+      "sha256": "a55be8892e75a02fbd11e78851bd3c2cff6bbc09449229e8ed8da7403150cdf5"
+    },
+    {
+      "path": ".bt_cache/SNDK.pkl",
+      "sha256": "d23bcae26881c9d310407857ec517520a16a9755a95e83276f0e81766b1b0c74"
+    },
+    {
+      "path": ".bt_cache/STX.pkl",
+      "sha256": "32af23fb70bb025c9e77cb4914a7fc91ab1f3ce9715ae1b3eb1d7a207bc60ca6"
+    },
+    {
+      "path": ".bt_cache/TE.pkl",
+      "sha256": "90d4185133ecaf63869fe4874071ce781c3d461e32913bb9325dc13d621b1d03"
+    },
+    {
+      "path": ".bt_cache/TSLA.pkl",
+      "sha256": "3db7480bd4b5fc322fcfcd5ae0175898b0013954ca7c460c56180857e78d9cbe"
+    },
+    {
+      "path": ".bt_cache/VST.pkl",
+      "sha256": "02123003d1991c98c4df4bb2e535501b4b5eb2775cac3434603614444fc8779b"
+    },
+    {
+      "path": ".bt_cache/WULF.pkl",
+      "sha256": "5914374f5d7f373c09c9af0a49f79e0bf5bb05b85621a0155f9d82f76ef1ed4a"
+    },
+    {
+      "path": "research/observed_signals_20261003/phase2/results/warmup_bars.pkl",
+      "sha256": "31846e2c18961d2c62b9f04a0497ce25c2c177d96438370d57e1a933892a7001"
+    }
+  ],
+  "featureChecks": [
+    {
+      "dataset": "2026",
+      "ticker": "AAPL",
+      "rows": 57,
+      "current_feature_code_matches_frozen_results": true
+    },
+    {
+      "dataset": "2026",
+      "ticker": "ACLS",
+      "rows": 22,
+      "current_feature_code_matches_frozen_results": true
+    },
+    {
+      "dataset": "2026",
+      "ticker": "ACMR",
+      "rows": 2,
+      "current_feature_code_matches_frozen_results": true
+    },
+    {
+      "dataset": "2021_2025",
+      "ticker": "ACLS",
+      "rows": 1254,
+      "current_feature_code_matches_frozen_results": true
+    },
+    {
+      "dataset": "2021_2025",
+      "ticker": "AEHR",
+      "rows": 1254,
+      "current_feature_code_matches_frozen_results": true
+    },
+    {
+      "dataset": "2021_2025",
+      "ticker": "AMD",
+      "rows": 1254,
+      "current_feature_code_matches_frozen_results": true
+    }
+  ]
+}

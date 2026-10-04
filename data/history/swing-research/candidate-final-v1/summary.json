@@ -1,0 +1,31 @@
+{
+  "version": "candidate-final-v1",
+  "startSession": "2026-10-05",
+  "lastSession": null,
+  "observations": 0,
+  "signalCounts": {
+    "final_p_breakout_first_retest": 0,
+    "final_p_failed_breakout_reclaim": 0,
+    "final_p_outside_reversal": 0,
+    "final_p_gap_first_retest": 0,
+    "final_p_shock_high_rebreak": 0,
+    "final_p_confirmed_rsi_divergence": 0,
+    "final_s1_few_distribution_days": 0,
+    "final_s2_fresh_ma_support": 0,
+    "final_s2_intraday_supported_trend": 0,
+    "final_s2_weekly_uptrend": 0,
+    "final_s3_intraday_supported_trend": 0,
+    "final_s3_nearby_price_support": 0,
+    "final_s4_few_distribution_days": 0,
+    "final_s6_few_distribution_days": 0,
+    "final_s7_intraday_supported_trend": 0
+  },
+  "filteredClosed": 0,
+  "filteredEntryDates": 0,
+  "earliestReviewKST": "2026-12-08",
+  "sampleReady": null,
+  "status": "awaiting_first_session",
+  "collectorHash": "27f3570b6f00f218c389a568133917194aa771ab4c4888bff4034a13e1a5c3ce",
+  "candidateCodeHash": "3decde52d548b3f8f4dc48165a8abd2e93219a306d2e84c18b2b77317efd534a",
+  "finalCodeHash": "08052ee781f61b8b6b7b87e606a4c44a8c5c9f6e5f1f92202f7715ab8686e9c8"
+}

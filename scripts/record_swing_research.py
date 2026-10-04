@@ -259,7 +259,7 @@ def replay(observations, sessions, arm_rules=None):
                     entry = entry_bar["open"]
                     labels.append({"signal": signal, "ticker": ticker, "entry": entry_day, "horizon": horizon,
                                    "through": day, "signals": obs["signals"],
-                                   **({"entryBlocks": {a: entry_block_reason(a, obs, entry_bar, arm_rules.get(a)) for a, passed in obs["signals"].items() if passed}} if any(a.startswith(("refine_", "lab_")) for a in obs["signals"]) else {}),
+                                   **({"entryBlocks": {a: entry_block_reason(a, obs, entry_bar, arm_rules.get(a)) for a, passed in obs["signals"].items() if passed}} if any(a.startswith(("refine_", "lab_", "final_")) for a in obs["signals"]) else {}),
                                    **({"diagnosticOnly": not any(obs["signals"].values())} if obs["features"].get("diagnosticSignal") else {}),
                                    "net": path[-1]["close"] / entry - 1 - .004,
                                    "mae": min(b["low"] for b in path) / entry - 1,
@@ -481,3 +481,5 @@ if __name__ == "__main__":
     collect_refinements(daily, list(names), event_payload=events, names=names, season=load_season())
     from scripts.record_candidate_lab import collect_lab
     collect_lab(daily, list(names), event_payload=events, names=names, season=load_season())
+    from scripts.record_final_candidates import collect_final
+    collect_final(daily, list(names), event_payload=events, names=names, season=load_season())

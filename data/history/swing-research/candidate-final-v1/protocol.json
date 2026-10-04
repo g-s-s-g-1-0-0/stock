@@ -1,0 +1,223 @@
+{
+  "version": "candidate-final-v1",
+  "startSession": "2026-10-05",
+  "earliestReviewKST": "2026-12-08",
+  "minimumClosedFilteredTrades": null,
+  "minimumFilteredEntryDates": null,
+  "minimumCalendarMonths": 2,
+  "reviewArm": "final_s3_nearby_price_support",
+  "arms": [
+    "final_p_breakout_first_retest",
+    "final_p_failed_breakout_reclaim",
+    "final_p_outside_reversal",
+    "final_p_gap_first_retest",
+    "final_p_shock_high_rebreak",
+    "final_p_confirmed_rsi_divergence",
+    "final_s1_few_distribution_days",
+    "final_s2_fresh_ma_support",
+    "final_s2_intraday_supported_trend",
+    "final_s2_weekly_uptrend",
+    "final_s3_intraday_supported_trend",
+    "final_s3_nearby_price_support",
+    "final_s4_few_distribution_days",
+    "final_s6_few_distribution_days",
+    "final_s7_intraday_supported_trend"
+  ],
+  "registry": {
+    "final_p_breakout_first_retest": {
+      "source": "breakout_first_retest",
+      "filter": null
+    },
+    "final_p_failed_breakout_reclaim": {
+      "source": "failed_breakout_reclaim",
+      "filter": null
+    },
+    "final_p_outside_reversal": {
+      "source": "outside_reversal",
+      "filter": null
+    },
+    "final_p_gap_first_retest": {
+      "source": "gap_first_retest",
+      "filter": null
+    },
+    "final_p_shock_high_rebreak": {
+      "source": "shock_high_rebreak",
+      "filter": null
+    },
+    "final_p_confirmed_rsi_divergence": {
+      "source": "confirmed_rsi_divergence",
+      "filter": null
+    },
+    "final_s1_few_distribution_days": {
+      "source": "S1",
+      "filter": "few_distribution_days"
+    },
+    "final_s2_fresh_ma_support": {
+      "source": "S2",
+      "filter": "fresh_ma_support"
+    },
+    "final_s2_intraday_supported_trend": {
+      "source": "S2",
+      "filter": "intraday_supported_trend"
+    },
+    "final_s2_weekly_uptrend": {
+      "source": "S2",
+      "filter": "weekly_uptrend"
+    },
+    "final_s3_intraday_supported_trend": {
+      "source": "S3",
+      "filter": "intraday_supported_trend"
+    },
+    "final_s3_nearby_price_support": {
+      "source": "S3",
+      "filter": "nearby_price_support"
+    },
+    "final_s4_few_distribution_days": {
+      "source": "S4",
+      "filter": "few_distribution_days"
+    },
+    "final_s6_few_distribution_days": {
+      "source": "S6",
+      "filter": "few_distribution_days"
+    },
+    "final_s7_intraday_supported_trend": {
+      "source": "S7",
+      "filter": "intraday_supported_trend"
+    }
+  },
+  "armRules": {
+    "final_p_breakout_first_retest": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_p_failed_breakout_reclaim": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_p_outside_reversal": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_p_gap_first_retest": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_p_shock_high_rebreak": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_p_confirmed_rsi_divergence": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_s1_few_distribution_days": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_s2_fresh_ma_support": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_s2_intraday_supported_trend": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_s2_weekly_uptrend": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_s3_intraday_supported_trend": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_s3_nearby_price_support": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_s4_few_distribution_days": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    },
+    "final_s6_few_distribution_days": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": "6"
+    },
+    "final_s7_intraday_supported_trend": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common",
+      "entryStrategy": null
+    }
+  },
+  "patterns": {
+    "breakout_first_retest": "volume>=1.3 first20-high breakout2..10 sessions ago; first low retest within -3..+1% of frozen level, intervening closes hold it; bullish close above level and MA200",
+    "failed_breakout_reclaim": "same breakout anchor within10; first failure within3 sessions, no reclaim before today; close now reclaims frozen level above MA200, volume>=1.2",
+    "outside_reversal": "prior3-session return<0; today's low<prior low and close>prior high/open/MA200",
+    "gap_first_retest": "bullish gap>=3%,volume>=2 anchor2..10 sessions ago; first retest anchor low within -3..+1%; intervening closes hold low; close>anchor midpoint/open/MA200",
+    "shock_high_rebreak": "bullish >=4% day2..5 sessions ago,TR>=2 priorATR,volume>=1.5; later lows hold its low and closes stay below its high; close now>anchor high/MA200,volume>=1.2",
+    "confirmed_rsi_divergence": "two latest confirmed2+2 lows within40 sessions: lower price by<=10%,RSI improves>=5 from<35; first close above newer pivot high after confirmation, aboveMA200"
+  },
+  "filters": {
+    "fresh_ma_support": "current bullish bounce at MA20/50/120/200 with previous10 lows all above that MA*1.003",
+    "no_recent_failed_breakout": "no prior20-high volume1.3 breakout closing below frozen level within3 sessions in last10 sessions through D",
+    "few_distribution_days": "prior10 sessions have at most1 day with return<=-1% and volume>=1.2 prior20 mean",
+    "intraday_supported_trend": "last20 cumulative log(close/open)>0 and >= cumulative log(open/prior close)",
+    "nearby_price_support": "distance from close to prior5-session low is >0 and <=5%; this is a signal filter, not a5% stop",
+    "weekly_uptrend": "last completed Friday week close>10-week MA and that MA>four weeks earlier; conservative Friday labels"
+  },
+  "entry": "D completed close, D+1 regular open; market/events and actual S2 season required; S6 gap/support rechecked at open",
+  "exit": "common close -8/+12/20 +market confirmed, next open; .4% cost; no operating exit replication",
+  "reentry": "signal strictly after prior exit session",
+  "recoveryBuyCap": 14.0,
+  "recoveryExit": 18.0,
+  "normalBuyCap": 9.0,
+  "roundTripCost": 0.004,
+  "controls": "S1/2/4/6 in strategy-refinements-v1; S3/5/7 common controls in candidate-lab-v1",
+  "diagnostics": "all six new patterns and six filters plus existing30 patterns/20 single filters and1..7 predicates; rejected and unknown values retained; paths are diagnostics, not necessarily fills",
+  "ranking": "all six patterns recorded, including sparse/weak cases; no strategy numbering or live priority assigned",
+  "freeze": "keep definitions fixed through first Dec8 review; inadequate dates/regimes means continue observing, not automatic adoption",
+  "scope": "private history; no UI/API/alerts/orders; same daily price downloads"
+}

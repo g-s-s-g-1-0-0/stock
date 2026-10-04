@@ -1,6 +1,6 @@
 # 추가 모의 후보 등록부 — 2026-10-04
 
-기존 14개는 유지한다. 아래 40개는 추가 비교 버전이며 모두 비공개 모의 원장이다. 공통 청산에는 시장 청산도 포함한다. 1·2·4·6번 대조군은 기존 `strategy-refinements-v1`에 있다. 미국 10월 5일 종가부터 기록하고 한국 12월 8일 이후 첫 점검한다.
+기존 14개는 유지한다. 첫 추가 40개와 마지막 보충 15개를 합해 총 69개 비교 버전을 비공개 모의 원장에 기록한다. 공통 청산에는 시장 청산도 포함한다. 1·2·4·6번 대조군은 기존 `strategy-refinements-v1`에 있다. 미국 10월 5일 종가부터 기록하고 한국 12월 8일 이후 첫 점검한다.
 
 | ID | 기준 신호 | 추가 조건 | 청산·시점 |
 |---|---|---|---|
@@ -96,3 +96,47 @@
 | `down_day_resilience` | mean stock-minus-QQQ daily return on prior/current20 QQQ down-days>0; at least5 matched days |
 
 두 상대강도 동시 충족과 이평선 교차 뒤 첫 눌림도 별도 표시한다. 결측은 탈락으로 확정하지 않고 원형과 보완형의 비교 가능한 날짜를 맞춘다. 신호 0건은 실패가 아니라 미관측이다.
+
+## 마지막 보충 15개
+
+모두 공통 연구 청산(-8%/+12%/20일 및 시장 청산, 다음 시가)과 비용 0.4%다. 기존 원형 대조군과 비교하며 12월 8일까지 정의를 고정한다.
+
+| ID | 기준 신호 | 추가 조건 |
+|---|---|---|
+| `final_p_breakout_first_retest` | 돌파 가격 첫 재시험 지키기 | 없음 |
+| `final_p_failed_breakout_reclaim` | 실패한 돌파 가격 회복 | 없음 |
+| `final_p_outside_reversal` | 전일 저점 이탈 뒤 전일 고가 위 마감 | 없음 |
+| `final_p_gap_first_retest` | 상승 갭 이후 첫 눌림 | 없음 |
+| `final_p_shock_high_rebreak` | 대량 상승일 고점 재돌파 | 없음 |
+| `final_p_confirmed_rsi_divergence` | 가격 저점 하락·RSI 저점 상승 | 없음 |
+| `final_s1_few_distribution_days` | 1번 | 최근 대량 매도일이 적음 |
+| `final_s2_fresh_ma_support` | 2번 | 최근 10일 접촉 없던 이평선 첫 반등 |
+| `final_s2_intraday_supported_trend` | 2번 | 최근 20일 정규장 상승이 양수이고 야간 상승 이상 |
+| `final_s2_weekly_uptrend` | 2번 | 완료 주봉이 10주선 위이고 10주선 상승 |
+| `final_s3_intraday_supported_trend` | 3번 | 최근 20일 정규장 상승이 양수이고 야간 상승 이상 |
+| `final_s3_nearby_price_support` | 3번 | 직전 5일 저점까지 거리 0 초과 5% 이하 |
+| `final_s4_few_distribution_days` | 4번 | 최근 대량 매도일이 적음 |
+| `final_s6_few_distribution_days` | 6번 | 최근 대량 매도일이 적음 |
+| `final_s7_intraday_supported_trend` | 7번 | 최근 20일 정규장 상승이 양수이고 야간 상승 이상 |
+
+### 추가 진단 정의
+
+| 패턴 ID | 고정 정의 |
+|---|---|
+| `breakout_first_retest` | volume>=1.3 first20-high breakout2..10 sessions ago; first low retest within -3..+1% of frozen level, intervening closes hold it; bullish close above level and MA200 |
+| `failed_breakout_reclaim` | same breakout anchor within10; first failure within3 sessions, no reclaim before today; close now reclaims frozen level above MA200, volume>=1.2 |
+| `outside_reversal` | prior3-session return<0; today's low<prior low and close>prior high/open/MA200 |
+| `gap_first_retest` | bullish gap>=3%,volume>=2 anchor2..10 sessions ago; first retest anchor low within -3..+1%; intervening closes hold low; close>anchor midpoint/open/MA200 |
+| `shock_high_rebreak` | bullish >=4% day2..5 sessions ago,TR>=2 priorATR,volume>=1.5; later lows hold its low and closes stay below its high; close now>anchor high/MA200,volume>=1.2 |
+| `confirmed_rsi_divergence` | two latest confirmed2+2 lows within40 sessions: lower price by<=10%,RSI improves>=5 from<35; first close above newer pivot high after confirmation, aboveMA200 |
+
+| 보완 조건 ID | 고정 정의 |
+|---|---|
+| `fresh_ma_support` | current bullish bounce at MA20/50/120/200 with previous10 lows all above that MA*1.003 |
+| `no_recent_failed_breakout` | no prior20-high volume1.3 breakout closing below frozen level within3 sessions in last10 sessions through D |
+| `few_distribution_days` | prior10 sessions have at most1 day with return<=-1% and volume>=1.2 prior20 mean |
+| `intraday_supported_trend` | last20 cumulative log(close/open)>0 and >= cumulative log(open/prior close) |
+| `nearby_price_support` | distance from close to prior5-session low is >0 and <=5%; this is a signal filter, not a5% stop |
+| `weekly_uptrend` | last completed Friday week close>10-week MA and that MA>four weeks earlier; conservative Friday labels |
+
+전체 기록은 36개 패턴과 26개 단일 보완 조건, 기존 두 조합 조건을 포함한다. 신호가 희소하거나 결과가 약한 패턴도 삭제하지 않으며, 가상 매매로 채택하지 않은 조건도 통과·탈락·당시 수치를 남긴다.

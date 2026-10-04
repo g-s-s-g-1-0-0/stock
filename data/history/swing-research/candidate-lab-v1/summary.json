@@ -50,6 +50,6 @@
   "earliestReviewKST": "2026-12-08",
   "sampleReady": null,
   "status": "awaiting_first_session",
-  "collectorHash": "aaf1ff396f75adfcc36a376612b7e955930fee652736a2aab7454e08496f1858",
-  "candidateCodeHash": "3d881394c0ec9464797bf2160b9b3761b2900587fa557de2db827ee3f34c029a"
+  "collectorHash": "27f3570b6f00f218c389a568133917194aa771ab4c4888bff4034a13e1a5c3ce",
+  "candidateCodeHash": "3decde52d548b3f8f4dc48165a8abd2e93219a306d2e84c18b2b77317efd534a"
 }

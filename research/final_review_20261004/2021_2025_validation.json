@@ -1,0 +1,42 @@
+[
+  {
+    "base": "S1",
+    "matching_prior_n_and_mean": true
+  },
+  {
+    "base": "S2_core",
+    "matching_prior_n_and_mean": true
+  },
+  {
+    "base": "S3",
+    "matching_prior_n_and_mean": true
+  },
+  {
+    "base": "S4",
+    "matching_prior_n_and_mean": true
+  },
+  {
+    "base": "S5",
+    "matching_prior_n_and_mean": true
+  },
+  {
+    "base": "S6",
+    "matching_prior_n_and_mean": true
+  },
+  {
+    "base": "S7",
+    "matching_prior_n_and_mean": true
+  },
+  {
+    "ticker": "ACLS",
+    "prefix_invariant": true
+  },
+  {
+    "ticker": "AEHR",
+    "prefix_invariant": true
+  },
+  {
+    "ticker": "AMD",
+    "prefix_invariant": true
+  }
+]

@@ -81,7 +81,8 @@ def lab_flags(f, m, eligible=True):
             for arm, cfg in ARMS.items()}
 
 
-def collect_lab(daily, tickers, now=None, history=HISTORY, event_payload=None, names=None, season=None):
+def collect_lab(daily, tickers, now=None, history=HISTORY, event_payload=None, names=None, season=None,
+                *, protocol=PROTOCOL, flags=lab_flags, arm_rules=ARM_RULES, prepare=feature_frame, extra_observation=None):
     from calculator.trend_strategies import build_trend_signal
     names = names or {}
     current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -90,9 +91,9 @@ def collect_lab(daily, tickers, now=None, history=HISTORY, event_payload=None, n
     if qqq is None or qqq.empty:
         raise RuntimeError("candidate lab: missing QQQ bars")
     local = current.astimezone(sr.NY)
-    complete = [d for d in qqq.index if (d < local.date().isoformat() or d == local.date().isoformat() and local.hour >= 16 and (local.hour > 16 or local.minute >= 5)) and d >= PROTOCOL["startSession"]]
+    complete = [d for d in qqq.index if (d < local.date().isoformat() or d == local.date().isoformat() and local.hour >= 16 and (local.hour > 16 or local.minute >= 5)) and d >= protocol["startSession"]]
     day = complete[-1] if complete else None
-    prepared = {t: feature_frame(b.loc[:day], qqq.loc[:day]) for t, b in frames.items()
+    prepared = {t: prepare(b.loc[:day], qqq.loc[:day]) for t, b in frames.items()
                 if day and t not in {"QQQ", "^VIX"} and day in b.index and len(b.loc[:day]) >= 200}
     members = [t for t in tickers if t in prepared and not excluded(t, names)]
     ctx = watchlist_context(prepared, members, day, qqq.index[qqq.index.get_loc(day)-5]) if day else None
@@ -121,7 +122,7 @@ def collect_lab(daily, tickers, now=None, history=HISTORY, event_payload=None, n
                        ma_cross_first_pullback=patterns['ma_cross_first_pullback'])
         filters['both_relative_strength'] = None if filters['rs20_positive'] is None or filters['rs_vs_watchlist'] is None else filters['rs20_positive'] and filters['rs_vs_watchlist']
         vix = frames.get('^VIX')
-        return {**numeric, 'patternFlags':patterns, 'filterFlags':filters, 'watchlistContext':ctx,
+        result = {**numeric, 'patternFlags':patterns, 'filterFlags':filters, 'watchlistContext':ctx,
                 'diagnosticSignal':bool(any(patterns.values()) and not excluded(ticker,names)),
                 'rsi':sr.number(r.RSI),'cci':sr.number(r.CCI),'lrSlope':sr.number(r.LR_Slope),'lrTrendline':sr.number(r.LR_Trendline),
                 'hist':sr.number(r.MACD_Hist),'histPrior':sr.number(r.MACD_Hist_D1),'pctBLow':sr.number(r.PctB_Low),
@@ -129,8 +130,12 @@ def collect_lab(daily, tickers, now=None, history=HISTORY, event_payload=None, n
                 'trendAttempt':bool(trend.get('attempt')),'trendRetest':bool(trend.get('retest')),'supportStop':sr.number(trend.get('stopPrice')),
                 'vix':sr.number(vix.loc[day,'Close']) if vix is not None and day in vix.index else None,
                 **rf.season_features(season,day,current)}
-    summary = sr.collect(daily,tickers,current,history,event_payload,names,protocol=PROTOCOL,flags=lab_flags,
-                         context_enricher=enrich,arm_rules=ARM_RULES,store_ma20=True)
+        if extra_observation is not None:
+            result.update(extra_observation(r))
+            result['diagnosticSignal'] = bool((result['diagnosticSignal'] or result.get('extraDiagnosticSignal')) and not excluded(ticker,names))
+        return result
+    summary = sr.collect(daily,tickers,current,history,event_payload,names,protocol=protocol,flags=flags,
+                         context_enricher=enrich,arm_rules=arm_rules,store_ma20=True)
     summary['candidateCodeHash'] = hashlib.sha256(Path(__file__).read_bytes()+(sr.ROOT/'scripts/swing_candidate_features.py').read_bytes()).hexdigest()
     sr.write_json(history/'summary.json',summary)
     return summary

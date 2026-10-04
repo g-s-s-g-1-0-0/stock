@@ -87,7 +87,7 @@ class CandidateLabTest(unittest.TestCase):
         f=pd.DataFrame({'Open':c-.2,'High':c+1,'Low':c-1,'Close':c,'Volume':100+np.arange(280)%23},index=index)
         full=feature_frame(f,f)
         prefix=feature_frame(f.iloc[:-12],f.iloc[:-12])
-        self.assertTrue(prefix[list(ALL_PATTERNS)].iloc[-1].equals(full.loc[prefix.index[-1],list(ALL_PATTERNS)]))
+        self.assertTrue(prefix[list(ALL_PATTERNS)].iloc[-1].equals(full[list(ALL_PATTERNS)].loc[prefix.index[-1]]))
         self.assertEqual(30,len(ALL_PATTERNS))
         # A high in the two still-unconfirmed rightmost bars cannot become the confirmed pivot.
         changed=f.copy();changed.iloc[-1,changed.columns.get_loc('High')]=1000

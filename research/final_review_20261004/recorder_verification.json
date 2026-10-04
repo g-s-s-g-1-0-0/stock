@@ -1,0 +1,77 @@
+[
+  {
+    "arm": "final_p_breakout_first_retest",
+    "trades": 1,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_p_failed_breakout_reclaim",
+    "trades": 1,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_p_outside_reversal",
+    "trades": 2,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_p_gap_first_retest",
+    "trades": 0,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_p_shock_high_rebreak",
+    "trades": 0,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_p_confirmed_rsi_divergence",
+    "trades": 0,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_s1_few_distribution_days",
+    "trades": 0,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_s2_fresh_ma_support",
+    "trades": 0,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_s2_intraday_supported_trend",
+    "trades": 7,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_s2_weekly_uptrend",
+    "trades": 18,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_s3_intraday_supported_trend",
+    "trades": 3,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_s3_nearby_price_support",
+    "trades": 9,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_s4_few_distribution_days",
+    "trades": 7,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_s6_few_distribution_days",
+    "trades": 1,
+    "matching_recorder": true
+  },
+  {
+    "arm": "final_s7_intraday_supported_trend",
+    "trades": 13,
+    "matching_recorder": true
+  }
+]
