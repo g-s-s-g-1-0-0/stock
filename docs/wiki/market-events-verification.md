@@ -1,6 +1,6 @@
 # 시장 주요 이벤트 공식 일정 검증
 
-최종 갱신: 2026-09-28
+최종 갱신: 2026-10-06
 
 ## 동작
 
@@ -11,16 +11,16 @@
 
 ## BLS 조회
 
-- `bls.gov` 일정 HTML은 Akamai가 자동 클라이언트에 HTTP 403을 준다. ICS·연간 일정 페이지도 같다.
-- 폴백은 Internet Archive Wayback이다. 기본 스냅샷 URL은 툴바와 `playback` iframe만 있는 껍데기라 발표일이 없다.
-- Wayback의 가장 가까운 스냅샷이 대상 연도 일정을 담지 않을 수 있다. 최근 스냅샷을 여러 개 조회해 원문을 읽고, 요청 연도의 발표일 행이 있는 사본을 자동 선택한다.
-- `.../web/{timestamp}if_/...` 원문을 읽고, 껍데기가 오면 iframe을 따라가며, 429·타임아웃은 재시도한다.
+- `bls.gov` 일정 HTML은 일반 Python 클라이언트에 HTTP 403을 줄 수 있다. ICS·연간 일정 페이지도 같은 문제가 있다.
+- 일반 HTTP 조회가 실패하거나 요청 연도의 유효한 날짜·시간 행이 없으면 `curl_cffi`의 Chrome 호환 HTTP/TLS 요청으로 같은 공식 페이지를 다시 읽는다. 자동 실행은 고정 버전 `0.13.0`을 설치한다.
+- 타임아웃·429·502·503·504는 각 통신 방식에서 한 번 재시도한다. 두 방식 모두 실패하면 기존 일정을 유지하고 수동 확인 메일을 보낸다.
+- Wayback 사본은 과거 자료이므로 최신 일정 변경 여부를 검증하거나 자동 수정하는 근거로 사용하지 않는다.
 
-근거: `calculator/pipeline.py`의 `fetch_bls_schedule_html`, `wayback_playback_url`, `fetch_wayback_html`, `tests/test_market_events.py`
+근거: `calculator/pipeline.py`의 `fetch_bls_schedule_html`, `fetch_bls_browser_text`, `.github/workflows/web-data-refresh.yml`, `tests/test_market_events.py`
 
 ## 한계
 
-- BLS 라이브 403 자체는 우회하지 않는다.
-- BLS 라이브 페이지가 막혀 있고 Wayback에도 대상 연도 발표일이 포함된 사본이 없으면 확인 메일을 보낸다. 임의의 날짜를 채우지 않는다.
+- BLS 서버 장애·추가 접속 제한·페이지 형식 변경까지 영구적으로 방지할 수는 없다.
+- 현재 공식 페이지를 두 통신 방식으로도 확인할 수 없으면 수동 확인 메일을 보낸다. 임의의 날짜를 채우거나 검증 성공으로 표시하지 않는다.
 
 연결: [[web-data-refresh]], [[index]]

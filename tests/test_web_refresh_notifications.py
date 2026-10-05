@@ -17,6 +17,11 @@ GAP_GO_WORKFLOW_PATH = ROOT_DIR / ".github" / "workflows" / "gap-go-observation.
 
 
 class WebRefreshWorkflowTest(unittest.TestCase):
+    def test_market_events_installs_browser_http_client_before_refresh(self) -> None:
+        workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+        self.assertIn("curl_cffi==0.13.0", workflow)
+        self.assertLess(workflow.index("- name: Install BLS live HTTP client"), workflow.index("- name: Refresh web caches"))
+
     def test_main_writing_workflows_share_one_concurrency_group(self) -> None:
         refresh_workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
         gap_go_workflow = GAP_GO_WORKFLOW_PATH.read_text(encoding="utf-8")
@@ -133,6 +138,47 @@ class WebRefreshWorkflowTest(unittest.TestCase):
 class WebRefreshNotificationsTest(unittest.TestCase):
     def setUp(self) -> None:
         self.notifications = importlib.import_module("scripts.web_refresh_notifications")
+
+    def test_market_event_unverified_source_still_sends_manual_review(self) -> None:
+        issue = "BLS PPI 발표 공식 일정 조회 실패: 모든 현재 공식 조회 경로 실패"
+        recipient = self.notifications.Recipient("admin", "admin@example.com", True, {
+            "adminAutoUpdateFailureEmail": True,
+        })
+        for failed_reason in (issue, None):
+            payload = {"meta": {"failedReason": failed_reason, "verification": {
+                "autoUpdated": [], "needsManualReview": [issue],
+            }}}
+            with self.subTest(failed_reason=failed_reason), \
+                mock.patch.object(self.notifications, "read_json", return_value=payload), \
+                mock.patch.object(self.notifications, "load_recipients", return_value=[recipient]), \
+                mock.patch.object(self.notifications, "send_notification") as send:
+                self.assertEqual(1, self.notifications.send_market_events_review_notification())
+                self.assertEqual("[확인 필요] 시장 주요 이벤트 공식 일정 검증", send.call_args.args[1])
+                self.assertIn(issue, send.call_args.args[2])
+
+    def test_market_event_confirmed_no_change_does_not_send_review(self) -> None:
+        payload = {"meta": {"failedReason": None, "verification": {
+            "autoUpdated": [], "needsManualReview": [],
+        }}}
+        with mock.patch.object(self.notifications, "read_json", return_value=payload), \
+            mock.patch.object(self.notifications, "load_recipients") as recipients:
+            self.assertEqual(0, self.notifications.send_market_events_review_notification())
+        recipients.assert_not_called()
+
+    def test_market_event_confirmed_change_sends_update_notification(self) -> None:
+        change = "PPI 발표 10월: 2099. 10. 15 21:30 -> 2099. 10. 16 22:00"
+        recipient = self.notifications.Recipient("admin", "admin@example.com", True, {
+            "adminAutoUpdateFailureEmail": True,
+        })
+        payload = {"meta": {"failedReason": None, "verification": {
+            "autoUpdated": [change], "needsManualReview": [],
+        }}}
+        with mock.patch.object(self.notifications, "read_json", return_value=payload), \
+            mock.patch.object(self.notifications, "load_recipients", return_value=[recipient]), \
+            mock.patch.object(self.notifications, "send_notification") as send:
+            self.assertEqual(1, self.notifications.send_market_events_review_notification())
+        self.assertEqual("[자동 수정] 시장 주요 이벤트 공식 일정 반영", send.call_args.args[1])
+        self.assertIn("PPI 발표 10월", send.call_args.args[2])
 
     def test_supabase_request_retries_transient_gateway_timeout(self) -> None:
         response = mock.MagicMock()

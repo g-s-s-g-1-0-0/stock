@@ -112,7 +112,7 @@ BLS_RELEASE_SCHEDULE_URLS = {
     "PPI 발표": "https://www.bls.gov/schedule/news_release/ppi.htm",
 }
 # BLS HTML is often blocked by Akamai (HTTP 403) for automated clients.
-# Internet Archive keeps recent official copies we can verify against.
+# Archive helpers remain available for historical research, not current verification.
 WAYBACK_AVAILABLE_API = "https://archive.org/wayback/available"
 WAYBACK_CDX_API = "https://web.archive.org/cdx/search/cdx"
 BEA_RELEASE_SCHEDULE_URL = "https://www.bea.gov/news/schedule"
@@ -2385,29 +2385,40 @@ def fetch_wayback_html(snapshot: str) -> str:
 
 
 def fetch_bls_schedule_html(url: str, year: int | None = None) -> tuple[str, str]:
-    """Return (html, source_label). Prefer live BLS, then Wayback archive."""
+    """Read the current official page; archived copies cannot confirm changes."""
 
-    try:
-        return fetch_text(url, timeout=20), "bls-live"
-    except Exception as live_exc:  # noqa: BLE001
-        snapshots = wayback_snapshot_urls(url, year or datetime.now(KST).year)
-        if not snapshots:
-            raise RuntimeError(f"live={live_exc}; wayback snapshot unavailable") from live_exc
-        failures: list[str] = []
-        for snapshot in snapshots:
+    target_year = year or datetime.now(KST).year
+    failures: list[str] = []
+    for source, fetch in (("bls-live", fetch_text), ("bls-live-browser-http", fetch_bls_browser_text)):
+        for attempt in range(2):
             try:
-                html_text = fetch_wayback_html(snapshot)
-                rows = html_table_rows(html_text)
-                if year is None or any(
-                    len(row) >= 3 and parse_us_date_text(row[1], year) is not None
-                    and parse_us_date_text(row[1], year).year == year
-                    for row in rows
+                html_text = fetch(url, timeout=20)
+                if not any(
+                    len(row) >= 3 and (released := parse_us_date_text(row[1], target_year)) is not None
+                    and released.year == target_year and market_event_source_value(released, row[2]) is not None
+                    for row in html_table_rows(html_text)
                 ):
-                    return html_text, f"wayback:{snapshot}"
-                failures.append(f"{snapshot}: no {year} release rows")
-            except Exception as archive_exc:  # noqa: BLE001
-                failures.append(f"{snapshot}: {archive_exc}")
-        raise RuntimeError(f"live={live_exc}; wayback={' | '.join(failures[:4])}") from live_exc
+                    raise RuntimeError(f"no valid {target_year} release dates and times")
+                return html_text, source
+            except Exception as exc:  # noqa: BLE001
+                if attempt == 0 and _retryable_fetch_error(exc):
+                    sleep(1.5)
+                    continue
+                failures.append(f"{source}={exc}")
+                break
+    raise RuntimeError("; ".join(failures))
+
+
+def fetch_bls_browser_text(url: str, *, timeout: float = 20) -> str:
+    from curl_cffi import requests
+
+    response = requests.get(url, impersonate="chrome", timeout=timeout)
+    if response.status_code != 200:
+        raise urllib.error.HTTPError(url, response.status_code, "BLS browser HTTP request failed", None, None)
+    final_url = urllib.parse.urlparse(response.url)
+    if final_url.scheme != "https" or final_url.hostname != "www.bls.gov":
+        raise RuntimeError("BLS request redirected outside the official HTTPS site")
+    return response.text
 
 
 def fetch_fomc_market_events(year: int, issues: list[str]) -> dict[int, dict[str, str]]:
@@ -2617,7 +2628,7 @@ def build_market_events_cache() -> dict[str, Any]:
                 "sources": {
                     "fomc": FED_FOMC_SCHEDULE_URL,
                     "bls": list(BLS_RELEASE_SCHEDULE_URLS.values()),
-                    "blsFallback": "internet-archive-wayback",
+                    "blsFallback": "live-browser-compatible-http",
                     "beaPce": BEA_RELEASE_SCHEDULE_URL,
                 },
             },

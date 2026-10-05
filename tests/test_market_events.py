@@ -79,156 +79,80 @@ class MarketEventsTest(unittest.TestCase):
         self.assertEqual(result[3], {"date": "2026. 3. 19", "time": "3:00"})
         self.assertEqual(issues, [])
 
-    def test_bls_schedule_falls_back_to_wayback_when_live_forbidden(self) -> None:
-        html = """
-        <table>
-          <tr><th>Reference Month</th><th>Release Date</th><th>Release Time</th></tr>
-          <tr><td>July 2026</td><td>Aug. 07, 2026</td><td>08:30 AM</td></tr>
-          <tr><td>August 2026</td><td>Sep. 04, 2026</td><td>08:30 AM</td></tr>
-        </table>
-        """
+    def test_bls_reads_current_official_schedule_after_standard_http_403(self) -> None:
+        html = "<table><tr><td>September 2026</td><td>Oct. 15, 2026</td><td>08:30 AM</td></tr></table>"
+        forbidden = urllib.error.HTTPError("https://www.bls.gov/schedule", 403, "Forbidden", None, None)
         issues: list[str] = []
-
-        def fake_fetch(url: str, *args: object, **kwargs: object) -> str:
-            if "bls.gov/schedule" in url and "web.archive.org" not in url:
-                raise urllib.error.HTTPError(url, 403, "Forbidden", hdrs=None, fp=None)  # type: ignore[arg-type]
-            if "archive.org/wayback/available" in url:
-                return json.dumps({
-                    "archived_snapshots": {
-                        "closest": {
-                            "available": True,
-                            "url": "https://web.archive.org/web/20260819054954/https://www.bls.gov/schedule/news_release/empsit.htm",
-                        }
-                    }
-                })
-            if "web.archive.org/web/" in url:
-                return html
-            raise AssertionError(url)
-
-        with patch("calculator.pipeline.fetch_text", side_effect=fake_fetch):
-            result = pipeline.fetch_bls_market_events(
-                "고용보고서 발표",
-                "https://www.bls.gov/schedule/news_release/empsit.htm",
-                2026,
-                issues,
-            )
-
-        self.assertEqual(issues, [])
-        self.assertIn(8, result)
-        self.assertIn(9, result)
-        self.assertEqual(result[8]["date"], "2026. 8. 7")
-        self.assertEqual(result[9]["date"], "2026. 9. 4")
-
-    def test_bls_wayback_fallback_skips_snapshots_without_target_year_rows(self) -> None:
-        stale = "https://web.archive.org/web/20260801if_/https://www.bls.gov/schedule/news_release/empsit.htm"
-        current = "https://web.archive.org/web/20260903if_/https://www.bls.gov/schedule/news_release/empsit.htm"
-        html = "<table><tr><td>August 2026</td><td>Sep. 04, 2026</td><td>08:30 AM</td></tr></table>"
-        forbidden = urllib.error.HTTPError("https://www.bls.gov/schedule", 403, "Forbidden", hdrs=None, fp=None)  # type: ignore[arg-type]
         with patch("calculator.pipeline.fetch_text", side_effect=forbidden), patch(
-            "calculator.pipeline.wayback_snapshot_urls", return_value=[stale, current]
-        ), patch(
-            "calculator.pipeline.fetch_wayback_html", side_effect=["<html>old shell</html>", html]
+            "calculator.pipeline.fetch_bls_browser_text", return_value=html
+        ) as browser, patch("calculator.pipeline.wayback_snapshot_urls") as archive:
+            result = pipeline.fetch_bls_market_events("PPI 발표", pipeline.BLS_RELEASE_SCHEDULE_URLS["PPI 발표"], 2026, issues)
+        self.assertEqual(result[10], {"date": "2026. 10. 15", "time": "21:30"})
+        self.assertEqual(issues, [])
+        browser.assert_called_once()
+        archive.assert_not_called()
+
+    def test_bls_valid_standard_response_does_not_use_fallback(self) -> None:
+        html = "<table><tr><td>September 2026</td><td>Oct. 15, 2026</td><td>08:30 AM</td></tr></table>"
+        with patch("calculator.pipeline.fetch_text", return_value=html), patch(
+            "calculator.pipeline.fetch_bls_browser_text"
+        ) as browser:
+            self.assertEqual(pipeline.fetch_bls_schedule_html("https://www.bls.gov/schedule", 2026), (html, "bls-live"))
+        browser.assert_not_called()
+
+    def test_bls_empty_or_stale_200_response_tries_current_live_fallback(self) -> None:
+        html = "<table><tr><td>September 2026</td><td>Oct. 15, 2026</td><td>08:30 AM</td></tr></table>"
+        for invalid in ("<html>Access denied</html>", html.replace("2026", "2025"), html.replace("08:30 AM", "TBD")):
+            with self.subTest(invalid=invalid), patch("calculator.pipeline.fetch_text", return_value=invalid), patch(
+                "calculator.pipeline.fetch_bls_browser_text", return_value=html
+            ):
+                self.assertEqual(pipeline.fetch_bls_schedule_html("https://www.bls.gov/schedule", 2026), (html, "bls-live-browser-http"))
+
+    def test_bls_browser_timeout_retries_then_reads_current_schedule(self) -> None:
+        html = "<table><tr><td>September 2026</td><td>Oct. 15, 2026</td><td>08:30 AM</td></tr></table>"
+        forbidden = urllib.error.HTTPError("https://www.bls.gov/schedule", 403, "Forbidden", None, None)
+        with patch("calculator.pipeline.fetch_text", side_effect=forbidden), patch(
+            "calculator.pipeline.fetch_bls_browser_text", side_effect=[TimeoutError("timed out"), html]
+        ) as browser, patch("calculator.pipeline.sleep"):
+            _, source = pipeline.fetch_bls_schedule_html("https://www.bls.gov/schedule", 2026)
+        self.assertEqual(source, "bls-live-browser-http")
+        self.assertEqual(browser.call_count, 2)
+
+    def test_bls_all_current_sources_unavailable_require_manual_review(self) -> None:
+        forbidden = urllib.error.HTTPError("https://www.bls.gov/schedule", 403, "Forbidden", None, None)
+        issues: list[str] = []
+        with patch("calculator.pipeline.fetch_text", side_effect=forbidden), patch(
+            "calculator.pipeline.fetch_bls_browser_text", side_effect=TimeoutError("timed out")
+        ), patch("calculator.pipeline.sleep"), patch("calculator.pipeline.wayback_snapshot_urls") as archive:
+            result = pipeline.fetch_bls_market_events("PPI 발표", pipeline.BLS_RELEASE_SCHEDULE_URLS["PPI 발표"], 2026, issues)
+        self.assertEqual(result, {})
+        self.assertEqual(len(issues), 1)
+        self.assertIn("bls-live-browser-http=timed out", issues[0])
+        archive.assert_not_called()
+
+    def test_bls_browser_http_rejects_error_and_offsite_redirect(self) -> None:
+        from unittest.mock import Mock
+        for response in (Mock(status_code=403), Mock(status_code=200, url="https://other.example/schedule")):
+            with self.subTest(response=response), patch("curl_cffi.requests.get", return_value=response):
+                with self.assertRaises((urllib.error.HTTPError, RuntimeError)):
+                    pipeline.fetch_bls_browser_text(pipeline.BLS_RELEASE_SCHEDULE_URLS["PPI 발표"])
+
+    def test_browser_live_schedule_change_is_automatically_applied(self) -> None:
+        html = "<table><tr><td>September 2099</td><td>Oct. 16, 2099</td><td>09:00 AM</td></tr></table>"
+        payload = {"meta": {"yearLabel": "2099"}, "groups": [{"title": "PPI 발표", "entries": [
+            {"month": "10월", "date": "2099. 10. 15", "time": "21:30"}
+        ]}]}
+        forbidden = urllib.error.HTTPError("https://www.bls.gov/schedule", 403, "Forbidden", None, None)
+        with patch("calculator.pipeline.fetch_text", side_effect=forbidden), patch(
+            "calculator.pipeline.fetch_bls_browser_text", return_value=html
+        ), patch("calculator.pipeline.fetch_fomc_market_events", return_value={}), patch(
+            "calculator.pipeline.fetch_pce_market_events", return_value={}
         ):
-            fetched, source = pipeline.fetch_bls_schedule_html(
-                "https://www.bls.gov/schedule/news_release/empsit.htm", 2026
-            )
-
-        self.assertEqual(fetched, html)
-        self.assertEqual(source, f"wayback:{current}")
-
-    def test_wayback_playback_url_uses_iframe_copy(self) -> None:
-        snapshot = "https://web.archive.org/web/20260903124341/https://www.bls.gov/schedule/news_release/empsit.htm"
-        self.assertEqual(
-            pipeline.wayback_playback_url(snapshot),
-            "https://web.archive.org/web/20260903124341if_/https://www.bls.gov/schedule/news_release/empsit.htm",
-        )
-
-    def test_bls_follows_wayback_playback_shell_iframe(self) -> None:
-        schedule_html = """
-        <table>
-          <tr><th>Reference Month</th><th>Release Date</th><th>Release Time</th></tr>
-          <tr><td>August 2026</td><td>Sep. 04, 2026</td><td>08:30 AM</td></tr>
-        </table>
-        """
-        shell_html = """
-        <html><head><title>Wayback Machine</title>
-        <script src="https://web-static.archive.org/_static/js/bundle-playback.js"></script>
-        </head><body>
-        <iframe id="playback" src="https://web.archive.org/web/20260903124341id_/https://www.bls.gov/schedule/news_release/empsit.htm"></iframe>
-        </body></html>
-        """
-        issues: list[str] = []
-        iframe_url = "https://web.archive.org/web/20260903124341id_/https://www.bls.gov/schedule/news_release/empsit.htm"
-
-        def fake_fetch(url: str, *args: object, **kwargs: object) -> str:
-            if "bls.gov/schedule" in url and "web.archive.org" not in url:
-                raise urllib.error.HTTPError(url, 403, "Forbidden", hdrs=None, fp=None)  # type: ignore[arg-type]
-            if "archive.org/wayback/available" in url:
-                return json.dumps({
-                    "archived_snapshots": {
-                        "closest": {
-                            "available": True,
-                            "url": "https://web.archive.org/web/20260903124341/https://www.bls.gov/schedule/news_release/empsit.htm",
-                        }
-                    }
-                })
-            if url == iframe_url:
-                return schedule_html
-            if "web.archive.org/web/" in url:
-                return shell_html
-            raise AssertionError(url)
-
-        with patch("calculator.pipeline.fetch_text", side_effect=fake_fetch):
-            result = pipeline.fetch_bls_market_events(
-                "고용보고서 발표",
-                "https://www.bls.gov/schedule/news_release/empsit.htm",
-                2026,
-                issues,
-            )
-
+            updated, changes, issues = pipeline.apply_market_event_verification(payload)
+        self.assertEqual(updated["groups"][0]["entries"][0]["date"], "2099. 10. 16")
+        self.assertEqual(updated["groups"][0]["entries"][0]["time"], "22:00")
+        self.assertEqual(len(changes), 1)
         self.assertEqual(issues, [])
-        self.assertEqual(result[9]["date"], "2026. 9. 4")
-
-    def test_bls_retries_wayback_rate_limit_then_parses_schedule(self) -> None:
-        schedule_html = """
-        <table>
-          <tr><th>Reference Month</th><th>Release Date</th><th>Release Time</th></tr>
-          <tr><td>August 2026</td><td>Sep. 04, 2026</td><td>08:30 AM</td></tr>
-        </table>
-        """
-        issues: list[str] = []
-        calls = {"n": 0}
-
-        def fake_fetch(url: str, *args: object, **kwargs: object) -> str:
-            if "bls.gov/schedule" in url and "web.archive.org" not in url:
-                raise urllib.error.HTTPError(url, 403, "Forbidden", hdrs=None, fp=None)  # type: ignore[arg-type]
-            if "archive.org/wayback/available" in url:
-                return json.dumps({
-                    "archived_snapshots": {
-                        "closest": {
-                            "available": True,
-                            "url": "https://web.archive.org/web/20260903124341/https://www.bls.gov/schedule/news_release/empsit.htm",
-                        }
-                    }
-                })
-            if "web.archive.org/web/" in url:
-                calls["n"] += 1
-                if calls["n"] == 1:
-                    raise urllib.error.HTTPError(url, 429, "Too Many Requests", hdrs=None, fp=None)  # type: ignore[arg-type]
-                return schedule_html
-            raise AssertionError(url)
-
-        with patch("calculator.pipeline.fetch_text", side_effect=fake_fetch), patch("calculator.pipeline.sleep"):
-            result = pipeline.fetch_bls_market_events(
-                "CPI 발표",
-                "https://www.bls.gov/schedule/news_release/cpi.htm",
-                2026,
-                issues,
-            )
-
-        self.assertEqual(issues, [])
-        self.assertEqual(result[9]["date"], "2026. 9. 4")
-        self.assertEqual(calls["n"], 2)
 
     def test_bls_prefers_later_release_when_month_has_two_official_dates(self) -> None:
         html = """
