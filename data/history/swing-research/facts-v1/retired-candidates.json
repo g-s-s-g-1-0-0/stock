@@ -1,0 +1,54 @@
+{
+  "retiredAt": "2026-10-05",
+  "status": "inactive",
+  "scope": "removed from active diagnostic review list; no preexisting paper-trade arm had these exact definitions; preserve source data and historical audit",
+  "candidates": {
+    "S3_size100b": {
+      "definition": [
+        "S3",
+        [
+          "fund_market_cap_le_100000000000.0"
+        ]
+      ],
+      "reason": "공통 청산에서 원형보다 낮은 성과"
+    },
+    "S7_obv_positive": {
+      "definition": [
+        "S7",
+        [
+          "obv20_gt_0"
+        ]
+      ],
+      "reason": "공통 청산에서 성과 악화"
+    },
+    "S7_volume_ratio_falling5": {
+      "definition": [
+        "S7",
+        [
+          "observed_vol20_change5_le_0"
+        ]
+      ],
+      "reason": "공통 청산에서 성과 악화"
+    },
+    "S7_quality": {
+      "definition": [
+        "S7",
+        [
+          "fund_debtToEquity_le_1",
+          "fund_operatingMargin_gt_0"
+        ]
+      ],
+      "reason": "흑자·낮은 부채를 함께 붙여도 개선되지 않음"
+    },
+    "N_expanded_profitable_roe": {
+      "definition": [
+        "allowed",
+        [
+          "squeeze_gt_1.25",
+          "fund_roe_gt_0"
+        ]
+      ],
+      "reason": "변동 확대 후보와 중복되고 추가 가치 불명확"
+    }
+  }
+}

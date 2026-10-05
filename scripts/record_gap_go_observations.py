@@ -679,6 +679,8 @@ def record(now: datetime | None = None) -> int:
         collect_final(daily, tickers, now=current, event_payload=events, names=names, season=load_season())
         from scripts.record_research_facts import collect_facts
         collect_facts(daily, tickers, now=current)
+        from scripts.record_data_first_candidates import collect_data_first
+        collect_data_first(daily, tickers, now=current, event_payload=events, names=names)
     return written
 
 

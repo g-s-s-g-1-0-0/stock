@@ -1,7 +1,8 @@
 {
-  "version": "data-first-review-20261005",
+  "version": "data-first-active-2026-10-05",
+  "mode": "prospective_paired_paper_trades",
+  "startSession": "2026-10-05",
   "earliestReviewKST": "2026-12-08",
-  "mode": "frozen hypotheses and source snapshots; not new daily paper fills",
   "candidates": {
     "S3_ma200_distance25": [
       "S3",
@@ -13,12 +14,6 @@
       "S3",
       [
         "rsi_le_35"
-      ]
-    ],
-    "S3_size100b": [
-      "S3",
-      [
-        "fund_market_cap_le_100000000000.0"
       ]
     ],
     "S3_intraday_positive": [
@@ -39,29 +34,10 @@
         "fund_epsQoq_gt_0"
       ]
     ],
-    "S7_obv_positive": [
-      "S7",
-      [
-        "obv20_gt_0"
-      ]
-    ],
     "S7_high52_drawdown30": [
       "S7",
       [
         "high52_distance_le_-30"
-      ]
-    ],
-    "S7_volume_ratio_falling5": [
-      "S7",
-      [
-        "observed_vol20_change5_le_0"
-      ]
-    ],
-    "S7_quality": [
-      "S7",
-      [
-        "fund_debtToEquity_le_1",
-        "fund_operatingMargin_gt_0"
       ]
     ],
     "N_expanded_below200": [
@@ -78,13 +54,6 @@
         "hist_le_0"
       ]
     ],
-    "N_expanded_profitable_roe": [
-      "allowed",
-      [
-        "squeeze_gt_1.25",
-        "fund_roe_gt_0"
-      ]
-    ],
     "N_value_laggard": [
       "allowed",
       [
@@ -93,7 +62,48 @@
       ]
     ]
   },
-  "definitions": "research/data_first_review_20261005/protocol.json",
+  "definitions": "data/history/swing-research/data-first-paper-v1/protocol.json",
+  "pairs": {
+    "S3_ma200_distance25": [
+      "data_S3_ma200_distance25_base",
+      "data_S3_ma200_distance25_filtered"
+    ],
+    "S3_rsi35": [
+      "data_S3_rsi35_base",
+      "data_S3_rsi35_filtered"
+    ],
+    "S3_intraday_positive": [
+      "data_S3_intraday_positive_base",
+      "data_S3_intraday_positive_filtered"
+    ],
+    "S4_debt1": [
+      "data_S4_debt1_base",
+      "data_S4_debt1_filtered"
+    ],
+    "S4_eps_growth": [
+      "data_S4_eps_growth_base",
+      "data_S4_eps_growth_filtered"
+    ],
+    "S7_high52_drawdown30": [
+      "data_S7_high52_drawdown30_base",
+      "data_S7_high52_drawdown30_filtered"
+    ],
+    "N_expanded_below200": [
+      "data_N_expanded_below200_base",
+      "data_N_expanded_below200_filtered"
+    ],
+    "N_rsi_ahead_macd": [
+      "data_N_rsi_ahead_macd_base",
+      "data_N_rsi_ahead_macd_filtered"
+    ],
+    "N_value_laggard": [
+      "data_N_value_laggard_base",
+      "data_N_value_laggard_filtered"
+    ]
+  },
   "existingPaperArms": 69,
-  "newPaperArms": 0
+  "newPaperArms": 18,
+  "newCandidates": 9,
+  "matchedControls": 9,
+  "totalPaperArms": 87
 }

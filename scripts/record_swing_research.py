@@ -372,7 +372,8 @@ def replay(observations, sessions, arm_rules=None):
 
 
 def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names=None,
-            *, protocol=PROTOCOL, flags=signal_flags, feature_enricher=None, context_enricher=None, arm_rules=None, store_ma20=False):
+            *, protocol=PROTOCOL, flags=signal_flags, feature_enricher=None, context_enricher=None, arm_rules=None, store_ma20=False,
+            observation_ready=None, forward_eligibility=None, observation_source="Yahoo completed daily OHLCV"):
     initialize(history, protocol)
     current = (now or datetime.now(timezone.utc)).astimezone(NY)
     frames = extract_frames(daily, sorted(set(tickers) | set(tracked_tickers(history)) | {"QQQ"}))
@@ -405,6 +406,8 @@ def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names
         # Never backfill a signal after its entry session has started.
         later = [d for d in qqq.index if d > day and d <= current.date().isoformat()]
         forward = not later
+        if forward_eligibility is not None:
+            forward = bool(forward_eligibility(day, current))
         from calculator.pipeline import current_market_event_label
         event_known = isinstance(event_payload, dict) and "groups" in event_payload
         event = current_market_event_label(event_payload, now=datetime.fromisoformat(day + "T16:00:00").replace(tzinfo=NY)) if event_known else "unknown"
@@ -428,13 +431,15 @@ def collect(daily, tickers, now=None, history=HISTORY, event_payload=None, names
                 features.update(feature_enricher(f))
             if context_enricher is not None:
                 features.update(context_enricher(ticker, f))
+            if observation_ready is not None and not observation_ready(features, day, current):
+                continue
             name = (names or {}).get(ticker, "")
             excluded = ticker in ETF or any(word in name.upper() for word in ("ETF", "DIREXION", "PROSHARES", "LEVERAGED", "2X", "3X"))
             market = {**states[day], "event": event, "buyAllowed": states[day]["buyAllowed"] and event == "당분간 없음"}
             observations.append({"session": day, "ticker": ticker, "capturedAt": capture, "forwardEligible": forward,
                                  "excludedETF": excluded, "features": features, "market": market,
                                  "signals": flags(features, market, eligible=not excluded),
-                                 "source": "Yahoo completed daily OHLCV", "version": protocol["version"]})
+                                 "source": observation_source, "version": protocol["version"]})
     write_lines(history / "sessions.jsonl", [sessions[d] for d in sorted(sessions)])
     write_lines(history / "observations.jsonl", sorted(observations, key=lambda r: (r["session"], r["ticker"])))
     trades, labels = replay(observations, sessions, arm_rules)
@@ -485,3 +490,5 @@ if __name__ == "__main__":
     from scripts.record_final_candidates import collect_final
     collect_final(daily, list(names), event_payload=events, names=names, season=load_season())
     collect_facts(daily, list(names))
+    from scripts.record_data_first_candidates import collect_data_first
+    collect_data_first(daily, list(names), event_payload=events, names=names)

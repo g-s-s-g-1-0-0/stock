@@ -1,0 +1,257 @@
+{
+  "version": "data-first-paper-v1",
+  "startSession": "2026-10-05",
+  "earliestReviewKST": "2026-12-08",
+  "minimumCalendarMonths": 2,
+  "minimumClosedFilteredTrades": null,
+  "minimumFilteredEntryDates": null,
+  "reviewArm": "data_S3_rsi35_filtered",
+  "arms": [
+    "data_S3_ma200_distance25_base",
+    "data_S3_ma200_distance25_filtered",
+    "data_S3_rsi35_base",
+    "data_S3_rsi35_filtered",
+    "data_S3_intraday_positive_base",
+    "data_S3_intraday_positive_filtered",
+    "data_S4_debt1_base",
+    "data_S4_debt1_filtered",
+    "data_S4_eps_growth_base",
+    "data_S4_eps_growth_filtered",
+    "data_S7_high52_drawdown30_base",
+    "data_S7_high52_drawdown30_filtered",
+    "data_N_expanded_below200_base",
+    "data_N_expanded_below200_filtered",
+    "data_N_rsi_ahead_macd_base",
+    "data_N_rsi_ahead_macd_filtered",
+    "data_N_value_laggard_base",
+    "data_N_value_laggard_filtered"
+  ],
+  "armRules": {
+    "data_S3_ma200_distance25_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_S3_ma200_distance25_filtered": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_S3_rsi35_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_S3_rsi35_filtered": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_S3_intraday_positive_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_S3_intraday_positive_filtered": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_S4_debt1_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_S4_debt1_filtered": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_S4_eps_growth_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_S4_eps_growth_filtered": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_S7_high52_drawdown30_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_S7_high52_drawdown30_filtered": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_N_expanded_below200_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_N_expanded_below200_filtered": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_N_rsi_ahead_macd_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_N_rsi_ahead_macd_filtered": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_N_value_laggard_base": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    },
+    "data_N_value_laggard_filtered": {
+      "stop": 0.08,
+      "target": 0.12,
+      "days": 20,
+      "mode": "common"
+    }
+  },
+  "candidates": {
+    "S3_ma200_distance25": {
+      "base": "S3",
+      "label": "3번: MA200 이격 25% 이하",
+      "priority": "low"
+    },
+    "S3_rsi35": {
+      "base": "S3",
+      "label": "3번: RSI 35 이하",
+      "priority": "primary"
+    },
+    "S3_intraday_positive": {
+      "base": "S3",
+      "label": "3번: 오전 대비 오후 관찰가격 회복",
+      "priority": "secondary"
+    },
+    "S4_debt1": {
+      "base": "S4",
+      "label": "4번: 부채/자본 0~1배",
+      "priority": "secondary"
+    },
+    "S4_eps_growth": {
+      "base": "S4",
+      "label": "4번: 최근 분기 EPS 전년 동기 대비 증가",
+      "priority": "low"
+    },
+    "S7_high52_drawdown30": {
+      "base": "S7",
+      "label": "7번: 52주 고점 대비 30% 이상 하락",
+      "priority": "primary"
+    },
+    "N_expanded_below200": {
+      "base": "allowed",
+      "label": "장기선 아래 변동 확대",
+      "priority": "primary"
+    },
+    "N_rsi_ahead_macd": {
+      "base": "allowed",
+      "label": "RSI 회복·MACD 지연",
+      "priority": "primary"
+    },
+    "N_value_laggard": {
+      "base": "allowed",
+      "label": "PBR 제한·관심종목 대비 상대적 부진",
+      "priority": "low"
+    }
+  },
+  "pairs": {
+    "S3_ma200_distance25": [
+      "data_S3_ma200_distance25_base",
+      "data_S3_ma200_distance25_filtered"
+    ],
+    "S3_rsi35": [
+      "data_S3_rsi35_base",
+      "data_S3_rsi35_filtered"
+    ],
+    "S3_intraday_positive": [
+      "data_S3_intraday_positive_base",
+      "data_S3_intraday_positive_filtered"
+    ],
+    "S4_debt1": [
+      "data_S4_debt1_base",
+      "data_S4_debt1_filtered"
+    ],
+    "S4_eps_growth": [
+      "data_S4_eps_growth_base",
+      "data_S4_eps_growth_filtered"
+    ],
+    "S7_high52_drawdown30": [
+      "data_S7_high52_drawdown30_base",
+      "data_S7_high52_drawdown30_filtered"
+    ],
+    "N_expanded_below200": [
+      "data_N_expanded_below200_base",
+      "data_N_expanded_below200_filtered"
+    ],
+    "N_rsi_ahead_macd": [
+      "data_N_rsi_ahead_macd_base",
+      "data_N_rsi_ahead_macd_filtered"
+    ],
+    "N_value_laggard": [
+      "data_N_value_laggard_base",
+      "data_N_value_laggard_filtered"
+    ]
+  },
+  "retired": {
+    "S3_size100b": "공통 청산에서 원형보다 낮은 성과",
+    "S7_obv_positive": "공통 청산에서 성과 악화",
+    "S7_volume_ratio_falling5": "공통 청산에서 성과 악화",
+    "S7_quality": "흑자·낮은 부채를 함께 붙여도 개선되지 않음",
+    "N_expanded_profitable_roe": "변동 확대 후보와 중복되고 추가 가치 불명확"
+  },
+  "entry": "complete archived D candle; D+1 open; unknown source waits until the conservative next-weekday09:30NY cutoff, then remains ineligible",
+  "holidayCutoff": "next weekday ignores holidays conservatively; no late backfill to compensate",
+  "exit": "close -8/+12/20 plus market peak/recovery-end2, next open; .4% cost; no operating strategy change",
+  "recoveryBuyCap": 14.0,
+  "recoveryExit": 18.0,
+  "normalBuyCap": 9.0,
+  "roundTripCost": 0.004,
+  "technical": "latest archived completed D candle available by capture before entry; raw close reconciles to D daily close within0.2%; RSI/MACD/BB/MA200/high52 never backfilled with new indicators",
+  "ma50": "use saved MA50 when present; otherwise calculate D-only daily MA50 and label reconstructed",
+  "financial": "latest available source strictly before D16:00NY, age0..7days; missing or negative-equity ratio unknown",
+  "intraday": "first regular-session saved quote<=11NY and last>=14NY, >=2 distinct prices; source and evidenced availability before D close",
+  "peer": "D20-return minus median of current observed members with a completed archived D candle; >=10 non-ETF stocks",
+  "pairedCoverage": "each candidate has its own base arm on the exact same known-input dates; false and unknown are distinguished",
+  "reviewChecklist": "review after Dec8; initially seek30 closed filtered trades,15 entry dates,10 tickers; these are practical checkpoints, not proof; inspect concentration, open PnL, costs and paired outcomes",
+  "definitions": {
+    "S3_ma200_distance25": "S3 and100*(close/MA200-1)<=25",
+    "S3_rsi35": "S3 and RSI<=35",
+    "S3_intraday_positive": "S3 and(last_intraday_price/first_intraday_price-1)>0",
+    "S4_debt1": "S4 and0<=Debt/Equity<=1",
+    "S4_eps_growth": "S4 and EPSQ/Q>0 (latest quarter year-over-year)",
+    "S7_high52_drawdown30": "S7 and saved52week-high distance<=-30%",
+    "N_expanded_below200": "market allowed and close<=MA200 and BBwidth/BBwidth60mean>1.25",
+    "N_rsi_ahead_macd": "market allowed and RSI>50 and MACDhist<=0",
+    "N_value_laggard": "market allowed and0<PBR<=5 and20-return<=observed-watchlist median"
+  },
+  "scope": "private paper only; no live orders, UI or alerts; preserve old69 arms; retire five diagnostic hypotheses"
+}
