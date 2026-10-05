@@ -2,11 +2,11 @@
   "meta": {
     "kind": "market-events",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-10-05T15:45:42+00:00",
-    "lastSuccessfulRun": "2026-10-05T15:45:42+00:00",
+    "updatedAt": "2026-10-05T15:52:40+00:00",
+    "lastSuccessfulRun": "2026-10-05T15:52:40+00:00",
     "failedReason": null,
     "verification": {
-      "checkedAt": "2026-10-05T15:45:42+00:00",
+      "checkedAt": "2026-10-05T15:52:40+00:00",
       "sourcePolicy": "official-only-auto-update",
       "autoUpdated": [],
       "needsManualReview": [],
