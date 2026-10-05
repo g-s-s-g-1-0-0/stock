@@ -1499,6 +1499,10 @@ def concise_opinion_reason(
         return sell_reason(current_stock, technical_row)
     if new_opinion == "관망":
         explicit_reason = first_text(current_stock.get("opinionReason"), technical_row.get("opinionReason"))
+        if old_opinion == "매도":
+            qqq_overheat = re.search(r"QQQ 과열\([^)]*\)", explicit_reason)
+            buy_block_reason = qqq_overheat.group(0) if qqq_overheat else "현재 신규 매수 조건 미충족"
+            return f"매도 후 대기 시간이 끝나 관망으로 전환 (매수 조건 미충족: {buy_block_reason})"
         if explicit_reason != "-":
             return explicit_reason
         return watch_reason(old_opinion, previous_stock, current_stock, technical_row)

@@ -17,6 +17,7 @@ __pycache__/
 .env
 *.key
 .gstack/
+*.gs
 
 # 전략 연구 중간 산출물 (재생성 가능)
 analysis_tmp/
