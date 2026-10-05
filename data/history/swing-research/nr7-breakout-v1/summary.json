@@ -1,8 +1,8 @@
 {
   "version": "nr7-breakout-v1",
   "startSession": "2026-10-05",
-  "lastSession": null,
-  "observations": 0,
+  "lastSession": "2026-10-05",
+  "observations": 41,
   "signalCounts": {
     "s8_nr7_breakout": 0
   },
@@ -10,6 +10,6 @@
   "filteredEntryDates": 0,
   "earliestReviewKST": "2026-12-08",
   "sampleReady": null,
-  "status": "awaiting_first_session",
+  "status": "collecting",
   "collectorHash": "aa0d08cd3744aa0a6681f0e0f539bd888ff491a731adec78e9af7daa8ad5484d"
 }

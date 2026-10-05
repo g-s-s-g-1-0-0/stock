@@ -1,8 +1,8 @@
 {
   "version": "candidate-lab-v1",
   "startSession": "2026-10-05",
-  "lastSession": null,
-  "observations": 0,
+  "lastSession": "2026-10-05",
+  "observations": 41,
   "signalCounts": {
     "lab_p_rsi2_pullback": 0,
     "lab_p_pocket_pivot": 0,
@@ -49,7 +49,7 @@
   "filteredEntryDates": 0,
   "earliestReviewKST": "2026-12-08",
   "sampleReady": null,
-  "status": "awaiting_first_session",
+  "status": "collecting",
   "collectorHash": "aa0d08cd3744aa0a6681f0e0f539bd888ff491a731adec78e9af7daa8ad5484d",
   "candidateCodeHash": "3decde52d548b3f8f4dc48165a8abd2e93219a306d2e84c18b2b77317efd534a"
 }
