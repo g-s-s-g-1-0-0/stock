@@ -2496,6 +2496,7 @@ def fetch_bls_market_events(title: str, url: str, year: int, issues: list[str]) 
         issues.append(
             f"BLS {title} {year}년 공식 일정에서 검증 가능한 발표일을 찾지 못했습니다. (source={source_label})"
         )
+    print(f"BLS schedule read: title={title}; source={source_label}; year={year}; parsedMonths={len(result)}")
     return result
 
 
@@ -2613,6 +2614,7 @@ def build_market_events_cache() -> dict[str, Any]:
         existing, changes, issues = apply_market_event_verification(existing)
         failed_reason = market_event_failed_reason(changes, issues)
         checked_at = now_iso()
+        print(f"Market event verification: status={'manual-review' if issues else 'verified'}; autoUpdated={len(changes)}; needsManualReview={len(issues)}")
         existing["meta"] = {
             **existing.get("meta", {}),
             "kind": "market-events",
