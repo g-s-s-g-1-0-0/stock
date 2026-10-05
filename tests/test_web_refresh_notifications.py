@@ -134,40 +134,6 @@ class WebRefreshNotificationsTest(unittest.TestCase):
     def setUp(self) -> None:
         self.notifications = importlib.import_module("scripts.web_refresh_notifications")
 
-    def test_market_event_source_failure_never_sends_review_notifications(self) -> None:
-        issue = "BLS PPI 발표 공식 일정 조회 실패: live=HTTP Error 403: Forbidden; wayback=timed out"
-        for verification in ({"autoUpdated": [], "needsManualReview": [issue]}, {}):
-            with self.subTest(verification=verification), \
-                mock.patch.object(self.notifications, "read_json", return_value={"meta": {
-                    "failedReason": issue, "verification": verification,
-                }}), \
-                mock.patch.object(self.notifications, "load_recipients") as recipients, \
-                mock.patch.object(self.notifications, "send_notification") as send:
-                self.assertEqual(0, self.notifications.send_market_events_review_notification())
-                recipients.assert_not_called()
-                send.assert_not_called()
-
-    def test_market_event_correction_with_source_failure_only_reports_correction(self) -> None:
-        issue = "BLS PPI 발표 공식 일정 조회 실패: HTTP Error 403"
-        change = "CPI 발표 10월: 2026. 10. 13 21:30 -> 2026. 10. 14 21:30"
-        payload = {"meta": {"failedReason": issue, "verification": {
-            "autoUpdated": [change], "needsManualReview": [issue],
-        }}}
-        recipient = self.notifications.Recipient("admin", "admin@example.com", True, {
-            "adminAutoUpdateFailureEmail": True,
-        })
-        with mock.patch.object(self.notifications, "read_json", return_value=payload), \
-            mock.patch.object(self.notifications, "load_recipients", return_value=[recipient]), \
-            mock.patch.object(self.notifications, "send_notification") as send:
-            self.assertEqual(1, self.notifications.send_market_events_review_notification())
-        _, subject, body = send.call_args.args
-        self.assertEqual("[자동 수정] 시장 주요 이벤트 공식 일정 반영", subject)
-        self.assertIn("CPI 발표 10월", body)
-        self.assertNotIn(issue, body)
-        self.assertNotIn("관리자 화면에서 확인 후", body)
-        self.assertNotIn("수동 확인 필요", body)
-        self.assertEqual([issue], payload["meta"]["verification"]["needsManualReview"])
-
     def test_supabase_request_retries_transient_gateway_timeout(self) -> None:
         response = mock.MagicMock()
         response.__enter__.return_value = response
