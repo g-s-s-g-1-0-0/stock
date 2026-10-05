@@ -2916,11 +2916,10 @@ def send_admin_failure(message: str) -> int:
 def send_market_events_review_notification(path: Path = DEFAULT_MARKET_EVENTS) -> int:
     payload = read_json(path)
     meta = payload.get("meta") if isinstance(payload, dict) else {}
-    failed_reason = str(meta.get("failedReason") or "").strip()
     verification = meta.get("verification") if isinstance(meta.get("verification"), dict) else {}
     changes = verification.get("autoUpdated") if isinstance(verification.get("autoUpdated"), list) else []
-    if not failed_reason and not changes:
-        print("Market event verification has no changes or manual review items.")
+    if not changes:
+        print("Market event verification has no confirmed schedule changes; review issues remain in the admin dashboard.")
         return 0
 
     recipients = [
@@ -2934,8 +2933,15 @@ def send_market_events_review_notification(path: Path = DEFAULT_MARKET_EVENTS) -
         print("No admin recipients for market event review.")
         return 0
 
-    subject = "[확인 필요] 시장 주요 이벤트 공식 일정 검증" if failed_reason else "[자동 수정] 시장 주요 이벤트 공식 일정 반영"
-    body = market_events_review_body(payload)
+    subject = "[자동 수정] 시장 주요 이벤트 공식 일정 반영"
+    body = market_events_review_body({
+        **payload,
+        "meta": {
+            **meta,
+            "failedReason": None,
+            "verification": {**verification, "needsManualReview": []},
+        },
+    })
     sent = 0
     for recipient in recipients:
         send_notification(recipient, subject, append_notification_footer(body, recipient, "adminAutoUpdateFailureEmail"))
