@@ -1,7 +1,6 @@
 {
   "version": "data-first-paper-v1",
   "startSession": "2026-10-05",
-  "earliestReviewKST": "2026-12-08",
   "lastSession": null,
   "observations": 0,
   "signalCounts": {
@@ -26,9 +25,10 @@
   },
   "filteredClosed": 0,
   "filteredEntryDates": 0,
+  "earliestReviewKST": "2026-12-08",
   "sampleReady": null,
   "status": "awaiting_first_session",
-  "waitingForSource": 0,
+  "collectorHash": "aa0d08cd3744aa0a6681f0e0f539bd888ff491a731adec78e9af7daa8ad5484d",
   "pairs": {
     "S3_ma200_distance25": {
       "knownObservations": 0,
@@ -138,5 +138,6 @@
         "entryDates": 0
       }
     }
-  }
+  },
+  "waitingForSource": 0
 }
