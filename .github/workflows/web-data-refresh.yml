@@ -370,9 +370,8 @@ jobs:
           VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY가 Production에 있는지 확인해 주세요.
           site=${{ secrets.WEB_APP_URL }}"
 
-  # This job also covers runs that never get a runner. Those runs are cancelled
-  # before refresh steps start, so repeated outages of that kind need a job-level
-  # failure check.
+  # This alert still needs an Ubuntu runner. web-refresh-recovery.yml handles
+  # confirmed pre-start runner outages from a separate Windows runner pool.
   alert-repeated-failure:
     needs: refresh
     if: ${{ always() && needs.refresh.result != 'success' }}
