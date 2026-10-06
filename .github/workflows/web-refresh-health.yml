@@ -1,0 +1,145 @@
+name: Web refresh health
+
+on:
+  workflow_run:
+    workflows: [Web data refresh]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Inspect a refresh run without sending email"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+  checks: read
+
+concurrency:
+  group: web-refresh-health
+  cancel-in-progress: false
+
+jobs:
+  record-health:
+    # Failure reporting must also work when Ubuntu refresh never starts.
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Record failure reasons and count consecutive failures
+        id: health
+        uses: actions/github-script@v8
+        env:
+          INSPECT_RUN_ID: ${{ inputs.run_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const inspect = context.eventName === 'workflow_dispatch';
+            const runId = Number(inspect ? process.env.INSPECT_RUN_ID : context.payload.workflow_run.id);
+            if (!Number.isSafeInteger(runId) || runId <= 0) throw new Error('Invalid run ID.');
+            const { data: run } = await github.rest.actions.getWorkflowRun({ ...context.repo, run_id: runId });
+            if (run.path !== '.github/workflows/web-data-refresh.yml' || run.head_branch !== 'main' || run.status !== 'completed') {
+              throw new Error('Expected a completed main-branch web refresh run.');
+            }
+            const jobCache = new Map();
+            async function reasonsFor(item) {
+              if (jobCache.has(item.id)) return jobCache.get(item.id);
+              const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRunAttempt, {
+                ...context.repo, run_id: item.id, attempt_number: item.run_attempt, per_page: 100
+              });
+              const reasons = [];
+              let runnerOutage = false;
+              for (const job of jobs.filter(job => ['failure', 'cancelled', 'timed_out'].includes(job.conclusion))) {
+                const annotations = job.check_run_url ? await github.paginate(github.rest.checks.listAnnotations, {
+                  ...context.repo, check_run_id: Number(job.check_run_url.split('/').pop()), per_page: 100
+                }) : [];
+                const messages = annotations.filter(item => item.annotation_level === 'failure').map(item => item.message);
+                runnerOutage ||= messages.some(message => message.includes('The job was not acquired by Runner of type hosted'));
+                const failedSteps = (job.steps || []).filter(step => ['failure', 'timed_out'].includes(step.conclusion)).map(step => step.name);
+                let logErrors = [];
+                if (failedSteps.length) {
+                  try {
+                    const response = await github.rest.actions.downloadJobLogsForWorkflowRun({ ...context.repo, job_id: job.id });
+                    logErrors = String(response.data).split(/\r?\n/)
+                      .filter(line => /(?:Error:|error:|fatal:|HTTPError:|##\[error\])/.test(line))
+                      .slice(-12).map(line => line.slice(0, 600));
+                  } catch (error) {
+                    logErrors = [`Job logs unavailable: HTTP ${error.status || 'unknown'}. See the source run.`];
+                  }
+                }
+                reasons.push({ job: job.name, conclusion: job.conclusion, failedSteps, messages, logErrors });
+              }
+              const result = { reasons, runnerOutage };
+              jobCache.set(item.id, result);
+              return result;
+            }
+            const current = await reasonsFor(run);
+            const { data: history } = await github.rest.actions.listWorkflowRuns({
+              ...context.repo, workflow_id: 'web-data-refresh.yml', branch: 'main', status: 'completed', per_page: 100
+            });
+            const runs = [run, ...history.workflow_runs.filter(item => item.id !== runId && item.run_number < run.run_number)]
+              .sort((a, b) => b.run_number - a.run_number);
+            let streak = 0;
+            for (const item of runs) {
+              if (item.conclusion === 'success') break;
+              if (['failure', 'timed_out'].includes(item.conclusion)) streak++;
+              else if (item.conclusion === 'cancelled' && (await reasonsFor(item)).runnerOutage) streak++;
+            }
+            const recovered = history.workflow_runs.some(item => item.run_number > run.run_number && item.conclusion === 'success');
+            const failed = ['failure', 'timed_out'].includes(run.conclusion) || (run.conclusion === 'cancelled' && current.runnerOutage);
+            const notify = !inspect && failed && streak >= 3 && !recovered;
+            const record = {
+              runId, runNumber: run.run_number, url: run.html_url, conclusion: run.conclusion,
+              failureStreak: streak, notify, inspectionOnly: inspect, recoveredByLaterRun: recovered,
+              recordedAt: new Date().toISOString(), reasons: current.reasons
+            };
+            fs.writeFileSync('refresh-health.json', JSON.stringify(record, null, 2));
+            const details = current.reasons.map(reason => [
+              `${reason.job}: ${reason.conclusion}`, ...reason.failedSteps, ...reason.messages, ...reason.logErrors
+            ].join('\n')).join('\n\n') || '정상 완료';
+            fs.writeFileSync('refresh-failure-message.txt',
+              `웹 데이터 갱신이 연속 ${streak}회 실패했습니다. 다음 2시간 정기 실행에서 다시 갱신합니다.\n\n실패 원인:\n${details}\n\n실행 기록: ${run.html_url}`);
+            core.setOutput('notify', String(notify));
+            await core.summary.addHeading('Web refresh health')
+              .addRaw(`Run: ${run.html_url}\n\nConsecutive failures: ${streak}; email: ${notify}; inspection only: ${inspect}\n\n`)
+              .addCodeBlock(details).write();
+            core.info(`run=${runId} conclusion=${run.conclusion} streak=${streak} notify=${notify} inspection=${inspect}`);
+
+      - name: Preserve refresh health record
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-refresh-health-${{ github.event.workflow_run.id || inputs.run_id }}-${{ github.run_id }}
+          path: refresh-health.json
+          retention-days: 90
+
+      - name: Check out notification sender
+        if: ${{ steps.health.outputs.notify == 'true' }}
+        uses: actions/checkout@v4
+        with:
+          path: notification-sender
+
+      - name: Set up Python
+        if: ${{ steps.health.outputs.notify == 'true' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Notify admins after three consecutive failures
+        if: ${{ steps.health.outputs.notify == 'true' }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
+          EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+          WEB_APP_URL: ${{ secrets.WEB_APP_URL }}
+          NOTIFICATION_UNSUBSCRIBE_SECRET: ${{ secrets.NOTIFICATION_UNSUBSCRIBE_SECRET }}
+        run: |
+          python -c "import pathlib, subprocess, sys; message = pathlib.Path('refresh-failure-message.txt').read_text(encoding='utf-8'); subprocess.run([sys.executable, 'notification-sender/scripts/web_refresh_notifications.py', 'admin-failure', '--message', message], check=True)"

@@ -5,6 +5,9 @@
 - Workflow: `.github/workflows/web-data-refresh.yml`
 - Trigger in repository: manual `workflow_dispatch`
 - Two-hour analysis refresh: external `cron-job.org` jobs call `/api/admin/trigger-refresh`, which dispatches the workflow. Those jobs live outside this repository, so a short `schedule:` block does not mean the refresh is unscheduled.
+- A failed refresh is not automatically rerun. The next two-hour trigger tries again. `web-refresh-health.yml` independently records job errors (including failures before an Ubuntu runner starts) in its summary and a 90-day artifact. The first two consecutive failures are silent; administrators receive email on the third and subsequent failed runs. A successful refresh resets the count. Manual cancellations do not count, and a delayed monitor does not alert after a newer success.
+- GitHub's account-level Actions email channel is disabled for `g-s-s-g-1-0-0` as of 2026-10-06; GitHub web notifications remain enabled. Failure emails come from the threshold-based health workflow. Keep the native email channel off to avoid bypassing the three-failure threshold.
+- The four GSSG jobs in cron-job.org also notify only after three consecutive HTTP request failures, do not send recovery emails, and save response bodies in execution history. The main technical job remains enabled at `55 1,3,5,7,9,11,13,15,17,19,21,23 * * *` in Asia/Seoul; these requests publish the analysis caches at the following even-numbered hour.
 - Keep GitHub's native `schedule:` block minimal to avoid duplicate refreshes with the external scheduler. It holds only `0 15 * * *` (daily valuation + earnings D-1) and `0 15 * * 0` (weekly market trends + universe report).
 - GitHub queues scheduled runs at low priority and regularly delays them by tens of minutes to a few hours. Do not put time-sensitive notifications on `schedule:`. A delayed run that refreshes analysis caches also republishes them off the two-hour cadence, so `meta.updatedAt` will not always land on the hour.
 
@@ -25,7 +28,7 @@ Watch these values before public traffic spikes:
 - Scheduled cache refreshes commit `web/public/api/*.json` only. `web/vercel.json` ignores those data-only builds so Vite is not rebuilt every two hours (a rebuild without `VITE_SUPABASE_*` previously took login offline).
 - After a data-only skip, the already-deployed app loads market JSON from GitHub (`raw.githubusercontent.com/.../web/public/api/`), with same-origin `/api/*.json` as fallback.
 - Full app builds refuse to proceed when `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` are missing (`web/scripts/assert-vite-supabase-env.mjs`).
-- The refresh workflow smoke-checks production for an inlined `supabase.co` host after each cache publish and emails admins on failure.
+- The refresh workflow checks production for an inlined `supabase.co` host after each cache publish. Auth check failures and market trend fallbacks mark the run unhealthy; the health workflow applies the same three-failure email threshold.
 - Admin market-event edits are saved by `web/api/admin/market-events.js`, which commits both `web/public/api/market-events.json` and `data/cache/market-events.json` through the GitHub API. Set `GITHUB_ACTIONS_TOKEN` with Actions and contents write access, `GITHUB_REPO`, and `GITHUB_REFRESH_REF` in Vercel.
 
 ## Email Notifications

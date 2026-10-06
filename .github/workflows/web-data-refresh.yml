@@ -202,18 +202,19 @@ jobs:
         continue-on-error: true
         run: python scripts/report_operational_scale.py
 
-      - name: Notify admins if market trend analysis fell back
+      - name: Record market trend analysis fallback
+        id: market-trend-health
         if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
         continue-on-error: true
         run: |
-          # A Groq failure is swallowed into a signal-only fallback, so the run stays green.
+          # Keep refreshing other caches, then report this run as unhealthy.
           REASON="$(python -c 'import json; print((json.load(open("web/public/api/market-trends.json")).get("meta") or {}).get("failedReason") or "")')"
           if [ -z "$REASON" ]; then
             echo "Market trend LLM analysis succeeded."
             exit 0
           fi
-          echo "Market trend LLM analysis failed: $REASON"
-          python scripts/web_refresh_notifications.py admin-failure --message "주간 시장 트렌드 LLM 분석이 실패해 내부 가격·기술 모멘텀 신호로 대체됐습니다. GitHub Secrets의 GROQ_API_KEY와 GROQ_MARKET_TREND_MODEL 설정을 확인해 주세요. 사유: $REASON"
+          echo "::error::Market trend LLM analysis failed: $REASON"
+          exit 1
 
       - name: Wait until scheduled publish time
         if: ${{ env.SKIP_REFRESH != 'true' && env.WEB_REFRESH_PUBLISH_AT != '' }}
@@ -360,94 +361,8 @@ jobs:
           sleep 20
           python scripts/verify_web_auth_config.py
 
-      - name: Notify admins if auth config is missing
-        if: ${{ env.SKIP_REFRESH != 'true' && steps.verify-auth-config.outcome == 'failure' }}
-        continue-on-error: true
-        run: >
-          python scripts/web_refresh_notifications.py admin-failure
-          --message "프로덕션 웹 번들에 Supabase 로그인 설정이 없습니다.
-          일반 사용자는 로그인할 수 없습니다. Vercel에서 Use existing Build Cache를 끄고 Redeploy 한 뒤,
-          VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY가 Production에 있는지 확인해 주세요.
-          site=${{ secrets.WEB_APP_URL }}"
-
-  # This alert still needs an Ubuntu runner. web-refresh-recovery.yml handles
-  # confirmed pre-start runner outages from a separate Windows runner pool.
-  alert-repeated-failure:
-    needs: refresh
-    if: ${{ always() && needs.refresh.result != 'success' }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      actions: read
-    env:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      SMTP_HOST: ${{ secrets.SMTP_HOST }}
-      SMTP_PORT: ${{ secrets.SMTP_PORT }}
-      SMTP_USER: ${{ secrets.SMTP_USER }}
-      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-      SMTP_FROM: ${{ secrets.SMTP_FROM }}
-      SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
-      EMAIL_PROVIDER: ${{ secrets.EMAIL_PROVIDER }}
-      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
-      ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
-      WEB_APP_URL: ${{ secrets.WEB_APP_URL }}
-      NOTIFICATION_UNSUBSCRIBE_SECRET: ${{ secrets.NOTIFICATION_UNSUBSCRIBE_SECRET }}
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Count consecutive failures
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fail refresh when health checks fail
+        if: ${{ steps.market-trend-health.outcome == 'failure' || steps.verify-auth-config.outcome == 'failure' }}
         run: |
-          python - <<'PY'
-          import json
-          import os
-          import urllib.request
-
-          repository = os.environ["GITHUB_REPOSITORY"]
-          current_run_id = int(os.environ["GITHUB_RUN_ID"])
-          request = urllib.request.Request(
-              f"https://api.github.com/repos/{repository}/actions/workflows"
-              "/web-data-refresh.yml/runs?status=completed&per_page=40",
-              headers={
-                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
-                  "Accept": "application/vnd.github+json",
-              },
-          )
-          with urllib.request.urlopen(request, timeout=30) as response:
-              runs = json.load(response)["workflow_runs"]
-
-          # This run is still in progress, so it is absent from the list above.
-          streak = 1
-          for run in runs:
-              if run["id"] == current_run_id:
-                  continue
-              if run["conclusion"] == "success":
-                  break
-              streak += 1
-
-          # Ignore transient failures. Notify when the third consecutive run
-          # fails, then roughly once a day while the outage continues.
-          failure_alert_threshold = 3
-          notify = streak == failure_alert_threshold or (streak > failure_alert_threshold and streak % 12 == 0)
-          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env_file:
-              env_file.write(f"FAILURE_STREAK={streak}\n")
-              env_file.write(f"NOTIFY_ADMINS={'true' if notify else 'false'}\n")
-          print(f"Consecutive non-success runs: {streak} (notify={notify})")
-          PY
-
-      - name: Notify admins about repeated failures
-        if: ${{ env.NOTIFY_ADMINS == 'true' }}
-        continue-on-error: true
-        run: >
-          python scripts/web_refresh_notifications.py admin-failure
-          --message "웹 데이터 갱신 워크플로가 연속 ${{ env.FAILURE_STREAK }}회 실패했습니다.
-          한두 번은 GitHub 러너 배정 지연으로 저절로 복구되지만, 연속 실패가 이어지면 사이트 데이터가 낡은 채로 남습니다.
-          실행 로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "::error::Refresh health check failed. See the market trend or production auth step above."
+          exit 1

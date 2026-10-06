@@ -124,15 +124,20 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn('git commit -m "Update scheduled web data caches"', workflow)
         self.assertIn('git rebase -X theirs --autostash "origin/$BRANCH"', workflow)
         self.assertIn("python scripts/verify_web_auth_config.py", workflow)
-        self.assertIn("프로덕션 웹 번들에 Supabase 로그인 설정이 없습니다.", workflow)
+        self.assertIn("- name: Fail refresh when health checks fail", workflow)
         self.assertNotIn("npx --yes vercel@latest deploy --prod", workflow)
         self.assertNotIn("- name: Deploy refreshed web", workflow)
 
     def test_refresh_failure_alert_waits_for_three_consecutive_failures(self) -> None:
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
+        health = (ROOT_DIR / ".github/workflows/web-refresh-health.yml").read_text(encoding="utf-8")
 
-        self.assertIn("failure_alert_threshold = 3", workflow)
-        self.assertIn("notify = streak == failure_alert_threshold", workflow)
+        self.assertIn("streak >= 3", health)
+        self.assertIn("!inspect && failed", health)
+        self.assertIn("!recovered", health)
+        self.assertIn("runs-on: windows-latest", health)
+        self.assertNotIn("reRunWorkflow", health)
+        self.assertNotIn("admin-failure", workflow)
         self.assertNotIn("if failure()", workflow)
 
 class WebRefreshNotificationsTest(unittest.TestCase):
