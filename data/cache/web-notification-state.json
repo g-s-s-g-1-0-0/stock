@@ -88,8 +88,38 @@
     "sent": false
   },
   "nasdaqWarn": {
-    "resetAt": "2026-07-28T14:00:01.662887+00:00",
-    "sent": false
+    "sent": true,
+    "sentAt": "2026-10-06T14:00:06.702814+00:00",
+    "snapshot": {
+      "buyBlockMax": 9.0,
+      "confirmThreshold": 763.9491553344727,
+      "currentPrice": 761.317626953125,
+      "dailyRsi": 83.19,
+      "dailyRsiPrev": 82.16,
+      "directThreshold": 777.3517720947266,
+      "isRecoveryMarket": false,
+      "ma200": 670.1308380126953,
+      "macdHist": 2.51,
+      "macdHistD1": 2.11,
+      "macdHistD2": 1.72,
+      "macdHistSlowing": false,
+      "peakConfirmDist": 14.0,
+      "peakDirectDist": 16.0,
+      "peakResetDist": 5.0,
+      "peakTriggered": false,
+      "peakWarnDist": 13.0,
+      "peakWarnResetDist": 5.0,
+      "premiumPercent": 13.607311254448229,
+      "recent60MinPremiumPercent": 2.7313520357855836,
+      "regimeLabel": "횡보장 고점",
+      "resetThreshold": 703.6373799133302,
+      "rsiHotAndFalling": false,
+      "triggered": false,
+      "warnResetThreshold": 703.6373799133302,
+      "warnThreshold": 757.2478469543456,
+      "warnTriggered": true,
+      "weeklyRsi": 61.06
+    }
   },
   "opinionChange": {
     "sentKeys": [
@@ -129,7 +159,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-10-06T13:00:00+00:00"
+    "updatedAt": "2026-10-06T14:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
