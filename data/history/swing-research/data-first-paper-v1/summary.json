@@ -2,7 +2,7 @@
   "version": "data-first-paper-v1",
   "startSession": "2026-10-05",
   "lastSession": "2026-10-05",
-  "observations": 41,
+  "observations": 42,
   "signalCounts": {
     "data_S3_ma200_distance25_base": 0,
     "data_S3_ma200_distance25_filtered": 0,
@@ -32,7 +32,7 @@
   "pairs": {
     "S3_ma200_distance25": {
       "knownObservations": 41,
-      "unknownObservations": 0,
+      "unknownObservations": 1,
       "data_S3_ma200_distance25_base": {
         "closed": 0,
         "entryDates": 0
@@ -44,7 +44,7 @@
     },
     "S3_rsi35": {
       "knownObservations": 41,
-      "unknownObservations": 0,
+      "unknownObservations": 1,
       "data_S3_rsi35_base": {
         "closed": 0,
         "entryDates": 0
@@ -56,7 +56,7 @@
     },
     "S3_intraday_positive": {
       "knownObservations": 41,
-      "unknownObservations": 0,
+      "unknownObservations": 1,
       "data_S3_intraday_positive_base": {
         "closed": 0,
         "entryDates": 0
@@ -68,7 +68,7 @@
     },
     "S4_debt1": {
       "knownObservations": 36,
-      "unknownObservations": 5,
+      "unknownObservations": 6,
       "data_S4_debt1_base": {
         "closed": 0,
         "entryDates": 0
@@ -80,7 +80,7 @@
     },
     "S4_eps_growth": {
       "knownObservations": 36,
-      "unknownObservations": 5,
+      "unknownObservations": 6,
       "data_S4_eps_growth_base": {
         "closed": 0,
         "entryDates": 0
@@ -92,7 +92,7 @@
     },
     "S7_high52_drawdown30": {
       "knownObservations": 41,
-      "unknownObservations": 0,
+      "unknownObservations": 1,
       "data_S7_high52_drawdown30_base": {
         "closed": 0,
         "entryDates": 0
@@ -104,7 +104,7 @@
     },
     "N_expanded_below200": {
       "knownObservations": 41,
-      "unknownObservations": 0,
+      "unknownObservations": 1,
       "data_N_expanded_below200_base": {
         "closed": 0,
         "entryDates": 0
@@ -116,7 +116,7 @@
     },
     "N_rsi_ahead_macd": {
       "knownObservations": 41,
-      "unknownObservations": 0,
+      "unknownObservations": 1,
       "data_N_rsi_ahead_macd_base": {
         "closed": 0,
         "entryDates": 0
@@ -128,7 +128,7 @@
     },
     "N_value_laggard": {
       "knownObservations": 36,
-      "unknownObservations": 5,
+      "unknownObservations": 6,
       "data_N_value_laggard_base": {
         "closed": 0,
         "entryDates": 0
