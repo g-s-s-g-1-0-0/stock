@@ -1,8 +1,8 @@
 {
   "version": "nr7-breakout-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-10-05",
-  "observations": 42,
+  "lastSession": "2026-10-06",
+  "observations": 84,
   "signalCounts": {
     "s8_nr7_breakout": 0
   },
