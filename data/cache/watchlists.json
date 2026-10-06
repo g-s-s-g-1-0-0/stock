@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-10-06T15:01:35Z",
+    "updatedAt": "2026-10-06T15:04:48Z",
     "rowCount": 5
   },
   "rows": [
@@ -58,7 +58,8 @@
         "SOXS",
         "COHU",
         "ACMR",
-        "SPCX"
+        "SPCX",
+        "UBER"
       ],
       "tickersByType": {
         "swing": [
@@ -110,7 +111,8 @@
           "SOXS",
           "COHU",
           "ACMR",
-          "SPCX"
+          "SPCX",
+          "UBER"
         ],
         "long_term": [
           "000660",
@@ -131,7 +133,7 @@
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-10-06T14:29:18.401222+00:00"
+      "remoteUpdatedAt": "2026-10-06T15:03:57.244972+00:00"
     },
     {
       "id": "71d761c7-b0c3-4a1d-9f10-cc34d5ccb8a6",
@@ -191,7 +193,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-10-06T14:29:18.401234+00:00"
+      "remoteUpdatedAt": "2026-10-06T15:03:51.7396+00:00"
     }
   ]
 }

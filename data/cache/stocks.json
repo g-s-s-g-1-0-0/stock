@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-10-06T15:02:37+00:00",
-    "lastSuccessfulRun": "2026-10-06T15:02:37+00:00",
+    "updatedAt": "2026-10-06T15:05:50+00:00",
+    "lastSuccessfulRun": "2026-10-06T15:05:50+00:00",
     "failedReason": null
   },
   "rows": [
@@ -792,6 +792,22 @@
       "updatedAt": "2026-10-06T15:02:31+00:00"
     },
     {
+      "ticker": "UBER",
+      "name": "Uber Technologies",
+      "market": "US",
+      "fairPrice": "$66.83 ~ $90.41",
+      "fairPriceReason": null,
+      "currentPrice": "-",
+      "valuation": "보통",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "성장주",
+      "industry": "소프트웨어·클라우드, AI 플랫폼",
+      "updatedAt": "2026-10-06T15:05:50+00:00"
+    },
+    {
       "ticker": "AAPL",
       "name": "Apple",
       "market": "US",
@@ -843,7 +859,7 @@
       "ticker": "META",
       "name": "Meta Platforms Class A",
       "market": "US",
-      "fairPrice": "$761.85 ~ $1,030.74",
+      "fairPrice": "$761.42 ~ $1,030.16",
       "fairPriceReason": null,
       "currentPrice": "$740.50",
       "valuation": "저평가",
