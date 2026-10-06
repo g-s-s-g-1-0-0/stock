@@ -1804,15 +1804,62 @@ def normalize_market_trend_summary(value: Any) -> str:
         sanitized = re.sub(pattern, replacement, sanitized)
     if sanitized.endswith(".") and not re.search(r"(습니다|입니다)\.$", sanitized):
         sanitized = re.sub(r"분위기\.$", "분위기입니다.", sanitized)
-    return sanitized
+    return ensure_market_trend_summary_ending(sanitized)
+
+
+def market_trend_summary_has_polite_ending(value: str) -> bool:
+    return bool(re.search(r"(습니다|입니다)\.$", value))
+
+
+def ensure_market_trend_summary_ending(value: str) -> str:
+    """잘린 명사·조사 어미를 다른 요약과 같은 '입니다.'로 닫는다."""
+    text = value.strip()
+    if not text or market_trend_summary_has_polite_ending(text):
+        return text
+    core = re.sub(r"(을|를|은|는)$", "", text.rstrip(" .")).rstrip(" ,、")
+    if not core or re.search(r"(다|요|지|음|기)$", core):
+        return text if text.endswith(".") else f"{text}."
+    if core != text.rstrip(" .") or re.search(r"(상승세|강세|약세|분위기|흐름|국면|추세)$", core):
+        return f"{core}입니다."
+    return text if text.endswith(".") else f"{text}."
 
 
 MARKET_TREND_SUMMARY_MAX_CHARS = 80
 
 
+def close_clipped_market_trend_summary(head: str) -> str:
+    """80자 안에서 잘린 앞부분을 완결된 합쇼체 문장으로 닫는다."""
+    text = re.sub(r"(을|를|은|는)$", "", head.rstrip(" ,、.")).rstrip()
+    finite_endings = (
+        (r"되는 가운데$", "됩니다."),
+        (r"하는 가운데$", "합니다."),
+        (r"인 가운데$", "입니다."),
+        (r"되며$", "됩니다."),
+        (r"하며$", "합니다."),
+        (r"이며$", "입니다."),
+        (r"되고$", "됩니다."),
+        (r"하고$", "합니다."),
+        (r"이고$", "입니다."),
+    )
+    for pattern, replacement in finite_endings:
+        if re.search(pattern, text):
+            return re.sub(pattern, replacement, text)
+    if not text:
+        return "이번 주 시장은 주요 흐름이 엇갈렸습니다."
+    if market_trend_summary_has_polite_ending(f"{text}."):
+        return text if text.endswith(".") else f"{text}."
+    closed = ensure_market_trend_summary_ending(text)
+    if market_trend_summary_has_polite_ending(closed) and len(closed) <= MARKET_TREND_SUMMARY_MAX_CHARS:
+        return closed
+    room = MARKET_TREND_SUMMARY_MAX_CHARS - len("입니다.")
+    trimmed = re.sub(r"(을|를|은|는)$", "", text[:room].rstrip(" ,、.")).rstrip()
+    return f"{trimmed}입니다." if trimmed else "이번 주 시장은 주요 흐름이 엇갈렸습니다."
+
+
 def clip_market_trend_summary(value: Any) -> str:
     text = normalize_market_trend_summary(value)
-    if len(text) <= MARKET_TREND_SUMMARY_MAX_CHARS:
+    # 어미를 붙이며 80자를 몇 글자 넘긴 완결 문장은 다시 자르지 않는다.
+    if market_trend_summary_has_polite_ending(text) and len(text) <= MARKET_TREND_SUMMARY_MAX_CHARS + 4:
         return text
     window = text[:MARKET_TREND_SUMMARY_MAX_CHARS]
     for sep in ("습니다.", "입니다."):
@@ -1821,8 +1868,12 @@ def clip_market_trend_summary(value: Any) -> str:
             clipped = text[: idx + len(sep)].strip()
             if len(clipped) <= MARKET_TREND_SUMMARY_MAX_CHARS:
                 return clipped
-    trimmed = window[: MARKET_TREND_SUMMARY_MAX_CHARS - 1].rstrip(" ,、.")
-    return f"{trimmed}."
+    budget = MARKET_TREND_SUMMARY_MAX_CHARS - len("입니다.")
+    head = re.sub(r"(습니다|입니다)\.$", "", text).rstrip()[:budget]
+    comma = max(head.rfind(","), head.rfind("，"))
+    if comma >= 24:
+        head = head[:comma]
+    return close_clipped_market_trend_summary(head)
 
 
 def sanitize_market_trend_rows(rows: list[Any]) -> list[Any]:
@@ -1941,7 +1992,7 @@ def analyze_market_trends_with_groq(news_text: str, api_key: str, signal_rows: l
 [출력 형식]
 JSON만 출력합니다. ranks는 정확히 10개이며, 각 항목은 "섹터명 | 키워드1, 키워드2, 키워드3" 형식입니다.
 10개 섹터명은 띄어쓰기 차이를 포함해 서로 중복되면 안 됩니다.
-summary는 이번 주 전체 시장 분위기를 한 문장, 80자 이내로 적습니다. 섹터를 나열하지 말고 핵심 분위기만 남깁니다.
+summary는 이번 주 전체 시장 분위기를 한 문장, 80자 이내로 적습니다. 섹터를 나열하지 말고 핵심 분위기만 남깁니다. 문장은 다른 요약과 같이 반드시 "입니다."로 끝냅니다.
 
 [관심종목 가격·기술 모멘텀 신호]
 {signal_evidence}

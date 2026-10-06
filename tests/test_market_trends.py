@@ -109,6 +109,20 @@ class MarketTrendsTest(unittest.TestCase):
 
         self.assertTrue(normalized.endswith("둔화된 분위기입니다."))
 
+    def test_market_trend_summary_closes_truncated_rise_phrase(self) -> None:
+        summary = (
+            "주식 시장은 인공지능과 데이터센터, 로봇·자동화 등 고성장 기술 섹터에 자금이 집중되며, "
+            "전력·우주·광통신 등 인프라 부문도 견고한 상승세를."
+        )
+
+        normalized = self.pipeline.normalize_market_trend_summary(summary)
+
+        self.assertEqual(
+            "주식 시장은 인공지능과 데이터센터, 로봇·자동화 등 고성장 기술 섹터에 자금이 집중되며, "
+            "전력·우주·광통신 등 인프라 부문도 견고한 상승세입니다.",
+            normalized,
+        )
+
     def test_clip_market_trend_summary_keeps_one_short_sentence(self) -> None:
         summary = (
             "이번 주 전체 시장 분위기는 기술과 금융 분야에서 새로운 동향과 발전이 나타남에 따라 "
@@ -118,7 +132,10 @@ class MarketTrendsTest(unittest.TestCase):
         clipped = self.pipeline.clip_market_trend_summary(summary)
 
         self.assertLessEqual(len(clipped), 80)
-        self.assertTrue(clipped.endswith("."))
+        self.assertEqual(
+            "이번 주 전체 시장 분위기는 기술과 금융 분야에서 새로운 동향과 발전이 나타남에 따라 투자자들의 관심이 집중됩니다.",
+            clipped,
+        )
 
     def test_parse_market_trend_json_clips_long_summary(self) -> None:
         payload = {
