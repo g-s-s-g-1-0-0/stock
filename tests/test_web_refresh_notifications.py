@@ -1892,6 +1892,59 @@ class WebRefreshNotificationsTest(unittest.TestCase):
         self.assertFalse(self.notifications.is_us_market_open(datetime(2026, 6, 26, 20, 0, tzinfo=et)))
         self.assertFalse(self.notifications.is_us_market_open(datetime(2026, 6, 27, 12, 0, tzinfo=et)))
 
+    def test_nasdaq_warn_email_leads_with_distance_to_the_exit_line(self) -> None:
+        body = self.notifications.nasdaq_warn_email_body({
+            "currentPrice": 761.32,
+            "ma200": 670.13,
+            "premiumPercent": 13.61,
+            "recent60MinPremiumPercent": 2.73,
+            "regimeLabel": "횡보장 고점",
+            "peakWarnDist": 13,
+            "peakDirectDist": 16,
+            "peakConfirmDist": 14,
+            "warnThreshold": 757.25,
+            "directThreshold": 777.35,
+            "isRecoveryMarket": False,
+        })
+
+        self.assertIn("근접 경고", body)
+        self.assertIn("QQQ(나스닥 100 추종 ETF)가 과열 청산선 근접 구간에 들어왔습니다.", body)
+        self.assertIn("+13.61%", body)
+        self.assertIn("청산선까지 2.39%p", body)
+        self.assertIn("761.32", body)
+        self.assertIn("670.13", body)
+        self.assertIn("757.25", body)
+        self.assertIn("777.35", body)
+        self.assertIn("횡보장 고점", body)
+        self.assertIn("아직 매수 차단", body)
+        self.assertIn("비회복장", body)
+        self.assertNotIn("<strong>QQQ 현재가:</strong>", body)
+
+    def test_nasdaq_peak_email_keeps_the_momentum_readings(self) -> None:
+        body = self.notifications.nasdaq_peak_email_body({
+            "currentPrice": 120.0,
+            "ma200": 100.0,
+            "premiumPercent": 20.0,
+            "recent60MinPremiumPercent": -5.0,
+            "regimeLabel": "test",
+            "peakDirectDist": 14.0,
+            "peakConfirmDist": 18.0,
+            "directThreshold": 114.0,
+            "confirmThreshold": 118.0,
+            "weeklyRsi": 70.0,
+            "dailyRsi": 66.0,
+            "dailyRsiPrev": 68.0,
+            "macdHist": 1.0,
+            "macdHistD1": 1.2,
+            "macdHistD2": 1.4,
+            "isRecoveryMarket": False,
+        })
+
+        self.assertIn("과열 청산 조건이 켜졌습니다", body)
+        self.assertIn("70.00", body)
+        self.assertIn("확인 청산선 +18%", body)
+        self.assertIn("+1.00 / +1.20 / +1.40", body)
+
     def test_nasdaq_warn_does_not_reset_until_deeper_pullback(self) -> None:
         with TemporaryDirectory() as temp_dir:
             state_path = Path(temp_dir) / "web-notification-state.json"

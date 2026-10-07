@@ -1037,6 +1037,9 @@ def notification_preference_label(preference_key: str) -> str:
     return labels.get(preference_key, "이 알림")
 
 
+ALERT_FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Neo','Noto Sans KR',Arial,sans-serif"
+
+
 def append_notification_footer(html_body: str, recipient: Recipient, preference_key: str) -> str:
     base_url = web_app_url()
     account_url = settings_url()
@@ -1050,11 +1053,11 @@ def append_notification_footer(html_body: str, recipient: Recipient, preference_
     label = html.escape(notification_preference_label(preference_key))
     links = []
     if unsubscribe_url:
-        links.append(f'<a href="{html.escape(unsubscribe_url)}" style="color:#777;text-decoration:underline;">{label} 끄기</a>')
+        links.append(f'<a href="{html.escape(unsubscribe_url)}" style="color:#a8a29e;text-decoration:underline;">{label} 끄기</a>')
     if account_url:
-        links.append(f'<a href="{html.escape(account_url)}" style="color:#777;text-decoration:underline;">알림 설정 열기</a>')
+        links.append(f'<a href="{html.escape(account_url)}" style="color:#a8a29e;text-decoration:underline;">알림 설정 열기</a>')
     return html_body + f"""
-    <div style="font-family:Arial,sans-serif;max-width:640px;margin-top:18px;padding-top:12px;border-top:1px solid #eee;color:#888;font-size:12px;line-height:1.6;">
+    <div style="font-family:{ALERT_FONT};max-width:640px;margin-top:16px;padding-top:12px;border-top:1px solid #f0eeeb;color:#a8a29e;font-size:12px;line-height:1.6;">
       이 메일은 계정 알림 설정에 따라 발송되었습니다.<br>
       {' · '.join(links)}
     </div>
@@ -1596,7 +1599,7 @@ def build_macro_context_html(technical_path: Path = DEFAULT_TECHNICAL) -> str:
     )
 
     return f"""
-      <div style="margin:12px 0 14px;padding:10px 12px;background:#fff8e8;border-left:3px solid #f39c12;font-size:13px;color:#444;">
+      <div style="margin:14px 0 0;padding:12px 14px;background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;font-size:13px;line-height:1.55;color:#44403c;">
         <strong>매크로 참고</strong><br>
         단, 고금리(미국 10년물 4.2% 이상), 강달러(달러 인덱스 103 이상), 시장 불안(VIX 20 이상), 기술주 약세(QQQ 60일선 하회) 구간에서는 적자 성장주보다 <strong>실적이 확인되는 종목</strong>을 우선할 것을 권장합니다.<br>
         현재값: 미국 10년물 <strong>{html.escape(fmt_context_percent(us10y))}</strong> · 달러 인덱스 <strong>{html.escape(fmt_context_index(dxy))}</strong> · VIX <strong>{html.escape(fmt_number(vix)) if vix is not None else "데이터 없음"}</strong> · QQQ <strong>{html.escape(nasdaq_status)}</strong><br>
@@ -1627,7 +1630,7 @@ def build_trend_top3_html() -> str:
     summary = str(trend.get("summary") or "").strip()
     summary_html = f'<div style="margin-top:8px;font-size:12px;color:#555;">※ {html.escape(summary)}</div>' if summary else ""
     return f"""
-      <div style="margin:0 0 14px;padding:10px 12px;background:#f0f7ff;border-left:3px solid #3498db;font-size:13px;color:#444;">
+      <div style="margin:10px 0 0;padding:12px 14px;background:#f8fafc;border:1px solid #e7e5e4;border-radius:12px;font-size:13px;line-height:1.55;color:#44403c;">
         <strong>이번 주 시장 트렌드 Top 3</strong>{date_html}<br>
         <div style="margin-top:6px;">{rows_html}</div>
         {summary_html}
@@ -1718,19 +1721,23 @@ def opinion_email_body(
             )
         changed_html.append(
             f"""
-            <div style="margin-bottom:8px;padding:8px;background:#f9f9f9;border-left:3px solid {border};">
-              {index}. <strong>{html.escape(display_stock(change))}</strong>
-              &nbsp;<span style="color:#888;">'{html.escape(from_label)}'</span>
-              → <strong style="color:{color};">{html.escape(to_label)}</strong><br>
-              <span style="font-size:13px;">이유: {change_reason_html(change.get('reason'))}</span><br>
-              <span style="font-size:13px;">현재가: <strong>{html.escape(str(change.get('price') or '-'))}</strong></span>
-              {action_html}
-              {recommended_sell_html}
-              {allocation_html}
-              {stop_html}
-              {entry_note_html}
-              {f'<br><span style="font-size:12px;color:#666;">산업: {html.escape(industry)}</span>' if industry and industry != '-' else ''}
-              {f'<br><span style="font-size:12px;color:#e67e22;">{html.escape(trend_badge)}</span>' if trend_badge else ''}
+            <div style="margin:0 0 10px;padding:12px 14px;background:#fafaf9;border:1px solid #f0eeeb;border-left:3px solid {border};border-radius:12px;">
+              <div style="font-size:15px;font-weight:700;line-height:1.4;color:#1c1917;">{index}. {html.escape(display_stock(change))}</div>
+              <div style="margin-top:4px;font-size:13px;line-height:1.45;color:#78716c;">
+                <span>'{html.escape(from_label)}'</span>
+                → <strong style="color:{color};">{html.escape(to_label)}</strong>
+              </div>
+              <div style="margin-top:8px;font-size:13px;line-height:1.55;color:#44403c;">
+                이유: {change_reason_html(change.get('reason'))}<br>
+                현재가: <strong>{html.escape(str(change.get('price') or '-'))}</strong>
+                {action_html}
+                {recommended_sell_html}
+                {allocation_html}
+                {stop_html}
+                {entry_note_html}
+                {f'<br><span style="font-size:12px;color:#78716c;">산업: {html.escape(industry)}</span>' if industry and industry != '-' else ''}
+                {f'<br><span style="font-size:12px;color:#c2410c;">{html.escape(trend_badge)}</span>' if trend_badge else ''}
+              </div>
             </div>
             """
         )
@@ -1739,25 +1746,47 @@ def opinion_email_body(
     macro_context_html = build_macro_context_html() if has_buy_transition else ""
     trend_top3_html = build_trend_top3_html() if has_buy_transition else ""
     sell_summary_html = (
-        f'<p style="margin:0;"><strong>현재 매도 의견 종목:</strong> {html.escape(list_text(sell_opinion_labels))}</p>'
+        f'<div style="padding:10px 0;border-top:1px solid #f0eeeb;font-size:13px;line-height:1.5;color:#44403c;"><span style="color:#78716c;">현재 매도 의견 종목:</span> <strong>{html.escape(list_text(sell_opinion_labels))}</strong></div>'
         if include_sell_summary
         else ""
     )
+    buy_count = sum(1 for change in changes if change.get("to") == "매수" or "매수" in change_display_to(change))
+    sell_count = sum(1 for change in changes if change.get("to") == "매도" or "매도" in change_display_to(change))
+    if sell_count and not buy_count:
+        accent, pill, pill_bg, pill_color = "#dc2626", "매도", "#fef2f2", "#b91c1c"
+    elif buy_count and not sell_count:
+        accent, pill, pill_bg, pill_color = "#15803d", "매수", "#f0fdf4", "#166534"
+    else:
+        accent, pill, pill_bg, pill_color = "#1d4ed8", "의견 변경", "#eff6ff", "#1d4ed8"
+    count_label = f"{len(changes)}개 종목"
     return f"""
-    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;max-width:600px;">
-      <p style="font-size:16px;font-weight:bold;color:#333;border-bottom:2px solid #eee;padding-bottom:8px;">
-        투자의견이 변경된 종목이 있습니다.
-      </p>
-      <div>{''.join(changed_html)}</div>
-      {macro_context_html}
-      {trend_top3_html}
-      <p style="margin:0;"><strong>현재 매수 의견 종목:</strong> {html.escape(list_text(buy_opinions or []))}</p>
-      <p style="margin:0;"><strong>보유 중 관망 종목:</strong> {html.escape(list_text(watch_holding_opinions or []))}</p>
-      {sell_summary_html}<br>
-      <p style="color:#888;font-size:12px;">
-        발송 시각 (한국): {html.escape(kst_label)}<br>
-        발송 시각 (미 동부): {html.escape(et_label)}
-      </p>
+    <div style="font-family:{ALERT_FONT};color:#1c1917;max-width:640px;line-height:1.5;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;border:1px solid #e7e5e4;border-radius:16px;background:#ffffff;">
+        <tr>
+          <td height="4" bgcolor="{accent}" style="height:4px;background:{accent};font-size:0;line-height:0;border-radius:16px 16px 0 0;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:22px 22px 18px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+              <tr>
+                <td style="font-size:13px;font-weight:700;letter-spacing:-0.01em;color:#1d4ed8;">공수성가</td>
+                <td align="right">
+                  <span style="display:inline-block;background:{pill_bg};color:{pill_color};border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;line-height:1.4;">{pill}</span>
+                </td>
+              </tr>
+            </table>
+            <div style="margin:16px 0 0;font-size:20px;font-weight:700;letter-spacing:-0.02em;line-height:1.35;">투자의견이 변경된 종목이 있습니다.</div>
+            <div style="margin:8px 0 16px;font-size:14px;line-height:1.55;color:#57534e;">{count_label}의 의견이 바뀌었습니다.</div>
+            {''.join(changed_html)}
+            {macro_context_html}
+            {trend_top3_html}
+            <div style="margin-top:14px;padding:10px 0;border-top:1px solid #f0eeeb;font-size:13px;line-height:1.5;color:#44403c;"><span style="color:#78716c;">현재 매수 의견 종목:</span> <strong>{html.escape(list_text(buy_opinions or []))}</strong></div>
+            <div style="padding:10px 0;border-top:1px solid #f0eeeb;font-size:13px;line-height:1.5;color:#44403c;"><span style="color:#78716c;">보유 중 관망 종목:</span> <strong>{html.escape(list_text(watch_holding_opinions or []))}</strong></div>
+            {sell_summary_html}
+            <div style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#a8a29e;">한국 {html.escape(kst_label)}<br>미 동부 {html.escape(et_label)}</div>
+          </td>
+        </tr>
+      </table>
     </div>
     """
 
@@ -2097,57 +2126,186 @@ def qqq_peak_snapshot() -> dict[str, Any]:
     return snapshot
 
 
+def _finite_float(value: Any) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    if parsed != parsed:
+        return None
+    return parsed
+
+
+def _exit_gap_caption(premium: float | None, direct_dist: float) -> str:
+    if premium is None:
+        return "200일선 대비"
+    gap = direct_dist - premium
+    if gap > 0:
+        return f"200일선 대비 · 청산선까지 {gap:.2f}%p"
+    return "200일선 대비 · 청산선을 넘었습니다"
+
+
+def _meter_ratio(premium: float | None, direct_dist: float) -> float:
+    if premium is None or direct_dist <= 0:
+        return 0.0
+    return premium / direct_dist
+
+
+def _alert_meter(ratio: float, color: str, left_label: str, right_label: str) -> str:
+    fill = max(0, min(100, int(round(max(0.0, min(1.0, ratio)) * 100))))
+    rest = 100 - fill
+    track = "#f3efe8"
+    if fill <= 0:
+        bar = f'<td width="100%" height="8" bgcolor="{track}" style="height:8px;background:{track};border-radius:99px;font-size:0;line-height:0;">&nbsp;</td>'
+    elif fill >= 100:
+        bar = f'<td width="100%" height="8" bgcolor="{color}" style="height:8px;background:{color};border-radius:99px;font-size:0;line-height:0;">&nbsp;</td>'
+    else:
+        bar = (
+            f'<td width="{fill}%" height="8" bgcolor="{color}" style="height:8px;background:{color};border-radius:99px 0 0 99px;font-size:0;line-height:0;">&nbsp;</td>'
+            f'<td width="{rest}%" height="8" bgcolor="{track}" style="height:8px;background:{track};border-radius:0 99px 99px 0;font-size:0;line-height:0;">&nbsp;</td>'
+        )
+    return f"""
+    <div style="margin:16px 0 2px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+        <tr>{bar}</tr>
+      </table>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:8px;">
+        <tr>
+          <td style="font-size:12px;line-height:1.4;color:#a8a29e;">{left_label}</td>
+          <td align="right" style="font-size:12px;line-height:1.4;color:#a8a29e;">{right_label}</td>
+        </tr>
+      </table>
+    </div>
+    """
+
+
+def _alert_rows(rows: list[tuple[str, str, str]]) -> str:
+    rendered: list[str] = []
+    for label, value, hint in rows:
+        hint_html = (
+            f'<div style="margin-top:2px;font-size:12px;line-height:1.4;font-weight:500;color:#a8a29e;">{hint}</div>'
+            if hint
+            else ""
+        )
+        rendered.append(
+            "<tr>"
+            f'<td style="padding:11px 0;border-top:1px solid #f0eeeb;color:#78716c;font-size:13px;line-height:1.4;vertical-align:top;">{label}</td>'
+            f'<td align="right" style="padding:11px 0;border-top:1px solid #f0eeeb;color:#1c1917;font-size:14px;line-height:1.4;font-weight:600;vertical-align:top;">{value}{hint_html}</td>'
+            "</tr>"
+        )
+    return (
+        '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:8px;">'
+        + "".join(rendered)
+        + "</table>"
+    )
+
+
+def _alert_card(
+    *,
+    accent: str,
+    pill: str,
+    pill_bg: str,
+    pill_color: str,
+    title: str,
+    lede: str,
+    hero: str,
+    hero_color: str,
+    hero_caption: str,
+    meter_html: str,
+    rows_html: str,
+    action_bg: str,
+    action_label_color: str,
+    action_html: str,
+    footnote: str,
+    kst_date: str,
+    et_date: str,
+) -> str:
+    return f"""
+    <div style="font-family:{ALERT_FONT};color:#1c1917;max-width:640px;line-height:1.5;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;border:1px solid #e7e5e4;border-radius:16px;background:#ffffff;">
+        <tr>
+          <td height="4" bgcolor="{accent}" style="height:4px;background:{accent};font-size:0;line-height:0;border-radius:16px 16px 0 0;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:22px 22px 18px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+              <tr>
+                <td style="font-size:13px;font-weight:700;letter-spacing:-0.01em;color:#1d4ed8;">공수성가</td>
+                <td align="right">
+                  <span style="display:inline-block;background:{pill_bg};color:{pill_color};border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;line-height:1.4;">{pill}</span>
+                </td>
+              </tr>
+            </table>
+            <div style="margin:16px 0 0;font-size:20px;font-weight:700;letter-spacing:-0.02em;line-height:1.35;color:#1c1917;">{title}</div>
+            <div style="margin:8px 0 0;font-size:14px;line-height:1.55;color:#57534e;">{lede}</div>
+            <div style="margin:18px 0 0;font-size:36px;font-weight:700;letter-spacing:-0.04em;line-height:1;color:{hero_color};">{hero}</div>
+            <div style="margin:8px 0 0;font-size:13px;line-height:1.4;color:#78716c;">{hero_caption}</div>
+            {meter_html}
+            {rows_html}
+            <div style="margin:16px 0 0;background:{action_bg};border-radius:12px;padding:14px 16px;">
+              <div style="font-size:12px;font-weight:700;color:{action_label_color};">지금 할 일</div>
+              <div style="margin:6px 0 0;font-size:14px;line-height:1.55;color:#44403c;">{action_html}</div>
+            </div>
+            <div style="margin:14px 0 0;font-size:12px;line-height:1.55;color:#a8a29e;">{footnote}</div>
+            <div style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#a8a29e;">한국 {kst_date}<br>미 동부 {et_date}</div>
+          </td>
+        </tr>
+      </table>
+    </div>
+    """
+
+
 def nasdaq_peak_email_body(snapshot: dict[str, Any]) -> str:
     kst_date, et_date = now_labels()
     regime = html.escape(str(snapshot.get("regimeLabel") or "-"))
     direct_dist = float(snapshot.get("peakDirectDist") or 0)
     confirm_dist = float(snapshot.get("peakConfirmDist") or 0)
+    premium = _finite_float(snapshot.get("premiumPercent"))
     trigger_rule = (
         f"회복장에서는 QQQ가 200일선보다 +{direct_dist:.0f}% 이상 높으면 과열로 봅니다."
         if snapshot.get("isRecoveryMarket")
         else f"비회복장에서는 QQQ가 200일선보다 +{direct_dist:.0f}% 이상 높고 RSI가 꺾이거나, +{confirm_dist:.0f}% 이상에서 RSI와 MACD가 함께 식으면 과열로 봅니다."
     )
-    return f"""
-    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;max-width:640px;">
-      <p style="font-size:16px;font-weight:bold;color:#333;margin:0 0 12px 0;">
-        QQQ 과열 청산 조건이 켜졌습니다.
-      </p>
-      <div style="border:1px solid #fde68a;background:#fffbeb;border-radius:10px;padding:12px 14px;margin:0 0 14px 0;">
-        <div style="font-weight:bold;margin-bottom:6px;">핵심만 보면</div>
-        <div>QQQ가 국면별 고점 청산 기준을 충족했습니다.</div>
-        <div>이 알림은 시장 공통 청산 조건이 충족됐다는 뜻입니다.</div>
-        <div>웹서비스는 신규 매수와 추가매수를 막고, 보유 종목은 청산 기준으로 점검합니다.</div>
-        <div style="margin-top:6px;">개별 종목의 실제 청산 반영은 이어서 발송되는 투자의견 변경 메일이나 웹의 보유 현황에서 확인해 주세요.</div>
-      </div>
-      <div style="margin:0 0 14px 0;">
-        <div style="font-weight:bold;margin-bottom:6px;">시장 위치</div>
-        <div><strong>QQQ 현재가:</strong> {snapshot['currentPrice']:.2f}</div>
-        <div><strong>QQQ 200일 이평선:</strong> {snapshot['ma200']:.2f}</div>
-        <div><strong>200일선 대비:</strong> {fmt_signed(snapshot.get('premiumPercent'), '%')}</div>
-        <div><strong>최근 60거래일 최저 이격도:</strong> {fmt_signed(snapshot.get('recent60MinPremiumPercent'), '%')}</div>
-        <div><strong>시장 국면:</strong> {regime}</div>
-        <div><strong>직접 청산선:</strong> +{direct_dist:.0f}% ({snapshot['directThreshold']:.2f}) - 이 위면 과열로 바로 판단</div>
-        {'' if snapshot.get("isRecoveryMarket") else f'<div><strong>확인 청산선:</strong> +{confirm_dist:.0f}% ({snapshot["confirmThreshold"]:.2f}) - 이 위에서는 RSI/MACD 둔화까지 확인</div>'}
-      </div>
-      <div style="margin:0 0 14px 0;">
-        <div style="font-weight:bold;margin-bottom:6px;">힘이 식는지 보는 지표</div>
-        <div><strong>QQQ 주봉 RSI(14):</strong> {fmt_number(snapshot.get('weeklyRsi'))}</div>
-        <div><strong>QQQ 일봉 RSI(14):</strong> {fmt_number(snapshot.get('dailyRsi'))}</div>
-        <div><strong>QQQ 일봉 RSI 전일:</strong> {fmt_number(snapshot.get('dailyRsiPrev'))}</div>
-        <div><strong>QQQ MACD Histogram (D/D-1/D-2):</strong> {fmt_signed(snapshot.get('macdHist'))} / {fmt_signed(snapshot.get('macdHistD1'))} / {fmt_signed(snapshot.get('macdHistD2'))}</div>
-      </div>
-      <p>
-        <strong>이번 알림이 뜬 이유:</strong> {html.escape(trigger_rule)}
-      </p>
-      <p>
-        <strong>지금 할 일:</strong> 새 매수와 추가매수는 보류하고, 보유 종목은 웹의 보유 현황 또는 이어지는 투자의견 변경 메일에서 실제 청산 반영 여부를 확인해 주세요.
-      </p>
-      <p style="color:#888;font-size:12px;margin:0;">
-        발송 시각 (한국): {html.escape(kst_date)}<br>
-        발송 시각 (미 동부): {html.escape(et_date)}
-      </p>
-    </div>
-    """
+    rows = [
+        ("현재가", f"{snapshot['currentPrice']:.2f}", ""),
+        ("200일 이평선", f"{snapshot['ma200']:.2f}", ""),
+        ("60일 최저 이격", fmt_signed(snapshot.get("recent60MinPremiumPercent"), "%"), ""),
+        ("시장 국면", regime, ""),
+        (f"직접 청산선 +{direct_dist:.0f}%", f"{snapshot['directThreshold']:.2f}", "이 위면 과열로 바로 판단"),
+    ]
+    if not snapshot.get("isRecoveryMarket"):
+        rows.append(
+            (f"확인 청산선 +{confirm_dist:.0f}%", f"{snapshot['confirmThreshold']:.2f}", "이 위에서는 RSI·MACD 둔화까지 확인")
+        )
+    rows.extend([
+        ("주봉 RSI(14)", fmt_number(snapshot.get("weeklyRsi")), ""),
+        ("일봉 RSI(14)", fmt_number(snapshot.get("dailyRsi")), ""),
+        ("일봉 RSI 전일", fmt_number(snapshot.get("dailyRsiPrev")), ""),
+        (
+            "MACD Histogram",
+            f"{fmt_signed(snapshot.get('macdHist'))} / {fmt_signed(snapshot.get('macdHistD1'))} / {fmt_signed(snapshot.get('macdHistD2'))}",
+            "D / D-1 / D-2",
+        ),
+    ])
+    return _alert_card(
+        accent="#dc2626",
+        pill="청산 조건",
+        pill_bg="#fef2f2",
+        pill_color="#b91c1c",
+        title="QQQ(나스닥 100 추종 ETF) 과열 청산 조건이 켜졌습니다.",
+        lede="국면별 고점 청산 기준을 충족했습니다. 웹서비스는 신규 매수와 추가매수를 막고, 보유 종목은 청산 기준으로 점검합니다.",
+        hero=fmt_signed(premium, "%"),
+        hero_color="#b91c1c",
+        hero_caption=_exit_gap_caption(premium, direct_dist),
+        meter_html=_alert_meter(_meter_ratio(premium, direct_dist), "#dc2626", "200일선", f"청산선 +{direct_dist:.0f}%"),
+        rows_html=_alert_rows(rows),
+        action_bg="#fef2f2",
+        action_label_color="#b91c1c",
+        action_html="새 매수와 추가매수는 보류해 주세요. 보유 종목의 실제 청산 반영은 웹의 보유 현황이나, 이어서 오는 투자의견 변경 메일에서 확인하면 됩니다.",
+        footnote=html.escape(trigger_rule),
+        kst_date=html.escape(kst_date),
+        et_date=html.escape(et_date),
+    )
 
 
 def send_nasdaq_peak_notifications() -> int:
@@ -2218,39 +2376,34 @@ def nasdaq_warn_email_body(snapshot: dict[str, Any]) -> str:
             f"비회복장에서는 QQQ가 200일선보다 +{direct_dist:.0f}% 이상(또는 +{confirm_dist:.0f}% 이상에서 RSI·MACD 둔화) "
             f"이면 과열 청산으로 봅니다. 지금은 그 직전인 +{warn_dist:.0f}%에 도달했습니다."
         )
-    return f"""
-    <div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#222;max-width:640px;">
-      <p style="font-size:16px;font-weight:bold;color:#b45309;margin:0 0 12px 0;">
-        QQQ가 과열 청산선 근접 구간에 들어왔습니다.
-      </p>
-      <div style="border:1px solid #fde68a;background:#fffbeb;border-radius:10px;padding:12px 14px;margin:0 0 14px 0;">
-        <div style="font-weight:bold;margin-bottom:6px;">핵심만 보면</div>
-        <div>아직 매수 차단·청산이 켜진 것은 아닙니다.</div>
-        <div>다만 QQQ 이격도가 과열 청산선 직전까지 올라와, 곧 하락이 나올 수 있는 구간입니다.</div>
-        <div style="margin-top:6px;">신규·추가 매수는 보수적으로 보고, 보유 종목의 청산 기준을 미리 점검해 두세요.</div>
-      </div>
-      <div style="margin:0 0 14px 0;">
-        <div style="font-weight:bold;margin-bottom:6px;">시장 위치</div>
-        <div><strong>QQQ 현재가:</strong> {snapshot['currentPrice']:.2f}</div>
-        <div><strong>QQQ 200일 이평선:</strong> {snapshot['ma200']:.2f}</div>
-        <div><strong>200일선 대비:</strong> {fmt_signed(snapshot.get('premiumPercent'), '%')}</div>
-        <div><strong>최근 60거래일 최저 이격도:</strong> {fmt_signed(snapshot.get('recent60MinPremiumPercent'), '%')}</div>
-        <div><strong>시장 국면:</strong> {regime}</div>
-        <div><strong>경고선:</strong> +{warn_dist:.0f}% ({snapshot['warnThreshold']:.2f}) - 지금 도달한 지점</div>
-        <div><strong>직접 청산선:</strong> +{direct_dist:.0f}% ({snapshot['directThreshold']:.2f}) - 이 위면 과열로 바로 판단</div>
-      </div>
-      <p>
-        <strong>이번 알림이 뜬 이유:</strong> {html.escape(trigger_rule)}
-      </p>
-      <p>
-        <strong>지금 할 일:</strong> 새 매수와 추가매수는 신중하게 보고, 보유 종목은 청산 기준을 미리 확인해 두세요. 실제 청산이 켜지면 별도의 과열 청산 알림이 이어서 발송됩니다.
-      </p>
-      <p style="color:#888;font-size:12px;margin:0;">
-        발송 시각 (한국): {html.escape(kst_date)}<br>
-        발송 시각 (미 동부): {html.escape(et_date)}
-      </p>
-    </div>
-    """
+    premium = _finite_float(snapshot.get("premiumPercent"))
+    rows = [
+        ("현재가", f"{snapshot['currentPrice']:.2f}", ""),
+        ("200일 이평선", f"{snapshot['ma200']:.2f}", ""),
+        ("60일 최저 이격", fmt_signed(snapshot.get("recent60MinPremiumPercent"), "%"), ""),
+        ("시장 국면", regime, ""),
+        (f"경고선 +{warn_dist:.0f}%", f"{snapshot['warnThreshold']:.2f}", "지금 도달한 지점"),
+        (f"직접 청산선 +{direct_dist:.0f}%", f"{snapshot['directThreshold']:.2f}", "이 위면 과열로 바로 판단"),
+    ]
+    return _alert_card(
+        accent="#d97706",
+        pill="근접 경고",
+        pill_bg="#fff7ed",
+        pill_color="#9a3412",
+        title="QQQ(나스닥 100 추종 ETF)가 과열 청산선 근접 구간에 들어왔습니다.",
+        lede="아직 매수 차단·청산은 켜지지 않았습니다. 다만 이격도가 청산선 직전까지 올라와, 곧 하락이 나올 수 있는 구간입니다.",
+        hero=fmt_signed(premium, "%"),
+        hero_color="#9a3412",
+        hero_caption=_exit_gap_caption(premium, direct_dist),
+        meter_html=_alert_meter(_meter_ratio(premium, direct_dist), "#d97706", "200일선", f"청산선 +{direct_dist:.0f}%"),
+        rows_html=_alert_rows(rows),
+        action_bg="#fff7ed",
+        action_label_color="#9a3412",
+        action_html="새 매수와 추가매수는 신중하게 보고, 보유 종목은 청산 기준을 미리 확인해 두세요. 실제 청산이 켜지면 별도의 과열 청산 알림이 이어서 발송됩니다.",
+        footnote=html.escape(trigger_rule),
+        kst_date=html.escape(kst_date),
+        et_date=html.escape(et_date),
+    )
 
 
 def send_nasdaq_warn_notifications() -> int:
