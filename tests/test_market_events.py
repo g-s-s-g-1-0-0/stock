@@ -229,6 +229,86 @@ class MarketEventsTest(unittest.TestCase):
 
         self.assertEqual(["네마녀의 날"], [group["title"] for group in updated["groups"]])
 
+    def test_quadruple_witching_uses_kst_close_of_the_us_third_friday(self) -> None:
+        events = pipeline.quadruple_witching_market_events(2026)
+
+        self.assertEqual(events[3], {"date": "2026. 3. 21", "time": "5:00"})
+        self.assertEqual(events[6], {"date": "2026. 6. 20", "time": "5:00"})
+        self.assertEqual(events[9], {"date": "2026. 9. 19", "time": "5:00"})
+        self.assertEqual(events[12], {"date": "2026. 12. 19", "time": "6:00"})
+
+    def test_first_update_of_a_new_year_rolls_the_table_year_and_dates(self) -> None:
+        payload = {
+            "yearLabel": "2026년",
+            "groups": [
+                {
+                    "title": "CPI 발표",
+                    "entries": [
+                        {"month": "1월", "date": "2026. 1. 13", "time": "22:30", "dday": "-"},
+                        {"month": "2월", "date": "2026. 2. 11", "time": "22:30", "dday": "-"},
+                    ],
+                },
+                {
+                    "title": "네마녀의 날",
+                    "entries": [
+                        {"month": "3월", "date": "2026. 3. 21", "time": "5:00", "dday": "-"},
+                    ],
+                },
+            ],
+        }
+        sources = {"CPI 발표": {1: {"date": "2027. 1. 12", "time": "22:30"}}}
+        with patch("calculator.pipeline.official_market_event_sources", return_value=(sources, [])) as official:
+            updated, changes, issues = pipeline.apply_market_event_verification(payload, today=date(2027, 1, 4))
+
+        self.assertEqual(official.call_args.args[0], 2027)
+        self.assertEqual(updated["yearLabel"], "2027년")
+        self.assertEqual(updated["groups"][0]["entries"][0]["date"], "2027. 1. 12")
+        self.assertEqual(updated["groups"][0]["entries"][0]["time"], "22:30")
+        self.assertEqual(updated["groups"][0]["entries"][1]["date"], "-")
+        self.assertEqual(updated["groups"][0]["entries"][1]["time"], "-")
+        witching = pipeline.quadruple_witching_market_events(2027)[3]
+        self.assertEqual(updated["groups"][1]["entries"][0]["date"], witching["date"])
+        self.assertEqual(updated["groups"][1]["entries"][0]["time"], witching["time"])
+        self.assertEqual(issues, [])
+        self.assertIn("연도: 2026년 -> 2027년", changes)
+
+    def test_market_events_keep_the_current_year_until_that_year_starts(self) -> None:
+        payload = {
+            "yearLabel": "2026년",
+            "groups": [
+                {"title": "CPI 발표", "entries": [{"month": "12월", "date": "2026. 12. 10", "time": "22:30"}]},
+            ],
+        }
+        with patch(
+            "calculator.pipeline.official_market_event_sources",
+            return_value=({"CPI 발표": {12: {"date": "2026. 12. 10", "time": "22:30"}}}, []),
+        ) as official:
+            updated, changes, issues = pipeline.apply_market_event_verification(payload, today=date(2026, 12, 20))
+
+        self.assertEqual(official.call_args.args[0], 2026)
+        self.assertEqual(updated["yearLabel"], "2026년")
+        self.assertEqual(updated["groups"][0]["entries"][0]["date"], "2026. 12. 10")
+        self.assertEqual(changes, [])
+        self.assertEqual(issues, [])
+
+    def test_failed_new_year_sources_do_not_change_the_table_year(self) -> None:
+        payload = {
+            "yearLabel": "2026년",
+            "groups": [
+                {"title": "CPI 발표", "entries": [{"month": "1월", "date": "2026. 1. 13", "time": "22:30"}]},
+            ],
+        }
+        with patch(
+            "calculator.pipeline.official_market_event_sources",
+            return_value=({"CPI 발표": {}}, ["BLS CPI 공식 일정 조회 실패"]),
+        ):
+            updated, changes, issues = pipeline.apply_market_event_verification(payload, today=date(2027, 1, 4))
+
+        self.assertEqual(updated["yearLabel"], "2026년")
+        self.assertEqual(updated["groups"][0]["entries"][0]["date"], "2026. 1. 13")
+        self.assertEqual(changes, [])
+        self.assertIn("2027년 공식 일정을 읽지 못해 표 연도를 바꾸지 않았습니다.", issues)
+
 
 if __name__ == "__main__":
     unittest.main()

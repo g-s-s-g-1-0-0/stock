@@ -2221,11 +2221,21 @@ def parse_release_month(entry: dict[str, Any]) -> int | None:
     return month if 1 <= month <= 12 else None
 
 
-def market_event_year(payload: dict[str, Any], today: date | None = None) -> int:
-    meta = payload.get("meta") if isinstance(payload.get("meta"), dict) else {}
-    match = re.search(r"\d{4}", str(meta.get("yearLabel") or ""))
-    if match:
-        return int(match.group(0))
+def _year_in_label(value: Any) -> int | None:
+    match = re.search(r"\d{4}", str(value or ""))
+    return int(match.group(0)) if match else None
+
+
+def cached_market_event_year(payload: dict[str, Any], today: date | None = None) -> int:
+    """Year currently shown on the market-events table, before a calendar rollover."""
+
+    for label in (
+        payload.get("yearLabel"),
+        (payload.get("meta") or {}).get("yearLabel") if isinstance(payload.get("meta"), dict) else None,
+    ):
+        year = _year_in_label(label)
+        if year is not None:
+            return year
 
     groups = payload.get("groups") if isinstance(payload.get("groups"), list) else []
     years: list[int] = []
@@ -2240,6 +2250,32 @@ def market_event_year(payload: dict[str, Any], today: date | None = None) -> int
     if years:
         return Counter(years).most_common(1)[0][0]
     return (today or datetime.now(KST).date()).year
+
+
+def market_event_year(payload: dict[str, Any], today: date | None = None) -> int:
+    today = today or datetime.now(KST).date()
+    cached = cached_market_event_year(payload, today)
+    return today.year if today.year > cached else cached
+
+
+def third_friday(year: int, month: int) -> date:
+    first = date(year, month, 1)
+    offset = (4 - first.weekday()) % 7
+    return first.replace(day=1 + offset + 14)
+
+
+def quadruple_witching_market_events(year: int) -> dict[int, dict[str, str]]:
+    """Third Friday of Mar/Jun/Sep/Dec, stored as the 16:00 ET close in KST."""
+
+    result: dict[int, dict[str, str]] = {}
+    for month in (3, 6, 9, 12):
+        value = market_event_source_value(third_friday(year, month), "4:00 PM")
+        if value is None:
+            continue
+        event_date = parse_market_event_date(value.get("date"))
+        if event_date is not None:
+            result[event_date.month] = value
+    return result
 
 
 def format_market_event_date(value: date) -> str:
@@ -2602,10 +2638,29 @@ def official_market_event_sources(year: int) -> tuple[dict[str, dict[int, dict[s
     return sources, issues
 
 
-def apply_market_event_verification(payload: dict[str, Any]) -> tuple[dict[str, Any], list[str], list[str]]:
-    year = market_event_year(payload)
-    today = datetime.now(KST).date()
+def apply_market_event_verification(
+    payload: dict[str, Any],
+    today: date | None = None,
+) -> tuple[dict[str, Any], list[str], list[str]]:
+    today = today or datetime.now(KST).date()
+    cached_year = cached_market_event_year(payload, today)
+    year = today.year if today.year > cached_year else cached_year
+    rolling = year > cached_year
     sources, issues = official_market_event_sources(year)
+    changes: list[str] = []
+    if rolling and not any(sources.values()):
+        issues.append(f"{year}년 공식 일정을 읽지 못해 표 연도를 바꾸지 않았습니다.")
+        rolling = False
+    elif rolling:
+        sources["네마녀의 날"] = quadruple_witching_market_events(year)
+        label = f"{year}년"
+        previous = str(payload.get("yearLabel") or f"{cached_year}년")
+        if previous != label:
+            payload["yearLabel"] = label
+            meta = payload.get("meta")
+            if isinstance(meta, dict) and meta.get("yearLabel"):
+                meta["yearLabel"] = label
+            changes.append(f"연도: {previous} -> {label}")
     groups = payload.get("groups") if isinstance(payload.get("groups"), list) else []
     payload["groups"] = [
         group
@@ -2613,7 +2668,6 @@ def apply_market_event_verification(payload: dict[str, Any]) -> tuple[dict[str, 
         if not (isinstance(group, dict) and str(group.get("title") or "").strip() in IGNORED_MARKET_EVENT_TITLES)
     ]
     groups = payload["groups"]
-    changes: list[str] = []
 
     for group in groups:
         if not isinstance(group, dict):
@@ -2631,17 +2685,23 @@ def apply_market_event_verification(payload: dict[str, Any]) -> tuple[dict[str, 
             if month is None or title not in sources:
                 continue
             source_value = group_sources.get(month)
+            old_date = str(entry.get("date") or "-").strip() or "-"
+            old_time = str(entry.get("time") or "-").strip() or "-"
             if not source_value:
-                cached_date = parse_market_event_date(entry.get("date"))
-                if group_sources and cached_date and cached_date >= today:
-                    issues.append(f"{title} {month}월 공식 일정 확인값이 없어 자동 수정하지 않았습니다.")
+                if rolling and group_sources and (old_date != "-" or old_time != "-"):
+                    entry["date"] = "-"
+                    entry["time"] = "-"
+                    entry["dday"] = "-"
+                    changes.append(f"{title} {month}월: {old_date} {old_time} -> - -")
+                else:
+                    cached_date = parse_market_event_date(entry.get("date"))
+                    if group_sources and cached_date and cached_date >= today:
+                        issues.append(f"{title} {month}월 공식 일정 확인값이 없어 자동 수정하지 않았습니다.")
                 continue
 
             cached_date = parse_market_event_date(entry.get("date"))
-            if cached_date and cached_date < today:
+            if not rolling and cached_date and cached_date < today:
                 continue
-            old_date = str(entry.get("date") or "-").strip() or "-"
-            old_time = str(entry.get("time") or "-").strip() or "-"
             if old_date != source_value["date"] or old_time != source_value["time"]:
                 entry["date"] = source_value["date"]
                 entry["time"] = source_value["time"]
