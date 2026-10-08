@@ -5353,7 +5353,7 @@ function trendChartReading(stock: Stock, chart: TrendChartData): TrendReading {
     .sort((a, b) => b.value - a.value)
   let action: TrendReading['action']
   if (label === '지지선 이탈' && support) {
-    action = { label: '매수 보류', tone: 'hold', text: `지금은 사지 않습니다. 종가가 지지선 ${money(support.endPrice)} 위로 다시 올라오면 다시 봅니다.` }
+    action = { label: '매수 보류', tone: 'hold', text: `지금은 사지 않습니다. 종가가 지지선 ${money(support.endPrice)} 위로 다시 올라오면 그때 다시 봅니다.` }
   } else if (label === '저항선 돌파' && resistance) {
     action = close <= resistance.endPrice * 1.03
       ? { label: '돌파 근처 매수', tone: 'buy', text: `종가가 돌파한 저항선 ${money(resistance.endPrice)} 위에 있으면 들어갑니다. 다시 그 아래로 마감하면 들어가지 않습니다.` }
