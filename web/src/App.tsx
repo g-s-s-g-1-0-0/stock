@@ -6720,36 +6720,106 @@ function App() {
   ), [initialLocalTestSession])
   const [query, setQuery] = useState('')
   useEffect(() => {
+    const modalSelector = '.modal-backdrop, .trend-chart-modal-backdrop'
     let lockedScrollY: number | null = null
-    const syncModalScrollLock = () => {
-      const hasModal = Boolean(document.querySelector('.modal-backdrop'))
-      if (hasModal && lockedScrollY === null) {
-        lockedScrollY = window.scrollY
-        document.body.style.position = 'fixed'
-        document.body.style.top = `-${lockedScrollY}px`
-        document.body.style.width = '100%'
-        document.body.style.overflow = 'hidden'
-      } else if (!hasModal && lockedScrollY !== null) {
-        document.body.style.position = ''
-        document.body.style.top = ''
-        document.body.style.width = ''
-        document.body.style.overflow = ''
-        window.scrollTo(0, lockedScrollY)
-        lockedScrollY = null
-      }
+    let lastTouchY = 0
+
+    const lockBackgroundScroll = () => {
+      if (lockedScrollY !== null) return
+      lockedScrollY = window.scrollY
+      document.documentElement.classList.add('modal-scroll-lock')
+      document.documentElement.style.overflow = 'hidden'
+      document.documentElement.style.overscrollBehavior = 'none'
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${lockedScrollY}px`
+      document.body.style.left = '0'
+      document.body.style.right = '0'
+      document.body.style.width = '100%'
+      document.body.style.overflow = 'hidden'
+      document.body.style.overscrollBehavior = 'none'
     }
+
+    const unlockBackgroundScroll = () => {
+      if (lockedScrollY === null) return
+      const scrollY = lockedScrollY
+      lockedScrollY = null
+      document.documentElement.classList.remove('modal-scroll-lock')
+      document.documentElement.style.overflow = ''
+      document.documentElement.style.overscrollBehavior = ''
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.left = ''
+      document.body.style.right = ''
+      document.body.style.width = ''
+      document.body.style.overflow = ''
+      document.body.style.overscrollBehavior = ''
+      window.scrollTo(0, scrollY)
+    }
+
+    const syncModalScrollLock = () => {
+      if (document.querySelector(modalSelector)) lockBackgroundScroll()
+      else unlockBackgroundScroll()
+    }
+
+    const canScrollInsideModal = (target: EventTarget | null, deltaY: number) => {
+      if (!(target instanceof Element) || deltaY === 0) return false
+      const root = target.closest(modalSelector)
+      if (!root) return false
+      let node: Element | null = target
+      while (node && node !== root.parentElement) {
+        const style = window.getComputedStyle(node)
+        const overflowY = style.overflowY
+        const scrolls = overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay'
+        if (scrolls && node.scrollHeight > node.clientHeight + 1) {
+          const atTop = node.scrollTop <= 0
+          const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - 1
+          if (deltaY < 0 && !atTop) return true
+          if (deltaY > 0 && !atBottom) return true
+          return false
+        }
+        if (node === root) break
+        node = node.parentElement
+      }
+      return false
+    }
+
+    const onTouchStart = (event: TouchEvent) => {
+      lastTouchY = event.touches[0]?.clientY ?? lastTouchY
+    }
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (lockedScrollY === null) return
+      const nextY = event.touches[0]?.clientY ?? lastTouchY
+      const deltaY = lastTouchY - nextY
+      lastTouchY = nextY
+      if (!canScrollInsideModal(event.target, deltaY)) event.preventDefault()
+    }
+
+    const onWheel = (event: WheelEvent) => {
+      if (lockedScrollY === null) return
+      if (!canScrollInsideModal(event.target, event.deltaY)) event.preventDefault()
+    }
+
+    const keepBackgroundStill = () => {
+      if (lockedScrollY !== null && window.scrollY !== 0) window.scrollTo(0, 0)
+    }
+
     const observer = new MutationObserver(syncModalScrollLock)
     observer.observe(document.body, { childList: true, subtree: true })
+    document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true })
+    document.addEventListener('touchmove', onTouchMove, { capture: true, passive: false })
+    document.addEventListener('wheel', onWheel, { capture: true, passive: false })
+    window.addEventListener('scroll', keepBackgroundStill)
+    window.visualViewport?.addEventListener('scroll', keepBackgroundStill)
     syncModalScrollLock()
     return () => {
       observer.disconnect()
-      if (lockedScrollY !== null) {
-        document.body.style.position = ''
-        document.body.style.top = ''
-        document.body.style.width = ''
-        document.body.style.overflow = ''
-        window.scrollTo(0, lockedScrollY)
-      }
+      document.removeEventListener('touchstart', onTouchStart, true)
+      document.removeEventListener('touchmove', onTouchMove, true)
+      document.removeEventListener('wheel', onWheel, true)
+      window.removeEventListener('scroll', keepBackgroundStill)
+      window.visualViewport?.removeEventListener('scroll', keepBackgroundStill)
+      unlockBackgroundScroll()
     }
   }, [])
   const [watchlist, setWatchlist] = useState<string[]>(() => (

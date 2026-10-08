@@ -87,7 +87,8 @@
   .mobile-view-zoom .mobile-view-zoom-reset { width: 54px; font-size: 12px; font-weight: 700; }
   .mobile-view-zoom button:disabled { opacity: 0.3; cursor: default; }
   .mobile-view-zoom button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; border-radius: 22px; }
-  body:has(.modal-backdrop) .mobile-view-zoom { display: none; }
+  body:has(.modal-backdrop) .mobile-view-zoom,
+  body:has(.trend-chart-modal-backdrop) .mobile-view-zoom { display: none; }
 }
 
 .pull-refresh-indicator {
@@ -3692,6 +3693,12 @@ body.guest-personal-view .sheet-header-freeze {
   }
 }
 
+html.modal-scroll-lock,
+html.modal-scroll-lock body {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -3700,8 +3707,9 @@ body.guest-personal-view .sheet-header-freeze {
   place-items: center;
   background: rgba(15, 23, 42, 0.28);
   padding: 24px;
-  overscroll-behavior: contain;
-  touch-action: pan-y;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
 }
 
 .confirm-modal {
@@ -3710,6 +3718,8 @@ body.guest-personal-view .sheet-header-freeze {
   width: min(360px, 100%);
   max-height: calc(100dvh - 48px);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--surface);
@@ -5068,7 +5078,9 @@ body.guest-personal-view .sheet-header-freeze {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  overflow-y: auto;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
   background: rgba(15, 23, 42, .58);
 }
 
@@ -5079,6 +5091,7 @@ body.guest-personal-view .sheet-header-freeze {
   max-height: calc(100dvh - 48px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 22px;
   border: 1px solid #cedcea;
   border-radius: 18px;
