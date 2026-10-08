@@ -5075,7 +5075,7 @@ function TechnicalAnalysisPage({
                 </th>
                 <th>
                   <MetricValue
-                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 클릭하면 크게 볼 수 있습니다. 두꺼운 테두리는 지금 들어가거나 빠질 자리입니다.', '테두리 빨강: 매수 자리\n테두리 파랑: 매도 자리\n초록: 상승 추세\n파랑: 하락 추세\n보라: 전환 감지\n빨강: 이탈 위험')}
+                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 클릭하면 크게 볼 수 있습니다. 두꺼운 테두리는 지금 들어가거나 빠질 자리입니다. 이 의견은 투자 전략과 무관하게 차트만 보고 해석한 것입니다.', '테두리 빨강: 매수 자리\n테두리 파랑: 매도 자리\n초록: 상승 추세\n파랑: 하락 추세\n보라: 전환 감지\n빨강: 이탈 위험')}
                     onTooltipClose={onTooltipClose}
                     onTooltipOpen={onTooltipOpen}
                   >
@@ -5224,6 +5224,142 @@ function TrendChartPreview({ stock, data, onOpen }: { stock: Stock; data: TrendC
   )
 }
 
+function TrendChartZoom({ children }: { children: ReactNode }) {
+  const frameRef = useRef<HTMLDivElement>(null)
+  const targetRef = useRef<HTMLDivElement>(null)
+  const viewRef = useRef({ scale: 1, x: 0, y: 0 })
+  const pointers = useRef(new Map<number, { x: number; y: number }>())
+  const gesture = useRef<null | {
+    mode: 'pinch' | 'pan'
+    startDist: number
+    startScale: number
+    startX: number
+    startY: number
+    anchorX: number
+    anchorY: number
+    pointerX: number
+    pointerY: number
+  }>(null)
+
+  useEffect(() => {
+    const frame = frameRef.current
+    const target = targetRef.current
+    if (!frame || !target) return
+
+    const apply = (scale: number, x: number, y: number) => {
+      const next = scale <= 1
+        ? { scale: 1, x: 0, y: 0 }
+        : {
+            scale,
+            x: Math.min(0, Math.max(frame.clientWidth - frame.clientWidth * scale, x)),
+            y: Math.min(0, Math.max(frame.clientHeight - frame.clientHeight * scale, y)),
+          }
+      viewRef.current = next
+      target.style.transform = `translate(${next.x}px, ${next.y}px) scale(${next.scale})`
+      frame.classList.toggle('is-zoomed', next.scale > 1)
+    }
+    const localPoint = (event: PointerEvent) => {
+      const rect = frame.getBoundingClientRect()
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top }
+    }
+    const beginPinch = () => {
+      const points = [...pointers.current.values()]
+      if (points.length < 2) return
+      const [a, b] = points
+      const midX = (a.x + b.x) / 2
+      const midY = (a.y + b.y) / 2
+      const current = viewRef.current
+      gesture.current = {
+        mode: 'pinch',
+        startDist: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+        startScale: current.scale,
+        startX: current.x,
+        startY: current.y,
+        anchorX: (midX - current.x) / current.scale,
+        anchorY: (midY - current.y) / current.scale,
+        pointerX: midX,
+        pointerY: midY,
+      }
+      frame.classList.add('is-zoomed')
+    }
+    const beginPan = (point: { x: number; y: number }) => {
+      const current = viewRef.current
+      gesture.current = {
+        mode: 'pan',
+        startDist: 0,
+        startScale: current.scale,
+        startX: current.x,
+        startY: current.y,
+        anchorX: 0,
+        anchorY: 0,
+        pointerX: point.x,
+        pointerY: point.y,
+      }
+    }
+    const onDown = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse') return
+      pointers.current.set(event.pointerId, localPoint(event))
+      if (pointers.current.size >= 2) {
+        beginPinch()
+        for (const id of pointers.current.keys()) {
+          try { frame.setPointerCapture(id) } catch { /* pointer already ended */ }
+        }
+      } else if (viewRef.current.scale > 1) {
+        beginPan(localPoint(event))
+        try { frame.setPointerCapture(event.pointerId) } catch { /* pointer already ended */ }
+      }
+    }
+    const onMove = (event: PointerEvent) => {
+      if (!pointers.current.has(event.pointerId)) return
+      pointers.current.set(event.pointerId, localPoint(event))
+      const active = gesture.current
+      if (!active) return
+      if (active.mode === 'pinch' && pointers.current.size >= 2) {
+        const points = [...pointers.current.values()]
+        const [a, b] = points
+        const midX = (a.x + b.x) / 2
+        const midY = (a.y + b.y) / 2
+        const scale = Math.min(4, Math.max(1, active.startScale * Math.hypot(a.x - b.x, a.y - b.y) / active.startDist))
+        apply(scale, midX - active.anchorX * scale, midY - active.anchorY * scale)
+      } else if (active.mode === 'pan') {
+        const point = localPoint(event)
+        apply(active.startScale, active.startX + point.x - active.pointerX, active.startY + point.y - active.pointerY)
+      }
+    }
+    const onUp = (event: PointerEvent) => {
+      pointers.current.delete(event.pointerId)
+      gesture.current = null
+      if (viewRef.current.scale <= 1) frame.classList.remove('is-zoomed')
+      if (pointers.current.size === 1 && viewRef.current.scale > 1) {
+        const point = [...pointers.current.values()][0]
+        beginPan(point)
+      }
+    }
+    const onTouchMove = (event: globalThis.TouchEvent) => {
+      if (event.touches.length >= 2 || viewRef.current.scale > 1) event.preventDefault()
+    }
+
+    frame.addEventListener('pointerdown', onDown)
+    frame.addEventListener('pointermove', onMove)
+    frame.addEventListener('pointerup', onUp)
+    frame.addEventListener('pointercancel', onUp)
+    frame.addEventListener('touchmove', onTouchMove, { passive: false })
+    return () => {
+      frame.removeEventListener('pointerdown', onDown)
+      frame.removeEventListener('pointermove', onMove)
+      frame.removeEventListener('pointerup', onUp)
+      frame.removeEventListener('pointercancel', onUp)
+      frame.removeEventListener('touchmove', onTouchMove)
+    }
+  }, [])
+
+  return (
+    <div ref={frameRef} className="trend-chart-zoom">
+      <div ref={targetRef} className="trend-chart-zoom-target">{children}</div>
+    </div>
+  )
+}
+
 function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: TrendChartData; onClose: () => void }) {
   const reading = trendChartReading(stock, chart)
   const currentPrice = formatTechnicalPrice(stock, chart.candles.at(-1)?.close ?? 0)
@@ -5249,10 +5385,19 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
     <div className="trend-chart-modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, onClose)}>
       <section className="trend-chart-modal" role="dialog" aria-modal="true" aria-label={`${stock.name} 추세 차트`} onMouseDown={(event) => event.stopPropagation()}>
         <header>
-          <div><strong>{stock.name}<span className={`trend-chart-preview-phase trend-chart-title-tag ${reading.tone}`}>{reading.label}</span><span className={`trend-chart-title-tag trend-action-tag ${reading.action.tone}`}>{reading.action.label}</span></strong><span>{stock.ticker} · 최근 120거래일 일봉 · 현재가 {currentPrice}</span></div>
+          <div className="trend-chart-heading">
+            <strong>{stock.name}</strong>
+            <div className="trend-chart-tags">
+              <span className={`trend-chart-preview-phase trend-chart-title-tag ${reading.tone}`}>{reading.label}</span>
+              <span className={`trend-chart-title-tag trend-action-tag ${reading.action.tone}`}>{reading.action.label}</span>
+            </div>
+            <span className="trend-chart-subtitle">{stock.ticker} · 최근 120거래일 일봉 · 현재가 {currentPrice}</span>
+          </div>
           <button type="button" onClick={onClose} aria-label="추세 차트 닫기">×</button>
         </header>
-        <TrendChartSvg chart={chart} stock={stock} />
+        <TrendChartZoom key={stock.ticker}>
+          <TrendChartSvg chart={chart} stock={stock} />
+        </TrendChartZoom>
         <div className="trend-chart-legend">
           <span className="legend-line ma20">20일선</span><span className="legend-line ma50">50일선</span><span className="legend-line ma200">200일선</span><span className="legend-line resistance">저항선</span><span className="legend-line support">지지선</span>
         </div>
@@ -5267,7 +5412,7 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
           <strong>차트 보는 법</strong>
           <ul className="trend-criteria">
             <li>곡선은 20일선·50일선·200일선입니다. 각각 그 기간 종가의 평균을 이은 선입니다.</li>
-            <li>빨간 직선은 저항선, 청록 직선은 지지선입니다. 최근 120거래일에서 가장 높은 고점(지지선은 가장 낮은 저점)과 그 뒤 고점(저점)을 이어 오늘까지 늘린 선입니다.</li>
+            <li>빨간 직선은 저항선, 형광 하늘색 직선은 지지선입니다. 최근 120거래일에서 가장 높은 고점(지지선은 가장 낮은 저점)과 그 뒤 고점(저점)을 이어 오늘까지 늘린 선입니다.</li>
             <li>고점·저점은 앞뒤 5거래일보다 높거나 낮아야 인정합니다. 그래서 최근 5거래일은 아직 선을 바꾸지 않습니다.</li>
             <li>저항선이 내려오고 지지선이 올라오면 삼각수렴, 두 선이 같은 방향이면 채널입니다. 지금 가격에서 너무 먼 선은 그리지 않습니다.</li>
           </ul>
@@ -5385,6 +5530,7 @@ function trendChartReading(stock: Stock, chart: TrendChartData): TrendReading {
 
 function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartData; stock: Stock; compact?: boolean }) {
   const { candles } = chart
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const width = compact ? 176 : 760
   const height = compact ? 88 : 360
   const leftPad = compact ? 7 : 64
@@ -5424,7 +5570,30 @@ function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartDat
   if (overflow > 0) labels.forEach((item) => { item.at -= overflow })
   const underflow = 40 - (labels[0]?.at ?? 40)
   if (underflow > 0) labels.forEach((item) => { item.at += underflow })
-  return <svg className={`trend-chart-svg ${compact ? 'compact' : ''}`} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+  const hovered = hoverIndex == null ? null : candles[hoverIndex]
+  const hoveredVolume = hovered?.volume
+  const onPlotMouseMove = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (window.matchMedia('(pointer: coarse)').matches) return
+    const svg = event.currentTarget.querySelector('svg')
+    const rect = svg?.getBoundingClientRect()
+    if (!rect || rect.width <= 0) return
+    const svgX = ((event.clientX - rect.left) / rect.width) * width
+    if (svgX < leftPad || svgX > width - rightPad) {
+      setHoverIndex(null)
+      return
+    }
+    let nearest = 0
+    let best = Infinity
+    for (let index = 0; index < candles.length; index += 1) {
+      const distance = Math.abs(x(index) - svgX)
+      if (distance < best) {
+        best = distance
+        nearest = index
+      }
+    }
+    setHoverIndex(nearest)
+  }
+  const chartSvg = <svg className={`trend-chart-svg ${compact ? 'compact' : ''}`} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
     {[0.15, 0.4, 0.65, 0.9].map((ratio) => {
       const value = min + (max - min) * ratio
       return <g key={ratio}><line className="trend-grid" x1={leftPad} x2={width - rightPad} y1={y(value)} y2={y(value)} />{!compact && <text className="chart-axis-label" x={8} y={y(value) + 4}>{formatChartPrice(stock, value)}</text>}</g>
@@ -5437,16 +5606,30 @@ function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartDat
       <text className="chart-axis-label" x={8} y={height - padY - volumeBand + 22}>거래량</text>
       {candles.map((candle, i) => {
         const barHeight = (candle.volume ?? 0) / maxVolume * (volumeBand - 12)
-        return <rect key={i} className={`trend-volume-bar ${candle.close >= candle.open ? 'up' : 'down'}`} x={x(i) - candleWidth / 2} y={height - padY - barHeight} width={candleWidth} height={barHeight} />
+        return <rect key={i} className={`trend-volume-bar ${candle.close >= candle.open ? 'up' : 'down'}${hoverIndex === i ? ' is-hot' : ''}`} x={x(i) - candleWidth / 2} y={height - padY - barHeight} width={candleWidth} height={barHeight} />
       })}
     </g>}
     {averages.map(({ values, className }) => <path key={className} className={`trend-average-line ${className}`} d={path(values)} />)}
-    {straightLines.map(({ line, className }) => <line key={className} className={`trend-straight-line ${className}`} x1={x(line.startIndex)} y1={y(line.startPrice)} x2={x(line.endIndex)} y2={y(line.endPrice)} />)}
+    {straightLines.map(({ line, className }) => (
+      <g key={className}>
+        {className === 'support' && <line className="trend-straight-line support-under" x1={x(line.startIndex)} y1={y(line.startPrice)} x2={x(line.endIndex)} y2={y(line.endPrice)} />}
+        <line className={`trend-straight-line ${className}`} x1={x(line.startIndex)} y1={y(line.startPrice)} x2={x(line.endIndex)} y2={y(line.endPrice)} />
+      </g>
+    ))}
+    {!compact && hoverIndex != null && <line className="trend-hover-line" x1={x(hoverIndex)} x2={x(hoverIndex)} y1={padY} y2={height - padY} />}
     {!compact && <>
       {labels.map((item) => <text key={item.className} className={`chart-level-label ${item.className}`} x={width - 6} y={item.at + 4} textAnchor="end">{item.name} {formatChartPrice(stock, item.value)}</text>)}
       {[0, Math.floor((candles.length - 1) / 3), Math.floor((candles.length - 1) * 2 / 3), candles.length - 1].map((index) => <text className="chart-axis-label" key={index} x={x(index)} y={height - 7} textAnchor={index === 0 ? 'start' : index === candles.length - 1 ? 'end' : 'middle'}>{formatChartDate(candles[index]?.date)}</text>)}
     </>}
   </svg>
+  if (compact) return chartSvg
+  const tipLeft = hovered == null ? 0 : Math.min(82, Math.max(18, (x(hoverIndex ?? 0) / width) * 100))
+  return (
+    <div className="trend-chart-plot" onMouseMove={onPlotMouseMove} onMouseLeave={() => setHoverIndex(null)}>
+      {chartSvg}
+      {hovered && hoveredVolume != null && <div className="trend-volume-tip" style={{ left: `${tipLeft}%` }}>{formatChartDate(hovered.date)} · 거래량 {Math.round(hoveredVolume).toLocaleString('ko-KR')}</div>}
+    </div>
+  )
 }
 
 function formatChartPrice(stock: Stock, value: number) {
