@@ -27,58 +27,22 @@ def buy(signal, **kwargs):
         trend_signal={'signalClose': 100, 'stopPrice': 94, **signal}, **kwargs)
 
 
-def test_chart_resistance_freezes_on_close_above_without_half_percent():
+def test_chart_payload_has_averages_and_swing_lines():
     data = bars()
-    resistance = max(r['high'] for r in data[-20:])
-    data.append(dict(date='bare', open=resistance, low=resistance * .99, high=resistance * 1.05, close=resistance * 1.0006, volume=1000000))
-    first = build_trend_chart(data)
-    assert first['resistance'] == resistance
-    assert first['resistanceFrozen']
-    data.append(dict(date='next', open=resistance * 1.03, low=resistance * 1.02, high=resistance * 1.08, close=resistance * 1.04, volume=1000000))
-    second = build_trend_chart(data)
-    assert second['resistance'] == resistance
-    assert second['resistance'] < max(r['high'] for r in data[-21:-1])
-
-
-def test_chart_resistance_stays_at_breakout_level_after_new_high():
-    data = bars()
-    resistance = max(r['high'] for r in data[-20:])
-    origin = next(i for i, row in enumerate(data[-20:]) if row['high'] == resistance) + len(data) - 20
-    data.append(dict(date='breakout', open=resistance*1.006, low=resistance*1.004, high=resistance*1.02, close=resistance*1.01, volume=1000000))
-    first = build_trend_chart(data)
-    assert first['resistance'] == resistance
-    assert first['resistanceIndex'] == origin
-    assert first['resistanceFrozen']
-    data.append(dict(date='follow', open=resistance*1.03, low=resistance*1.02, high=resistance*1.08, close=resistance*1.05, volume=1000000))
-    second = build_trend_chart(data)
-    assert second['resistance'] == resistance
-    assert second['resistanceIndex'] == origin
-    assert second['resistance'] < max(r['high'] for r in data[-21:-1])
-    assert second['phase'] == '상승 전환 초입'
-
-
-def test_chart_resistance_unfreezes_after_failed_hold():
-    data = bars()
-    resistance = max(r['high'] for r in data[-20:])
-    data.append(dict(date='breakout', open=resistance*1.006, low=resistance*1.004, high=resistance*1.02, close=resistance*1.01, volume=1000000))
-    data.append(dict(date='fail', open=resistance*.96, low=resistance*.95, high=resistance*.97, close=resistance*.96, volume=1000000))
+    for i in range(120):
+        c = 80 + 6 * ((i % 20) - 10 if (i // 20) % 2 else 10 - (i % 20)) / 10 + i * .02
+        data.append(dict(date=f'w{i}', open=c, high=c + .5, low=c - .5, close=c, volume=1000000))
     chart = build_trend_chart(data)
-    rolling = max(r['high'] for r in data[-21:-1])
-    assert chart['resistance'] == rolling
-    assert not chart['resistanceFrozen']
-
-
-def test_chart_resistance_expires_after_hold_window():
-    data = bars()
-    resistance = max(r['high'] for r in data[-20:])
-    data.append(dict(date='breakout', open=resistance*1.006, low=resistance*1.004, high=resistance*1.02, close=resistance*1.01, volume=1000000))
-    for i in range(21):
-        price = resistance * 1.04
-        data.append(dict(date=str(i), open=price, high=price * 1.02, low=price * .99, close=price, volume=1000000))
-    chart = build_trend_chart(data)
-    rolling = max(r['high'] for r in data[-21:-1])
-    assert chart['resistance'] == rolling
-    assert not chart['resistanceFrozen']
+    closes = [r['close'] for r in data]
+    assert len(chart['candles']) == len(chart['ma20']) == len(chart['ma200']) == 120
+    assert chart['candles'][-1]['volume'] == 1000000
+    assert chart['ma200'][0] == round(sum(closes[-319:-119]) / 200, 4)
+    assert chart['ma20'][-1] == round(sum(closes[-20:]) / 20, 4)
+    for line in (chart['resistanceLine'], chart['supportLine']):
+        assert line['endIndex'] == 119 and line['endIndex'] - line['startIndex'] >= 5
+    assert chart['resistanceLine']['endPrice'] > closes[-1] * .97
+    assert chart['supportLine']['endPrice'] < closes[-1] * 1.03
+    assert 'phase' not in chart
 
 
 def test_retest_is_after_breakout_and_consumed_once():

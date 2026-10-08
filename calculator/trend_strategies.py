@@ -12,33 +12,6 @@ def _prior_extrema(rows: list[dict[str, Any]], index: int) -> tuple[float, int, 
     return float(rows[support_i]['low']), support_i, float(rows[resistance_i]['high']), resistance_i
 
 
-def resolve_chart_levels(rows: list[dict[str, Any]], end_index: int) -> tuple[float, int, float, int, bool, bool]:
-    start = max(20, end_index - 39)
-    support, support_i, resistance, resistance_i = _prior_extrema(rows, start)
-    res_broken = False
-    sup_broken = False
-    res_break_i = 0
-    sup_break_i = 0
-    for i in range(start, end_index + 1):
-        close = float(rows[i]['close'])
-        roll_s, roll_si, roll_r, roll_ri = _prior_extrema(rows, i)
-        if res_broken and (close < resistance * .97 or i - res_break_i > 20):
-            res_broken = False
-        if sup_broken and (close > support * 1.03 or i - sup_break_i > 20):
-            sup_broken = False
-        if not res_broken:
-            resistance, resistance_i = roll_r, roll_ri
-        if not sup_broken:
-            support, support_i = roll_s, roll_si
-        if not res_broken and close > resistance:
-            res_broken = True
-            res_break_i = i
-        if not sup_broken and close < support:
-            sup_broken = True
-            sup_break_i = i
-    return support, support_i, resistance, resistance_i, sup_broken, res_broken
-
-
 def chart_phase(
     rows: list[dict[str, Any]],
     index: int,
@@ -71,21 +44,83 @@ def chart_phase(
     return phase, support, resistance
 
 
+CHART_BARS = 120
+PIVOT_SPAN = 5
+LINE_TOLERANCE = .012
+LINE_TOUCH = .015
+# The line's value at the last bar must stay this close to the close to be worth drawing.
+LINE_RANGE = {'high': (.97, 1.35), 'low': (.65, 1.03)}
+
+
+def _moving_averages(closes: list[float], period: int, start: int) -> list[float | None]:
+    return [
+        round(sum(closes[i + 1 - period:i + 1]) / period, 4) if i + 1 >= period else None
+        for i in range(start, len(closes))
+    ]
+
+
+def _swing_pivots(values: list[float], kind: str) -> list[int]:
+    found = []
+    for i in range(PIVOT_SPAN, len(values) - PIVOT_SPAN):
+        around = values[i - PIVOT_SPAN:i] + values[i + 1:i + PIVOT_SPAN + 1]
+        if (kind == 'high' and values[i] > max(around)) or (kind == 'low' and values[i] < min(around)):
+            found.append(i)
+    return found
+
+
+def _swing_line(values: list[float], close: float, kind: str) -> dict[str, float | int] | None:
+    """Join two confirmed swing points, preferring the window extreme, then more touches, then recency."""
+    points = _swing_pivots(values, kind)
+    if not points:
+        return None
+    extreme = (max if kind == 'high' else min)(values[p] for p in points)
+    low_bound, high_bound = LINE_RANGE[kind]
+    last = len(values) - 1
+    best = None
+    for a, i in enumerate(points):
+        for j in points[a + 1:]:
+            if j - i < PIVOT_SPAN:
+                continue
+            slope = (values[j] - values[i]) / (j - i)
+            if not close * low_bound <= values[i] + slope * (last - i) <= close * high_bound:
+                continue
+            misses = 0
+            for k in range(i, len(values)):
+                level = values[i] + slope * (k - i)
+                if (kind == 'high' and values[k] > level * (1 + LINE_TOLERANCE)) or (
+                    kind == 'low' and values[k] < level * (1 - LINE_TOLERANCE)
+                ):
+                    misses += 1
+            if misses > 4:
+                continue
+            touches = sum(1 for k in points if k >= i and abs(values[k] - (values[i] + slope * (k - i))) <= values[k] * LINE_TOUCH)
+            score = (values[i] == extreme, touches, j)
+            if best is None or score > best[0]:
+                best = (score, i, slope)
+    if best is None:
+        return None
+    _, i, slope = best
+    return {
+        'startIndex': i,
+        'startPrice': round(values[i], 4),
+        'endIndex': last,
+        'endPrice': round(values[i] + slope * (last - i), 4),
+    }
+
+
 def build_trend_chart(rows: list[dict[str, Any]]) -> dict[str, Any] | None:
     if len(rows) < 30:
         return None
-    end = len(rows) - 1
-    support, support_i, resistance, resistance_i, support_frozen, resistance_frozen = resolve_chart_levels(rows, end)
-    phase, _, _ = chart_phase(rows, end, support, resistance)
+    offset = max(0, len(rows) - CHART_BARS)
+    visible = rows[offset:]
+    closes = [float(row['close']) for row in rows]
     return {
-        'phase': phase,
-        'support': support,
-        'resistance': resistance,
-        'supportIndex': support_i,
-        'resistanceIndex': resistance_i,
-        'supportFrozen': support_frozen,
-        'resistanceFrozen': resistance_frozen,
-        'candles': [{key: row[key] for key in ('date', 'open', 'high', 'low', 'close')} for row in rows],
+        'candles': [{key: row[key] for key in ('date', 'open', 'high', 'low', 'close', 'volume')} for row in visible],
+        'ma20': _moving_averages(closes, 20, offset),
+        'ma50': _moving_averages(closes, 50, offset),
+        'ma200': _moving_averages(closes, 200, offset),
+        'resistanceLine': _swing_line([float(row['high']) for row in visible], closes[-1], 'high'),
+        'supportLine': _swing_line([float(row['low']) for row in visible], closes[-1], 'low'),
     }
 
 

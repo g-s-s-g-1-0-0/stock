@@ -53,6 +53,7 @@ from .sheet_sources import (
     fetch_us_ohlcv,
     fetch_valuation,
     refresh_earnings_date_label,
+    resolve_market,
 )
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -1259,7 +1260,11 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
             if row:
                 # The table stores an intentionally compact, render-ready daily OHLC series.
                 # It is refreshed with the rest of the technical cache, not fabricated in the UI.
-                candles = fetch_ohlcv(stock["ticker"], count=160)[-120:]
+                # 320 bars so the 200-day line spans the whole 120-bar chart window.
+                if resolve_market(stock["ticker"]) == "KR":
+                    candles = fetch_ohlcv(stock["ticker"], count=320)
+                else:
+                    candles = fetch_us_ohlcv(stock["ticker"], range_value="2y")
                 chart = build_trend_chart(candles)
                 if chart:
                     row["추세 차트 데이터"] = json.dumps(chart, ensure_ascii=False, separators=(",", ":"))
