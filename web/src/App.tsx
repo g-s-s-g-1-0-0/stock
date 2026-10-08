@@ -5412,7 +5412,7 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
           <strong>차트 보는 법</strong>
           <ul className="trend-criteria">
             <li>곡선은 20일선·50일선·200일선입니다. 각각 그 기간 종가의 평균을 이은 선입니다.</li>
-            <li>빨간 직선은 저항선, 형광 하늘색 직선은 지지선입니다. 최근 120거래일에서 가장 높은 고점(지지선은 가장 낮은 저점)과 그 뒤 고점(저점)을 이어 오늘까지 늘린 선입니다.</li>
+            <li>빨간 직선은 저항선, 하늘색 직선은 지지선입니다. 최근 120거래일에서 가장 높은 고점(지지선은 가장 낮은 저점)과 그 뒤 고점(저점)을 이어 오늘까지 늘린 선입니다.</li>
             <li>고점·저점은 앞뒤 5거래일보다 높거나 낮아야 인정합니다. 그래서 최근 5거래일은 아직 선을 바꾸지 않습니다.</li>
             <li>저항선이 내려오고 지지선이 올라오면 삼각수렴, 두 선이 같은 방향이면 채널입니다. 지금 가격에서 너무 먼 선은 그리지 않습니다.</li>
           </ul>
@@ -5610,12 +5610,7 @@ function TrendChartSvg({ chart, stock, compact = false }: { chart: TrendChartDat
       })}
     </g>}
     {averages.map(({ values, className }) => <path key={className} className={`trend-average-line ${className}`} d={path(values)} />)}
-    {straightLines.map(({ line, className }) => (
-      <g key={className}>
-        {className === 'support' && <line className="trend-straight-line support-under" x1={x(line.startIndex)} y1={y(line.startPrice)} x2={x(line.endIndex)} y2={y(line.endPrice)} />}
-        <line className={`trend-straight-line ${className}`} x1={x(line.startIndex)} y1={y(line.startPrice)} x2={x(line.endIndex)} y2={y(line.endPrice)} />
-      </g>
-    ))}
+    {straightLines.map(({ line, className }) => <line key={className} className={`trend-straight-line ${className}`} x1={x(line.startIndex)} y1={y(line.startPrice)} x2={x(line.endIndex)} y2={y(line.endPrice)} />)}
     {!compact && hoverIndex != null && <line className="trend-hover-line" x1={x(hoverIndex)} x2={x(hoverIndex)} y1={padY} y2={height - padY} />}
     {!compact && <>
       {labels.map((item) => <text key={item.className} className={`chart-level-label ${item.className}`} x={width - 6} y={item.at + 4} textAnchor="end">{item.name} {formatChartPrice(stock, item.value)}</text>)}
