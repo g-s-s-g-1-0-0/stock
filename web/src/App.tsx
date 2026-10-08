@@ -6783,11 +6783,11 @@ function App() {
       return false
     }
 
-    const onTouchStart = (event: TouchEvent) => {
+    const onTouchStart = (event: globalThis.TouchEvent) => {
       lastTouchY = event.touches[0]?.clientY ?? lastTouchY
     }
 
-    const onTouchMove = (event: TouchEvent) => {
+    const onTouchMove = (event: globalThis.TouchEvent) => {
       if (lockedScrollY === null) return
       const nextY = event.touches[0]?.clientY ?? lastTouchY
       const deltaY = lastTouchY - nextY
