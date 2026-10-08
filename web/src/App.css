@@ -4962,7 +4962,8 @@ html.modal-scroll-lock body {
 .trend-chart-preview {
   position: relative;
   display: grid;
-  width: 184px;
+  box-sizing: border-box;
+  width: 196px;
   padding: 5px;
   border: 1px solid #d8e2ef;
   border-radius: 10px;
@@ -4976,6 +4977,29 @@ html.modal-scroll-lock body {
   border-color: #6f96c4;
   box-shadow: 0 5px 14px rgba(48, 82, 122, .16);
   transform: translateY(-1px);
+}
+
+.trend-chart-preview-buy,
+.trend-chart-preview-sell {
+  border-width: 3px;
+}
+
+.trend-chart-preview-buy,
+.trend-chart-preview-buy:hover {
+  border-color: #dc2626;
+}
+
+.trend-chart-preview-sell,
+.trend-chart-preview-sell:hover {
+  border-color: #2563eb;
+}
+
+.trend-chart-preview-buy:hover {
+  box-shadow: 0 5px 14px rgba(220, 38, 38, .2);
+}
+
+.trend-chart-preview-sell:hover {
+  box-shadow: 0 5px 14px rgba(37, 99, 235, .2);
 }
 
 .trend-chart-preview-phase {

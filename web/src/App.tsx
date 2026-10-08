@@ -5075,7 +5075,7 @@ function TechnicalAnalysisPage({
                 </th>
                 <th>
                   <MetricValue
-                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 클릭하면 크게 볼 수 있습니다.', '초록: 상승 추세\n파랑: 하락 추세\n보라: 전환 감지\n빨강: 이탈 위험')}
+                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 클릭하면 크게 볼 수 있습니다. 두꺼운 테두리는 지금 들어가거나 빠질 자리입니다.', '테두리 빨강: 매수 자리\n테두리 파랑: 매도 자리\n초록: 상승 추세\n파랑: 하락 추세\n보라: 전환 감지\n빨강: 이탈 위험')}
                     onTooltipClose={onTooltipClose}
                     onTooltipOpen={onTooltipOpen}
                   >
@@ -5205,11 +5205,19 @@ function parseTrendChart(raw?: string): TrendChartData | null {
   } catch { return null }
 }
 
+function trendChartSpot(reading: TrendReading) {
+  if (reading.action.tone === 'buy') return 'buy'
+  if (reading.label === '지지선 이탈') return 'sell'
+  return null
+}
+
 function TrendChartPreview({ stock, data, onOpen }: { stock: Stock; data: TrendChartData | null; onOpen: (chart: TrendChartData) => void }) {
   if (!data) return <span className="trend-chart-unavailable">데이터 갱신 중</span>
   const reading = trendChartReading(stock, data)
+  const spot = trendChartSpot(reading)
+  const spotLabel = spot === 'buy' ? '매수 자리' : spot === 'sell' ? '매도 자리' : ''
   return (
-    <button className="trend-chart-preview" type="button" onClick={() => onOpen(data)} aria-label={`${stock.name} 추세 차트 크게 보기`}>
+    <button className={`trend-chart-preview${spot ? ` trend-chart-preview-${spot}` : ''}`} type="button" onClick={() => onOpen(data)} aria-label={`${stock.name} ${spotLabel ? `${spotLabel} ` : ''}추세 차트 크게 보기`}>
       <TrendChartSvg chart={data} stock={stock} compact />
       <span className={`trend-chart-preview-phase ${reading.tone}`}>{reading.label}</span>
     </button>
