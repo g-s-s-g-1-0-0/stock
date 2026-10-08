@@ -5493,7 +5493,7 @@ function trendChartReading(stock: Stock, chart: TrendChartData): TrendReading {
   if (label === '저항선 돌파') watch.push('종가가 다시 저항선 아래로 내려오면 돌파 실패로 봅니다.')
   else if (label === '지지선 이탈') watch.push('종가가 지지선 위로 다시 올라오면 이탈이 취소된 것으로 봅니다.')
   else if (resistance || support) watch.push('종가가 저항선 위로 마감하면 위쪽 돌파, 지지선 아래로 마감하면 아래쪽 이탈로 봅니다. 선이 기울어 있으면 기준 가격도 날마다 바뀝니다.')
-  watch.push('액션 가이드는 차트 모양만 보고 정한 것입니다. 투자의견 칸이 관망이면 그쪽이 우선입니다.')
+  watch.push('액션 가이드는 차트 모양만 보고 정한 것입니다. 기술 분석의 투자의견 칸이 관망이면 그쪽이 우선입니다.')
 
   const near = (level: number) => level < close && close / level - 1 <= 0.04
   const downtrend = label === '하락 채널' || (ma200 != null && close < ma200)

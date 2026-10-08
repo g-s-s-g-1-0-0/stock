@@ -5159,11 +5159,12 @@ html.modal-scroll-lock body {
 .trend-chart-zoom { overflow: hidden; touch-action: pan-y; border-radius: 7px; }
 .trend-chart-zoom.is-zoomed { touch-action: none; }
 .trend-chart-zoom-target { transform-origin: 0 0; }
-.trend-chart-note { margin: 15px 0 5px; padding: 12px 14px; border-radius: 10px; background: #f5f8fc; color: #3f5067; font-size: 13px; line-height: 1.65; }
+.trend-chart-note { margin: 15px 0 5px; padding: 12px 14px; border-radius: 10px; background: #f5f8fc; color: #3f5067; font-size: 15px; line-height: 1.65; }
+.trend-chart-note .trend-action-tag { font-size: 14px; }
 .trend-chart-note p { margin: 0; }
 .trend-chart-note p + p { margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
 
-.trend-criteria { display: grid; gap: 7px; margin: 10px 0 5px; padding: 0; list-style: none; color: #526277; font-size: 12px; line-height: 1.55; }
+.trend-criteria { display: grid; gap: 7px; margin: 10px 0 5px; padding: 0; list-style: none; color: #526277; font-size: 14px; line-height: 1.55; }
 .trend-criteria li { position: relative; padding-left: 15px; }.trend-criteria li::before { position: absolute; left: 0; color: #3b82f6; content: '•'; font-weight: 900; }
 
 .trend-chart-guide {
@@ -5171,13 +5172,13 @@ html.modal-scroll-lock body {
   padding: 14px 0 4px;
   border-top: 1px solid #edf1f5;
   color: #526277;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.7;
 }
-.trend-chart-guide strong { display: block; margin-bottom: 6px; color: #334155; font-size: 12px; }
+.trend-chart-guide strong { display: block; margin-bottom: 6px; color: #334155; font-size: 14px; }
 .trend-chart-guide .trend-criteria { margin: 0; }
 
-.trend-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; color: #475569; font-size: 12px; }
+.trend-chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; color: #475569; font-size: 14px; }
 .legend-line::before { display: inline-block; width: 16px; height: 0; margin-right: 5px; border-top: 2px solid currentColor; content: ''; vertical-align: middle; }
 .legend-line.ma20 { color: #2563eb; }.legend-line.ma50 { color: #d97706; }.legend-line.ma200 { color: #db2777; }.legend-line.support { color: #0891b2; }.legend-line.resistance { color: #dc2626; }
 .legend-line.support::before, .legend-line.resistance::before { width: 18px; border-top-width: 3px; }
@@ -5193,9 +5194,11 @@ html.modal-scroll-lock body {
   .trend-chart-svg:not(.compact) { min-height: 148px; }
   .trend-chart-svg .chart-axis-label { font-size: 10px; }
   .trend-chart-svg .chart-level-label { font-size: 11px; }
-  .trend-chart-legend { gap: 8px; font-size: 11px; }
-  .trend-chart-note { margin-top: 12px; font-size: 12px; }
-  .trend-chart-guide { margin-top: 12px; padding: 10px 0 0; font-size: 11px; }
+  .trend-chart-legend { gap: 8px; font-size: 13px; }
+  .trend-chart-note { margin-top: 12px; font-size: 14px; }
+  .trend-chart-guide { margin-top: 12px; padding: 10px 0 0; font-size: 14px; }
+  .trend-chart-guide strong { font-size: 14px; }
+  .trend-criteria { font-size: 14px; }
 }
 
 .technical-analysis-table th:nth-child(46),
