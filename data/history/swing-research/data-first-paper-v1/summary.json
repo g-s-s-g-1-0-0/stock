@@ -1,7 +1,7 @@
 {
   "version": "data-first-paper-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-10-07",
+  "lastSession": "2026-10-08",
   "observations": 126,
   "signalCounts": {
     "data_S3_ma200_distance25_base": 0,
@@ -139,5 +139,5 @@
       }
     }
   },
-  "waitingForSource": 1
+  "waitingForSource": 43
 }
