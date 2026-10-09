@@ -5248,6 +5248,13 @@ function trendProductLabel(ticker: string, multiple: number) {
   return `${ticker} ${side}${Math.abs(multiple)}배`
 }
 
+function trendBaseReason(reference: LeveragedTrendReference) {
+  const times = Math.abs(reference.multiple)
+  const direction = reference.multiple < 0 ? '반대로 ' : ''
+  const base = trendBaseLabel(reference)
+  return `${times}배 차트는 하루 등락만 ${direction}${times}배로 키운 가격이라 이평·지지·저항이 달라집니다. 추세는 ${base} 차트로 봅니다.`
+}
+
 function trendChartSpot(reading: TrendReading) {
   if (reading.action.tone === 'buy') return 'buy'
   if (reading.label === '지지선 이탈') return 'sell'
@@ -5463,23 +5470,21 @@ function TrendChartModal({
               <span className={`trend-chart-title-tag trend-action-tag ${reading.action.tone}`}>{reading.action.label}</span>
             </div>
             <span className="trend-chart-subtitle">{activeStock.ticker} · 최근 120거래일 일봉 · 현재가 {currentPrice}</span>
-            {reference && (
-              <div className="trend-chart-switch" role="tablist" aria-label="추세 차트 기준">
-                <button type="button" role="tab" aria-selected={viewingBase} className={viewingBase ? 'active' : ''} onClick={() => setShowBase(true)}>
-                  {trendBaseLabel(reference)}
-                </button>
-                <button type="button" role="tab" aria-selected={!viewingBase} className={viewingBase ? '' : 'active'} onClick={() => setShowBase(false)}>
-                  {trendProductLabel(stock.ticker, reference.multiple)}
-                </button>
-              </div>
-            )}
           </div>
           <button type="button" onClick={onClose} aria-label="추세 차트 닫기">×</button>
         </header>
         {reference && (
-          <p className="trend-chart-base-note">
-            {Math.abs(reference.multiple)}배 봉은 하루 등락만 그 배수입니다. 추세는 {trendBaseLabel(reference)} 차트로 봅니다.
-          </p>
+          <div className="trend-chart-switch-row">
+            <div className="trend-chart-switch" role="tablist" aria-label="추세 차트 기준">
+              <button type="button" role="tab" aria-selected={viewingBase} className={viewingBase ? 'active' : ''} onClick={() => setShowBase(true)}>
+                {trendBaseLabel(reference)}
+              </button>
+              <button type="button" role="tab" aria-selected={!viewingBase} className={viewingBase ? '' : 'active'} onClick={() => setShowBase(false)}>
+                {trendProductLabel(stock.ticker, reference.multiple)}
+              </button>
+            </div>
+            <p className="trend-chart-base-note">{trendBaseReason(reference)}</p>
+          </div>
         )}
         <TrendChartZoom key={`${activeStock.ticker}-${viewingBase ? 'base' : 'own'}`}>
           <TrendChartSvg chart={activeChart} stock={activeStock} />

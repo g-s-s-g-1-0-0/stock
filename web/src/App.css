@@ -5064,40 +5064,47 @@ html.modal-scroll-lock body {
   line-height: 1.2;
 }
 
-.trend-chart-modal header .trend-chart-switch {
-  flex-basis: 100%;
-  margin: 8px 0 2px;
+.trend-chart-switch-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 0 0 12px;
 }
 
 .trend-chart-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 8px;
-}
-
-.trend-chart-switch button {
-  padding: 7px 12px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 3px;
   border: 1px solid #d5e0ec;
   border-radius: 999px;
   background: #f8fafc;
+}
+
+.trend-chart-switch button {
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
   color: #475569;
   font-size: 13px;
   font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
   cursor: pointer;
 }
 
 .trend-chart-switch button.active {
-  border-color: #1e3a5f;
   background: #1e3a5f;
   color: #fff;
 }
 
 .trend-chart-base-note {
-  margin: 0 0 12px;
+  flex: 1 1 240px;
+  margin: 0;
   color: #64748b;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .trend-chart-unavailable { color: var(--muted); font-size: 11px; }
@@ -5206,7 +5213,7 @@ html.modal-scroll-lock body {
 .trend-action-tag.wait { border-color: #2563eb; background: #dbeafe; color: #1e40af; }
 .trend-action-tag.hold { border-color: #94a3b8; background: #f1f5f9; color: #475569; }
 .trend-chart-note .trend-action-text { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: #1f2d3d; font-weight: 700; }
-.trend-chart-modal header button { flex-shrink: 0; width: 32px; height: 32px; border: 0; border-radius: 50%; background: #eef2f7; color: #475569; font-size: 23px; cursor: pointer; }
+.trend-chart-modal header > button { flex-shrink: 0; width: 32px; height: 32px; border: 0; border-radius: 50%; background: #eef2f7; color: #475569; font-size: 23px; cursor: pointer; }
 .trend-chart-zoom { overflow: hidden; touch-action: pan-y; border-radius: 7px; }
 .trend-chart-zoom.is-zoomed { touch-action: none; }
 .trend-chart-zoom-target { transform-origin: 0 0; }
@@ -5241,6 +5248,8 @@ html.modal-scroll-lock body {
   .trend-chart-heading { flex-direction: column; align-items: flex-start; gap: 6px; }
   .trend-chart-subtitle { flex-basis: auto; font-size: 11px; }
   .trend-chart-modal header strong { font-size: 16px; }
+  .trend-chart-switch-row { align-items: flex-start; }
+  .trend-chart-base-note { flex-basis: 100%; }
   .trend-volume-tip { display: none; }
   .trend-chart-svg:not(.compact) { min-height: 148px; }
   .trend-chart-svg .chart-axis-label { font-size: 10px; }
