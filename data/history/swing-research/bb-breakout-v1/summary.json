@@ -1,8 +1,8 @@
 {
   "version": "bb-breakout-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-10-08",
-  "observations": 168,
+  "lastSession": "2026-10-09",
+  "observations": 210,
   "signalCounts": {
     "bb_squeeze_breakout": 0
   },

@@ -1,8 +1,8 @@
 {
   "version": "candidate-lab-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-10-08",
-  "observations": 168,
+  "lastSession": "2026-10-09",
+  "observations": 210,
   "signalCounts": {
     "lab_p_rsi2_pullback": 0,
     "lab_p_pocket_pivot": 0,
