@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-10-09T13:51:21+00:00",
-    "lastSuccessfulRun": "2026-10-09T13:51:21+00:00",
+    "updatedAt": "2026-10-09T14:56:25+00:00",
+    "lastSuccessfulRun": "2026-10-09T14:56:25+00:00",
     "failedReason": null
   },
   "rows": [
@@ -43,7 +43,7 @@
       "ticker": "005380",
       "name": "현대자동차",
       "market": "KR",
-      "fairPrice": "₩405,849 ~ ₩549,090",
+      "fairPrice": "₩397,922 ~ ₩538,365",
       "fairPriceReason": null,
       "currentPrice": "₩324,500",
       "valuation": "저평가",
@@ -75,7 +75,7 @@
       "ticker": "011070",
       "name": "LG이노텍",
       "market": "KR",
-      "fairPrice": "₩608,711 ~ ₩823,551",
+      "fairPrice": "₩581,160 ~ ₩786,275",
       "fairPriceReason": null,
       "currentPrice": "₩572,000",
       "valuation": "저평가",
@@ -523,7 +523,7 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "fairPrice": "₩270,906 ~ ₩366,520",
+      "fairPrice": "₩268,501 ~ ₩363,267",
       "fairPriceReason": null,
       "currentPrice": "₩619,000",
       "valuation": "고평가",
