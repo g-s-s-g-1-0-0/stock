@@ -4963,7 +4963,11 @@ function TechnicalAnalysisPage({
   onTooltipClose: () => void
 }) {
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
-  const [selectedTrendChart, setSelectedTrendChart] = useState<{ stock: Stock; chart: TrendChartData } | null>(null)
+  const [selectedTrendChart, setSelectedTrendChart] = useState<{
+    stock: Stock
+    chart: TrendChartData
+    reference: LeveragedTrendReference | null
+  } | null>(null)
   const visibleStocks = stocks.slice(0, MAX_WATCHLIST_ITEMS)
   const blankRowCount = Math.max(MAX_WATCHLIST_ITEMS - visibleStocks.length, 0)
   const isEmpty = stocks.length === 0
@@ -5075,7 +5079,7 @@ function TechnicalAnalysisPage({
                 </th>
                 <th>
                   <MetricValue
-                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 클릭하면 크게 볼 수 있습니다. 두꺼운 테두리는 지금 들어가거나 빠질 자리입니다. 이 의견은 투자 전략과 무관하게 차트만 보고 해석한 것입니다.', '테두리 빨강: 매수 자리\n테두리 파랑: 매도 자리\n초록: 상승 추세\n파랑: 하락 추세\n보라: 전환 감지\n빨강: 이탈 위험')}
+                    tooltip={metricTooltip('최근 가격 흐름에 자동으로 추세선·지지·저항을 표시한 미리보기입니다. 2배·3배 종목은 기준 1배 차트가 먼저 나오고, 클릭하면 그 종목의 배수 차트로 바꿀 수 있습니다. 두꺼운 테두리는 지금 들어가거나 빠질 자리입니다.', '테두리 빨강: 매수 자리\n테두리 파랑: 매도 자리')}
                     onTooltipClose={onTooltipClose}
                     onTooltipOpen={onTooltipOpen}
                   >
@@ -5108,7 +5112,12 @@ function TechnicalAnalysisPage({
                   <td className="ticker-cell">{stock.ticker}</td>
                   <td><span className={`status-badge ${statusClass(displayedOpinion)}`}>{displayedOpinion}</span></td>
                   <td className="trend-chart-cell">
-                    <TrendChartPreview stock={stock} data={parseTrendChart(apiRow?.['추세 차트 데이터'])} onOpen={(chart) => setSelectedTrendChart({ stock, chart })} />
+                    <TrendChartPreview
+                      stock={stock}
+                      data={parseTrendChart(apiRow?.['추세 차트 데이터'])}
+                      reference={leveragedTrendReference(apiRow, technicalRows)}
+                      onOpen={(chart, reference) => setSelectedTrendChart({ stock, chart, reference })}
+                    />
                   </td>
                   {technicalMetricColumns.map((column) => {
                     const apiKey = column.key ?? column.label
@@ -5166,6 +5175,7 @@ function TechnicalAnalysisPage({
         <TrendChartModal
           stock={selectedTrendChart.stock}
           chart={selectedTrendChart.chart}
+          reference={selectedTrendChart.reference}
           onClose={() => setSelectedTrendChart(null)}
         />
       )}
@@ -5205,20 +5215,67 @@ function parseTrendChart(raw?: string): TrendChartData | null {
   } catch { return null }
 }
 
+type LeveragedTrendReference = {
+  ticker: string
+  multiple: number
+  kind: 'etf' | 'stock'
+  chart: TrendChartData
+}
+
+function leveragedTrendReference(
+  row?: Record<string, string>,
+  rows?: Record<string, Record<string, string>>,
+): LeveragedTrendReference | null {
+  const ticker = row?.['기준 티커']?.trim().toUpperCase()
+  const multiple = Number(row?.['레버리지 배수'])
+  if (!ticker || !Number.isFinite(multiple) || Math.abs(multiple) < 2) return null
+  const chart = parseTrendChart(rows?.[ticker]?.['추세 차트 데이터']) ?? parseTrendChart(row?.['기준 추세 차트 데이터'])
+  if (!chart) return null
+  return {
+    ticker,
+    multiple,
+    kind: row?.['기준 종류'] === 'stock' ? 'stock' : 'etf',
+    chart,
+  }
+}
+
+function trendBaseLabel(reference: LeveragedTrendReference) {
+  return reference.kind === 'stock' ? `${reference.ticker} 기준` : `${reference.ticker} 1배`
+}
+
+function trendProductLabel(ticker: string, multiple: number) {
+  const side = multiple < 0 ? '인버스 ' : ''
+  return `${ticker} ${side}${Math.abs(multiple)}배`
+}
+
 function trendChartSpot(reading: TrendReading) {
   if (reading.action.tone === 'buy') return 'buy'
   if (reading.label === '지지선 이탈') return 'sell'
   return null
 }
 
-function TrendChartPreview({ stock, data, onOpen }: { stock: Stock; data: TrendChartData | null; onOpen: (chart: TrendChartData) => void }) {
-  if (!data) return <span className="trend-chart-unavailable">데이터 갱신 중</span>
-  const reading = trendChartReading(stock, data)
+function TrendChartPreview({
+  stock,
+  data,
+  reference,
+  onOpen,
+}: {
+  stock: Stock
+  data: TrendChartData | null
+  reference: LeveragedTrendReference | null
+  onOpen: (chart: TrendChartData, reference: LeveragedTrendReference | null) => void
+}) {
+  const preview = reference?.chart ?? data
+  if (!preview) return <span className="trend-chart-unavailable">데이터 갱신 중</span>
+  const previewStock = reference ? { ...stock, ticker: reference.ticker, name: reference.ticker } : stock
+  const reading = trendChartReading(previewStock, preview)
   const spot = trendChartSpot(reading)
   const spotLabel = spot === 'buy' ? '매수 자리' : spot === 'sell' ? '매도 자리' : ''
+  const baseLabel = reference ? `미리보기는 ${trendBaseLabel(reference)}. ` : ''
   return (
-    <button className={`trend-chart-preview${spot ? ` trend-chart-preview-${spot}` : ''}`} type="button" onClick={() => onOpen(data)} aria-label={`${stock.name} ${spotLabel ? `${spotLabel} ` : ''}추세 차트 크게 보기`}>
-      <TrendChartSvg chart={data} stock={stock} compact />
+    <button className={`trend-chart-preview${spot ? ` trend-chart-preview-${spot}` : ''}`} type="button" onClick={() => onOpen(data ?? preview, reference)} aria-label={`${stock.name} ${baseLabel}${spotLabel ? `${spotLabel} ` : ''}추세 차트 크게 보기`}>
+      <TrendChartSvg chart={preview} stock={previewStock} compact />
+      {reference && <span className="trend-chart-base-chip">{trendBaseLabel(reference)}</span>}
       <span className={`trend-chart-preview-phase ${reading.tone}`}>{reading.label}</span>
     </button>
   )
@@ -5360,9 +5417,23 @@ function TrendChartZoom({ children }: { children: ReactNode }) {
   )
 }
 
-function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: TrendChartData; onClose: () => void }) {
-  const reading = trendChartReading(stock, chart)
-  const currentPrice = formatTechnicalPrice(stock, chart.candles.at(-1)?.close ?? 0)
+function TrendChartModal({
+  stock,
+  chart,
+  reference,
+  onClose,
+}: {
+  stock: Stock
+  chart: TrendChartData
+  reference: LeveragedTrendReference | null
+  onClose: () => void
+}) {
+  const [showBase, setShowBase] = useState(Boolean(reference))
+  const viewingBase = Boolean(reference) && showBase
+  const activeChart = viewingBase && reference ? reference.chart : chart
+  const activeStock = viewingBase && reference ? { ...stock, ticker: reference.ticker, name: reference.ticker } : stock
+  const reading = trendChartReading(activeStock, activeChart)
+  const currentPrice = formatTechnicalPrice(activeStock, activeChart.candles.at(-1)?.close ?? 0)
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow
     const previousHtmlOverflow = document.documentElement.style.overflow
@@ -5391,12 +5462,27 @@ function TrendChartModal({ stock, chart, onClose }: { stock: Stock; chart: Trend
               <span className={`trend-chart-preview-phase trend-chart-title-tag ${reading.tone}`}>{reading.label}</span>
               <span className={`trend-chart-title-tag trend-action-tag ${reading.action.tone}`}>{reading.action.label}</span>
             </div>
-            <span className="trend-chart-subtitle">{stock.ticker} · 최근 120거래일 일봉 · 현재가 {currentPrice}</span>
+            <span className="trend-chart-subtitle">{activeStock.ticker} · 최근 120거래일 일봉 · 현재가 {currentPrice}</span>
+            {reference && (
+              <div className="trend-chart-switch" role="tablist" aria-label="추세 차트 기준">
+                <button type="button" role="tab" aria-selected={viewingBase} className={viewingBase ? 'active' : ''} onClick={() => setShowBase(true)}>
+                  {trendBaseLabel(reference)}
+                </button>
+                <button type="button" role="tab" aria-selected={!viewingBase} className={viewingBase ? '' : 'active'} onClick={() => setShowBase(false)}>
+                  {trendProductLabel(stock.ticker, reference.multiple)}
+                </button>
+              </div>
+            )}
           </div>
           <button type="button" onClick={onClose} aria-label="추세 차트 닫기">×</button>
         </header>
-        <TrendChartZoom key={stock.ticker}>
-          <TrendChartSvg chart={chart} stock={stock} />
+        {reference && (
+          <p className="trend-chart-base-note">
+            {Math.abs(reference.multiple)}배 봉은 하루 등락만 그 배수입니다. 추세는 {trendBaseLabel(reference)} 차트로 봅니다.
+          </p>
+        )}
+        <TrendChartZoom key={`${activeStock.ticker}-${viewingBase ? 'base' : 'own'}`}>
+          <TrendChartSvg chart={activeChart} stock={activeStock} />
         </TrendChartZoom>
         <div className="trend-chart-legend">
           <span className="legend-line ma20">20일선</span><span className="legend-line ma50">50일선</span><span className="legend-line ma200">200일선</span><span className="legend-line resistance">저항선</span><span className="legend-line support">지지선</span>

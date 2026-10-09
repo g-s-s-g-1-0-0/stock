@@ -5049,6 +5049,57 @@ html.modal-scroll-lock body {
   color: #475569;
 }
 
+.trend-chart-base-chip {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  z-index: 1;
+  padding: 2px 6px;
+  border: 1px solid #c5d4e6;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .94);
+  color: #1e3a5f;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.trend-chart-modal header .trend-chart-switch {
+  flex-basis: 100%;
+  margin: 8px 0 2px;
+}
+
+.trend-chart-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 8px;
+}
+
+.trend-chart-switch button {
+  padding: 7px 12px;
+  border: 1px solid #d5e0ec;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.trend-chart-switch button.active {
+  border-color: #1e3a5f;
+  background: #1e3a5f;
+  color: #fff;
+}
+
+.trend-chart-base-note {
+  margin: 0 0 12px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .trend-chart-unavailable { color: var(--muted); font-size: 11px; }
 
 .trend-phase {

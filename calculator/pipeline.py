@@ -26,6 +26,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from .industry_classification import CATEGORY_VALUES, classify_stock, is_curated_ticker, looks_like_etf, summarize_industry
+from .leveraged_reference import resolve_leveraged_reference
 from .industry_review import reviewed_industry_is_fresh
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
 from .market_signals import build_market_signals, market_signal_rows
@@ -1204,6 +1205,34 @@ def latest_technical_row(
     }
 
 
+def _attach_reference_trend_chart(
+    row: dict[str, str],
+    stock: dict[str, Any],
+    charts: dict[str, str],
+    errors: list[dict[str, str]],
+) -> None:
+    """Store the unlevered trend chart beside a 2x/3x product."""
+
+    reference = resolve_leveraged_reference(stock)
+    if not reference:
+        return
+    ticker = str(reference["ticker"])
+    row["기준 티커"] = ticker
+    row["레버리지 배수"] = str(reference["multiple"])
+    row["기준 종류"] = str(reference["kind"])
+    if ticker not in charts:
+        try:
+            # Match the product chart: two years so the 200-day line covers the window.
+            candles = fetch_ohlcv(ticker, count=320) if resolve_market(ticker) == "KR" else fetch_us_ohlcv(ticker, range_value="2y")
+            chart = build_trend_chart(candles)
+            charts[ticker] = json.dumps(chart, ensure_ascii=False, separators=(",", ":")) if chart else ""
+        except Exception as exc:  # noqa: BLE001 - a missing reference chart must not drop the product row
+            charts[ticker] = ""
+            errors.append({"ticker": ticker, "error": f"reference trend chart: {exc}"})
+    if charts[ticker]:
+        row["기준 추세 차트 데이터"] = charts[ticker]
+
+
 def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[str, Any]:
     existing = read_cache("technical")
     existing_meta = existing.get("meta", {}) if isinstance(existing, dict) else {}
@@ -1239,6 +1268,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
     season_open = bool(season.get("open")) or any(code in {"1", "2"} for code in holdings.values())
     season_opened_by: str | None = str(season.get("openedByTicker") or "") or None
     season_opened_at = season.get("openedAt")
+    reference_charts: dict[str, str] = {}
 
     for stock in source_universe:
         try:
@@ -1268,6 +1298,7 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 chart = build_trend_chart(candles)
                 if chart:
                     row["추세 차트 데이터"] = json.dumps(chart, ensure_ascii=False, separators=(",", ":"))
+                _attach_reference_trend_chart(row, stock, reference_charts, errors)
                 existing_row = existing_rows.get(stock["ticker"], {})
                 ticker_key = str(stock["ticker"]).strip().upper()
                 # Only keep 매도/exitReason while that ticker still has an open holding.
