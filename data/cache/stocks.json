@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-10-11T19:16:34+00:00",
-    "lastSuccessfulRun": "2026-10-11T19:16:34+00:00",
+    "updatedAt": "2026-10-11T19:18:45+00:00",
+    "lastSuccessfulRun": "2026-10-11T19:18:45+00:00",
     "failedReason": null
   },
   "rows": [
@@ -859,7 +859,7 @@
       "ticker": "META",
       "name": "Meta Platforms Class A",
       "market": "US",
-      "fairPrice": "$762.29 ~ $1,031.33",
+      "fairPrice": "$761.85 ~ $1,030.74",
       "fairPriceReason": null,
       "currentPrice": "$717.60",
       "valuation": "저평가",
@@ -875,10 +875,10 @@
       "ticker": "TSLA",
       "name": "Tesla",
       "market": "US",
-      "fairPrice": "-",
+      "fairPrice": "$26.71 ~ $36.14",
       "fairPriceReason": null,
       "currentPrice": "$382.72",
-      "valuation": "보통",
+      "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "-",
       "marketEvent": "당분간 없음",
