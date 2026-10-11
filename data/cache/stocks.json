@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-10-11T14:56:24+00:00",
-    "lastSuccessfulRun": "2026-10-11T14:56:24+00:00",
+    "updatedAt": "2026-10-11T15:01:13+00:00",
+    "lastSuccessfulRun": "2026-10-11T15:01:13+00:00",
     "failedReason": null
   },
   "rows": [
@@ -880,6 +880,7 @@
       "currentPrice": "$382.72",
       "valuation": "보통",
       "opinion": "관망",
+      "opinionReason": "-",
       "marketEvent": "당분간 없음",
       "strategies": [],
       "category": "성장주",
