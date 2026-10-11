@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15506,
-    "industryEnrichedAt": "2026-10-06T15:05:04+00:00",
+    "industryEnrichedAt": "2026-10-11T04:55:39+00:00",
     "industryEnrichedTickers": 1,
     "industryReviewedAt": "2026-10-04T18:27:47+00:00",
     "industryReviewedTickers": 9
@@ -216387,7 +216387,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "전기차, 에너지, AI, FSD, 로보택시",
-      "rawIndustry": "-",
+      "rawIndustry": "Consumer Cyclical | Auto Manufacturers",
       "products": "-",
       "updatedAt": "2026-10-04T18:27:24+00:00"
     },

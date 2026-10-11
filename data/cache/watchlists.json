@@ -1,8 +1,8 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-10-11T02:55:25Z",
-    "rowCount": 6
+    "updatedAt": "2026-10-11T04:55:24Z",
+    "rowCount": 7
   },
   "rows": [
     {
@@ -209,6 +209,29 @@
         "secondary": "registered"
       },
       "remoteUpdatedAt": "2026-10-10T06:13:53.273782+00:00"
+    },
+    {
+      "id": "abf11b28-87c3-46ff-9000-504278e89db2",
+      "scope": "personal",
+      "ownerId": "8d43baaf-3e29-40d0-b516-6ea8ccd1615e",
+      "tickers": [
+        "005930",
+        "000660",
+        "TSLA"
+      ],
+      "tickersByType": {
+        "swing": [
+          "005930",
+          "000660",
+          "TSLA"
+        ],
+        "long_term": []
+      },
+      "watchlistSort": {
+        "primary": "registered",
+        "secondary": "registered"
+      },
+      "remoteUpdatedAt": "2026-10-11T03:56:41.84665+00:00"
     }
   ]
 }
