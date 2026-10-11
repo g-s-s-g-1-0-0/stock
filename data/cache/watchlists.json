@@ -1,8 +1,8 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-10-11T06:55:25Z",
-    "rowCount": 7
+    "updatedAt": "2026-10-11T08:55:24Z",
+    "rowCount": 9
   },
   "rows": [
     {
@@ -232,6 +232,36 @@
         "secondary": "registered"
       },
       "remoteUpdatedAt": "2026-10-11T03:56:41.84665+00:00"
+    },
+    {
+      "id": "df0e56ce-9185-41eb-a324-d63558cf4833",
+      "scope": "personal",
+      "ownerId": "86752d75-255f-4704-83f1-72b62227e624",
+      "tickers": [],
+      "tickersByType": {
+        "swing": [],
+        "long_term": []
+      },
+      "watchlistSort": {
+        "primary": "registered",
+        "secondary": "registered"
+      },
+      "remoteUpdatedAt": "2026-10-11T07:17:50.428732+00:00"
+    },
+    {
+      "id": "ebfa4661-5b76-4aa6-8b4b-0ece4064d316",
+      "scope": "personal",
+      "ownerId": "938cdd73-98bc-4861-9539-1ade026b6656",
+      "tickers": [],
+      "tickersByType": {
+        "swing": [],
+        "long_term": []
+      },
+      "watchlistSort": {
+        "primary": "registered",
+        "secondary": "registered"
+      },
+      "remoteUpdatedAt": "2026-10-11T08:53:08.935624+00:00"
     }
   ]
 }
