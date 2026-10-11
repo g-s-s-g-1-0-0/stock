@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-10-11T18:56:15+00:00",
-    "lastSuccessfulRun": "2026-10-11T18:56:15+00:00",
+    "updatedAt": "2026-10-11T19:16:35+00:00",
+    "lastSuccessfulRun": "2026-10-11T19:16:35+00:00",
     "failedReason": null
   },
   "rows": [
@@ -1728,13 +1728,6 @@
       "market": "KR",
       "category": "성장주",
       "industry": "철강, 자동차강판, 조선·건설용 강재"
-    },
-    {
-      "ticker": "005030",
-      "name": "부산주공",
-      "market": "KR",
-      "category": "가치주",
-      "industry": "자동차, 전기차, 모빌리티"
     },
     {
       "ticker": "005070",
@@ -18551,13 +18544,6 @@
       "industry": "소비재, 식품·유통, 브랜드 커머스"
     },
     {
-      "ticker": "472230",
-      "name": "SK증권제11호스팩",
-      "market": "KR",
-      "category": "가치주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
-    },
-    {
       "ticker": "472850",
       "name": "폰드그룹",
       "market": "KR",
@@ -18567,13 +18553,6 @@
     {
       "ticker": "473000",
       "name": "SK증권제12호스팩",
-      "market": "KR",
-      "category": "가치주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
-    },
-    {
-      "ticker": "473050",
-      "name": "유안타제15호스팩",
       "market": "KR",
       "category": "가치주",
       "industry": "금융, 은행·보험·증권, 지주회사"
@@ -53141,7 +53120,7 @@
       "ticker": "GNRC",
       "name": "Generac Holdlings",
       "market": "US",
-      "category": "가치주",
+      "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {

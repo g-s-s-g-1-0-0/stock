@@ -2,14 +2,17 @@
   "meta": {
     "kind": "market-events",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-10-05T15:52:40+00:00",
+    "updatedAt": "2026-10-11T19:16:41+00:00",
     "lastSuccessfulRun": "2026-10-05T15:52:40+00:00",
-    "failedReason": null,
+    "failedReason": "시장 주요 이벤트 검증에 수동 확인이 필요한 항목이 있습니다: CPI 발표 10월 공식 일정 확인값이 없어 자동 수정하지 않았습니다.; PPI 발표 10월 공식 일정 확인값이 없어 자동 수정하지 않았습니다.",
     "verification": {
-      "checkedAt": "2026-10-05T15:52:40+00:00",
+      "checkedAt": "2026-10-11T19:16:41+00:00",
       "sourcePolicy": "official-only-auto-update",
       "autoUpdated": [],
-      "needsManualReview": [],
+      "needsManualReview": [
+        "CPI 발표 10월 공식 일정 확인값이 없어 자동 수정하지 않았습니다.",
+        "PPI 발표 10월 공식 일정 확인값이 없어 자동 수정하지 않았습니다."
+      ],
       "sources": {
         "fomc": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm",
         "bls": [
@@ -45,7 +48,7 @@
         {
           "month": "1월",
           "date": "2026. 1. 29",
-          "dday": "-250",
+          "dday": "-256",
           "time": "4:00"
         },
         {
@@ -57,13 +60,13 @@
         {
           "month": "3월",
           "date": "2026. 3. 19",
-          "dday": "-201",
+          "dday": "-207",
           "time": "3:00"
         },
         {
           "month": "4월",
           "date": "2026. 4. 30",
-          "dday": "-159",
+          "dday": "-165",
           "time": "3:00"
         },
         {
@@ -75,14 +78,14 @@
         {
           "month": "6월",
           "date": "2026. 6. 18",
-          "dday": "-110",
+          "dday": "-116",
           "time": "3:00",
           "highlighted": true
         },
         {
           "month": "7월",
           "date": "2026. 7. 30",
-          "dday": "-68",
+          "dday": "-74",
           "time": "3:00",
           "highlighted": true
         },
@@ -95,14 +98,14 @@
         {
           "month": "9월",
           "date": "2026. 9. 17",
-          "dday": "-19",
+          "dday": "-25",
           "time": "3:00",
           "highlighted": true
         },
         {
           "month": "10월",
           "date": "2026. 10. 29",
-          "dday": "23",
+          "dday": "17",
           "time": "3:00",
           "highlighted": true
         },
@@ -115,7 +118,7 @@
         {
           "month": "12월",
           "date": "2026. 12. 10",
-          "dday": "65",
+          "dday": "59",
           "time": "4:00",
           "highlighted": true
         }
@@ -128,79 +131,79 @@
         {
           "month": "1월",
           "date": "2026. 1. 9",
-          "dday": "-270",
+          "dday": "-276",
           "time": "22:30"
         },
         {
           "month": "2월",
           "date": "2026. 2. 11",
-          "dday": "-237",
+          "dday": "-243",
           "time": "22:30"
         },
         {
           "month": "3월",
           "date": "2026. 3. 6",
-          "dday": "-214",
+          "dday": "-220",
           "time": "22:30"
         },
         {
           "month": "4월",
           "date": "2026. 4. 3",
-          "dday": "-186",
+          "dday": "-192",
           "time": "22:30"
         },
         {
           "month": "5월",
           "date": "2026. 5. 8",
-          "dday": "-151",
+          "dday": "-157",
           "time": "22:30"
         },
         {
           "month": "6월",
           "date": "2026. 6. 5",
-          "dday": "-123",
+          "dday": "-129",
           "time": "22:30",
           "highlighted": true
         },
         {
           "month": "7월",
           "date": "2026. 7. 2",
-          "dday": "-96",
+          "dday": "-102",
           "time": "22:30",
           "highlighted": true
         },
         {
           "month": "8월",
           "date": "2026. 8. 7",
-          "dday": "-60",
+          "dday": "-66",
           "time": "22:30",
           "highlighted": true
         },
         {
           "month": "9월",
           "date": "2026. 9. 4",
-          "dday": "-32",
+          "dday": "-38",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "10월",
           "date": "2026. 10. 2",
-          "dday": "-4",
+          "dday": "-10",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "11월",
           "date": "2026. 11. 6",
-          "dday": "31",
+          "dday": "25",
           "time": "22:30",
           "highlighted": true
         },
         {
           "month": "12월",
           "date": "2026. 12. 4",
-          "dday": "59",
+          "dday": "53",
           "time": "22:30",
           "highlighted": true
         }
@@ -213,79 +216,79 @@
         {
           "month": "1월",
           "date": "2026. 1. 13",
-          "dday": "-266",
+          "dday": "-272",
           "time": "22:30"
         },
         {
           "month": "2월",
           "date": "2026. 2. 13",
-          "dday": "-235",
+          "dday": "-241",
           "time": "22:30"
         },
         {
           "month": "3월",
           "date": "2026. 3. 11",
-          "dday": "-209",
+          "dday": "-215",
           "time": "21:30"
         },
         {
           "month": "4월",
           "date": "2026. 4. 10",
-          "dday": "-179",
+          "dday": "-185",
           "time": "21:30"
         },
         {
           "month": "5월",
           "date": "2026. 5. 12",
-          "dday": "-147",
+          "dday": "-153",
           "time": "21:30"
         },
         {
           "month": "6월",
           "date": "2026. 6. 10",
-          "dday": "-118",
+          "dday": "-124",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "7월",
           "date": "2026. 7. 14",
-          "dday": "-84",
+          "dday": "-90",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "8월",
           "date": "2026. 8. 12",
-          "dday": "-55",
+          "dday": "-61",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "9월",
           "date": "2026. 9. 11",
-          "dday": "-25",
+          "dday": "-31",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "10월",
           "date": "2026. 10. 14",
-          "dday": "8",
+          "dday": "2",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "11월",
           "date": "2026. 11. 10",
-          "dday": "35",
+          "dday": "29",
           "time": "22:30",
           "highlighted": true
         },
         {
           "month": "12월",
           "date": "2026. 12. 10",
-          "dday": "65",
+          "dday": "59",
           "time": "22:30",
           "highlighted": true
         }
@@ -298,79 +301,79 @@
         {
           "month": "1월",
           "date": "2026. 1. 30",
-          "dday": "-249",
+          "dday": "-255",
           "time": "22:30"
         },
         {
           "month": "2월",
           "date": "2026. 2. 27",
-          "dday": "-221",
+          "dday": "-227",
           "time": "22:30"
         },
         {
           "month": "3월",
           "date": "2026. 3. 18",
-          "dday": "-202",
+          "dday": "-208",
           "time": "21:30"
         },
         {
           "month": "4월",
           "date": "2026. 4. 14",
-          "dday": "-175",
+          "dday": "-181",
           "time": "21:30"
         },
         {
           "month": "5월",
           "date": "2026. 5. 13",
-          "dday": "-146",
+          "dday": "-152",
           "time": "21:30"
         },
         {
           "month": "6월",
           "date": "2026. 6. 11",
-          "dday": "-117",
+          "dday": "-123",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "7월",
           "date": "2026. 7. 15",
-          "dday": "-83",
+          "dday": "-89",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "8월",
           "date": "2026. 8. 13",
-          "dday": "-54",
+          "dday": "-60",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "9월",
           "date": "2026. 9. 10",
-          "dday": "-26",
+          "dday": "-32",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "10월",
           "date": "2026. 10. 15",
-          "dday": "9",
+          "dday": "3",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "11월",
           "date": "2026. 11. 13",
-          "dday": "38",
+          "dday": "32",
           "time": "22:30",
           "highlighted": true
         },
         {
           "month": "12월",
           "date": "2026. 12. 15",
-          "dday": "70",
+          "dday": "64",
           "time": "22:30",
           "highlighted": true
         }
@@ -383,80 +386,80 @@
         {
           "month": "1월",
           "date": "2026. 1. 29",
-          "dday": "-250",
+          "dday": "-256",
           "time": "22:30"
         },
         {
           "month": "2월",
           "date": "2026. 2. 26",
-          "dday": "-222",
+          "dday": "-228",
           "time": "22:30"
         },
         {
           "month": "3월",
           "date": "2026. 3. 26",
-          "dday": "-194",
+          "dday": "-200",
           "time": "21:30"
         },
         {
           "month": "4월",
           "date": "2026. 4. 30",
-          "dday": "-159",
+          "dday": "-165",
           "time": "21:30"
         },
         {
           "month": "5월",
           "date": "2026. 5. 28",
-          "dday": "-131",
+          "dday": "-137",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "6월",
           "date": "2026. 6. 25",
-          "dday": "-103",
+          "dday": "-109",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "7월",
           "date": "2026. 7. 30",
-          "dday": "-68",
+          "dday": "-74",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "8월",
           "date": "2026. 8. 26",
-          "dday": "-41",
+          "dday": "-47",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "9월",
           "date": "2026. 9. 30",
-          "dday": "-6",
+          "dday": "-12",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "10월",
           "date": "2026. 10. 29",
-          "dday": "23",
+          "dday": "17",
           "time": "21:30",
           "highlighted": true
         },
         {
           "month": "11월",
           "date": "2026. 11. 25",
-          "dday": "50",
+          "dday": "44",
           "time": "22:30",
           "highlighted": true
         },
         {
           "month": "12월",
           "date": "2026. 12. 23",
-          "dday": "78",
+          "dday": "72",
           "time": "22:30",
           "highlighted": true
         }
@@ -481,7 +484,7 @@
         {
           "month": "3월",
           "date": "2026. 3. 21",
-          "dday": "-199",
+          "dday": "-205",
           "time": "5:00"
         },
         {
@@ -499,7 +502,7 @@
         {
           "month": "6월",
           "date": "2026. 6. 19",
-          "dday": "-109",
+          "dday": "-115",
           "time": "5:00",
           "highlighted": true
         },
@@ -518,7 +521,7 @@
         {
           "month": "9월",
           "date": "2026. 9. 19",
-          "dday": "-17",
+          "dday": "-23",
           "time": "5:00",
           "highlighted": true
         },
@@ -537,7 +540,7 @@
         {
           "month": "12월",
           "date": "2026. 12. 19",
-          "dday": "74",
+          "dday": "68",
           "time": "6:00",
           "highlighted": true
         }
