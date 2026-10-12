@@ -38,6 +38,12 @@ class FairPriceTest(unittest.TestCase):
             self.pipeline.fair_price_range(self.stock, {"epsTtm": "-$1.00", "salesYoyTtm": "10.00%"}),
         )
 
+    def test_missing_financials_are_not_pending_or_normally_valued(self) -> None:
+        for metric in ({}, {"epsTtm": "$10.00"}, {"epsTtm": "$10.00", "epsNextYear": "-$1.00"}):
+            self.assertEqual("insufficient_financials", self.pipeline.fair_price_unavailable_reason(self.stock, metric))
+        self.assertIsNone(self.pipeline.fair_price_unavailable_reason(self.stock, {"epsTtm": "$10.00", "salesYoyTtm": "0%"}))
+        self.assertEqual("loss_making", self.pipeline.fair_price_unavailable_reason(self.stock, {"epsTtm": "-$2.27"}))
+
 
 if __name__ == "__main__":
     unittest.main()
