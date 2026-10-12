@@ -13,6 +13,59 @@ KST = ZoneInfo("Asia/Seoul")
 
 
 class MarketEventsTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.calendar_fetch = patch("calculator.pipeline.fetch_bls_calendar_missing", return_value={"CPI 발표": {}, "PPI 발표": {}}).start()
+        self.addCleanup(patch.stopall)
+
+    def test_partial_live_schedule_recovers_october_without_manual_review(self) -> None:
+        payload = {"meta": {"yearLabel": "2026"}, "groups": [
+            {"title": title, "entries": [{"month": "10월", "date": "2026. 10. 13", "time": "22:30"}]}
+            for title in ("CPI 발표", "PPI 발표")
+        ]}
+        self.calendar_fetch.return_value = {
+            "CPI 발표": {10: {"date": "2026. 10. 14", "time": "21:30"}},
+            "PPI 발표": {10: {"date": "2026. 10. 15", "time": "21:30"}},
+        }
+        with patch("calculator.pipeline.official_market_event_sources", return_value=(
+            {title: {11: {"date": "2026. 11. 10", "time": "22:30"}} for title in ("CPI 발표", "PPI 발표")}, []
+        )):
+            updated, changes, issues = pipeline.apply_market_event_verification(payload, date(2026, 10, 11))
+        self.calendar_fetch.assert_called_once_with(2026, {"CPI 발표": {10}, "PPI 발표": {10}})
+        self.assertEqual(issues, [])
+        self.assertEqual(len(changes), 2)
+        self.assertEqual(updated["groups"][0]["entries"][0]["date"], "2026. 10. 14")
+        self.assertEqual(updated["groups"][1]["entries"][0]["time"], "21:30")
+        with patch("calculator.pipeline.official_market_event_sources", return_value=(self.calendar_fetch.return_value, [])):
+            _, changes, issues = pipeline.apply_market_event_verification(updated, date(2026, 10, 12))
+        self.assertEqual((changes, issues), ([], []))
+        self.assertEqual(self.calendar_fetch.call_count, 1)
+
+    def test_calendar_parses_release_month_exact_name_and_dst(self) -> None:
+        html = """<table>
+        <tr><td>Wednesday, October 14, 2026</td><td>08:30 AM</td><td>Consumer Price Index for September 2026</td></tr>
+        <tr><td>Thursday, October 15, 2026</td><td>08:30 AM</td><td>Producer Price Index for September 2026</td></tr>
+        <tr><td>Tuesday, November 10, 2026</td><td>08:30 AM</td><td>Consumer Price Index for October 2026</td></tr>
+        <tr><td>Friday, October 16, 2026</td><td>08:30 AM</td><td>Consumer Price Index Regional for September 2026</td></tr>
+        <tr><td>Thursday, October 15, 2027</td><td>08:30 AM</td><td>Producer Price Index for September 2027</td></tr>
+        <tr><td>Thursday, December 15, 2026</td><td>TBD</td><td>Producer Price Index for November 2026</td></tr>
+        </table>"""
+        result = pipeline.parse_bls_calendar(html, 2026)
+        self.assertEqual(result, {
+            "CPI 발표": {10: {"date": "2026. 10. 14", "time": "21:30"}, 11: {"date": "2026. 11. 10", "time": "22:30"}},
+            "PPI 발표": {10: {"date": "2026. 10. 15", "time": "21:30"}},
+        })
+
+    def test_calendar_falls_back_to_browser_then_annual_and_never_invents_dates(self) -> None:
+        patch.stopall()
+        html = "<table><tr><td>Thursday, October 15, 2026</td><td>08:30 AM</td><td>Producer Price Index for September 2026</td></tr></table>"
+        with patch("calculator.pipeline.fetch_text", return_value="Access denied"), patch(
+            "calculator.pipeline.fetch_bls_browser_text", side_effect=["<html>empty month</html>", html]
+        ) as browser:
+            result = pipeline.fetch_bls_calendar_missing(2026, {"CPI 발표": {10}, "PPI 발표": {10}})
+        self.assertEqual(result["CPI 발표"], {})
+        self.assertEqual(result["PPI 발표"][10]["date"], "2026. 10. 15")
+        self.assertEqual(browser.call_args_list[-1].args[0], "https://www.bls.gov/schedule/2026/home.htm")
+
     def test_market_event_verification_auto_updates_only_confirmed_values(self) -> None:
         payload = {
             "meta": {"yearLabel": "2099"},
