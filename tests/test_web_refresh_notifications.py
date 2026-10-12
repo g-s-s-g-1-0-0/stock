@@ -144,6 +144,15 @@ class WebRefreshNotificationsTest(unittest.TestCase):
     def setUp(self) -> None:
         self.notifications = importlib.import_module("scripts.web_refresh_notifications")
 
+    def test_failed_news_analysis_never_sends_old_or_internal_only_report(self) -> None:
+        with mock.patch.object(self.notifications, "is_weekly_report_window", return_value=True), \
+            mock.patch.object(self.notifications, "read_json", return_value={"meta": {"analysisStatus": "failed"}, "rows": [{"date": "2026.10.12"}]}), \
+            mock.patch.object(self.notifications, "send_notification") as send, \
+            mock.patch.object(self.notifications, "latest_market_trend") as latest:
+            self.assertEqual(0, self.notifications.send_weekly_trend_notifications())
+        send.assert_not_called()
+        latest.assert_not_called()
+
     def test_market_event_unverified_source_still_sends_manual_review(self) -> None:
         issue = "BLS PPI 발표 공식 일정 조회 실패: 모든 현재 공식 조회 경로 실패"
         recipient = self.notifications.Recipient("admin", "admin@example.com", True, {
