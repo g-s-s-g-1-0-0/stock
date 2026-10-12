@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-10-12T00:56:21+00:00",
-    "lastSuccessfulRun": "2026-10-12T00:56:21+00:00",
+    "updatedAt": "2026-10-12T02:20:08+00:00",
+    "lastSuccessfulRun": "2026-10-12T02:20:08+00:00",
     "failedReason": null
   },
   "rows": [
@@ -53120,7 +53120,7 @@
       "ticker": "GNRC",
       "name": "Generac Holdlings",
       "market": "US",
-      "category": "성장주",
+      "category": "가치주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {

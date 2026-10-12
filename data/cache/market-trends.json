@@ -2,9 +2,10 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-10-11T19:16:38+00:00",
-    "lastSuccessfulRun": "2026-10-11T19:16:38+00:00",
-    "failedReason": "RSS/Groq 분석 실패 후 내부 가격·기술 모멘텀 신호로 대체했습니다: Groq 구조화 응답을 처리하지 못했습니다: Groq 분석 순위 형식이 '섹터 | 키워드'가 아닙니다."
+    "updatedAt": "2026-10-12T02:20:08+00:00",
+    "lastSuccessfulRun": "2026-10-12T02:20:08+00:00",
+    "analysisStatus": "news-verified",
+    "failedReason": null
   },
   "rows": [
     {
@@ -415,13 +416,185 @@
         "로봇·자동화 | 로봇, 자동화, 휴머노이드, 협동로봇, 로보틱스",
         "전력 인프라 | 전력망, 원전, SMR, 데이터센터 전력, 에너지 저장",
         "광통신·네트워크 | 광통신, 트랜시버, 광케이블, AI 네트워킹, 이더넷 스위치",
-        "나스닥100 | 나스닥100, 지수, 1배, 대형, 묶음",
-        "우주항공 | 위성, 발사체, 위성통신, 지구관측, SpaceX",
-        "AI | AI, 광고, 클라우드, Waymo, TPU",
-        "소프트웨어 | 소프트웨어, 클라우드, AI, 플랫폼",
-        "전기차·배터리 | 전기차, 배터리, 리튬, 자율주행, 로보택시"
+        "AI & Machine Learning | AI safety, OpenAI, Nvidia",
+        "Data Centers | real estate, risk, investment",
+        "Retail | assortment trimming, sales boost, retailers",
+        "Telecommunications | SpaceX spectrum, AT&T, Verizon",
+        "Automotive | Tesla FSD, regulator pushback, Europe"
       ],
-      "summary": "이번 주 시장은 주요 산업별 흐름이 엇갈렸습니다."
+      "summary": "인공지능과 데이터센터, 소매·통신·자동차·금융·스포츠·게임·법률·에너지 등 다양한 섹터가 주목받으며 시장은 변동성을 보이고 있습니다.",
+      "newsEvidence": [
+        {
+          "sector": "AI & Machine Learning",
+          "articles": [
+            {
+              "title": "AI’s quiet safety gatekeepers are stepping into the spotlight",
+              "url": "https://www.cnbc.com/2026/10/11/ais-quiet-safety-gatekeepers-are-stepping-into-the-spotlight.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-11T14:08:44+00:00"
+            },
+            {
+              "title": "Hollywood takes on Zuckerberg, Musk and Altman amid widespread anxiety over AI",
+              "url": "https://www.cnbc.com/2026/10/10/ai-movies-tech-ceos-hollywood.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-10T12:00:01+00:00"
+            },
+            {
+              "title": "Microsoft's Nadella says AI needs an ‘emergency brake’ that humans control",
+              "url": "https://www.cnbc.com/2026/10/10/microsoft-satya-nadella-ai-emergency-brake-safety.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-10T20:59:28+00:00"
+            },
+            {
+              "title": "Stocks saw new highs and big declines: How the volatile AI trade moved last week's market",
+              "url": "https://www.cnbc.com/investingclub/2026/10/10/stocks-saw-new-highs-and-big-declines-how-the-volatile-ai-trade-moved-last-weeks-market.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-10T15:30:51+00:00"
+            },
+            {
+              "title": "Nvidia, Oracle, CoreWeave and other AI stocks sink on OpenAI revenue report",
+              "url": "https://www.cnbc.com/2026/10/08/open-ai-revenue-nvidia-oracle-coreweave.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-08T21:19:14+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "Data Centers",
+          "articles": [
+            {
+              "title": "Wall Street is pitching data centers as a major real estate bet. The risks are piling up",
+              "url": "https://www.cnbc.com/2026/10/09/ai-data-centers-investing.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-09T15:08:20+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "Retail",
+          "articles": [
+            {
+              "title": "From BJ’s to Lululemon, retailers are trimming assortments to boost business",
+              "url": "https://www.cnbc.com/2026/10/10/from-bjs-to-lululemon-retailers-are-trimming-assortments.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-11T17:08:30+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "Telecommunications",
+          "articles": [
+            {
+              "title": "Verizon posts worst day since 2002 as SpaceX U.S. network plans whack cell provider stocks",
+              "url": "https://www.cnbc.com/2026/10/09/verizon-att-tmobile-stocks-spacex-network.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-09T20:16:58+00:00"
+            },
+            {
+              "title": "SpaceX deal to acquire spectrum license hammers shares of AT&T, Verizon and T-Mobile",
+              "url": "https://www.cnbc.com/2026/10/08/spacex-spectrum-license-att-verizon-tmobile.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-09T13:52:27+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "Automotive",
+          "articles": [
+            {
+              "title": "Tesla drops 'Full Self-Driving' brand name in Europe after regulator pushback",
+              "url": "https://www.cnbc.com/2026/10/09/tesla-full-self-driving-europe-regulator.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-09T19:21:14+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "Financial Services",
+          "articles": [
+            {
+              "title": "JPMorgan makes bullish call in fixed income space, suggests it's a once in a generation opportunity",
+              "url": "https://www.cnbc.com/2026/10/10/jpmorgan-sees-once-in-a-generation-opportunity-in-fixed-income-space.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-10T15:00:01+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "Sports Tech",
+          "articles": [
+            {
+              "title": "NBA commissioner Adam Silver says league could introduce ‘smart ball’ technology as soon as next year",
+              "url": "https://www.cnbc.com/2026/10/11/commissioner-adam-silver-nba-could-launch-smart-ball-tech-next-year.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-11T12:54:04+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "Gaming Collectibles",
+          "articles": [
+            {
+              "title": "Pokémon card values are soaring. What collectors should know before buying or selling",
+              "url": "https://www.cnbc.com/2026/10/10/pokemon-card-values-grading-guide.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-10T13:30:02+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "Legal & Regulation",
+          "articles": [
+            {
+              "title": "How Supreme Court justices are leaning in major 401(k) case over private funds and underperformance",
+              "url": "https://www.cnbc.com/2026/10/10/supreme-court-case-401k-private-funds-intel.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-10T13:00:01+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "Energy & Geopolitics",
+          "articles": [
+            {
+              "title": "Trump declares 'energy ceasefire' between Russia and Ukraine; Zelenskyy is waiting for details",
+              "url": "https://www.cnbc.com/2026/10/11/trump-energy-ceasefire-russia-ukraine-zelenskyy.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-11T19:33:51+00:00"
+            },
+            {
+              "title": "Trump says he is 'going to look at' joining Saudi Arabia in the fight against Iran-backed Houthis after deadly airport strike",
+              "url": "https://www.cnbc.com/2026/10/11/trump-saudi-arabia-iran-houthis.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-11T21:30:45+00:00"
+            }
+          ]
+        }
+      ],
+      "newsRanks": [
+        "AI & Machine Learning | AI safety, OpenAI, Nvidia",
+        "Data Centers | real estate, risk, investment",
+        "Retail | assortment trimming, sales boost, retailers",
+        "Telecommunications | SpaceX spectrum, AT&T, Verizon",
+        "Automotive | Tesla FSD, regulator pushback, Europe",
+        "Financial Services | JPMorgan bullish, fixed income, investment",
+        "Sports Tech | smart ball, NBA, technology",
+        "Gaming Collectibles | Pokémon cards, values soaring, collectors",
+        "Legal & Regulation | Supreme Court, 401(k), private funds",
+        "Energy & Geopolitics | Russia Ukraine ceasefire, Saudi Arabia, Iran-backed Houthis"
+      ],
+      "analysis": {
+        "status": "news-verified",
+        "model": "openai/gpt-oss-20b",
+        "attempts": 2,
+        "newsCount": 61,
+        "sources": [
+          "https://feeds.marketwatch.com/marketwatch/topstories/",
+          "https://trends.google.com/trending/rss?geo=US",
+          "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+          "https://www.cnbc.com/id/19854910/device/rss/rss.html"
+        ]
+      }
     }
   ]
 }
