@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-10-12T13:51:15+00:00",
-    "lastSuccessfulRun": "2026-10-12T13:51:15+00:00",
+    "updatedAt": "2026-10-12T14:56:33+00:00",
+    "lastSuccessfulRun": "2026-10-12T14:56:33+00:00",
     "failedReason": null
   },
   "rows": [
@@ -779,7 +779,7 @@
       "ticker": "AAPL",
       "name": "Apple",
       "market": "US",
-      "fairPrice": "$172.46 ~ $233.32",
+      "fairPrice": "$172.83 ~ $233.83",
       "fairPriceReason": null,
       "currentPrice": "$340.93",
       "valuation": "고평가",
