@@ -312,7 +312,7 @@ class MarketTrendsTest(unittest.TestCase):
         self.assertEqual(self.news[0], result["newsEvidence"][0]["articles"][0])
 
     def test_structured_analysis_rejects_invalid_fields_and_fake_news_ids(self):
-        for replacement in ["테마 | 키워드", {"sector": "테마", "keywords": ["하나"], "headlineIds": [1]},
+        for replacement in ["테마 | 키워드", {"sector": "English sector", "keywords": ["A", "B", "C"], "headlineIds": [1]}, {"sector": "테마", "keywords": ["A", "A", "C"], "headlineIds": [1]}, {"sector": "테마", "keywords": ["하나"], "headlineIds": [1]},
                             {"sector": "테마", "keywords": ["A", "B", "C"], "headlineIds": [11]},
                             {"sector": "테마", "keywords": ["A", "B", "C"], "headlineIds": [True]},
                             {"sector": "테마", "keywords": ["A", "B", "C"], "headlineIds": []}]:
@@ -341,6 +341,15 @@ class MarketTrendsTest(unittest.TestCase):
         self.assertIn("headlineIds", last["messages"][-1]["content"])
         self.assertTrue(last["response_format"]["json_schema"]["strict"])
         self.assertEqual("object", last["response_format"]["json_schema"]["schema"]["properties"]["ranks"]["items"]["type"])
+
+    def test_truncated_or_missing_api_choices_are_repaired(self):
+        for envelope in [{"choices": []}, {"choices": [{"finish_reason": "length", "message": {"content": json.dumps(self.analysis_payload())}}]}]:
+            response = MagicMock()
+            response.__enter__.return_value.read.return_value = json.dumps(envelope).encode()
+            with self.subTest(envelope=envelope), patch("calculator.pipeline.urllib.request.urlopen", side_effect=[response, self.api_response(self.analysis_payload())]):
+                result = self.pipeline.analyze_market_trends_with_groq(json.dumps(self.news), "test-key")
+            self.assertEqual(2, result["analysis"]["attempts"])
+            self.assertEqual(1, len(result["analysis"]["recoveryErrors"]))
 
     def test_transient_rate_limit_is_retried(self):
         error = self.pipeline.urllib.error.HTTPError("https://api.groq.com", 429, "rate limited", {}, io.BytesIO(b"rate limited"))
