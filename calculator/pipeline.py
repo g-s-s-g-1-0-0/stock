@@ -773,6 +773,9 @@ def fair_price_unavailable_reason(stock: dict[str, Any], metric: dict[str, str])
     eps = parse_amount(metric.get("epsTtm"))
     if eps is not None and eps <= 0:
         return "loss_making"
+    forward_eps = parse_amount(metric.get("epsNextYear"))
+    if eps is None or ((forward_eps is None or forward_eps <= 0) and parse_percent(metric.get("salesYoyTtm")) is None):
+        return "insufficient_financials"
     return None
 
 
@@ -1408,12 +1411,18 @@ def build_valuation_cache(universe: list[dict[str, str]] | None = None) -> dict[
         try:
             values = fetch_valuation(stock["ticker"])
             metric = dict(zip(columns, values))
+            has_fresh_financials = any(metric.get(key) not in (None, "", "-") for key in columns[:19])
             metric = preserve_existing_values(metric, existing_rows.get(stock["ticker"], {}))
             metric["industry"] = stock_industry(stock, metric)
             metric["ruleOf40"] = rule_of_40(metric)
             metric["earningsDate"] = refresh_earnings_date_label(metric.get("earningsDate") or "-")
+            metric["checkedAt"] = now_iso()
+            metric["dataStatus"] = "not_applicable" if is_etf_stock(stock, metric) else ("available" if has_fresh_financials else "unavailable")
             rows[stock["ticker"]] = metric
-            successful_rows += 1
+            if has_fresh_financials or is_etf_stock(stock, metric):
+                successful_rows += 1
+            else:
+                errors.append({"ticker": stock["ticker"], "error": "source returned no financial metrics"})
         except Exception as exc:  # noqa: BLE001
             if stock["ticker"] in existing_rows:
                 preserved = dict(existing_rows[stock["ticker"]])
@@ -1530,7 +1539,7 @@ def build_stocks_cache(universe: list[dict[str, str]] | None = None) -> dict[str
             "fairPrice": fair_price,
             "fairPriceReason": fair_price_reason,
             "currentPrice": current_price,
-            "valuation": valuation_from_price_range(current_price, fair_price),
+            "valuation": "판단 불가" if fair_price_reason else valuation_from_price_range(current_price, fair_price),
             "opinion": technical.get("opinion", "관망"),
             "opinionReason": technical.get("opinionReason", "-"),
             "marketEvent": technical.get("marketEvent", "당분간 없음"),

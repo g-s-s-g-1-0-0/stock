@@ -91,7 +91,7 @@ type Stock = {
   riskGroup?: string
   currentRiskGroupPercent?: number
   postRiskGroupPercent?: number
-  fairPriceReason?: 'loss_making' | 'etf'
+  fairPriceReason?: 'loss_making' | 'etf' | 'insufficient_financials'
   updatedAt: string
 }
 
@@ -2649,6 +2649,7 @@ function isFairPriceUnavailable(stock: Stock) {
 
 function displayFairPriceText(stock: Stock) {
   if (isEtfStock(stock)) return ETF_FAIR_PRICE_UNAVAILABLE_LABEL
+  if (stock.fairPriceReason === 'insufficient_financials') return '재무자료 부족'
   return isFairPriceUnavailable(stock) ? FAIR_PRICE_UNAVAILABLE_LABEL : stock.fairPrice
 }
 
@@ -2665,7 +2666,7 @@ function displayValueAnalysisOpinion(stock: Stock): Opinion {
 }
 
 function displayStockValuation(stock: Stock): Valuation {
-  if (isFairPriceUnavailable(stock)) return '판단 불가'
+  if (isFairPriceUnavailable(stock) || stock.fairPriceReason === 'insufficient_financials') return '판단 불가'
   return valuationFromPriceRange(stock.currentPrice, stock.fairPrice) ?? stock.valuation
 }
 
@@ -10951,7 +10952,7 @@ function App() {
                           ) : displayIndustryLabel(stock.industry)}
                         </td>
                         <td className="number-cell">
-                          {isFairPriceUnavailable(stock) ? (
+                          {isFairPriceUnavailable(stock) || stock.fairPriceReason === 'insufficient_financials' ? (
                             <span className="unavailable-value-label">{displayFairPriceText(stock)}</span>
                           ) : isPendingValue(stock.fairPrice) ? (
                             <span className="pending-update-label">{fairPricePendingLabel}</span>

@@ -192,7 +192,11 @@ jobs:
 
       - name: Refresh web caches
         if: ${{ env.SKIP_REFRESH != 'true' }}
-        run: python scripts/refresh_web_caches.py $REFRESH_TASKS
+        run: |
+          if [[ " $REFRESH_TASKS " == *" valuation "* ]]; then
+            python -m unittest tests.test_fair_price tests.test_pipeline_valuation_cache
+          fi
+          python scripts/refresh_web_caches.py $REFRESH_TASKS
 
       - name: Update trade logs
         if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'technical') }}

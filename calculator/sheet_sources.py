@@ -717,6 +717,34 @@ def fetch_korean_valuation(code: str) -> list[str]:
     return format_currency_values([market_cap, sales_ttm, sales_qq, sales_yy, sales_past, current_ratio, de, "-", ps, per, pbr, roe, peg, shares, "-", oper_margin, eps_ttm, eps_next, eps_qq, earnings_date, "-"], "₩")
 
 
+def stockanalysis_financials(html: str, symbol: str) -> dict[int, str]:
+    heading = re.search(r'<h1\b[^>]*>(.*?)</h1>', html, re.S)
+    # The quote heading must match the requested security; never accept a redirect's data.
+    if not re.search(r'"tickerSymbol"\s*:\s*"' + re.escape(symbol.upper()) + r'"', html):
+        raise ValueError("financial fallback ticker mismatch")
+    if not heading or "Financials" not in re.sub(r'<[^>]+>', '', heading.group(1)):
+        raise ValueError("financial fallback table missing")
+    if not re.search(r'(?:millions USD|Millions USD)', html):
+        raise ValueError("financial fallback currency/unit missing")
+    result = {}
+    fields = {"revenue": 1, "revenueGrowth": 3, "grossMargin": 14, "operatingMargin": 15, "epsdil": 16}
+    ttm_column = None
+    for row in re.findall(r'<tr\b[^>]*>(.*?)</tr>', html, re.S):
+        cells = re.findall(r'<t[dh]\b[^>]*>(.*?)</t[dh]>', row, re.S)
+        texts = [unescape(re.sub(r'<[^>]+>', '', cell)).strip() for cell in cells]
+        if texts and texts[0] == "Fiscal Year":
+            ttm_column = texts.index("TTM") if "TTM" in texts else None
+        if ttm_column is None or len(cells) <= ttm_column:
+            continue
+        for field, index in fields.items():
+            if not re.search(r'\bid="' + field + r'"', cells[0]):
+                continue
+            value = texts[ttm_column].replace(',', '').replace('−', '-')
+            if re.fullmatch(r'-?\d+(?:\.\d+)?%?', value):
+                result[index] = f"{float(value) / 1000:g}B" if index == 1 else value
+    return result
+
+
 def fetch_us_valuation(symbol: str) -> list[str]:
     html = fetch_text(f"https://finviz.com/quote.ashx?t={urllib.parse.quote(symbol)}&p=d")
     labels = [
@@ -733,6 +761,17 @@ def fetch_us_valuation(symbol: str) -> list[str]:
     sector = re.sub(r"<.*?>", "", sector_match.group(1)).strip() if sector_match else "-"
     industry = re.sub(r"<.*?>", "", industry_match.group(1)).strip() if industry_match else "-"
     values.append(" | ".join(value for value in (sector, industry) if value != "-") or "-")
+    financial_fields = (1, 3, 14, 15, 16)
+    is_fund = "Exchange Traded Fund" in industry
+    if not is_fund and any(values[index] == "-" for index in financial_fields):
+        try:
+            fallback_html = fetch_text(f"https://stockanalysis.com/stocks/{urllib.parse.quote(symbol.lower())}/financials/")
+            fallback = stockanalysis_financials(fallback_html, symbol)
+        except Exception:
+            fallback = {}
+        for index, value in fallback.items():
+            if values[index] == "-":
+                values[index] = value
     return format_currency_values(values, "$")
 
 
