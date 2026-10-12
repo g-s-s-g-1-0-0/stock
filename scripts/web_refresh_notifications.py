@@ -2017,6 +2017,11 @@ def send_weekly_trend_notifications() -> int:
         print("Weekly trend notification skipped outside KST Monday 00:00-03:00 window.")
         return 0
 
+    payload = read_json(DEFAULT_MARKET_TRENDS)
+    if isinstance(payload, dict) and (payload.get("meta") or {}).get("analysisStatus") == "failed":
+        print("Weekly trend notification withheld: current news analysis failed.")
+        return 0
+
     trend = latest_market_trend()
     if not trend:
         print("No market trend data.")

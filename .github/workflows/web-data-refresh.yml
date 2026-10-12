@@ -186,6 +186,10 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'market-events') }}
         run: pip install --disable-pip-version-check curl_cffi==0.13.0
 
+      - name: Validate weekly news analysis contract
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
+        run: python -m unittest tests.test_market_trends tests.test_web_refresh_notifications.WebRefreshNotificationsTest.test_failed_news_analysis_never_sends_old_or_internal_only_report
+
       - name: Refresh web caches
         if: ${{ env.SKIP_REFRESH != 'true' }}
         run: python scripts/refresh_web_caches.py $REFRESH_TASKS
