@@ -2007,6 +2007,7 @@ def weekly_trend_email_body(trend: dict[str, Any]) -> str:
       <div style="margin-top:16px;padding:10px 14px;background:#f0f7ff;border-left:3px solid #3498db;font-size:13px;color:#333;">
         ※ {html.escape(summary)}
       </div>
+      <p style="color:#888;font-size:12px;margin-top:18px;">출처·산정: CNBC·MarketWatch·Google Trends 등의 최근 7일 뉴스와 관심종목의 가격·거래량·기술지표를 종합해 테마별 순위를 산정했습니다.</p>
       <p style="color:#bbb;font-size:11px;margin-top:20px;">시장 트렌드 갱신 완료 후 자동 발송</p>
     </div>
     """
