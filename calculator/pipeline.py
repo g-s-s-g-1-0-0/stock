@@ -2669,6 +2669,61 @@ def official_market_event_sources(year: int) -> tuple[dict[str, dict[int, dict[s
     return sources, issues
 
 
+BLS_CALENDAR_RELEASES = {
+    "CPI 발표": "Consumer Price Index",
+    "PPI 발표": "Producer Price Index",
+}
+
+
+def parse_bls_calendar(html_text: str, year: int) -> dict[str, dict[int, dict[str, str]]]:
+    sources: dict[str, dict[int, dict[str, str]]] = {title: {} for title in BLS_CALENDAR_RELEASES}
+    for row in html_table_rows(html_text):
+        if len(row) != 3:
+            continue
+        released = parse_us_date_text(re.sub(r"^[A-Za-z]+,\s*", "", row[0]))
+        if released is None or released.year != year:
+            continue
+        value = market_event_source_value(released, row[1])
+        if value is None:
+            continue
+        for title, name in BLS_CALENDAR_RELEASES.items():
+            if row[2].startswith(name + " for "):
+                add_unique_market_event_source(sources[title], [], title, released.month, value, prefer_later=True)
+    return sources
+
+
+def fetch_bls_calendar_missing(
+    year: int, missing: dict[str, set[int]],
+) -> dict[str, dict[int, dict[str, str]]]:
+    result: dict[str, dict[int, dict[str, str]]] = {title: {} for title in missing}
+    months = sorted(set().union(*missing.values()))
+    urls = [f"https://www.bls.gov/schedule/{year}/{month:02d}_sched_list.htm" for month in months]
+    urls.append(f"https://www.bls.gov/schedule/{year}/home.htm")
+    for url in urls:
+        wanted = {title: months - result[title].keys() for title, months in missing.items()}
+        if not any(wanted.values()):
+            break
+        for fetch in (fetch_text, fetch_bls_browser_text):
+            for attempt in range(2):
+                try:
+                    parsed = parse_bls_calendar(fetch(url, timeout=20), year)
+                    if not any(parsed[title].keys() & months for title, months in wanted.items()):
+                        raise RuntimeError("calendar has no requested release dates and times")
+                    for title, months in wanted.items():
+                        result[title].update({month: parsed[title][month] for month in months if month in parsed[title]})
+                    print(f"BLS calendar read: url={url}; months={ {title: sorted(values) for title, values in result.items()} }")
+                    break
+                except Exception as exc:  # noqa: BLE001
+                    if attempt == 0 and _retryable_fetch_error(exc):
+                        sleep(1.5)
+                        continue
+                    print(f"BLS calendar unavailable: url={url}; error={exc}")
+                    break
+            if all(not (months - result[title].keys()) for title, months in wanted.items()):
+                break
+    return result
+
+
 def apply_market_event_verification(
     payload: dict[str, Any],
     today: date | None = None,
@@ -2678,6 +2733,24 @@ def apply_market_event_verification(
     year = today.year if today.year > cached_year else cached_year
     rolling = year > cached_year
     sources, issues = official_market_event_sources(year)
+    missing: dict[str, set[int]] = {title: set() for title in BLS_CALENDAR_RELEASES}
+    for group in payload.get("groups", []):
+        title = group.get("title") if isinstance(group, dict) else None
+        if title not in missing:
+            continue
+        for entry in group.get("entries", []):
+            if not isinstance(entry, dict):
+                continue
+            month = parse_release_month(entry)
+            cached_date = parse_market_event_date(entry.get("date"))
+            if month and month not in sources.get(title, {}) and (rolling or cached_date is None or cached_date >= today):
+                missing[title].add(month)
+    if any(missing.values()):
+        calendar = fetch_bls_calendar_missing(year, missing)
+        for title, values in calendar.items():
+            sources.setdefault(title, {}).update(values)
+            if missing[title] and missing[title] <= values.keys():
+                issues = [issue for issue in issues if not issue.startswith(f"BLS {title} ")]
     changes: list[str] = []
     if rolling and not any(sources.values()):
         issues.append(f"{year}년 공식 일정을 읽지 못해 표 연도를 바꾸지 않았습니다.")
@@ -2778,6 +2851,7 @@ def build_market_events_cache() -> dict[str, Any]:
                     "fomc": FED_FOMC_SCHEDULE_URL,
                     "bls": list(BLS_RELEASE_SCHEDULE_URLS.values()),
                     "blsFallback": "live-browser-compatible-http",
+                    "blsCalendarFallback": "official-monthly-list-then-annual-calendar",
                     "beaPce": BEA_RELEASE_SCHEDULE_URL,
                 },
             },
