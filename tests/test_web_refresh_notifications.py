@@ -41,6 +41,10 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn('git fetch origin "$BRANCH"', workflow)
         self.assertIn('git rebase "origin/$BRANCH"', workflow)
         self.assertIn('git push origin "HEAD:$BRANCH"', workflow)
+        self.assertLess(
+            workflow.index('python scripts/space_main_push.py "$BRANCH"'),
+            workflow.index('git push origin "HEAD:$BRANCH"'),
+        )
 
     def test_workflow_preserves_previous_snapshot_outside_commit_paths(self) -> None:
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
@@ -75,6 +79,7 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         send_weekly_trend_index = workflow.index("- name: Send weekly trend report emails")
         send_stock_universe_index = workflow.index("- name: Send stock universe update email")
         commit_notification_state_index = workflow.index("- name: Commit notification send state")
+        push_follow_up_index = workflow.index("- name: Push follow-up data commits")
         record_logs_index = workflow.index("- name: Record stock-level operation logs")
         verify_auth_index = workflow.index("- name: Verify production auth config")
 
@@ -87,8 +92,15 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertLess(send_weekly_trend_index, commit_notification_state_index)
         self.assertLess(wait_index, send_stock_universe_index)
         self.assertLess(send_stock_universe_index, commit_notification_state_index)
-        self.assertLess(commit_notification_state_index, record_logs_index)
+        self.assertLess(commit_notification_state_index, push_follow_up_index)
+        self.assertLess(push_follow_up_index, record_logs_index)
         self.assertLess(record_logs_index, verify_auth_index)
+        gap_section = workflow[workflow.index("- name: Catch up gap-and-go observations"):commit_notification_state_index]
+        notification_section = workflow[commit_notification_state_index:push_follow_up_index]
+        self.assertNotIn("git push", gap_section)
+        self.assertNotIn("git push", notification_section)
+        self.assertIn('python scripts/space_main_push.py "$BRANCH"', workflow[push_follow_up_index:record_logs_index])
+        self.assertIn('git push origin "HEAD:$BRANCH"', workflow[push_follow_up_index:record_logs_index])
         self.assertNotIn("- name: Notify admins on failure", workflow)
         self.assertIn('workflow_dispatch:', workflow)
         self.assertIn('  schedule:', workflow)

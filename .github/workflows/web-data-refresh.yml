@@ -315,18 +315,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Collect gap-and-go observations"
-          BRANCH="${GITHUB_REF_NAME:-main}"
-          for attempt in 1 2 3; do
-            git fetch origin "$BRANCH"
-            git rebase -X theirs --autostash "origin/$BRANCH"
-            if git push origin "HEAD:$BRANCH"; then
-              exit 0
-            fi
-            echo "Push failed; retrying after syncing remote changes (attempt $attempt/3)."
-            sleep $((attempt * 5))
-          done
-          echo "Failed to push gap-and-go observations after retries."
-          exit 1
 
       - name: Commit notification send state
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' }}
@@ -339,7 +327,19 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Update notification send state"
+
+      - name: Push follow-up data commits
+        if: ${{ env.SKIP_REFRESH != 'true' }}
+        run: |
+          # One later push, after the cache publish has had time to be cloned.
+          # Two extra pushes in the same minute were tripping GitHub's rate limit.
           BRANCH="${GITHUB_REF_NAME:-main}"
+          git fetch origin "$BRANCH"
+          if [ "$(git rev-list --count "origin/$BRANCH..HEAD")" = "0" ]; then
+            echo "No follow-up commits."
+            exit 0
+          fi
+          python scripts/space_main_push.py "$BRANCH"
           for attempt in 1 2 3; do
             git fetch origin "$BRANCH"
             git rebase -X theirs --autostash "origin/$BRANCH"
@@ -349,7 +349,7 @@ jobs:
             echo "Push failed; retrying after syncing remote changes (attempt $attempt/3)."
             sleep $((attempt * 5))
           done
-          echo "Failed to push notification state after retries."
+          echo "Failed to push follow-up data commits after retries."
           exit 1
 
       - name: Record stock-level operation logs

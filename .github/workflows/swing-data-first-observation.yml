@@ -38,6 +38,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Collect data-first swing paper observations"
           BRANCH="${GITHUB_REF_NAME:-main}"
+          python scripts/space_main_push.py "$BRANCH"
           for attempt in 1 2 3; do
             git fetch origin "$BRANCH"
             git rebase "origin/$BRANCH"
