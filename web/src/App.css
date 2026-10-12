@@ -4760,6 +4760,36 @@ html.modal-scroll-lock body {
   white-space: nowrap;
 }
 
+.technical-summary-disclosure summary strong.indicator-good,
+.technical-summary-item.indicator-good strong,
+.technical-summary-item.indicator-good strong .metric-tooltip-trigger {
+  color: #be123c;
+}
+
+.technical-summary-disclosure summary strong.indicator-neutral,
+.technical-summary-item.indicator-neutral strong,
+.technical-summary-item.indicator-neutral strong .metric-tooltip-trigger {
+  color: #64748b;
+}
+
+.technical-summary-disclosure summary strong.indicator-weak,
+.technical-summary-item.indicator-weak strong,
+.technical-summary-item.indicator-weak strong .metric-tooltip-trigger {
+  color: #2563eb;
+}
+
+.technical-summary-item.indicator-good {
+  background: #fff1f2;
+}
+
+.technical-summary-item.indicator-neutral {
+  background: #f8fafc;
+}
+
+.technical-summary-item.indicator-weak {
+  background: #eff6ff;
+}
+
 .technical-summary-disclosure summary strong:not(:last-of-type)::after {
   margin-left: 12px;
   color: #cbd5e1;

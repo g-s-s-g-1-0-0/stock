@@ -4545,6 +4545,102 @@ function shouldShowTechnicalSummaryCard(label: string) {
   return label !== 'QQQ 매수 차단 기준'
 }
 
+function technicalSummaryTone(label: string, value: string, snapshot: string[][]): IndicatorTone | null {
+  if (!value || value === '-' || value.includes('수집 실패')) return null
+  const today = parseIndicatorNumber((value.split('/')[0] ?? value).trim())
+  const snapshotNumber = (name: string) => parseIndicatorNumber(snapshot.find(([item]) => item === name)?.[1] ?? '')
+
+  if (label === '시장 주요 이벤트') {
+    if (value.includes('당분간 없음') || value.includes('예정 없음')) return 'good'
+    return 'weak'
+  }
+  if (label === '장 상태') {
+    if (value.startsWith('회복장') || value.startsWith('정상장')) return 'good'
+    if (value.startsWith('횡보장')) return 'neutral'
+    if (value.startsWith('하락장')) return 'weak'
+    return null
+  }
+  if (label.startsWith('VIX')) {
+    if (today === null) return null
+    if (today < 20) return 'good'
+    if (today < 30) return 'neutral'
+    return 'weak'
+  }
+  if (label.startsWith('CNN')) {
+    if (today === null) return null
+    if (today <= 25) return 'good'
+    if (today < 75) return 'neutral'
+    return 'weak'
+  }
+  if (label === '미국 10년물 금리' || label === '미국 30년물 금리') {
+    if (today === null) return null
+    if (today < 3.5) return 'good'
+    if (today < 4.5) return 'neutral'
+    return 'weak'
+  }
+  if (label === '달러 인덱스') {
+    if (today === null) return null
+    if (today < 100) return 'good'
+    if (today < 105) return 'neutral'
+    return 'weak'
+  }
+  if (label.startsWith('QQQ 주봉 RSI') || label.startsWith('QQQ 일봉 RSI')) {
+    if (today === null) return null
+    if (today <= 30) return 'good'
+    if (today <= 70) return 'neutral'
+    return 'weak'
+  }
+  if (label.startsWith('QQQ MACD')) {
+    if (today === null) return null
+    if (today > 0) return 'good'
+    if (today === 0) return 'neutral'
+    return 'weak'
+  }
+  if (label.startsWith('QQQ 60')) {
+    if (today === null) return null
+    if (today <= -5) return 'good'
+    if (today <= 0) return 'neutral'
+    return 'weak'
+  }
+  if (label === '나스닥 (QQQ, 당일)') {
+    const price = today
+    const ma200 = snapshotNumber('나스닥 (QQQ, 200일 이동평균선)')
+    const distance = snapshotNumber('나스닥 (QQQ, 200일선 이격도)')
+    if (price === null) return null
+    const gap = distance ?? (ma200 !== null && ma200 > 0 ? (price / ma200 - 1) * 100 : null)
+    if (ma200 !== null && price < ma200) return 'weak'
+    if (gap === null) return null
+    if (gap > 14) return 'weak'
+    if (gap > 9) return 'neutral'
+    return 'good'
+  }
+  if (label.includes('이동평균선')) {
+    const price = snapshotNumber('나스닥 (QQQ, 당일)')
+    if (price === null || today === null || today <= 0) return null
+    const distance = (price / today - 1) * 100
+    if (distance > 0) return 'good'
+    if (distance >= -2) return 'neutral'
+    return 'weak'
+  }
+  if (label === '나스닥 (QQQ, 200일선 이격도)') {
+    if (today === null) return null
+    if (today >= -3 && today <= 9) return 'good'
+    if (today <= 14) return 'neutral'
+    return 'weak'
+  }
+  if (
+    label === '고점 신호 종합'
+    || label.startsWith('미국 주식 20일선')
+    || label === '미국 10년물 금리 20일 변화'
+    || label.startsWith('미국 저신용')
+  ) {
+    if (value.includes('경고')) return 'weak'
+    if (value.includes('주의')) return 'neutral'
+    if (value.includes('정상')) return 'good'
+  }
+  return null
+}
+
 function technicalSeed(stock: Stock, index: number, salt = 0) {
   const base = [...stock.ticker].reduce((sum, char) => sum + char.charCodeAt(0), 0)
   return (base * 17 + index * 31 + salt * 13) % 997
@@ -5017,18 +5113,20 @@ function TechnicalAnalysisPage({
       >
         <summary>
           <span>공통 지표</span>
-          <strong>{regimeMarketLabel}</strong>
-          <strong>VIX (변동성지수) {vixSnapshot}</strong>
-          {fearGreedSnapshot && <strong>CNN 공포·탐욕지수 {fearGreedSnapshot}</strong>}
-          <strong>{qqqSummary}</strong>
-          <strong>미국 10년물 금리 {tnxSnapshot}</strong>
-          <strong>달러 인덱스 {dollarSnapshot}</strong>
-          <strong>QQQ 일봉 RSI 당일 {qqqDailyRsi} / 전날 {qqqDailyRsiPrev}</strong>
+          <strong className={indicatorToneClass(technicalSummaryTone('장 상태', regimeMarketLabel, marketSnapshot))}>{regimeMarketLabel}</strong>
+          <strong className={indicatorToneClass(technicalSummaryTone('VIX (변동성지수) 당일·전날', vixSnapshot, marketSnapshot))}>VIX (변동성지수) {vixSnapshot}</strong>
+          {fearGreedSnapshot && <strong className={indicatorToneClass(technicalSummaryTone('CNN 공포·탐욕지수 당일·전날', fearGreedSnapshot, marketSnapshot))}>CNN 공포·탐욕지수 {fearGreedSnapshot}</strong>}
+          <strong className={indicatorToneClass(technicalSummaryTone('나스닥 (QQQ, 200일선 이격도)', qqqMa200Distance === null ? '' : qqqMa200Distance, marketSnapshot))}>{qqqSummary}</strong>
+          <strong className={indicatorToneClass(technicalSummaryTone('미국 10년물 금리', tnxSnapshot, marketSnapshot))}>미국 10년물 금리 {tnxSnapshot}</strong>
+          <strong className={indicatorToneClass(technicalSummaryTone('달러 인덱스', dollarSnapshot, marketSnapshot))}>달러 인덱스 {dollarSnapshot}</strong>
+          <strong className={indicatorToneClass(technicalSummaryTone('QQQ 일봉 RSI (14, 당일)', qqqDailyRsi, marketSnapshot))}>QQQ 일봉 RSI 당일 {qqqDailyRsi} / 전날 {qqqDailyRsiPrev}</strong>
           <em>펼쳐보기</em>
         </summary>
         <div className="technical-summary-strip" aria-label="기술 분석 시장 요약">
-          {marketSnapshot.filter(([label]) => shouldShowTechnicalSummaryCard(label)).map(([label, value]) => (
-            <div className="technical-summary-item" key={label}>
+          {marketSnapshot.filter(([label]) => shouldShowTechnicalSummaryCard(label)).map(([label, value]) => {
+            const toneClassName = indicatorToneClass(technicalSummaryTone(label, value, marketSnapshot))
+            return (
+            <div className={`technical-summary-item ${toneClassName}`.trim()} key={label}>
               <span>
                 <MetricValue
                   tooltip={technicalSummaryTooltips[label] ?? technicalSummaryTooltips[technicalSummaryDisplayLabel(label)]}
@@ -5038,7 +5136,7 @@ function TechnicalAnalysisPage({
                   {technicalSummaryDisplayLabel(label)}
                 </MetricValue>
               </span>
-              <strong>
+              <strong className={toneClassName}>
                 <MetricValue
                   tooltip={`${technicalSummaryDisplayLabel(label)}\n${value}`}
                   onTooltipClose={onTooltipClose}
@@ -5049,7 +5147,8 @@ function TechnicalAnalysisPage({
                 </MetricValue>
               </strong>
             </div>
-          ))}
+            )
+          })}
         </div>
         <button className="technical-summary-collapse-button" type="button" onClick={() => setIsSummaryOpen(false)}>
           공통 지표 접기
