@@ -77,12 +77,14 @@ const publishedCacheBase = (
   (import.meta.env.VITE_PUBLISHED_CACHE_BASE as string | undefined)?.trim()
   || 'https://raw.githubusercontent.com/g-s-s-g-1-0-0/stock/main/web/public/api'
 ).replace(/\/$/, '')
+const liveDataCacheBase = 'https://raw.githubusercontent.com/g-s-s-g-1-0-0/stock/live-data/web/public/api'
 
 const CACHE_READER_BASE = '/api/cache/'
 
 function productionCachePaths(fileName: string): string[] {
   return [
     `${CACHE_READER_BASE}${fileName}`,
+    `${liveDataCacheBase}/${fileName}`,
     `${publishedCacheBase}/${fileName}`,
     `/api/${fileName}`,
   ]

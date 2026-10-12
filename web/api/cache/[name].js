@@ -25,25 +25,24 @@ const ALLOWED = new Set([
 const DEFAULT_REPO = 'g-s-s-g-1-0-0/stock'
 const CACHE_DIR = 'web/public/api'
 
-function repoRef() {
-  return {
-    repo: process.env.GITHUB_REPO || DEFAULT_REPO,
-    ref: process.env.GITHUB_REFRESH_REF || 'main',
-  }
+function repoName() {
+  return process.env.GITHUB_REPO || DEFAULT_REPO
 }
 
-async function fromRaw(name) {
-  const { repo, ref } = repoRef()
+function dataRefs() {
+  return [...new Set([process.env.GITHUB_DATA_REF || 'live-data', process.env.GITHUB_REFRESH_REF || 'main'])]
+}
+
+async function fromRaw(name, ref) {
   const response = await fetch(
-    `https://raw.githubusercontent.com/${repo}/${ref}/${CACHE_DIR}/${name}`,
+    `https://raw.githubusercontent.com/${repoName()}/${ref}/${CACHE_DIR}/${name}`,
     { cache: 'no-store', headers: { accept: 'application/json', 'cache-control': 'no-cache' } },
   )
   if (!response.ok) throw new Error(`raw responded ${response.status}`)
   return response.json()
 }
 
-async function fromContentsApi(name) {
-  const { repo, ref } = repoRef()
+async function fromContentsApi(name, ref) {
   const token = process.env.GITHUB_ACTIONS_TOKEN
   const headers = {
     accept: 'application/vnd.github.raw+json',
@@ -54,7 +53,7 @@ async function fromContentsApi(name) {
   if (token) headers.authorization = `Bearer ${token}`
 
   const response = await fetch(
-    `https://api.github.com/repos/${repo}/contents/${CACHE_DIR}/${name}?ref=${ref}`,
+    `https://api.github.com/repos/${repoName()}/contents/${CACHE_DIR}/${name}?ref=${ref}`,
     { headers },
   )
   if (!response.ok) throw new Error(`contents API responded ${response.status}`)
@@ -71,13 +70,16 @@ export default async function handler(req, res) {
 
   let payload = null
   const failures = []
-  for (const read of [fromRaw, fromContentsApi]) {
-    try {
-      payload = await read(name)
-      break
-    } catch (error) {
-      failures.push(error instanceof Error ? error.message : String(error))
+  for (const ref of dataRefs()) {
+    for (const read of [fromRaw, fromContentsApi]) {
+      try {
+        payload = await read(name, ref)
+        break
+      } catch (error) {
+        failures.push(error instanceof Error ? error.message : String(error))
+      }
     }
+    if (payload) break
   }
 
   if (!payload) {

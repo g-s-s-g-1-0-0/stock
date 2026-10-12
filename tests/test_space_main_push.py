@@ -18,13 +18,11 @@ class SpaceMainPushTest(unittest.TestCase):
         self.assertEqual(space_main_push.seconds_until_clear(1_000, 1_180), 0)
         self.assertEqual(space_main_push.seconds_until_clear(1_000, 1_500), 0)
 
-    def test_research_workflows_wait_before_pushing_main(self) -> None:
+    def test_research_workflows_publish_away_from_main(self) -> None:
         for name in ("gap-go-observation.yml", "swing-data-first-observation.yml"):
             workflow = (ROOT_DIR / ".github" / "workflows" / name).read_text(encoding="utf-8")
-            self.assertLess(
-                workflow.index('python scripts/space_main_push.py "$BRANCH"'),
-                workflow.index('git push origin "HEAD:$BRANCH"'),
-            )
+            self.assertIn("bash scripts/publish_live_data.sh", workflow)
+            self.assertNotIn('git push origin "HEAD:$BRANCH"', workflow)
 
 
 if __name__ == "__main__":

@@ -74,6 +74,9 @@ jobs:
           git fetch origin "$BRANCH"
           git checkout -B "$BRANCH" "origin/$BRANCH"
 
+      - name: Load latest published data
+        run: bash scripts/publish_live_data.sh --overlay
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -246,26 +249,16 @@ jobs:
           # Publish analysis caches before notification emails so the site and
           # trade logs match what users will see when they open the mail.
           git add data/cache data/history data/search_universe.json web/public/api
-          git reset HEAD -- data/cache/web-notification-state.json 2>/dev/null || true
+          if git cat-file -e origin/live-data:data/cache/web-notification-state.json 2>/dev/null; then
+            git restore --source=origin/live-data --staged data/cache/web-notification-state.json
+          else
+            git reset HEAD -- data/cache/web-notification-state.json 2>/dev/null || true
+          fi
           if git diff --cached --quiet -- data/cache data/history data/search_universe.json web/public/api; then
             echo "No cache changes."
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update scheduled web data caches"
-          BRANCH="${GITHUB_REF_NAME:-main}"
-          for attempt in 1 2 3; do
-            git fetch origin "$BRANCH"
-            git rebase -X theirs --autostash "origin/$BRANCH"
-            if git push origin "HEAD:$BRANCH"; then
-              exit 0
-            fi
-            echo "Push failed; retrying after syncing remote changes (attempt $attempt/3)."
-            sleep $((attempt * 5))
-          done
-          echo "Failed to push refreshed caches after retries."
-          exit 1
+          bash scripts/publish_live_data.sh "Update scheduled web data caches"
 
       - name: Send opinion change emails
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' && contains(env.REFRESH_TASKS, 'technical') }}
@@ -312,9 +305,7 @@ jobs:
             echo "No gap-and-go changes."
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Collect gap-and-go observations"
+          bash scripts/publish_live_data.sh "Collect gap-and-go observations"
 
       - name: Commit notification send state
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' }}
@@ -324,33 +315,7 @@ jobs:
             echo "No notification state changes."
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Update notification send state"
-
-      - name: Push follow-up data commits
-        if: ${{ env.SKIP_REFRESH != 'true' }}
-        run: |
-          # One later push, after the cache publish has had time to be cloned.
-          # Two extra pushes in the same minute were tripping GitHub's rate limit.
-          BRANCH="${GITHUB_REF_NAME:-main}"
-          git fetch origin "$BRANCH"
-          if [ "$(git rev-list --count "origin/$BRANCH..HEAD")" = "0" ]; then
-            echo "No follow-up commits."
-            exit 0
-          fi
-          python scripts/space_main_push.py "$BRANCH"
-          for attempt in 1 2 3; do
-            git fetch origin "$BRANCH"
-            git rebase -X theirs --autostash "origin/$BRANCH"
-            if git push origin "HEAD:$BRANCH"; then
-              exit 0
-            fi
-            echo "Push failed; retrying after syncing remote changes (attempt $attempt/3)."
-            sleep $((attempt * 5))
-          done
-          echo "Failed to push follow-up data commits after retries."
-          exit 1
+          bash scripts/publish_live_data.sh "Update notification send state"
 
       - name: Record stock-level operation logs
         if: ${{ env.SKIP_REFRESH != 'true' }}

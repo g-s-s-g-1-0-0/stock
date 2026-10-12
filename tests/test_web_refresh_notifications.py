@@ -37,14 +37,8 @@ class WebRefreshWorkflowTest(unittest.TestCase):
     def test_gap_go_workflow_retries_non_fast_forward_pushes(self) -> None:
         workflow = GAP_GO_WORKFLOW_PATH.read_text(encoding="utf-8")
 
-        self.assertIn("for attempt in 1 2 3; do", workflow)
-        self.assertIn('git fetch origin "$BRANCH"', workflow)
-        self.assertIn('git rebase "origin/$BRANCH"', workflow)
-        self.assertIn('git push origin "HEAD:$BRANCH"', workflow)
-        self.assertLess(
-            workflow.index('python scripts/space_main_push.py "$BRANCH"'),
-            workflow.index('git push origin "HEAD:$BRANCH"'),
-        )
+        self.assertIn('bash scripts/publish_live_data.sh "Collect gap-and-go and swing research observations"', workflow)
+        self.assertNotIn('git push origin "HEAD:$BRANCH"', workflow)
 
     def test_workflow_preserves_previous_snapshot_outside_commit_paths(self) -> None:
         workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
@@ -79,7 +73,6 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         send_weekly_trend_index = workflow.index("- name: Send weekly trend report emails")
         send_stock_universe_index = workflow.index("- name: Send stock universe update email")
         commit_notification_state_index = workflow.index("- name: Commit notification send state")
-        push_follow_up_index = workflow.index("- name: Push follow-up data commits")
         record_logs_index = workflow.index("- name: Record stock-level operation logs")
         verify_auth_index = workflow.index("- name: Verify production auth config")
 
@@ -92,15 +85,14 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertLess(send_weekly_trend_index, commit_notification_state_index)
         self.assertLess(wait_index, send_stock_universe_index)
         self.assertLess(send_stock_universe_index, commit_notification_state_index)
-        self.assertLess(commit_notification_state_index, push_follow_up_index)
-        self.assertLess(push_follow_up_index, record_logs_index)
+        self.assertLess(commit_notification_state_index, record_logs_index)
         self.assertLess(record_logs_index, verify_auth_index)
         gap_section = workflow[workflow.index("- name: Catch up gap-and-go observations"):commit_notification_state_index]
-        notification_section = workflow[commit_notification_state_index:push_follow_up_index]
-        self.assertNotIn("git push", gap_section)
-        self.assertNotIn("git push", notification_section)
-        self.assertIn('python scripts/space_main_push.py "$BRANCH"', workflow[push_follow_up_index:record_logs_index])
-        self.assertIn('git push origin "HEAD:$BRANCH"', workflow[push_follow_up_index:record_logs_index])
+        notification_section = workflow[commit_notification_state_index:record_logs_index]
+        self.assertNotIn('git push origin "HEAD:', gap_section)
+        self.assertNotIn('git push origin "HEAD:', notification_section)
+        self.assertIn('bash scripts/publish_live_data.sh "Collect gap-and-go observations"', gap_section)
+        self.assertIn('bash scripts/publish_live_data.sh "Update notification send state"', notification_section)
         self.assertNotIn("- name: Notify admins on failure", workflow)
         self.assertIn('workflow_dispatch:', workflow)
         self.assertIn('  schedule:', workflow)
@@ -133,8 +125,8 @@ class WebRefreshWorkflowTest(unittest.TestCase):
         self.assertIn("python scripts/record_web_api_logs.py --skip-trade-log-update $REFRESH_TASKS", workflow)
         self.assertIn("git diff --cached --quiet -- data/cache data/history data/search_universe.json web/public/api", workflow)
         self.assertIn("git add data/cache data/history data/search_universe.json web/public/api", workflow)
-        self.assertIn('git commit -m "Update scheduled web data caches"', workflow)
-        self.assertIn('git rebase -X theirs --autostash "origin/$BRANCH"', workflow)
+        self.assertIn('bash scripts/publish_live_data.sh "Update scheduled web data caches"', workflow)
+        self.assertNotIn('git push origin "HEAD:$BRANCH"', workflow)
         self.assertIn("python scripts/verify_web_auth_config.py", workflow)
         self.assertIn("- name: Fail refresh when health checks fail", workflow)
         self.assertNotIn("npx --yes vercel@latest deploy --prod", workflow)

@@ -1,5 +1,10 @@
 {
   "ignoreCommand": "bash scripts/vercel-ignore-data-only.sh",
+  "git": {
+    "deploymentEnabled": {
+      "live-data": false
+    }
+  },
   "rewrites": [
     { "source": "/dashboard", "destination": "/index.html" },
     { "source": "/dashboard/", "destination": "/index.html" }

@@ -62,7 +62,7 @@ function githubConfig() {
   return {
     token: process.env.GITHUB_ACTIONS_TOKEN,
     repo: process.env.GITHUB_REPO || DEFAULT_REPO,
-    ref: process.env.GITHUB_REFRESH_REF || 'main',
+    ref: process.env.GITHUB_DATA_REF || 'live-data',
   }
 }
 

@@ -44,18 +44,27 @@ export default async function handler(req, res) {
   }
 
   const repo = process.env.GITHUB_REPO || 'g-s-s-g-1-0-0/stock'
-  const ref = process.env.GITHUB_REFRESH_REF || 'main'
   const headers = {
     accept: 'application/vnd.github+json',
     'user-agent': 'gongsuseongga-app-data',
     'cache-control': 'no-cache',
     ...(process.env.GITHUB_ACTIONS_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_ACTIONS_TOKEN}` } : {}),
   }
+  const refs = [...new Set([process.env.GITHUB_DATA_REF || 'live-data', process.env.GITHUB_REFRESH_REF || 'main'])]
   try {
-    const head = await fetch(`https://api.github.com/repos/${repo}/commits/${encodeURIComponent(ref)}`, { cache: 'no-store', headers })
-    if (!head.ok) throw new Error(`Head lookup failed: ${head.status}`)
-    const { sha } = await head.json()
-    if (!/^[a-f0-9]{40}$/i.test(sha || '')) throw new Error('Invalid source revision.')
+    let sha = ''
+    let lastStatus = 0
+    for (const ref of refs) {
+      const head = await fetch(`https://api.github.com/repos/${repo}/commits/${encodeURIComponent(ref)}`, { cache: 'no-store', headers })
+      lastStatus = head.status
+      if (!head.ok) continue
+      const body = await head.json()
+      if (/^[a-f0-9]{40}$/i.test(body.sha || '')) {
+        sha = body.sha
+        break
+      }
+    }
+    if (!sha) throw new Error(`Head lookup failed: ${lastStatus}`)
 
     const snapshot = await readSnapshot(repo, sha, headers)
     res.statusCode = 200

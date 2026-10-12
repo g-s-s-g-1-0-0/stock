@@ -26,6 +26,8 @@ jobs:
           python-version: "3.11"
       - name: Install data reader
         run: pip install --disable-pip-version-check yfinance
+      - name: Load latest published data
+        run: bash scripts/publish_live_data.sh --overlay
       - name: Record archived inputs and paired paper trades
         run: python scripts/record_data_first_candidates.py
       - name: Commit private research records
@@ -34,17 +36,4 @@ jobs:
           if git diff --cached --quiet; then
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Collect data-first swing paper observations"
-          BRANCH="${GITHUB_REF_NAME:-main}"
-          python scripts/space_main_push.py "$BRANCH"
-          for attempt in 1 2 3; do
-            git fetch origin "$BRANCH"
-            git rebase "origin/$BRANCH"
-            if git push origin "HEAD:$BRANCH"; then
-              exit 0
-            fi
-            sleep $((attempt * 5))
-          done
-          exit 1
+          bash scripts/publish_live_data.sh "Collect data-first swing paper observations"
