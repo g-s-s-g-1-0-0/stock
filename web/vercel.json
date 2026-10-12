@@ -1,5 +1,9 @@
 {
   "ignoreCommand": "bash scripts/vercel-ignore-data-only.sh",
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/dashboard/", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/",

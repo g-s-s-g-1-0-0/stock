@@ -4,7 +4,9 @@ import { Fragment, type CSSProperties, type FormEvent, type MouseEvent as ReactM
 import { createPortal } from 'react-dom'
 import type { User } from '@supabase/supabase-js'
 import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, saveTradeLogs, type AppData, type RuntimeMeta } from './api'
+import { UsageDashboard } from './UsageDashboard'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
+import { isUsagePage, seoulDate } from './usageMetrics'
 
 type Market = 'KR' | 'US'
 type Valuation = '저평가' | '보통' | '고평가' | '판단 불가'
@@ -157,7 +159,7 @@ function isSameTooltipSource(current: TooltipState, next: TooltipState) {
   return current.text === next.text && Math.abs(current.x - next.x) < 2 && Math.abs(current.y - next.y) < 2
 }
 
-type ActivePage = 'home' | 'value-analysis' | 'technical-analysis' | 'market-events' | 'market-trends' | 'board' | 'admin-logs'
+type ActivePage = 'home' | 'value-analysis' | 'technical-analysis' | 'market-events' | 'market-trends' | 'board' | 'admin-logs' | 'dashboard'
 
 type AuthMode = 'login' | 'signup' | 'recover' | 'reset'
 type BoardCategory = '칭찬' | '버그' | '건의' | '기타'
@@ -373,7 +375,8 @@ const BOARD_POST_PAGE_SIZE = 50
 const MAX_BOARD_COMMENTS_PER_POST = 50
 const MAX_BOARD_COMMENT_LENGTH = 500
 const DEFAULT_WATCHLIST_SORT: WatchlistSortSettings = { primary: 'registered', secondary: 'registered' }
-const activePages: ActivePage[] = ['home', 'value-analysis', 'technical-analysis', 'market-events', 'market-trends', 'board', 'admin-logs']
+const activePages: ActivePage[] = ['home', 'value-analysis', 'technical-analysis', 'market-events', 'market-trends', 'board', 'admin-logs', 'dashboard']
+let usageRecordingUnavailable = false
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   opinionChangeEmail: true,
   nasdaqPeakEmail: true,
@@ -816,7 +819,12 @@ function activePageFromHash() {
   return normalizeActivePage(page as ActivePage)
 }
 
+function isUsageDashboardPath(pathname = window.location.pathname) {
+  return pathname === '/dashboard' || pathname === '/dashboard/'
+}
+
 function readInitialActivePage(): ActivePage {
+  if (isUsageDashboardPath()) return 'dashboard'
   return activePageFromHash() ?? readStoredActivePage()
 }
 
@@ -4242,7 +4250,7 @@ function isSameTrendWeek(tradeDate: string, trendDate: string) {
 }
 
 const gnbMenus = ['HOME', '가치 분석', '기술 분석', '시장 주요 이벤트', '시장 트렌드']
-const adminGnbMenus = [...gnbMenus, '운영 로그', ...(ADMIN_BOARD_FEATURE_ENABLED ? ['게시판'] : [])]
+const adminGnbMenus = [...gnbMenus, '운영 로그', '사용 현황', ...(ADMIN_BOARD_FEATURE_ENABLED ? ['게시판'] : [])]
 const boardCategories: BoardCategory[] = ['칭찬', '버그', '건의', '기타']
 const boardFilters: BoardFilter[] = ['전체', ...boardCategories]
 const watchlistSortOptions: Array<{ value: WatchlistSortKey; label: string; description: string }> = [
@@ -8537,7 +8545,7 @@ function App() {
   ]
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = (() => {
-    if (!isAdminUser && (activePage === 'board' || activePage === 'admin-logs')) return 'home'
+    if (!isAdminUser && (activePage === 'board' || activePage === 'admin-logs' || activePage === 'dashboard')) return 'home'
     if (!ADMIN_BOARD_FEATURE_ENABLED && activePage === 'board') return 'home'
     return activePage
   })()
@@ -9933,16 +9941,62 @@ function App() {
     if (hasAuthCallbackPayload()) return
     const page = normalizeActivePage(activePage)
     localStorage.setItem(ACTIVE_PAGE_STORAGE_KEY, page)
-    const nextHash = activePageHash(page)
-    if (activePageFromHash() !== page) {
-      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`)
+    if (page === 'dashboard') {
+      if (!isUsageDashboardPath() || window.location.hash) {
+        window.history.replaceState(null, '', '/dashboard')
+      }
+      return
     }
+    if (!isUsageDashboardPath() && activePageFromHash() === page) return
+    const pathname = isUsageDashboardPath() ? '/' : window.location.pathname
+    window.history.replaceState(null, '', `${pathname}${window.location.search}${activePageHash(page)}`)
   }, [activePage])
 
   useEffect(() => {
-    const syncPageFromHash = () => {
-      const page = activePageFromHash()
-      if (page) setActivePage(page)
+    if (!isRemoteDataReady || activePage !== 'dashboard' || isAdminUser) return
+    setActivePage('home')
+  }, [activePage, isAdminUser, isRemoteDataReady])
+
+  useEffect(() => {
+    if (usageRecordingUnavailable || !isRemoteDataReady || !supabase || !userSession || isAdminUser) return
+    if (!isUsagePage(currentActivePage)) return
+    const page = currentActivePage
+    const key = `gongsu-usage-v1:${userSession.id}:${seoulDate(new Date())}:${page}`
+    try {
+      if (localStorage.getItem(key) === '1') return
+    } catch {
+      // Private mode can block localStorage. The server still deduplicates the day.
+    }
+    let cancelled = false
+    void supabase.rpc('record_usage', { visited_page: page }).then(({ error }) => {
+      if (cancelled || !error) {
+        if (!cancelled && !error) {
+          try {
+            localStorage.setItem(key, '1')
+          } catch {
+            // The visit is already stored.
+          }
+        }
+        return
+      }
+      const code = error.code ?? ''
+      if (code === 'PGRST202' || code === '42883' || (error.message ?? '').includes('record_usage')) {
+        usageRecordingUnavailable = true
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [currentActivePage, isAdminUser, isRemoteDataReady, userSession])
+
+  useEffect(() => {
+    const syncPageFromLocation = () => {
+      if (isUsageDashboardPath()) {
+        setActivePage('dashboard')
+      } else {
+        const page = activePageFromHash()
+        if (page) setActivePage(page)
+      }
       if (hasNotificationSettingsDeepLink()) {
         setAuthMode('login')
         setAuthInfoMessage(notificationSettingsDeepLinkMessage())
@@ -9952,8 +10006,12 @@ function App() {
         }
       }
     }
-    window.addEventListener('hashchange', syncPageFromHash)
-    return () => window.removeEventListener('hashchange', syncPageFromHash)
+    window.addEventListener('hashchange', syncPageFromLocation)
+    window.addEventListener('popstate', syncPageFromLocation)
+    return () => {
+      window.removeEventListener('hashchange', syncPageFromLocation)
+      window.removeEventListener('popstate', syncPageFromLocation)
+    }
   }, [userSession?.id])
 
   const rawTableStocks = isOperatorDataMode ? operatorStocks : watchlistStocks
@@ -10472,7 +10530,7 @@ function App() {
         </div>
         <nav className="gnb-menu" aria-label="주요 메뉴">
           {visibleGnbMenus.map((menu) => {
-            const isActive = (menu === 'HOME' && currentActivePage === 'home') || (menu === '가치 분석' && currentActivePage === 'value-analysis') || (menu === '기술 분석' && currentActivePage === 'technical-analysis') || (menu === '시장 주요 이벤트' && currentActivePage === 'market-events') || (menu === '시장 트렌드' && currentActivePage === 'market-trends') || (menu === '운영 로그' && currentActivePage === 'admin-logs') || (menu === '게시판' && currentActivePage === 'board')
+            const isActive = (menu === 'HOME' && currentActivePage === 'home') || (menu === '가치 분석' && currentActivePage === 'value-analysis') || (menu === '기술 분석' && currentActivePage === 'technical-analysis') || (menu === '시장 주요 이벤트' && currentActivePage === 'market-events') || (menu === '시장 트렌드' && currentActivePage === 'market-trends') || (menu === '운영 로그' && currentActivePage === 'admin-logs') || (menu === '사용 현황' && currentActivePage === 'dashboard') || (menu === '게시판' && currentActivePage === 'board')
 
             return (
               <button
@@ -10486,6 +10544,7 @@ function App() {
                   if (menu === '시장 주요 이벤트') setActivePage('market-events')
                   if (menu === '시장 트렌드') setActivePage('market-trends')
                   if (menu === '운영 로그') setActivePage('admin-logs')
+                  if (menu === '사용 현황') setActivePage('dashboard')
                   if (menu === '게시판') setActivePage('board')
                 }}
               >
@@ -11224,6 +11283,8 @@ function App() {
           onTooltipClose={() => setActiveTooltip(null)}
           onTooltipOpen={openFloatingTooltip}
         />
+      ) : currentActivePage === 'dashboard' && isAdminUser ? (
+        <UsageDashboard excludeEmails={configuredAdminEmails()} />
       ) : currentActivePage === 'admin-logs' && isAdminUser ? (
         <AdminLogsPage logs={apiLogs} isLoading={isLoadingApiLogs} onRefresh={loadApiLogs} />
       ) : currentActivePage === 'board' && isAdminUser && ADMIN_BOARD_FEATURE_ENABLED ? (
