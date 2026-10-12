@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-10-12T04:55:25Z",
+    "updatedAt": "2026-10-12T06:55:30Z",
     "rowCount": 9
   },
   "rows": [
@@ -47,7 +47,6 @@
         "CRWV",
         "LRCX",
         "AMAT",
-        "KLAC",
         "TER",
         "VST",
         "GNRC",
@@ -57,7 +56,6 @@
         "ARM",
         "SOXS",
         "COHU",
-        "ACMR",
         "SPCX",
         "UBER"
       ],
@@ -100,7 +98,6 @@
           "CRWV",
           "LRCX",
           "AMAT",
-          "KLAC",
           "TER",
           "VST",
           "GNRC",
@@ -110,7 +107,6 @@
           "ARM",
           "SOXS",
           "COHU",
-          "ACMR",
           "SPCX",
           "UBER"
         ],
@@ -133,7 +129,7 @@
         "primary": "market_kr_first",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-10-12T04:23:42.016951+00:00"
+      "remoteUpdatedAt": "2026-10-12T05:58:41.67683+00:00"
     },
     {
       "id": "71d761c7-b0c3-4a1d-9f10-cc34d5ccb8a6",
@@ -261,7 +257,7 @@
         "primary": "registered",
         "secondary": "registered"
       },
-      "remoteUpdatedAt": "2026-10-12T04:23:42.018331+00:00"
+      "remoteUpdatedAt": "2026-10-12T05:58:41.702807+00:00"
     }
   ]
 }
