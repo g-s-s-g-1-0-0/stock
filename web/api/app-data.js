@@ -50,6 +50,7 @@ export default async function handler(req, res) {
     'cache-control': 'no-cache',
     ...(process.env.GITHUB_ACTIONS_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_ACTIONS_TOKEN}` } : {}),
   }
+  // live-data first, then the code branch. A missing branch falls through to main.
   const refs = [...new Set([process.env.GITHUB_DATA_REF || 'live-data', process.env.GITHUB_REFRESH_REF || 'main'])]
   try {
     let sha = ''
