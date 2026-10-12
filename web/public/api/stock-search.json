@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-10-12T02:22:57+00:00",
-    "lastSuccessfulRun": "2026-10-12T02:22:57+00:00",
+    "updatedAt": "2026-10-12T00:56:21+00:00",
+    "lastSuccessfulRun": "2026-10-12T00:56:21+00:00",
     "failedReason": null
   },
   "rows": [
@@ -20220,7 +20220,7 @@
       "ticker": "ACMR",
       "name": "ACM Research Class A",
       "market": "US",
-      "category": "스윙주",
+      "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
@@ -22845,7 +22845,7 @@
       "ticker": "AMAT",
       "name": "Applied Materials",
       "market": "US",
-      "category": "스윙주",
+      "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
@@ -36159,7 +36159,7 @@
       "ticker": "COHU",
       "name": "Cohu",
       "market": "US",
-      "category": "스윙주",
+      "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
@@ -53120,7 +53120,7 @@
       "ticker": "GNRC",
       "name": "Generac Holdlings",
       "market": "US",
-      "category": "스윙주",
+      "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
@@ -64124,7 +64124,7 @@
       "ticker": "KLAC",
       "name": "KLA",
       "market": "US",
-      "category": "스윙주",
+      "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
