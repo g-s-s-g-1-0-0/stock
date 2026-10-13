@@ -4479,7 +4479,7 @@ const technicalSummaryTooltips: Record<string, string> = {
   'QQQ 주봉 RSI (14)': metricTooltip('나스닥 주봉 RSI입니다. 일봉보다 느려서 중기 과열과 침체를 봅니다. 70 이상은 과열, 30 이하는 과매도입니다.', '긍정: 30 이하 과매도 · 일반: 30 초과 70 이하 · 부정: 70 초과 과열.'),
   'QQQ 일봉 RSI (14, 당일)': metricTooltip('나스닥 일봉 RSI입니다. 70 이상은 단기 과열, 30 이하는 과매도입니다.', '긍정: 30 이하 과매도 · 일반: 30 초과 70 이하 · 부정: 70 초과 과열.'),
   'QQQ 일봉 RSI (14, 전날)': metricTooltip('전날 나스닥 일봉 RSI입니다. 오늘 값과 비교해 단기 힘이 세졌는지 봅니다. 기준 구간은 당일과 같습니다.', '긍정: 30 이하 과매도 · 일반: 30 초과 70 이하 · 부정: 70 초과 과열.'),
-  'QQQ MACD Histogram (D/D-1/D-2)': metricTooltip('QQQ MACD 히스토그램입니다. 0보다 크면 상승 모멘텀, 0보다 작으면 하락 모멘텀입니다. D < D-1 < D-2이면 상승 힘이 2일 연속 둔화된 것입니다.', '긍정: 0 초과 상승 모멘텀 · 일반: 0 · 부정: 0 미만 하락 모멘텀.'),
+  'QQQ MACD Histogram (D/D-1/D-2)': metricTooltip('QQQ MACD 히스토그램입니다. 0보다 크면 상승 모멘텀, 0보다 작으면 하락 모멘텀입니다. D < D-1 < D-2이면 상승 힘이 2일 연속 둔화된 것입니다.', '긍정: 양수이며 전일보다 증가 · 일반: 양수 둔화·보합 또는 음수 개선 · 부정: 2일 연속 감소 또는 음수 유지·악화. 전일 값이 없으면 양수는 일반으로 표시합니다.'),
   'QQQ 60거래일 최저 이격도': metricTooltip('최근 60거래일 동안 QQQ가 200일선 대비 가장 낮았던 위치입니다. 회복장 후보는 이 값이 -5% 이하이고 현재 이격도가 0% 이상일 때입니다.', '긍정: -5% 이하 깊은 조정 이력 · 일반: -5% 초과 0% 이하 · 부정: 0% 초과 60일 내내 200일선 위.'),
   'QQQ 매수 차단 기준': metricTooltip('현재 QQQ 이격도와 비교하는 신규·재진입 차단선입니다. 회복장은 +14%, 그 외는 +9%입니다.', '긍정: 현재 이격도 ≤ 차단선 매수 허용 · 부정: 현재 이격도 > 차단선 신규 매수 차단.'),
   '나스닥 (QQQ, 당일)': metricTooltip('나스닥 현재가입니다. 지수 숫자 자체보다 200일선과의 위치로 높고 낮음을 봅니다.', '긍정: 200일선 위, 이격 +9% 이하 · 일반: 이격 +9% 초과 +14% 이하 · 부정: 200일선 아래, 또는 이격 +14% 초과.'),
@@ -4592,9 +4592,11 @@ function technicalSummaryTone(label: string, value: string, snapshot: string[][]
   }
   if (label.startsWith('QQQ MACD')) {
     if (today === null) return null
-    if (today > 0) return 'good'
-    if (today === 0) return 'neutral'
-    return 'weak'
+    const [, previous = null, beforePrevious = null] = value.split('/').map(part => parseIndicatorNumber(part.trim()))
+    if (previous !== null && beforePrevious !== null && today < previous && previous < beforePrevious) return 'weak'
+    if (today < 0) return previous !== null && today > previous ? 'neutral' : 'weak'
+    if (today > 0 && previous !== null && today > previous) return 'good'
+    return 'neutral'
   }
   if (label.startsWith('QQQ 60')) {
     if (today === null) return null
@@ -5418,24 +5420,41 @@ function TrendChartZoom({ children }: { children: ReactNode }) {
     const target = targetRef.current
     if (!frame || !target) return
 
+    const activePointers = pointers.current
+    let bounds = frame.getBoundingClientRect()
+    let width = frame.clientWidth
+    let height = frame.clientHeight
+    let animationFrame = 0
+    const paint = () => {
+      animationFrame = 0
+      const next = viewRef.current
+      target.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(${next.scale})`
+      frame.classList.toggle('is-zoomed', next.scale > 1)
+    }
     const apply = (scale: number, x: number, y: number) => {
       const next = scale <= 1
         ? { scale: 1, x: 0, y: 0 }
         : {
             scale,
-            x: Math.min(0, Math.max(frame.clientWidth - frame.clientWidth * scale, x)),
-            y: Math.min(0, Math.max(frame.clientHeight - frame.clientHeight * scale, y)),
+            x: Math.min(0, Math.max(width - width * scale, x)),
+            y: Math.min(0, Math.max(height - height * scale, y)),
           }
       viewRef.current = next
-      target.style.transform = `translate(${next.x}px, ${next.y}px) scale(${next.scale})`
-      frame.classList.toggle('is-zoomed', next.scale > 1)
+      if (!animationFrame) animationFrame = requestAnimationFrame(paint)
     }
+    const resizeObserver = new ResizeObserver(() => {
+      bounds = frame.getBoundingClientRect()
+      width = frame.clientWidth
+      height = frame.clientHeight
+      const current = viewRef.current
+      apply(current.scale, current.x, current.y)
+    })
+    resizeObserver.observe(frame)
     const localPoint = (event: PointerEvent) => {
-      const rect = frame.getBoundingClientRect()
-      return { x: event.clientX - rect.left, y: event.clientY - rect.top }
+      return { x: event.clientX - bounds.left, y: event.clientY - bounds.top }
     }
     const beginPinch = () => {
-      const points = [...pointers.current.values()]
+      const points = [...activePointers.values()]
       if (points.length < 2) return
       const [a, b] = points
       const midX = (a.x + b.x) / 2
@@ -5470,10 +5489,11 @@ function TrendChartZoom({ children }: { children: ReactNode }) {
     }
     const onDown = (event: PointerEvent) => {
       if (event.pointerType === 'mouse') return
-      pointers.current.set(event.pointerId, localPoint(event))
-      if (pointers.current.size >= 2) {
+      bounds = frame.getBoundingClientRect()
+      activePointers.set(event.pointerId, localPoint(event))
+      if (activePointers.size >= 2) {
         beginPinch()
-        for (const id of pointers.current.keys()) {
+        for (const id of activePointers.keys()) {
           try { frame.setPointerCapture(id) } catch { /* pointer already ended */ }
         }
       } else if (viewRef.current.scale > 1) {
@@ -5482,28 +5502,28 @@ function TrendChartZoom({ children }: { children: ReactNode }) {
       }
     }
     const onMove = (event: PointerEvent) => {
-      if (!pointers.current.has(event.pointerId)) return
-      pointers.current.set(event.pointerId, localPoint(event))
+      if (!activePointers.has(event.pointerId)) return
+      activePointers.set(event.pointerId, localPoint(event))
       const active = gesture.current
       if (!active) return
-      if (active.mode === 'pinch' && pointers.current.size >= 2) {
-        const points = [...pointers.current.values()]
+      if (active.mode === 'pinch' && activePointers.size >= 2) {
+        const points = [...activePointers.values()]
         const [a, b] = points
         const midX = (a.x + b.x) / 2
         const midY = (a.y + b.y) / 2
         const scale = Math.min(4, Math.max(1, active.startScale * Math.hypot(a.x - b.x, a.y - b.y) / active.startDist))
         apply(scale, midX - active.anchorX * scale, midY - active.anchorY * scale)
       } else if (active.mode === 'pan') {
-        const point = localPoint(event)
+        const point = activePointers.get(event.pointerId)!
         apply(active.startScale, active.startX + point.x - active.pointerX, active.startY + point.y - active.pointerY)
       }
     }
     const onUp = (event: PointerEvent) => {
-      pointers.current.delete(event.pointerId)
+      activePointers.delete(event.pointerId)
       gesture.current = null
       if (viewRef.current.scale <= 1) frame.classList.remove('is-zoomed')
-      if (pointers.current.size === 1 && viewRef.current.scale > 1) {
-        const point = [...pointers.current.values()][0]
+      if (activePointers.size === 1 && viewRef.current.scale > 1) {
+        const point = [...activePointers.values()][0]
         beginPan(point)
       }
     }
@@ -5517,6 +5537,10 @@ function TrendChartZoom({ children }: { children: ReactNode }) {
     frame.addEventListener('pointercancel', onUp)
     frame.addEventListener('touchmove', onTouchMove, { passive: false })
     return () => {
+      resizeObserver.disconnect()
+      cancelAnimationFrame(animationFrame)
+      activePointers.clear()
+      gesture.current = null
       frame.removeEventListener('pointerdown', onDown)
       frame.removeEventListener('pointermove', onMove)
       frame.removeEventListener('pointerup', onUp)

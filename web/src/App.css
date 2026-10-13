@@ -5246,7 +5246,7 @@ html.modal-scroll-lock body {
 .trend-chart-modal header > button { flex-shrink: 0; width: 32px; height: 32px; border: 0; border-radius: 50%; background: #eef2f7; color: #475569; font-size: 23px; cursor: pointer; }
 .trend-chart-zoom { overflow: hidden; touch-action: pan-y; border-radius: 7px; }
 .trend-chart-zoom.is-zoomed { touch-action: none; }
-.trend-chart-zoom-target { transform-origin: 0 0; }
+.trend-chart-zoom-target { transform-origin: 0 0; will-change: transform; }
 .trend-chart-note { margin: 15px 0 5px; padding: 12px 14px; border-radius: 10px; background: #f5f8fc; color: #3f5067; font-size: 15px; line-height: 1.65; }
 .trend-chart-note .trend-action-tag { font-size: 14px; }
 .trend-chart-note p { margin: 0; }
@@ -5284,7 +5284,9 @@ html.modal-scroll-lock body {
   .trend-chart-svg:not(.compact) { min-height: 148px; }
   .trend-chart-svg .chart-axis-label { font-size: 10px; }
   .trend-chart-svg .chart-level-label { font-size: 11px; }
-  .trend-chart-legend { gap: 8px; font-size: 13px; }
+  .trend-chart-legend { flex-wrap: nowrap; gap: 6px; font-size: 12.5px; }
+  .trend-chart-legend .legend-line { white-space: nowrap; }
+  .trend-chart-legend .legend-line::before { width: 12px; margin-right: 4px; }
   .trend-chart-note { margin-top: 12px; font-size: 14px; }
   .trend-chart-guide { margin-top: 12px; padding: 10px 0 0; font-size: 14px; }
   .trend-chart-guide strong { font-size: 14px; }
