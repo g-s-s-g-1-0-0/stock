@@ -1496,7 +1496,9 @@ def run_trade_engine(
         entry_codes = set(entry_signal_codes(row)) if isinstance(row, dict) else set()
         exit_price = sell_price
         held_trading_days = trading_days_since(trade.get("buyDate"), today_date)
-        if strategy in {"5", "6"}:
+        if strategy == "4" and live_ind is not None and live_ind.current_price <= live_ind.entry_price * (1 - STRATEGY_RULES["CIRCUIT_PCT_4"]):
+            exit_result = evaluate_exit_condition(live_ind, strategy_type=strategy)
+        elif strategy in {"5", "6"}:
             trend_ind = live_ind or daily_ind
             exit_result = evaluate_exit_condition(
                 trend_ind or IndicatorRow(stock_name=ticker, current_price=parse_price(trade.get("buyPrice")) or 0,

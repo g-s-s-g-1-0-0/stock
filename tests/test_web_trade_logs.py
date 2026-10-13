@@ -1482,3 +1482,26 @@ def test_offlist_held_trade_still_liquidates_on_exit(monkeypatch, tmp_path):
     assert len(ofl_rows) == 1
     assert ofl_rows[0]["status"] != "보유 중"
     assert ofl_rows[0]["exitReason"] == "나스닥 고점 청산/강제매도"
+
+
+def test_strategy_4_stops_at_eight_percent_and_keeps_target():
+    from calculator.rules import IndicatorRow, evaluate_exit_condition
+    for price, exits in [(92.01, False), (92.0, True), (90.0, True)]:
+        result = evaluate_exit_condition(IndicatorRow(stock_name="S4", current_price=price, entry_price=100), strategy_type="4")
+        assert result["shouldExit"] is exits
+        if exits:
+            assert "-8%" in result["reason"]
+    result = evaluate_exit_condition(IndicatorRow(stock_name="S4", current_price=115, entry_price=100), strategy_type="4")
+    assert result["shouldExit"] and "익절" in result["reason"]
+
+
+def test_strategy_4_live_stop_precedes_fresh_daily_close():
+    from datetime import date, datetime, timezone
+    trade = {"ticker": "TEST", "investmentType": "swing", "strategy": "4. 장기선 아래 반등 초입", "buyDate": "2026.10.01", "buyPrice": "$100", "status": "보유 중"}
+    stock = {"ticker": "TEST", "market": "US", "currentPrice": "$90", "opinion": "관망"}
+    logs.run_trade_engine([trade], {}, stocks=[stock], stocks_by_symbol={"TEST":stock}, previous_stocks={},
+        technical={"TEST":{"C - Close":"$95", "dailyPriceDate":"2026-10-09"}}, previous_technical={"TEST":{"dailyPriceDate":"2026-10-08"}},
+        season={}, deferred_tickers=set(), nasdaq_peak_alert=False, recovery_ended=False, seed_after_reset=False,
+        now=datetime(2026,10,12,15,tzinfo=timezone.utc), today="2026.10.12", today_date=date(2026,10,12), mutate_public_state=False)
+    assert trade["status"] == "손절"
+    assert trade["sellPrice"] == "$90"
