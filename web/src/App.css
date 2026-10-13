@@ -5284,7 +5284,9 @@ html.modal-scroll-lock body {
   .trend-chart-svg:not(.compact) { min-height: 148px; }
   .trend-chart-svg .chart-axis-label { font-size: 10px; }
   .trend-chart-svg .chart-level-label { font-size: 11px; }
-  .trend-chart-legend { gap: 8px; font-size: 13px; }
+  .trend-chart-legend { flex-wrap: nowrap; gap: 6px; font-size: 12.5px; }
+  .trend-chart-legend .legend-line { white-space: nowrap; }
+  .trend-chart-legend .legend-line::before { width: 12px; margin-right: 4px; }
   .trend-chart-note { margin-top: 12px; font-size: 14px; }
   .trend-chart-guide { margin-top: 12px; padding: 10px 0 0; font-size: 14px; }
   .trend-chart-guide strong { font-size: 14px; }
