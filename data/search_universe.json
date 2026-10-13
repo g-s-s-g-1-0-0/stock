@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15506,
-    "industryEnrichedAt": "2026-10-12T02:55:44+00:00",
+    "industryEnrichedAt": "2026-10-13T22:56:02+00:00",
     "industryEnrichedTickers": 1,
     "industryReviewedAt": "2026-10-12T02:25:25+00:00",
     "industryReviewedTickers": 10
@@ -177221,7 +177221,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI·빅데이터·방산, AIP, 정부계약, AI 플랫폼",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Software - Infrastructure",
       "products": "-",
       "updatedAt": "2026-10-12T02:24:56+00:00"
     },
