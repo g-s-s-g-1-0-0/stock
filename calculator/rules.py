@@ -24,7 +24,7 @@ STRATEGY_RULES: dict[str, float | int] = {
     "CIRCUIT_PCT_1": 0.30,
     "CIRCUIT_PCT_2": 0.30,
     "CIRCUIT_PCT_3": 0.12,
-    "CIRCUIT_PCT_4": 0.30,
+    "CIRCUIT_PCT_4": 0.08,
     "CIRCUIT_PCT_5": 0.08,
     "CIRCUIT_PCT_6": 0.08,
     "CIRCUIT_PCT_7": 0.08,
