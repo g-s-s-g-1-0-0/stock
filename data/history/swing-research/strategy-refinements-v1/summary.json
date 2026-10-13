@@ -1,8 +1,8 @@
 {
   "version": "strategy-refinements-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-10-12",
-  "observations": 252,
+  "lastSession": "2026-10-13",
+  "observations": 293,
   "signalCounts": {
     "refine_s1_base": 0,
     "refine_s1_ma200_rising": 0,
