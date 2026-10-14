@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-10-14T18:56:53+00:00",
-    "lastSuccessfulRun": "2026-10-14T18:56:53+00:00",
+    "updatedAt": "2026-10-14T19:07:00+00:00",
+    "lastSuccessfulRun": "2026-10-14T19:07:00+00:00",
     "failedReason": null
   },
   "rows": [
@@ -66,7 +66,9 @@
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (소비자물가지수 발표 (CPI))",
       "marketEvent": "생산자물가지수 발표 (PPI)",
-      "strategies": [],
+      "strategies": [
+        "7. 이평선 눌림 반등"
+      ],
       "category": "혼합주",
       "industry": "반도체, 메모리·파운드리, 스마트폰, 소비자 가전",
       "updatedAt": "2026-10-14T18:56:18+00:00"
