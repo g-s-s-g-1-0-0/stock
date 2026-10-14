@@ -7,7 +7,7 @@
       "US"
     ],
     "count": 15506,
-    "industryEnrichedAt": "2026-10-13T22:56:02+00:00",
+    "industryEnrichedAt": "2026-10-14T00:56:21+00:00",
     "industryEnrichedTickers": 1,
     "industryReviewedAt": "2026-10-12T02:25:25+00:00",
     "industryReviewedTickers": 10
@@ -78452,7 +78452,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "가상화폐, 핀테크, 블록체인",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial | Financial Data &amp; Stock Exchanges",
       "products": "-",
       "updatedAt": "2026-10-12T02:24:56+00:00"
     },
