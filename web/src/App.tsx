@@ -5338,7 +5338,7 @@ function leveragedTrendReference(
 ): LeveragedTrendReference | null {
   const ticker = row?.['기준 티커']?.trim().toUpperCase()
   const multiple = Number(row?.['레버리지 배수'])
-  if (!ticker || !Number.isFinite(multiple) || Math.abs(multiple) < 2) return null
+  if (!ticker || !Number.isFinite(multiple) || multiple < 2) return null
   const chart = parseTrendChart(rows?.[ticker]?.['추세 차트 데이터']) ?? parseTrendChart(row?.['기준 추세 차트 데이터'])
   if (!chart) return null
   return {
