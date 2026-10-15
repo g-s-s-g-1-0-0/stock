@@ -2,10 +2,10 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-10-15T14:00:00Z",
-    "lastSuccessfulRun": "2026-10-15T14:00:00Z",
+    "updatedAt": "2026-10-15T15:00:00Z",
+    "lastSuccessfulRun": "2026-10-15T15:00:00Z",
     "failedReason": null,
-    "appendedOpenTrades": 14,
+    "appendedOpenTrades": 0,
     "closedTrades": 0,
     "correctedClosedStatuses": 0,
     "nasdaqPeakLiquidation": false,
@@ -37,7 +37,7 @@
       "ticker": "CIFR",
       "name": "Cipher Digital",
       "market": "US",
-      "currentPrice": "$8.99",
+      "currentPrice": "$9.30",
       "strategy": "4. 장기선 아래 반등 초입",
       "buyDate": "2026.09.03",
       "buyPrice": "$15.72",
@@ -55,7 +55,7 @@
       "ticker": "VRT",
       "name": "Vertiv Holdings, LLC Class A",
       "market": "US",
-      "currentPrice": "$206.38",
+      "currentPrice": "$209.81",
       "strategy": "6. 하락 추세 이탈 시도",
       "buyDate": "2026.09.11",
       "buyPrice": "$256.37",
@@ -80,7 +80,7 @@
       "ticker": "BE",
       "name": "Bloom Energy Class A",
       "market": "US",
-      "currentPrice": "$218.76",
+      "currentPrice": "$231.23",
       "strategy": "5. 저항선 돌파 후 눌림",
       "buyDate": "2026.09.14",
       "buyPrice": "$258.67",
@@ -105,7 +105,7 @@
       "ticker": "LRCX",
       "name": "Lam Research",
       "market": "US",
-      "currentPrice": "$268.33",
+      "currentPrice": "$272.49",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.09.14",
       "buyPrice": "$278.65",
@@ -127,7 +127,7 @@
       "ticker": "AMAT",
       "name": "Applied Materials",
       "market": "US",
-      "currentPrice": "$424.38",
+      "currentPrice": "$428.29",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.09.14",
       "buyPrice": "$427.14",
@@ -149,7 +149,7 @@
       "ticker": "RKLB",
       "name": "Rocket Lab",
       "market": "US",
-      "currentPrice": "$50.80",
+      "currentPrice": "$53.53",
       "strategy": "4. 장기선 아래 반등 초입",
       "buyDate": "2026.09.15",
       "buyPrice": "$63.74",
@@ -167,7 +167,7 @@
       "ticker": "ALAB",
       "name": "Astera Labs",
       "market": "US",
-      "currentPrice": "$286.98",
+      "currentPrice": "$289.65",
       "strategy": "6. 하락 추세 이탈 시도",
       "buyDate": "2026.09.15",
       "buyPrice": "$260.04",
@@ -192,7 +192,7 @@
       "ticker": "STX",
       "name": "Seagate Technology Holdings",
       "market": "US",
-      "currentPrice": "$660.34",
+      "currentPrice": "$676.33",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.09.15",
       "buyPrice": "$771.00",
@@ -212,7 +212,7 @@
       "ticker": "TER",
       "name": "Teradyne",
       "market": "US",
-      "currentPrice": "$336.37",
+      "currentPrice": "$342.29",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.09.15",
       "buyPrice": "$327.15",
@@ -254,7 +254,7 @@
       "ticker": "ASTS",
       "name": "AST SpaceMobile Class A",
       "market": "US",
-      "currentPrice": "$40.33",
+      "currentPrice": "$42.25",
       "strategy": "4. 장기선 아래 반등 초입",
       "buyDate": "2026.09.17",
       "buyPrice": "$62.97",
@@ -272,7 +272,7 @@
       "ticker": "GNRC",
       "name": "Generac Holdlings",
       "market": "US",
-      "currentPrice": "$187.84",
+      "currentPrice": "$194.81",
       "strategy": "4. 장기선 아래 반등 초입",
       "buyDate": "2026.09.18",
       "buyPrice": "$203.68",
@@ -289,7 +289,7 @@
       "ticker": "IONQ",
       "name": "IonQ",
       "market": "US",
-      "currentPrice": "$30.37",
+      "currentPrice": "$32.13",
       "strategy": "4. 장기선 아래 반등 초입",
       "buyDate": "2026.09.18",
       "buyPrice": "$40.59",
@@ -366,7 +366,7 @@
       "ticker": "SOXS",
       "name": "Direxion Daily Semiconductor Bear 3X ETF",
       "market": "US",
-      "currentPrice": "$47.53",
+      "currentPrice": "$45.44",
       "strategy": "7. 이평선 눌림 반등",
       "buyDate": "2026.10.15",
       "buyPrice": "$46.76",
@@ -391,7 +391,7 @@
       "ticker": "AMD",
       "name": "Advanced Micro Devices",
       "market": "US",
-      "currentPrice": "$536.62",
+      "currentPrice": "$544.37",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$536.62",
@@ -409,7 +409,8 @@
       "openPositionCount": 2,
       "maxPositionCount": 10,
       "supportLevel": "MA60",
-      "supportStopPrice": 513.96
+      "supportStopPrice": 513.96,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "ASX_swing_3_20261015_1",
@@ -417,7 +418,7 @@
       "ticker": "ASX",
       "name": "ASE Technology Holding",
       "market": "US",
-      "currentPrice": "$40.99",
+      "currentPrice": "$41.52",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$40.99",
@@ -435,7 +436,8 @@
       "openPositionCount": 3,
       "maxPositionCount": 10,
       "supportLevel": "MA60",
-      "supportStopPrice": 38.91
+      "supportStopPrice": 38.91,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "BE_swing_3_20261015_1",
@@ -443,7 +445,7 @@
       "ticker": "BE",
       "name": "Bloom Energy Class A",
       "market": "US",
-      "currentPrice": "$218.76",
+      "currentPrice": "$231.23",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$218.76",
@@ -461,7 +463,8 @@
       "openPositionCount": 3,
       "maxPositionCount": 10,
       "supportLevel": "MA200",
-      "supportStopPrice": 205.56
+      "supportStopPrice": 205.56,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "INTC_swing_3_20261015_1",
@@ -469,7 +472,7 @@
       "ticker": "INTC",
       "name": "Intel",
       "market": "US",
-      "currentPrice": "$91.54",
+      "currentPrice": "$93.02",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$91.54",
@@ -487,7 +490,8 @@
       "openPositionCount": 3,
       "maxPositionCount": 10,
       "supportLevel": "MA200",
-      "supportStopPrice": 81.49
+      "supportStopPrice": 81.49,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "LITE_swing_3_20261015_1",
@@ -495,7 +499,7 @@
       "ticker": "LITE",
       "name": "Lumentum Holdings",
       "market": "US",
-      "currentPrice": "$810.12",
+      "currentPrice": "$854.24",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$810.12",
@@ -513,7 +517,8 @@
       "openPositionCount": 3,
       "maxPositionCount": 10,
       "supportLevel": "MA200",
-      "supportStopPrice": 736.79
+      "supportStopPrice": 736.79,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "MU_swing_3_20261015_1",
@@ -521,7 +526,7 @@
       "ticker": "MU",
       "name": "Micron Technology",
       "market": "US",
-      "currentPrice": "$867.83",
+      "currentPrice": "$909.10",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$867.83",
@@ -539,7 +544,8 @@
       "openPositionCount": 3,
       "maxPositionCount": 10,
       "supportLevel": "MA144",
-      "supportStopPrice": 816.46
+      "supportStopPrice": 816.46,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "SNDK_swing_3_20261015_1",
@@ -547,7 +553,7 @@
       "ticker": "SNDK",
       "name": "Sandisk",
       "market": "US",
-      "currentPrice": "$1,297.13",
+      "currentPrice": "$1,357.03",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$1,297.13",
@@ -565,7 +571,8 @@
       "openPositionCount": 3,
       "maxPositionCount": 10,
       "supportLevel": "MA200",
-      "supportStopPrice": 1158.04
+      "supportStopPrice": 1158.04,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "ALAB_swing_3_20261015_1",
@@ -573,7 +580,7 @@
       "ticker": "ALAB",
       "name": "Astera Labs",
       "market": "US",
-      "currentPrice": "$286.98",
+      "currentPrice": "$289.65",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$286.98",
@@ -591,7 +598,8 @@
       "openPositionCount": 3,
       "maxPositionCount": 10,
       "supportLevel": "MA200",
-      "supportStopPrice": 236.99
+      "supportStopPrice": 236.99,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "QQQ_swing_3_20261015_1",
@@ -599,7 +607,7 @@
       "ticker": "QQQ",
       "name": "Invesco QQQ Trust",
       "market": "US",
-      "currentPrice": "$718.28",
+      "currentPrice": "$723.88",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$718.28",
@@ -617,7 +625,8 @@
       "openPositionCount": 3,
       "maxPositionCount": 10,
       "supportLevel": "MA120",
-      "supportStopPrice": 711.13
+      "supportStopPrice": 711.13,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "QLD_swing_3_20261015_1",
@@ -625,7 +634,7 @@
       "ticker": "QLD",
       "name": "ProShares Ultra QQQ",
       "market": "US",
-      "currentPrice": "$89.92",
+      "currentPrice": "$91.25",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$89.92",
@@ -643,7 +652,8 @@
       "openPositionCount": 4,
       "maxPositionCount": 10,
       "supportLevel": "MA144",
-      "supportStopPrice": 86.16
+      "supportStopPrice": 86.16,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "USD_swing_3_20261015_1",
@@ -651,7 +661,7 @@
       "ticker": "USD",
       "name": "ProShares Ultra Semiconductors",
       "market": "US",
-      "currentPrice": "$78.05",
+      "currentPrice": "$80.35",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$78.05",
@@ -669,7 +679,8 @@
       "openPositionCount": 5,
       "maxPositionCount": 10,
       "supportLevel": "MA200",
-      "supportStopPrice": 74.88
+      "supportStopPrice": 74.88,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "ARM_swing_3_20261015_1",
@@ -677,7 +688,7 @@
       "ticker": "ARM",
       "name": "Arm Holdings",
       "market": "US",
-      "currentPrice": "$230.01",
+      "currentPrice": "$237.45",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$230.01",
@@ -695,7 +706,8 @@
       "openPositionCount": 6,
       "maxPositionCount": 10,
       "supportLevel": "MA200",
-      "supportStopPrice": 214.76
+      "supportStopPrice": 214.76,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "COHU_swing_3_20261015_1",
@@ -703,7 +715,7 @@
       "ticker": "COHU",
       "name": "Cohu",
       "market": "US",
-      "currentPrice": "$53.71",
+      "currentPrice": "$54.39",
       "strategy": "3. 정상장 볼린저 워시아웃",
       "buyDate": "2026.10.15",
       "buyPrice": "$53.71",
@@ -721,7 +733,8 @@
       "openPositionCount": 6,
       "maxPositionCount": 10,
       "supportLevel": "MA144",
-      "supportStopPrice": 50.1
+      "supportStopPrice": 50.1,
+      "restoreWatchDate": "2026.10.16"
     },
     {
       "slotId": "UBER_swing_7_20261015_1",
@@ -729,7 +742,7 @@
       "ticker": "UBER",
       "name": "Uber Technologies",
       "market": "US",
-      "currentPrice": "$69.75",
+      "currentPrice": "$70.37",
       "strategy": "7. 이평선 눌림 반등",
       "buyDate": "2026.10.15",
       "buyPrice": "$69.75",
@@ -745,7 +758,8 @@
       "currentRiskGroupPercent": 0.0,
       "postRiskGroupPercent": 10.0,
       "openPositionCount": 7,
-      "maxPositionCount": 10
+      "maxPositionCount": 10,
+      "restoreWatchDate": "2026.10.16"
     }
   ]
 }
