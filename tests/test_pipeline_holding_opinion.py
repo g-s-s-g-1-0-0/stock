@@ -210,3 +210,27 @@ def test_open_holding_strategies_reads_primary_code(monkeypatch):
     holdings = pipeline.open_holding_strategies()
 
     assert holdings == {"278470": "2"}
+
+
+def test_deferred_buy_uses_the_same_maintenance_strategy(monkeypatch):
+    monkeypatch.setattr(
+        pipeline,
+        "read_cache",
+        lambda name: {
+            "rows": [
+                {"ticker": "BE", "strategy": "3. 정상장 볼린저 워시아웃", "status": "매수 보류"},
+                {"ticker": "AMD", "strategy": "3. 정상장 볼린저 워시아웃", "status": "보유 중"},
+                {"ticker": "AAPL", "strategy": "1. 시장 공포 저점 진입", "status": "손절"},
+            ]
+        }
+        if name == "trade-logs"
+        else {},
+    )
+
+    assert pipeline.open_holding_strategies() == {"BE": "3", "AMD": "3"}
+
+
+def test_previous_buy_without_a_trade_keeps_that_strategy():
+    assert pipeline.maintenance_strategy_code("NVDA", {}, {"opinion": "매수", "entrySignalCodes": "3"}) == "3"
+    assert pipeline.maintenance_strategy_code("NVDA", {"NVDA": "3"}, {"opinion": "관망"}) == "3"
+    assert pipeline.maintenance_strategy_code("NVDA", {}, {"opinion": "관망", "entrySignalCodes": "3"}) is None
