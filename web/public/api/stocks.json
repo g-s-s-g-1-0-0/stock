@@ -732,7 +732,7 @@
       "currentPrice": "$45.44",
       "valuation": "판단 불가",
       "opinion": "관망",
-      "opinionReason": "매수 조건 해제 — 7. 이평선 눌림 반등: 전략 7 조건 1/2 충족 · 보유 유지",
+      "opinionReason": "관망 — 인버스 매수 조건 미충족 (QQQ 이격 +7.2% < 차단선 +9%)",
       "marketEvent": "당분간 없음",
       "strategies": [],
       "category": "스윙주",
