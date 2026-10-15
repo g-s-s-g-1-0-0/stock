@@ -1,11 +1,11 @@
 {
   "version": "swing-paired-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-10-14",
-  "observations": 340,
+  "lastSession": "2026-10-15",
+  "observations": 383,
   "signalCounts": {
-    "s7_base": 0,
-    "s7_rs_positive": 0,
+    "s7_base": 6,
+    "s7_rs_positive": 2,
     "laggard_rebound": 0
   },
   "filteredClosed": 0,
