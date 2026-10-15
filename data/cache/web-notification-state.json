@@ -78,7 +78,7 @@
   "marketHighSignalStatus": "경고",
   "marketHighSignals": {
     "breadth": "경고",
-    "credit": "정상",
+    "credit": "주의",
     "overallStatus": "경고",
     "treasury": "정상"
   },
@@ -168,6 +168,7 @@
       "ba4ae16aed1283a265e5d382c73349aaba0c0e30c37f8e220409662e23183591",
       "be35d34dcce229d2dd05f35b70bb890cff09b77ceb28af0534126cb5b332edba",
       "bfde15911f5b93ecbac09b48cd5ffbc3b9449b123a885dd813a421f3d228412f",
+      "c12c9f54e72edd4b27524847030a8093a1c03d31dd05e5adec21c1ad4f2e2848",
       "c69e512ac1125a937162a0270bc76ff0914c0ef090bb734abd7b3ef564546a08",
       "c875cc2a1b2e9b006a4830f3a342cbdeef2895864983ae71934014720adf51e6",
       "cdcb26195024d4bc975663df7fb3e008ae870185fb293b7f32324a7c7f45ca91",
@@ -186,7 +187,7 @@
       "f4ccb86201e837af1dce7916e7efa15052cd1aa6bc82e5a708bf4f7537be1e81",
       "ffe759f69cf48289a3580a7beb09fa58ccede03fe835e6d112bd5c1a1536f95c"
     ],
-    "updatedAt": "2026-10-15T17:00:05.649814+00:00"
+    "updatedAt": "2026-10-15T21:00:06.037255+00:00"
   },
   "regimeShift": {
     "isRecoveryMarket": false,
@@ -198,7 +199,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-10-15T19:00:00+00:00"
+    "updatedAt": "2026-10-15T21:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
