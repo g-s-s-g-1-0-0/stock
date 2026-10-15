@@ -906,17 +906,23 @@ def daily_price_date_label(raw_date: Any, market: str) -> str:
     return text
 
 
+# 매수 보류는 슬롯·권장 행동만 다르고, 매수 유지와 관망 전환은 보유 중과 같다.
+TRACKED_OPINION_STATUSES = {"보유 중", "매수 보류"}
+
+
+def _tracked_opinion_row(row: dict[str, Any]) -> bool:
+    return str(row.get("status") or "").strip() in TRACKED_OPINION_STATUSES
+
+
 def open_holding_strategies() -> dict[str, str]:
-    """현재 '보유 중'인 종목의 PRIMARY 전략 코드 맵 (ticker → 1|2)."""
+    """보유 중·매수 보류 종목의 PRIMARY 전략 코드 맵 (ticker → 1|2|…)."""
 
     rows = read_cache("trade-logs").get("rows", [])
     holdings: dict[str, str] = {}
     if not isinstance(rows, list):
         return holdings
     for row in rows:
-        if not isinstance(row, dict):
-            continue
-        if str(row.get("status") or "").strip() != "보유 중":
+        if not isinstance(row, dict) or not _tracked_opinion_row(row):
             continue
         ticker = str(row.get("ticker") or "").strip().upper()
         code = parse_holding_strategy_code(row.get("strategy"))
@@ -926,16 +932,14 @@ def open_holding_strategies() -> dict[str, str]:
 
 
 def open_holding_trades() -> dict[str, dict[str, Any]]:
-    """현재 '보유 중'인 종목의 대표 trade-log row (ticker → row)."""
+    """보유 중·매수 보류 종목의 대표 trade-log row (ticker → row)."""
 
     rows = read_cache("trade-logs").get("rows", [])
     holdings: dict[str, dict[str, Any]] = {}
     if not isinstance(rows, list):
         return holdings
     for row in rows:
-        if not isinstance(row, dict):
-            continue
-        if str(row.get("status") or "").strip() != "보유 중":
+        if not isinstance(row, dict) or not _tracked_opinion_row(row):
             continue
         ticker = str(row.get("ticker") or "").strip().upper()
         if ticker and ticker not in holdings:
@@ -951,7 +955,7 @@ def open_holding_signal_closes() -> dict[str, float]:
     if not isinstance(rows, list):
         return signal_closes
     for row in rows:
-        if not isinstance(row, dict) or str(row.get("status") or "").strip() != "보유 중":
+        if not isinstance(row, dict) or not _tracked_opinion_row(row):
             continue
         ticker = str(row.get("ticker") or "").strip().upper()
         code = parse_holding_strategy_code(row.get("strategy"))
@@ -964,6 +968,31 @@ def open_holding_signal_closes() -> dict[str, float]:
         if signal_close > 0:
             signal_closes[ticker] = signal_close
     return signal_closes
+
+
+def maintenance_strategy_code(
+    ticker: str,
+    holdings: dict[str, str],
+    existing_row: dict[str, Any] | None,
+) -> str | None:
+    """전략 유지 코드.
+
+    보유 중·매수 보류 기록이 우선이다. 기록이 없어도 직전 갱신이 매수였으면
+    그 전략의 유지 조건을 그대로 쓴다. 신규 진입 조건을 매 시간 다시 보지 않는다.
+    """
+
+    code = holdings.get(ticker)
+    if code:
+        return code
+    if not isinstance(existing_row, dict):
+        return None
+    if str(existing_row.get("opinion") or "").strip() != "매수":
+        return None
+    for raw in str(existing_row.get("entrySignalCodes") or "").split(","):
+        parsed = parse_holding_strategy_code(raw)
+        if parsed:
+            return parsed
+    return parse_holding_strategy_code(existing_row.get("entryStrategy"))
 
 
 def latest_technical_row(
@@ -1281,15 +1310,22 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
             earnings_date = refresh_earnings_date_label(
                 metric.get("earningsDate", "-") if isinstance(metric, dict) else "-"
             )
+            ticker_key = str(stock["ticker"]).strip().upper()
+            existing_row = existing_rows.get(stock["ticker"]) or existing_rows.get(ticker_key) or {}
+            holding_code = maintenance_strategy_code(
+                ticker_key,
+                holdings,
+                existing_row if isinstance(existing_row, dict) else None,
+            )
             row = latest_technical_row(
                 stock,
                 earnings_date=earnings_date,
                 qqq_market_state=qqq_market_state,
                 vix=vix_today,
                 market_event=market_event,
-                holding_strategy_type=holdings.get(str(stock["ticker"]).strip().upper()),
-                holding_signal_close=holding_signal_closes.get(str(stock["ticker"]).strip().upper()),
-                holding_trade=holding_trades.get(str(stock["ticker"]).strip().upper()),
+                holding_strategy_type=holding_code,
+                holding_signal_close=holding_signal_closes.get(ticker_key),
+                holding_trade=holding_trades.get(ticker_key),
                 season_open=season_open,
             )
             if row:
@@ -1304,8 +1340,6 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 if chart:
                     row["추세 차트 데이터"] = json.dumps(chart, ensure_ascii=False, separators=(",", ":"))
                 _attach_reference_trend_chart(row, stock, reference_charts, errors)
-                existing_row = existing_rows.get(stock["ticker"], {})
-                ticker_key = str(stock["ticker"]).strip().upper()
                 # Only keep 매도/exitReason while that ticker still has an open holding.
                 # After trade-log reset (or full exit), stale exitReason must not pin opinion to 매도.
                 if isinstance(existing_row, dict) and ticker_key in holdings:

@@ -326,6 +326,11 @@ def evaluate_buy_condition(
             )
             triggered = trend_market and price_window_ok
             entry_strategy = None
+        elif holding_code == "7":
+            # The moving-average touch is the entry event. Once in, keep the buy
+            # while that same pair of conditions still holds. A passing check must
+            # not fall through to 관망.
+            triggered = all(s7_conditions) or entry_strategy is not None
 
     return {
         "triggered": triggered,

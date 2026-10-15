@@ -128,6 +128,31 @@ def test_recovery_upper_bound_and_entry_risk_boundaries():
     assert buy({'retest':True,'candidatePrice':103.01})['strategyType'] is None
 
 
+def test_strategy_7_holding_stays_buy_while_its_conditions_hold():
+    row = IndicatorRow(
+        stock_name='UBER', current_price=101, ma20=100, ma50=120, ma120=130, ma200=140,
+        candle_open=100, candle_low=99.8, close_d1=100,
+    )
+    held = evaluate_buy_condition(
+        row, vix=15, ixic_dist=6.5, ixic_filter_active=False,
+        trend_market_allowed=True, is_holding=True, holding_strategy_type='7',
+        nasdaq_buy_block_max=9,
+    )
+    assert held['triggered']
+    assert not held['entryTriggered']
+
+    missed = evaluate_buy_condition(
+        IndicatorRow(
+            stock_name='UBER', current_price=101, ma20=90, ma50=80, ma120=70, ma200=60,
+            candle_open=100, candle_low=95, close_d1=100,
+        ),
+        vix=15, ixic_dist=6.5, ixic_filter_active=False,
+        trend_market_allowed=True, is_holding=True, holding_strategy_type='7',
+        nasdaq_buy_block_max=9,
+    )
+    assert not missed['triggered']
+
+
 def test_strategy_7_reclaims_any_major_moving_average_and_uses_eight_percent_stop():
     row = IndicatorRow(
         stock_name='TEST', current_price=101, ma20=100, ma50=120, ma120=130, ma200=140,

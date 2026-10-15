@@ -134,10 +134,36 @@ def _holding_release_detail(
             return "200일선 위 회복"
         return "장기선 아래 반등 조건 이탈"
 
-    conditions = buy.get("conditions", {}).get(normalized, [])
-    if conditions:
-        passed = sum(1 for value in conditions if value)
-        return f"전략 {normalized} 조건 {passed}/{len(conditions)} 충족"
+    if normalized == "7":
+        premium = qqq.get("premiumPercent")
+        buy_block = qqq.get("buyBlockMax")
+        if premium is not None and float(premium) < -3:
+            return f"QQQ 이격 {float(premium):+.1f}% < -3%"
+        if premium is not None and buy_block is not None and float(premium) > float(buy_block):
+            return f"QQQ 과열({float(premium):+.1f}% > 차단선 +{float(buy_block):.0f}%)"
+        if qqq.get("trendEntryBlocked") or qqq.get("peakTriggered"):
+            return "추세형 매수 허용 구간 종료"
+        touched = buy.get("maTouches") or {}
+        if not any(touched.get(name) for name in ("20", "50", "120", "200")):
+            lines = []
+            if ind is not None:
+                for label, value in (
+                    ("20일", ind.ma20),
+                    ("50일", ind.ma50),
+                    ("120일", ind.ma120),
+                    ("200일", ind.ma200),
+                ):
+                    if value:
+                        lines.append(f"{label} {value:.2f}")
+                low = f"{ind.candle_low:.2f}" if ind.candle_low is not None else "-"
+                close = f"{ind.current_price:.2f}"
+                detail = f"저가 {low} / 종가 {close}"
+                if lines:
+                    detail = f"{detail} / {', '.join(lines)}"
+                return f"이평선 터치 이탈 ({detail})"
+            return "20·50·120·200일선 터치 이탈"
+        return "이평선 눌림 반등 조건 이탈"
+
     return "매수 유지 조건 이탈"
 
 
