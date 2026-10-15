@@ -28,7 +28,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from .industry_classification import CATEGORY_VALUES, classify_stock, is_curated_ticker, looks_like_etf, summarize_industry
-from .leveraged_reference import resolve_leveraged_reference
+from .leveraged_reference import is_inverse_product, resolve_leveraged_reference
 from .industry_review import reviewed_industry_is_fresh
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
 from .market_signals import build_market_signals, market_signal_rows
@@ -1055,6 +1055,7 @@ def latest_technical_row(
     warn_triggered = bool(qqq_market_state.get("warnTriggered")) if qqq_market_state else False
     trend_signal = {**(row.get("trendSignal") or {}), "candidatePrice": display_price}
     trend_market_allowed = bool(qqq_market_state) and not qqq_market_state.get("trendEntryBlocked", True) and not qqq_market_state.get("peakTriggered", False)
+    inverse = is_inverse_product(stock)
     buy = evaluate_buy_condition(
         ind,
         vix=vix,
@@ -1069,6 +1070,7 @@ def latest_technical_row(
         trend_signal=trend_signal,
         trend_market_allowed=trend_market_allowed,
         holding_signal_close=holding_signal_close,
+        inverse=inverse,
     )
     event_watch_active = market_event != "당분간 없음"
     if event_watch_active:
@@ -1089,6 +1091,7 @@ def latest_technical_row(
                 ind=ind,
                 holding_signal_close=holding_signal_close,
                 trade=holding_trade,
+                inverse=inverse,
             )
     else:
         opinion = "매수" if buy["entryTriggered"] else "관망"
@@ -1108,12 +1111,26 @@ def latest_technical_row(
     else:
         strategy = "-"
         entry_signal_codes = []
-    downtrend_label = f"QQQ 하락장(<{float(STRATEGY_RULES['NASDAQ_DIST_UPPER']):.0f}%)"
-    buy_block_label = (
-        f"QQQ ≤ 매수 차단선(≤{float(nasdaq_buy_block_max):.0f}%)"
-        if nasdaq_buy_block_max is not None
-        else "QQQ ≤ 매수 차단선"
-    )
+    short_floor = float(STRATEGY_RULES["NASDAQ_BUY_BLOCK_MAX"])
+    s3_cap = float(STRATEGY_RULES["S3_ENTRY_QQQ_MAX"])
+    if inverse:
+        downtrend_label = f"QQQ ≥ 매수 차단선(≥{short_floor:.0f}%)"
+        buy_block_label = downtrend_label
+        recovery_label = "회복장 아님"
+        s3_market_label = f"회복장 아님 및 QQQ ≥ +{s3_cap:.0f}%"
+        s4_market_label = f"QQQ ≥ 매수 차단선(≥{short_floor:.0f}%)"
+        trend_label = f"QQQ ≥ 매수 차단선(≥{short_floor:.0f}%, 회복장 제외)"
+    else:
+        downtrend_label = f"QQQ 하락장(<{float(STRATEGY_RULES['NASDAQ_DIST_UPPER']):.0f}%)"
+        buy_block_label = (
+            f"QQQ ≤ 매수 차단선(≤{float(nasdaq_buy_block_max):.0f}%)"
+            if nasdaq_buy_block_max is not None
+            else "QQQ ≤ 매수 차단선"
+        )
+        recovery_label = "회복장"
+        s3_market_label = f"정상장 및 QQQ ≤ +{s3_cap:.0f}%"
+        s4_market_label = "QQQ 하락/정상장"
+        trend_label = "QQQ 매수 허용 구간"
     strategy_labels = {
         "1": [
             "현재가 < MA200",
@@ -1123,17 +1140,17 @@ def latest_technical_row(
             "저가 추세선 터치",
             downtrend_label,
         ],
-        "2": ["시즌 열림", "회복장", buy_block_label, "MA20/60/144/200 터치"],
+        "2": ["시즌 열림", recovery_label, buy_block_label, "MA20/60/144/200 터치"],
         "3": [
-            f"정상장 및 QQQ ≤ +{float(STRATEGY_RULES['S3_ENTRY_QQQ_MAX']):.0f}%",
+            s3_market_label,
             "현재가 > MA200",
             f"저가 %B ≤ {float(STRATEGY_RULES['S3_PCT_B_LOW_MAX']):.0f}",
             f"RSI ≤ {float(STRATEGY_RULES['S3_RSI_MAX']):.0f}",
         ],
-        "4": ["현재가 < MA200", "MACD 히스토그램 양수 전환", "QQQ 하락/정상장", "MA200 대비 -25% 이상"],
-        "5": ["QQQ 매수 허용 구간", "돌파 후 10거래일 내 눌림 지지", "신호 가격 대비 +3% 이내"],
-        "6": ["QQQ 매수 허용 구간", "하락 추세 이탈 시도 첫 신호", "신호 가격 대비 +3% 이내", "지지선 손절까지 8% 이내"],
-        "7": ["QQQ 매수 허용 구간", "20/50/120/200일선 중 하나 터치", "이평선 위 양봉 회복", "진입가 -8% 손절"],
+        "4": ["현재가 < MA200", "MACD 히스토그램 양수 전환", s4_market_label, "MA200 대비 -25% 이상"],
+        "5": [trend_label, "돌파 후 10거래일 내 눌림 지지", "신호 가격 대비 +3% 이내"],
+        "6": [trend_label, "하락 추세 이탈 시도 첫 신호", "신호 가격 대비 +3% 이내", "지지선 손절까지 8% 이내"],
+        "7": [trend_label, "20/50/120/200일선 중 하나 터치", "이평선 위 양봉 회복", "진입가 -8% 손절"],
     }
     condition_summaries = []
     for group, labels in strategy_labels.items():

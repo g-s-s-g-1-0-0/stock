@@ -1394,6 +1394,24 @@ def update_trade_logs(
     return signal_state_changed
 
 
+# Opened under the long market rule on 2026-10-15. Inverse strategy 7 needs
+# QQQ distance at or above +9%; that day was +6.46% then +7.23%.
+VOIDED_OPEN_SLOT_IDS = frozenset({"SOXS_swing_7_20261015_1"})
+
+
+def drop_voided_open_trades(trades: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Drop an open row that was recorded before inverse market gates existed."""
+
+    return [
+        trade
+        for trade in trades
+        if not (
+            str(trade.get("slotId") or "") in VOIDED_OPEN_SLOT_IDS
+            and str(trade.get("status") or "").strip() in {"보유 중", "매수 보류"}
+        )
+    ]
+
+
 def run_trade_engine(
     trades: list[dict[str, Any]],
     entry_tickers_by_type: dict[str, list[str]],
@@ -1422,6 +1440,7 @@ def run_trade_engine(
     시장 시즌 상태 파일을 갱신한다. 개인 패스는 전달받은 trades만 다루고 공용 상태는 읽기 전용이다.
     signal_tickers는 운영자 관심종목이 아니어도 매수 신호 억제에서 제외할 종목(개인 관심종목 합집합)이다.
     """
+    trades = drop_voided_open_trades(trades)
     entry_tickers = {ticker for values in entry_tickers_by_type.values() for ticker in values}
     signal_tickers = signal_tickers or set()
     deferred_tickers = set(deferred_tickers)

@@ -7,6 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from calculator import pipeline, sheet_sources
+from calculator.leveraged_reference import is_inverse_product
 from calculator.rules import IndicatorRow, evaluate_buy_condition, evaluate_exit_condition
 from calculator.trend_strategies import build_trend_chart, build_trend_signal, chart_phase, trend_market_blocked
 from scripts import record_web_api_logs as logs
@@ -126,6 +127,87 @@ def test_recovery_upper_bound_and_entry_risk_boundaries():
     assert buy({'attempt':True,'stopPrice':92})['strategyType'] == '6'
     assert buy({'attempt':True,'stopPrice':91.99})['strategyType'] is None
     assert buy({'retest':True,'candidatePrice':103.01})['strategyType'] is None
+
+
+def _s7_touch_row():
+    return IndicatorRow(
+        stock_name='SOXS', current_price=101, ma20=100, ma50=120, ma120=130, ma200=140,
+        candle_open=100, candle_low=99.8, close_d1=100,
+    )
+
+
+def test_voided_soxs_open_is_dropped_and_other_positions_stay():
+    kept = logs.drop_voided_open_trades([
+        {"slotId": "SOXS_swing_7_20261015_1", "status": "보유 중", "ticker": "SOXS"},
+        {"slotId": "UBER_swing_7_20261015_1", "status": "보유 중", "ticker": "UBER"},
+    ])
+    assert [trade["ticker"] for trade in kept] == ["UBER"]
+
+
+def test_only_negative_leverage_is_inverse():
+    assert is_inverse_product({"ticker": "SOXS"})
+    assert is_inverse_product({"ticker": "SQQQ"})
+    assert not is_inverse_product({"ticker": "USD"})
+    assert not is_inverse_product({"ticker": "SOXL"})
+    assert not is_inverse_product({"ticker": "QQQ"})
+
+
+def test_inverse_strategy_7_needs_qqq_at_or_above_the_long_ceiling():
+    touched = _s7_touch_row()
+    below = evaluate_buy_condition(
+        touched, vix=15, ixic_dist=6.5, ixic_filter_active=False,
+        trend_market_allowed=True, inverse=True, nasdaq_buy_block_max=9,
+    )
+    assert below['strategyType'] is None
+    assert below['conditions']['7'][0] is False
+
+    at_floor = evaluate_buy_condition(
+        touched, vix=15, ixic_dist=9, ixic_filter_active=False,
+        trend_market_allowed=False, inverse=True, nasdaq_buy_block_max=9,
+    )
+    assert at_floor['strategyType'] == '7'
+
+    long_still = evaluate_buy_condition(
+        touched, vix=15, ixic_dist=6.5, ixic_filter_active=False,
+        trend_market_allowed=True, inverse=False, nasdaq_buy_block_max=9,
+    )
+    assert long_still['strategyType'] == '7'
+
+
+def test_inverse_strategy_7_does_not_use_the_recovery_ceiling():
+    result = evaluate_buy_condition(
+        _s7_touch_row(), vix=15, ixic_dist=12, ixic_filter_active=False,
+        trend_market_allowed=True, inverse=True, is_recovery_market=True,
+        nasdaq_buy_block_max=14,
+    )
+    assert result['strategyType'] is None
+    assert result['conditions']['7'][0] is False
+
+
+def test_inverse_holding_strategy_7_turns_off_below_the_floor():
+    held = evaluate_buy_condition(
+        _s7_touch_row(), vix=15, ixic_dist=6.5, ixic_filter_active=False,
+        trend_market_allowed=True, inverse=True, is_holding=True,
+        holding_strategy_type='7', nasdaq_buy_block_max=9,
+    )
+    assert not held['triggered']
+
+
+def test_inverse_strategy_3_market_gate_is_the_opposite_side_of_plus_seven():
+    above = IndicatorRow(stock_name='SOXS', current_price=80, ma200=100, rsi=50, pct_b_low=20)
+    passed = evaluate_buy_condition(
+        above, vix=15, ixic_dist=7.23, ixic_filter_active=False, inverse=True,
+    )
+    failed = evaluate_buy_condition(
+        above, vix=15, ixic_dist=6.46, ixic_filter_active=False, inverse=True,
+    )
+    recovery = evaluate_buy_condition(
+        above, vix=15, ixic_dist=8, ixic_filter_active=False, inverse=True,
+        is_recovery_market=True,
+    )
+    assert passed['conditions']['3'][0] is True
+    assert failed['conditions']['3'][0] is False
+    assert recovery['conditions']['3'][0] is False
 
 
 def test_strategy_7_holding_stays_buy_while_its_conditions_hold():

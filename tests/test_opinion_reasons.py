@@ -74,6 +74,26 @@ class OpinionReasonTests(unittest.TestCase):
         self.assertIn("69.10", touch)
         self.assertIn("20일 71.20", touch)
 
+    def test_inverse_release_names_the_short_floor(self) -> None:
+        strategy_7 = build_held_watch_opinion_reason(
+            "7",
+            buy={"maTouches": {"20": True}},
+            qqq_market_state={"premiumPercent": 7.23, "buyBlockMax": 9, "isRecoveryMarket": False},
+            ind=IndicatorRow(stock_name="SOXS", current_price=45.44),
+            inverse=True,
+        )
+        self.assertIn("QQQ 이격 +7.2% < 차단선 +9%", strategy_7)
+        self.assertNotIn("과열", strategy_7)
+
+        strategy_3 = build_held_watch_opinion_reason(
+            "3",
+            qqq_market_state={"premiumPercent": 6.46, "buyBlockMax": 9, "isRecoveryMarket": False},
+            ind=IndicatorRow(stock_name="SQQQ", current_price=20, ma200=10),
+            inverse=True,
+        )
+        self.assertIn("QQQ +7% 미만", strategy_3)
+        self.assertNotIn("초과", strategy_3)
+
     def test_sparse_watch_reason(self) -> None:
         self.assertTrue(is_sparse_watch_reason("-"))
         self.assertFalse(is_sparse_watch_reason("매수 조건 해제 — 6. 하락 추세 이탈 시도"))

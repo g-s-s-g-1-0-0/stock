@@ -76,6 +76,29 @@ def exit_criteria_summary(code: str | None, trade: dict[str, Any] | None = None)
     return ""
 
 
+def _inverse_floor_detail(qqq: dict[str, Any]) -> str | None:
+    """Market reason when an inverse product leaves the short entry zone."""
+
+    if qqq.get("isRecoveryMarket"):
+        return "회복장 — 인버스 매수 구간 아님"
+    premium = qqq.get("premiumPercent")
+    floor = float(STRATEGY_RULES["NASDAQ_BUY_BLOCK_MAX"])
+    if premium is None or float(premium) < floor:
+        shown = f"{float(premium):+.1f}%" if premium is not None else "-"
+        return f"QQQ 이격 {shown} < 차단선 +{floor:.0f}%"
+    return None
+
+
+def _inverse_s3_detail(qqq: dict[str, Any]) -> str | None:
+    if qqq.get("isRecoveryMarket"):
+        return "회복장 — 인버스 매수 구간 아님"
+    premium = qqq.get("premiumPercent")
+    cap = float(STRATEGY_RULES["S3_ENTRY_QQQ_MAX"])
+    if premium is None or float(premium) < cap:
+        return f"QQQ +{cap:.0f}% 미만"
+    return None
+
+
 def _holding_release_detail(
     code: str,
     *,
@@ -83,23 +106,33 @@ def _holding_release_detail(
     qqq_market_state: dict[str, Any] | None,
     ind: IndicatorRow | None,
     holding_signal_close: float | None,
+    inverse: bool = False,
 ) -> str:
     normalized = normalize_strategy_code(code) or code
     buy = buy or {}
     qqq = qqq_market_state or {}
 
     if normalized in {"5", "6"}:
-        buy_block = qqq.get("buyBlockMax")
-        premium = qqq.get("premiumPercent")
-        if premium is not None and buy_block is not None and float(premium) > float(buy_block):
-            return f"QQQ 과열({float(premium):+.1f}% > 차단선 +{float(buy_block):.0f}%)"
+        if inverse:
+            detail = _inverse_floor_detail(qqq)
+            if detail:
+                return detail
+        else:
+            buy_block = qqq.get("buyBlockMax")
+            premium = qqq.get("premiumPercent")
+            if premium is not None and buy_block is not None and float(premium) > float(buy_block):
+                return f"QQQ 과열({float(premium):+.1f}% > 차단선 +{float(buy_block):.0f}%)"
         if holding_signal_close and ind and ind.current_price > holding_signal_close * 1.03:
             return "신호가 대비 +3% 추격 한도 초과"
-        if qqq.get("trendEntryBlocked"):
+        if not inverse and qqq.get("trendEntryBlocked"):
             return "추세형 매수 허용 구간 종료"
         return "신규 진입 신호 종료"
 
     if normalized == "1" and ind:
+        if inverse:
+            detail = _inverse_floor_detail(qqq)
+            if detail:
+                return detail
         if ind.ma200 is not None and ind.current_price >= ind.ma200:
             return "200일선 위 회복"
         rsi = ind.rsi
@@ -110,39 +143,57 @@ def _holding_release_detail(
         return "공포 저점 조건 이탈"
 
     if normalized == "2" and ind:
-        buy_block = qqq.get("buyBlockMax")
-        premium = qqq.get("premiumPercent")
-        if premium is not None and buy_block is not None and float(premium) > float(buy_block):
-            return f"QQQ 과열({float(premium):+.1f}% > 차단선 +{float(buy_block):.0f}%)"
-        if not qqq.get("isRecoveryMarket"):
-            return "회복장 종료"
+        if inverse:
+            detail = _inverse_floor_detail(qqq)
+            if detail:
+                return detail
+        else:
+            buy_block = qqq.get("buyBlockMax")
+            premium = qqq.get("premiumPercent")
+            if premium is not None and buy_block is not None and float(premium) > float(buy_block):
+                return f"QQQ 과열({float(premium):+.1f}% > 차단선 +{float(buy_block):.0f}%)"
+            if not qqq.get("isRecoveryMarket"):
+                return "회복장 종료"
         if ind.ma20 is not None and ind.current_price < ind.ma20 * float(STRATEGY_RULES.get("MA_RECLAIM_RATIO", 0.995)):
             return "20일선 회복 실패"
         return "이평선 눌림 조건 이탈"
 
     if normalized == "3" and ind:
+        if inverse:
+            detail = _inverse_s3_detail(qqq)
+            if detail:
+                return detail
         if ind.ma200 is not None and ind.current_price <= ind.ma200:
             return "MA200 아래 이탈"
-        buy_block = qqq.get("buyBlockMax")
-        premium = qqq.get("premiumPercent")
-        if premium is not None and float(premium) > float(STRATEGY_RULES["S3_ENTRY_QQQ_MAX"]):
-            return f"QQQ +{float(STRATEGY_RULES['S3_ENTRY_QQQ_MAX']):.0f}% 초과"
+        if not inverse:
+            premium = qqq.get("premiumPercent")
+            if premium is not None and float(premium) > float(STRATEGY_RULES["S3_ENTRY_QQQ_MAX"]):
+                return f"QQQ +{float(STRATEGY_RULES['S3_ENTRY_QQQ_MAX']):.0f}% 초과"
         return "워시아웃·정상장 조건 이탈"
 
     if normalized == "4" and ind:
+        if inverse:
+            detail = _inverse_floor_detail(qqq)
+            if detail:
+                return detail
         if ind.ma200 is not None and ind.current_price >= ind.ma200:
             return "200일선 위 회복"
         return "장기선 아래 반등 조건 이탈"
 
     if normalized == "7":
-        premium = qqq.get("premiumPercent")
-        buy_block = qqq.get("buyBlockMax")
-        if premium is not None and float(premium) < -3:
-            return f"QQQ 이격 {float(premium):+.1f}% < -3%"
-        if premium is not None and buy_block is not None and float(premium) > float(buy_block):
-            return f"QQQ 과열({float(premium):+.1f}% > 차단선 +{float(buy_block):.0f}%)"
-        if qqq.get("trendEntryBlocked") or qqq.get("peakTriggered"):
-            return "추세형 매수 허용 구간 종료"
+        if inverse:
+            detail = _inverse_floor_detail(qqq)
+            if detail:
+                return detail
+        else:
+            premium = qqq.get("premiumPercent")
+            buy_block = qqq.get("buyBlockMax")
+            if premium is not None and float(premium) < -3:
+                return f"QQQ 이격 {float(premium):+.1f}% < -3%"
+            if premium is not None and buy_block is not None and float(premium) > float(buy_block):
+                return f"QQQ 과열({float(premium):+.1f}% > 차단선 +{float(buy_block):.0f}%)"
+            if qqq.get("trendEntryBlocked") or qqq.get("peakTriggered"):
+                return "추세형 매수 허용 구간 종료"
         touched = buy.get("maTouches") or {}
         if not any(touched.get(name) for name in ("20", "50", "120", "200")):
             lines = []
@@ -176,6 +227,7 @@ def build_held_watch_opinion_reason(
     holding_signal_close: float | None = None,
     trade: dict[str, Any] | None = None,
     additional_buy_blocked: bool = False,
+    inverse: bool = False,
 ) -> str:
     label = strategy_label(strategy_code)
     criteria = exit_criteria_summary(strategy_code, trade)
@@ -190,6 +242,7 @@ def build_held_watch_opinion_reason(
         qqq_market_state=qqq_market_state,
         ind=ind,
         holding_signal_close=holding_signal_close,
+        inverse=inverse,
     )
     return f"매수 조건 해제 — {label}: {detail} · 보유 유지{criteria_suffix}"
 
