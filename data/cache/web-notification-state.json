@@ -77,7 +77,7 @@
   },
   "marketHighSignalStatus": "경고",
   "marketHighSignals": {
-    "breadth": "경고",
+    "breadth": "주의",
     "credit": "주의",
     "overallStatus": "경고",
     "treasury": "정상"
@@ -199,7 +199,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-10-15T21:00:00+00:00"
+    "updatedAt": "2026-10-15T23:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
