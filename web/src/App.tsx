@@ -4200,6 +4200,10 @@ function industryParts(industry?: string) {
     .filter(Boolean)
 }
 
+function isListedProductLabel(part: string) {
+  return /레버리지|인버스|곱버스|ETF|ETN/i.test(part)
+}
+
 function trendThemesForIndustry(industry?: string) {
   const parts = industryParts(industry)
   const normalizedIndustry = normalizeTrendText(parts.join(' '))
@@ -4208,9 +4212,13 @@ function trendThemesForIndustry(industry?: string) {
       const matched = normalizedTrendKeywords(rule.keywords)
         .some((keyword) => normalizedIndustry.includes(keyword))
       if (!matched) return null
+      const sectorPart = bestIndustryPartForTheme(
+        parts.filter((part) => !isListedProductLabel(part)),
+        rule.keywords,
+      )
       return {
         ...rule,
-        displayLabel: bestIndustryPartForTheme(parts, rule.keywords) ?? rule.theme,
+        displayLabel: sectorPart ?? rule.theme,
       }
     })
     .filter((rule): rule is typeof trendThemeRules[number] & { displayLabel: string } => rule !== null)
