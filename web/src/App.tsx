@@ -7285,6 +7285,7 @@ function App() {
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
   const [isInitialAppDataLoaded, setIsInitialAppDataLoaded] = useState(false)
   const [initialDataError, setInitialDataError] = useState('')
+  const [appDataError, setAppDataError] = useState('')
   const [apiStocks, setApiStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
   const [apiSearchStocks, setApiSearchStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
   const [isStockSearchLoaded, setIsStockSearchLoaded] = useState(false)
@@ -8243,6 +8244,7 @@ function App() {
         }
       }
       setIsRemoteDataReady(true)
+      setInitialDataError('')
     } catch {
       setIsRemoteDataReady(false)
       setInitialDataError('최신 계정 데이터를 불러오지 못했습니다. 다시 시도해 주세요.')
@@ -8263,8 +8265,9 @@ function App() {
           applyLoadedData(data)
         }
         setIsInitialAppDataLoaded(true)
+        setAppDataError('')
       } catch (error) {
-        if (isMounted && forceApply) setInitialDataError(error instanceof Error ? error.message : '최신 데이터를 불러오지 못했습니다.')
+        if (isMounted && (forceApply || !apiMetasRef.current.stocks)) setAppDataError(error instanceof Error ? error.message : '최신 데이터를 불러오지 못했습니다.')
       } finally {
         isCheckingLatestData = false
       }
@@ -10734,10 +10737,10 @@ function App() {
       </header>
 
       {!isInitialAppDataLoaded || !isRemoteDataReady ? (
-        initialDataError ? (
+        initialDataError || appDataError ? (
         <section className="panel app-data-loading" role="status" aria-live="polite">
             <div>
-              <p>{initialDataError}</p>
+              <p>{initialDataError || appDataError}</p>
               <button type="button" onClick={() => window.location.reload()}>다시 시도</button>
             </div>
         </section>

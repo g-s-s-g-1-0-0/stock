@@ -1,4 +1,5 @@
 import { createClient, type User } from '@supabase/supabase-js'
+import { readRequest } from './readRequest'
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim()
 const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim()
@@ -16,7 +17,7 @@ function isValidHttpUrl(value: string | undefined) {
 export const isSupabaseConfigured = Boolean(isValidHttpUrl(supabaseUrl) && supabaseAnonKey)
 
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl as string, supabaseAnonKey as string)
+  ? createClient(supabaseUrl as string, supabaseAnonKey as string, { global: { fetch: readRequest } })
   : null
 
 export function userDisplayName(user: User | null) {
