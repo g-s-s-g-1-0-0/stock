@@ -27,6 +27,7 @@ from calculator.opinion_reasons import (
 )
 from calculator.pipeline import load_strategy_season_state, save_strategy_season_state
 from calculator.portfolio_risk import swing_entry_decision
+from calculator.account_allocation import reconcile_account_trades, load_allocation_accounts
 from calculator.rules import (
     ACTIVE_STRATEGY_CODES,
     STRATEGY_RULES,
@@ -991,11 +992,10 @@ def block_held_public_buy_signal(
     직전 의견이 매수면 아직 매수 창이 열린 상태다. 추가매수 조건만 미충족이므로
     의견은 매수로 두고 진입 코드만 비운다. 직전 의견이 관망이면 매수 타이밍을
     이미 놓친 상태다. 추가매수 조건이 슬롯을 만들기 전에는 관망을 유지한다.
-    예외는 이벤트 기간 관망이다. 이벤트가 끝나고 매수 조건이 다시 맞으면 의견을
-    매수로 복구해 알림이 나갈 수 있게 한다. 추가 슬롯은 만들지 않는다.
+    이벤트 기간 관망도 동일하게 추가 진입 조건을 적용한다.
     """
     changed = False
-    if str(previous_opinion or "").strip() == "관망" and not is_event_watch_reason(previous_reason):
+    if str(previous_opinion or "").strip() == "관망":
         reason = build_held_watch_opinion_reason(
             strategy_code_from_trade(open_trade),
             trade=open_trade,
@@ -1024,17 +1024,11 @@ def block_held_public_buy_signal(
                     changed = True
         return changed
 
-    if is_event_watch_reason(previous_reason):
-        reason = (
-            f"이벤트 종료 ({event_watch_label(previous_reason)}) 후 매수 조건 재충족 — "
-            f"{held_strategy_label(stock, technical_row)} (추가 슬롯 없음, 보유 유지)"
-        )
-    else:
-        reason = build_held_watch_opinion_reason(
-            strategy_code_from_trade(open_trade),
-            trade=open_trade,
-            additional_buy_blocked=True,
-        )
+    reason = build_held_watch_opinion_reason(
+        strategy_code_from_trade(open_trade),
+        trade=open_trade,
+        additional_buy_blocked=True,
+    )
     if stock.get("strategies") != []:
         stock["strategies"] = []
         changed = True
@@ -1209,6 +1203,7 @@ def process_personal_trade_logs(
     *,
     season: dict[str, Any],
     engine_kwargs: dict[str, Any],
+    allocation_settings: dict[str, dict[str, Any]] | None = None,
 ) -> None:
     """모든 개인 계정의 관심종목에 운영자 로그와 동일한 진입/청산 엔진을 적용한다."""
     if not supabase_url() or not service_key():
@@ -1239,17 +1234,24 @@ def process_personal_trade_logs(
         entry_tickers_by_type = personal_watchlists.get(owner_id) or {
             investment_type: [] for investment_type in INVESTMENT_TYPES
         }
+        account_settings = (allocation_settings or {}).get(owner_id)
+        engine_trades = copy.deepcopy(before_trades)
+        if account_settings is not None:
+            engine_trades = reconcile_account_trades(engine_trades, engine_kwargs['stocks'], account_settings, account_trend_rows())
         result = run_trade_engine(
-            copy.deepcopy(before_trades),
+            engine_trades,
             entry_tickers_by_type,
             season=copy.deepcopy(season),
             # 런타임 리셋 시드는 운영자 로그 복구용이라 개인 로그에는 적용하지 않는다.
             seed_after_reset=False,
             mutate_public_state=False,
+            account_settings=account_settings,
             **engine_kwargs,
         )
         processed += 1
         next_trades = result["trades"]
+        if account_settings is not None:
+            next_trades = reconcile_account_trades(next_trades, engine_kwargs['stocks'], account_settings, account_trend_rows())
         next_by_key = {trade_key(trade): serialize_trade(trade) for trade in next_trades}
         if next_by_key == before_by_key:
             continue
@@ -1271,11 +1273,44 @@ def process_personal_trade_logs(
             if trade_key(trade) in before_open_keys
             and str(trade.get("status") or "") != "보유 중"
             and trade.get("manualExit") is not True
+            and trade.get("status") != DEFERRED_BUY_STATUS
         ]
         if closed_now:
             exit_events.append({"ownerId": owner_id, "trades": closed_now})
     write_personal_trade_exits(exit_events)
     print(f"[trade_logs] personal logs processed={processed} updated={updated} exits={len(exit_events)}")
+
+
+def account_trend_rows() -> list[dict[str, Any]]:
+    data = load_json(API_DIR / 'market-trends.json', {})
+    return data.get('rows', []) if isinstance(data, dict) else []
+
+
+def sync_account_allocation_guidance(stocks, technical, trades) -> bool:
+    latest = {str(t.get('ticker') or '').upper(): t for t in trades
+              if is_tracked_trade(t) and trade_investment_type(t) == 'swing'
+              and t.get('allocationSource') == 'account'}
+    changed = False
+    for stock in stocks:
+        ticker = str(stock.get('ticker') or '').upper()
+        if ticker in latest:
+            changed = apply_allocation_guidance(stock, technical.get(ticker, {}), latest[ticker]) or changed
+    return changed
+
+
+def repair_unqualified_buy_opinions(stocks, technical, trades, today_date) -> bool:
+    changed = False
+    tracked = open_trades_by_ticker(trades)
+    for stock in stocks:
+        ticker = str(stock.get('ticker') or '').upper()
+        watched = [t for t in tracked.get(ticker, []) if t.get('restoreWatchDate')]
+        if stock.get('opinion') != '매수' or not watched:
+            continue
+        current_price = parse_price(stock.get('currentPrice'))
+        if any(hold_restore_allowed(t, current_price, today_date) for t in watched):
+            continue
+        changed = block_held_public_buy_signal(stock, technical.get(ticker, {}), '관망', '', watched[0]) or changed
+    return changed
 
 
 def update_trade_logs(
@@ -1354,7 +1389,12 @@ def update_trade_logs(
 
     # 개인 로그는 운영자 패스가 공개 신호 상태(관심종목 외 매수 억제 등)를 변형하기 전에 처리한다.
     personal_watchlists = load_personal_watchlists()
-    process_personal_trade_logs(personal_watchlists, season=season, engine_kwargs=engine_kwargs)
+    settings_by_owner, operator_settings = (load_allocation_accounts(supabase_request)
+        if supabase_url() and service_key() else ({}, None))
+    if operator_settings is not None:
+        trades = reconcile_account_trades(trades, stocks, operator_settings, account_trend_rows())
+    process_personal_trade_logs(personal_watchlists, season=season, engine_kwargs=engine_kwargs,
+                                allocation_settings=settings_by_owner)
     personal_signal_tickers = {
         ticker
         for by_type in personal_watchlists.values()
@@ -1369,9 +1409,14 @@ def update_trade_logs(
         seed_after_reset=seed_after_reset,
         mutate_public_state=True,
         signal_tickers=personal_signal_tickers,
+        account_settings=operator_settings,
         **engine_kwargs,
     )
+    if operator_settings is not None:
+        result['trades'] = reconcile_account_trades(result['trades'], stocks, operator_settings, account_trend_rows())
     signal_state_changed = result["signal_state_changed"] or signal_state_changed
+    signal_state_changed = sync_account_allocation_guidance(stocks, technical, result["trades"]) or signal_state_changed
+    signal_state_changed = repair_unqualified_buy_opinions(stocks, technical, result['trades'], today_date) or signal_state_changed
 
     refreshed_at = publish_iso()
     payload = {
@@ -1433,6 +1478,7 @@ def run_trade_engine(
     signal_tickers: set[str] | None = None,
     regime_label: str | None = None,
     market_premium: float | None = None,
+    account_settings: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """매수 진입/청산 엔진. 운영자 공용 로그와 개인 로그에 같은 규칙을 적용한다.
 
@@ -1663,6 +1709,23 @@ def run_trade_engine(
         previous_reason = str(previous_stock.get("opinionReason") or "").strip()
         if current_opinion != "매수" or nasdaq_peak_alert:
             continue
+        # A recovered maintenance condition is not a new entry. Persist the
+        # watch boundary so already-published false buy opinions are repaired too.
+        watched_trades = [
+            trade for trade in open_for_ticker_all
+            if previous_opinion == "관망" or trade.get("restoreWatchDate")
+        ]
+        for trade in watched_trades:
+            mark_restore_watch(trade, today)
+        if watched_trades and not any(
+            hold_restore_allowed(trade, current_price, today_date)
+            for trade in watched_trades
+        ):
+            if mutate_public_state:
+                signal_state_changed = block_held_public_buy_signal(
+                    stock, row, "관망", previous_reason, watched_trades[0]
+                ) or signal_state_changed
+            continue
         active_entry_codes = entry_signal_codes(row)
         if "1" in active_entry_codes:
             season["open"] = True
@@ -1687,10 +1750,29 @@ def run_trade_engine(
             deferred_buy = False
             if investment_type == "swing":
                 allocation_decision = swing_entry_decision(stock, open_swing_trades, stocks_by_symbol)
+                if account_settings is not None and not open_for_ticker:
+                    candidate = {
+                        'slotId': '__allocation_candidate__', 'investmentType': investment_type,
+                        'ticker': ticker, 'name': stock.get('name'), 'market': stock.get('market'),
+                        'strategy': strategy_display_name(active_entry_codes[0]) if active_entry_codes else '-',
+                        'buyDate': today, 'buyPrice': stock.get('currentPrice'), 'currentPrice': stock.get('currentPrice'),
+                        'status': OPEN_POSITION_STATUS, 'sellDate': OPEN_POSITION_STATUS,
+                        'riskGroup': allocation_decision.get('riskGroup'),
+                    }
+                    allocated = reconcile_account_trades(trades + [candidate], stocks, account_settings, account_trend_rows())[-1]
+                    allocation_decision = {**allocation_decision, **{
+                        key: allocated[key] for key in ('allocationSource', 'allocationSignalStatus',
+                            'investmentAmount', 'allocationStatus', 'allocationReason')
+                    }}
                 if mutate_public_state:
                     signal_state_changed = (
                         apply_allocation_guidance(stock, row, allocation_decision) or signal_state_changed
                     )
+                if allocation_decision.get('allocationStatus') == '보유' and restore_candidates:
+                    allocation_decision = {**allocation_decision, 'allocationStatus': DEFERRED_BUY_STATUS,
+                        'allocationReason': '추가 진입 조건 충족 · 동일 종목 한 포지션 제한으로 매수 보류'}
+                    if mutate_public_state:
+                        signal_state_changed = apply_allocation_guidance(stock, row, allocation_decision) or signal_state_changed
                 allocation_status = str(allocation_decision.get("allocationStatus") or "")
                 deferred_buy = allocation_status == DEFERRED_BUY_STATUS
                 if not deferred_buy and allocation_status != "진입 가능":
@@ -1799,7 +1881,6 @@ def run_trade_engine(
             open_for_ticker_all
             and not ticker_appended
             and mutate_public_state
-            and stock.get("allocationStatus") != "보유"
         ):
             signal_state_changed = (
                 block_held_public_buy_signal(

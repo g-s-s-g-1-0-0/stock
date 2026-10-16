@@ -103,7 +103,15 @@
       ],
       "category": "성장주",
       "industry": "반도체 레이저 장비, HBM·AI 반도체, 레이저 어닐링, 그루빙·다이싱",
-      "updatedAt": "2026-10-16T15:02:30+00:00"
+      "updatedAt": "2026-10-16T15:02:30+00:00",
+      "allocationStatus": "매수 보류",
+      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
+      "recommendedAllocationPercent": 10,
+      "riskGroup": "반도체·AI 인프라",
+      "currentRiskGroupPercent": 15,
+      "postRiskGroupPercent": 25,
+      "openPositionCount": 7,
+      "maxPositionCount": 10
     },
     {
       "ticker": "042700",
@@ -177,22 +185,20 @@
       "fairPriceReason": null,
       "currentPrice": "$543.32",
       "valuation": "고평가",
-      "opinion": "매수",
-      "opinionReason": "-",
+      "opinion": "관망",
+      "opinionReason": "보유 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 지지선 이탈 $513.96 · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [
-        "3. 정상장 볼린저 워시아웃"
-      ],
+      "strategies": [],
       "category": "성장주",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
       "updatedAt": "2026-10-16T15:02:36+00:00",
-      "allocationStatus": "보유",
-      "allocationReason": "동일 종목은 한 포지션만 허용",
-      "recommendedAllocationPercent": 10.0,
+      "allocationStatus": "진입 가능",
+      "allocationReason": "",
+      "recommendedAllocationPercent": 12.5,
       "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15.0,
-      "postRiskGroupPercent": 25.0,
-      "openPositionCount": 7,
+      "currentRiskGroupPercent": 5,
+      "postRiskGroupPercent": 15,
+      "openPositionCount": 2,
       "maxPositionCount": 10
     },
     {
@@ -232,7 +238,7 @@
       "riskGroup": "반도체·AI 인프라",
       "currentRiskGroupPercent": 15.0,
       "postRiskGroupPercent": 25.0,
-      "openPositionCount": 7,
+      "openPositionCount": 3,
       "maxPositionCount": 10
     },
     {
@@ -256,7 +262,7 @@
       "riskGroup": "반도체·AI 인프라",
       "currentRiskGroupPercent": 15.0,
       "postRiskGroupPercent": 25.0,
-      "openPositionCount": 7,
+      "openPositionCount": 3,
       "maxPositionCount": 10
     },
     {
@@ -328,7 +334,7 @@
       "riskGroup": "반도체·AI 인프라",
       "currentRiskGroupPercent": 15.0,
       "postRiskGroupPercent": 25.0,
-      "openPositionCount": 7,
+      "openPositionCount": 3,
       "maxPositionCount": 10
     },
     {
@@ -384,7 +390,7 @@
       "riskGroup": "반도체·AI 인프라",
       "currentRiskGroupPercent": 15.0,
       "postRiskGroupPercent": 25.0,
-      "openPositionCount": 7,
+      "openPositionCount": 3,
       "maxPositionCount": 10
     },
     {
@@ -408,7 +414,7 @@
       "riskGroup": "반도체·AI 인프라",
       "currentRiskGroupPercent": 15.0,
       "postRiskGroupPercent": 25.0,
-      "openPositionCount": 7,
+      "openPositionCount": 3,
       "maxPositionCount": 10
     },
     {
@@ -419,7 +425,7 @@
       "fairPriceReason": "loss_making",
       "currentPrice": "$174.76",
       "valuation": "판단 불가",
-      "opinion": "매수",
+      "opinion": "관망",
       "opinionReason": "보유 유지 — 7. 이평선 눌림 반등 · 추가매수 대기",
       "marketEvent": "당분간 없음",
       "strategies": [],
@@ -488,7 +494,7 @@
       "riskGroup": "반도체·AI 인프라",
       "currentRiskGroupPercent": 15.0,
       "postRiskGroupPercent": 25.0,
-      "openPositionCount": 7,
+      "openPositionCount": 3,
       "maxPositionCount": 10
     },
     {
@@ -576,7 +582,7 @@
       "riskGroup": "반도체·AI 인프라",
       "currentRiskGroupPercent": 15.0,
       "postRiskGroupPercent": 25.0,
-      "openPositionCount": 7,
+      "openPositionCount": 3,
       "maxPositionCount": 10
     },
     {
@@ -705,7 +711,15 @@
       "strategies": [],
       "category": "성장주",
       "industry": "전력 발전, 원전·가스, AI 데이터센터 전력수요, AI 인프라",
-      "updatedAt": "2026-10-16T15:02:58+00:00"
+      "updatedAt": "2026-10-16T15:02:58+00:00",
+      "allocationStatus": "매수 보류",
+      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
+      "recommendedAllocationPercent": 10,
+      "riskGroup": "반도체·AI 인프라",
+      "currentRiskGroupPercent": 15,
+      "postRiskGroupPercent": 25,
+      "openPositionCount": 7,
+      "maxPositionCount": 10
     },
     {
       "ticker": "GNRC",
@@ -715,23 +729,21 @@
       "fairPriceReason": null,
       "currentPrice": "$197.29",
       "valuation": "고평가",
-      "opinion": "매수",
-      "opinionReason": "-",
+      "opinion": "관망",
+      "opinionReason": "보유 유지 — 4. 장기선 아래 반등 초입 · 추가매수 대기 (익절 +15% 또는 회복장 종료 청산 · 손절 -8%)",
       "marketEvent": "당분간 없음",
-      "strategies": [
-        "4. 장기선 아래 반등 초입"
-      ],
+      "strategies": [],
       "category": "가치주",
       "industry": "산업재, 장비·제조, 자동화",
       "updatedAt": "2026-10-16T15:02:59+00:00",
-      "allocationStatus": "보유",
-      "allocationReason": "동일 종목은 한 포지션만 허용",
-      "recommendedAllocationPercent": 10.0,
-      "riskGroup": "산업재·건설",
-      "currentRiskGroupPercent": 20.0,
-      "postRiskGroupPercent": 30.0,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "allocationStatus": "매수 보류",
+      "allocationReason": "메가트렌드 Top 5 미충족",
+      "recommendedAllocationPercent": 0,
+      "riskGroup": null,
+      "currentRiskGroupPercent": null,
+      "postRiskGroupPercent": null,
+      "openPositionCount": null,
+      "maxPositionCount": null
     },
     {
       "ticker": "QQQ",
@@ -741,22 +753,20 @@
       "fairPriceReason": "etf",
       "currentPrice": "$720.09",
       "valuation": "판단 불가",
-      "opinion": "매수",
-      "opinionReason": "-",
+      "opinion": "관망",
+      "opinionReason": "보유 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 지지선 이탈 $711.13 · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [
-        "3. 정상장 볼린저 워시아웃"
-      ],
+      "strategies": [],
       "category": "스윙주",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
       "updatedAt": "2026-10-16T15:03:00+00:00",
-      "allocationStatus": "보유",
-      "allocationReason": "동일 종목은 한 포지션만 허용",
-      "recommendedAllocationPercent": 10.0,
+      "allocationStatus": "매수 보류",
+      "allocationReason": "메가트렌드 Top 5 미충족",
+      "recommendedAllocationPercent": 0,
       "riskGroup": "나스닥100 지수 ETF(1배)",
-      "currentRiskGroupPercent": 10.0,
-      "postRiskGroupPercent": 20.0,
-      "openPositionCount": 7,
+      "currentRiskGroupPercent": 0,
+      "postRiskGroupPercent": 10,
+      "openPositionCount": 3,
       "maxPositionCount": 10
     },
     {
@@ -767,22 +777,20 @@
       "fairPriceReason": "etf",
       "currentPrice": "$90.30",
       "valuation": "판단 불가",
-      "opinion": "매수",
-      "opinionReason": "-",
+      "opinion": "관망",
+      "opinionReason": "보유 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 지지선 이탈 $86.16 · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [
-        "3. 정상장 볼린저 워시아웃"
-      ],
+      "strategies": [],
       "category": "스윙주",
       "industry": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
       "updatedAt": "2026-10-16T15:03:01+00:00",
-      "allocationStatus": "보유",
-      "allocationReason": "동일 종목은 한 포지션만 허용",
-      "recommendedAllocationPercent": 5.0,
+      "allocationStatus": "매수 보류",
+      "allocationReason": "메가트렌드 Top 5 미충족",
+      "recommendedAllocationPercent": 0,
       "riskGroup": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
-      "currentRiskGroupPercent": 5.0,
-      "postRiskGroupPercent": 10.0,
-      "openPositionCount": 7,
+      "currentRiskGroupPercent": 0,
+      "postRiskGroupPercent": 5,
+      "openPositionCount": 4,
       "maxPositionCount": 10
     },
     {
@@ -793,22 +801,20 @@
       "fairPriceReason": "etf",
       "currentPrice": "$80.17",
       "valuation": "판단 불가",
-      "opinion": "매수",
-      "opinionReason": "-",
+      "opinion": "관망",
+      "opinionReason": "보유 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 지지선 이탈 $74.88 · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [
-        "3. 정상장 볼린저 워시아웃"
-      ],
+      "strategies": [],
       "category": "스윙주",
       "industry": "다우존스 미국 반도체 지수 2배 레버리지 ETF(일일 2배)",
       "updatedAt": "2026-10-16T15:03:02+00:00",
-      "allocationStatus": "보유",
-      "allocationReason": "동일 종목은 한 포지션만 허용",
+      "allocationStatus": "진입 가능",
+      "allocationReason": "",
       "recommendedAllocationPercent": 5.0,
       "riskGroup": "반도체·AI 인프라",
       "currentRiskGroupPercent": 15.0,
       "postRiskGroupPercent": 20.0,
-      "openPositionCount": 7,
+      "openPositionCount": 5,
       "maxPositionCount": 10
     },
     {
@@ -827,12 +833,12 @@
       "industry": "반도체, 광전자·포토닉스, 데이터센터",
       "updatedAt": "2026-10-16T15:03:03+00:00",
       "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
+      "allocationReason": "반도체·AI 인프라 20%로 산업 한도 20% 초과",
       "recommendedAllocationPercent": 10.0,
       "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15.0,
-      "postRiskGroupPercent": 25.0,
-      "openPositionCount": 7,
+      "currentRiskGroupPercent": 20,
+      "postRiskGroupPercent": 30,
+      "openPositionCount": 6,
       "maxPositionCount": 10
     },
     {
@@ -859,22 +865,20 @@
       "fairPriceReason": "loss_making",
       "currentPrice": "$51.74",
       "valuation": "판단 불가",
-      "opinion": "매수",
-      "opinionReason": "-",
+      "opinion": "관망",
+      "opinionReason": "보유 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 지지선 이탈 $50.10 · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [
-        "3. 정상장 볼린저 워시아웃"
-      ],
+      "strategies": [],
       "category": "가치주",
       "industry": "산업재, 장비·제조, 자동화",
       "updatedAt": "2026-10-16T15:03:04+00:00",
-      "allocationStatus": "보유",
-      "allocationReason": "동일 종목은 한 포지션만 허용",
-      "recommendedAllocationPercent": 10.0,
+      "allocationStatus": "진입 가능",
+      "allocationReason": "",
+      "recommendedAllocationPercent": 12.5,
       "riskGroup": "산업재·건설",
-      "currentRiskGroupPercent": 20.0,
-      "postRiskGroupPercent": 30.0,
-      "openPositionCount": 7,
+      "currentRiskGroupPercent": 10,
+      "postRiskGroupPercent": 20,
+      "openPositionCount": 6,
       "maxPositionCount": 10
     },
     {
@@ -907,7 +911,15 @@
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
-      "updatedAt": "2026-10-16T15:03:06+00:00"
+      "updatedAt": "2026-10-16T15:03:06+00:00",
+      "allocationStatus": "매수 보류",
+      "allocationReason": "메가트렌드 Top 5 미충족",
+      "recommendedAllocationPercent": 0,
+      "riskGroup": "소프트웨어·클라우드",
+      "currentRiskGroupPercent": 0,
+      "postRiskGroupPercent": 10,
+      "openPositionCount": 7,
+      "maxPositionCount": 10
     },
     {
       "ticker": "AAPL",

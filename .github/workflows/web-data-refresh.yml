@@ -21,6 +21,7 @@ on:
           - technical
           - market-trends
           - market-events
+          - portfolio
       send_notifications:
         description: "Send notification emails"
         required: true
@@ -77,6 +78,11 @@ jobs:
       - name: Load latest published data
         run: bash scripts/publish_live_data.sh --overlay
 
+      - name: Set up allocation runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -109,6 +115,7 @@ jobs:
             stock-universe) TASKS="stock-universe" ;;
             valuation) TASKS="valuation" ;;
             technical) TASKS="technical" ;;
+            portfolio) TASKS="portfolio" ;;
             market-trends) TASKS="stock-universe market-trends" ;;
             market-events) TASKS="market-events" ;;
             *) TASKS="stock-universe valuation technical market-trends market-events" ;;
@@ -193,8 +200,12 @@ jobs:
         if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'market-trends') }}
         run: python -m unittest tests.test_market_trends tests.test_web_refresh_notifications.WebRefreshNotificationsTest.test_failed_news_analysis_never_sends_old_or_internal_only_report
 
+      - name: Reconcile account portfolio state
+        if: ${{ env.SKIP_REFRESH != 'true' && contains(env.REFRESH_TASKS, 'portfolio') }}
+        run: python scripts/reconcile_portfolio_state.py
+
       - name: Refresh web caches
-        if: ${{ env.SKIP_REFRESH != 'true' }}
+        if: ${{ env.SKIP_REFRESH != 'true' && !contains(env.REFRESH_TASKS, 'portfolio') }}
         run: |
           if [[ " $REFRESH_TASKS " == *" valuation "* ]]; then
             python -m unittest tests.test_fair_price tests.test_pipeline_valuation_cache

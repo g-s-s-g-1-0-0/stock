@@ -631,7 +631,7 @@ def trade_exit_changes(previous_path: Path, current_path: Path) -> list[dict[str
         previous_trade = previous.get(key)
         if not previous_trade:
             continue
-        if str(current.get("status") or "").strip() == "보유 중":
+        if str(current.get("status") or "").strip() in {"보유 중", "매수 보류"}:
             continue
         changes.append(exit_change_from_trade(current, previous_trade))
     return dedupe_exit_changes_by_ticker(changes)
@@ -1196,18 +1196,31 @@ def enrich_swing_change_risk(
     enriched = dict(change)
     target_opinion = str(enriched.get("to") or "")
     ticker = str(enriched.get("ticker") or "").strip().upper()
-    is_held = any(trade_ticker(trade) == ticker for trade in open_trades)
+    is_held = any(trade_ticker(trade) == ticker and is_open_trade(trade) for trade in open_trades)
     if target_opinion == "관망":
         if is_held:
             enriched["actionLabel"] = "기존 보유 유지 · 신규·추가매수 없음"
+        elif any(trade_ticker(trade) == ticker and trade.get('status') == '매수 보류' for trade in open_trades):
+            enriched['actionLabel'] = '매수 보류 유지 · 신규·추가매수 없음'
         return enriched
     if target_opinion == "매도":
         enriched["actionLabel"] = "매도"
         return enriched
     if target_opinion != "매수":
         return enriched
+    account_trade = next((trade for trade in reversed(open_trades)
+        if trade_ticker(trade) == ticker and trade.get('allocationSource') == 'account'), None)
     entry_note = str(enriched.get("entryNote") or "")
-    if entry_note.startswith("보유 유지"):
+    if account_trade is not None:
+        enriched.update({key: account_trade.get(key) for key in ('allocationStatus', 'allocationReason',
+            'recommendedAllocationPercent', 'riskGroup', 'investmentAmount')})
+        if account_trade.get('status') == '매수 보류':
+            enriched['actionLabel'] = '매수 보류'
+        elif entry_note.startswith('보유 유지'):
+            enriched['actionLabel'] = '추가매수 없음 · 기존 보유 유지'
+        else:
+            enriched['actionLabel'] = f"매수 배정 {account_trade.get('investmentAmount', 0):,.0f}원"
+    elif entry_note.startswith("보유 유지"):
         enriched["actionLabel"] = "추가매수 없음 · 기존 보유 유지"
     else:
         prior_open = [trade for trade in open_trades if trade_ticker(trade) != ticker]
@@ -2784,7 +2797,7 @@ def load_personal_open_trades_by_owner() -> dict[str, list[dict[str, Any]]]:
         open_trades = [
             trade
             for trade in trades
-            if isinstance(trade, dict) and is_open_trade(trade)
+            if isinstance(trade, dict) and str(trade.get("status")) in {"보유 중", "매수 보류"}
         ]
         if open_trades:
             result[owner_id] = open_trades
@@ -2928,7 +2941,7 @@ def send_opinion_notifications(
     system_open_trades = [
         row
         for row in trade_rows(current_trade_logs or DEFAULT_CURRENT_TRADE_LOGS)
-        if is_open_trade(row)
+        if str(row.get("status")) in {"보유 중", "매수 보류"}
     ]
     current_stocks = stock_rows_by_ticker(current)
     current_technical = technical_rows_by_ticker(DEFAULT_TECHNICAL)
@@ -2950,8 +2963,8 @@ def send_opinion_notifications(
                 recipient.investment_type,
             )
             my_exit_changes = personal_exits_by_owner.get(recipient.owner_id, [])
-        my_open_tickers = {ticker for ticker in (trade_ticker(trade) for trade in my_open_trades) if ticker}
-        relevant_tickers = my_tickers | my_open_tickers
+        my_open_tickers = {trade_ticker(trade) for trade in my_open_trades if is_open_trade(trade) and trade_ticker(trade)}
+        relevant_tickers = my_tickers | {trade_ticker(trade) for trade in my_open_trades if trade_ticker(trade)}
         my_opinion_changes = [
             change
             for change in changes

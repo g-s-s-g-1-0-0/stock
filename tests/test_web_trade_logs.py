@@ -1094,6 +1094,7 @@ def test_public_log_removes_duplicate_closed_same_day_strategy_slots(monkeypatch
 
 
 def test_same_strategy_never_adds_a_second_swing_position(monkeypatch, tmp_path):
+    monkeypatch.setattr(logs, "should_defer_market_signal", lambda *args: False)
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     today = logs.kst_trade_date()
     public_path.parent.mkdir(parents=True)
@@ -1125,8 +1126,9 @@ def test_same_strategy_never_adds_a_second_swing_position(monkeypatch, tmp_path)
     updated = logs.load_json(cache_path, {})
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
     assert len(rows) == 1
+    assert len([row for row in updated["rows"] if row["status"] == "매수 보류"]) == 1
     assert rows[0]["strategy"] == "1. 시장 공포 저점 진입"
-    assert updated["meta"]["appendedOpenTrades"] == 0
+    assert updated["meta"]["appendedOpenTrades"] == 1
 
 
 def test_one_position_rule_does_not_create_restore_state(monkeypatch, tmp_path):
@@ -1166,6 +1168,7 @@ def test_one_position_rule_does_not_create_restore_state(monkeypatch, tmp_path):
 
 
 def test_one_position_rule_ignores_repeated_restore_signals(monkeypatch, tmp_path):
+    monkeypatch.setattr(logs, "should_defer_market_signal", lambda *args: False)
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     today = logs.kst_trade_date()
     public_path.parent.mkdir(parents=True)
@@ -1197,8 +1200,9 @@ def test_one_position_rule_ignores_repeated_restore_signals(monkeypatch, tmp_pat
     updated = logs.load_json(cache_path, {})
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
     assert len(rows) == 1
+    assert len([row for row in updated["rows"] if row["status"] == "매수 보류"]) == 1
     assert "restoreSignalCounts" not in rows[0]
-    assert updated["meta"]["appendedOpenTrades"] == 0
+    assert updated["meta"]["appendedOpenTrades"] == 1
 
     logs.update_trade_logs(
         [{"ticker": "DL", "name": "DL", "market": "US", "currentPrice": "$90.00", "opinion": "매수"}],
@@ -1210,6 +1214,7 @@ def test_one_position_rule_ignores_repeated_restore_signals(monkeypatch, tmp_pat
     updated = logs.load_json(cache_path, {})
     rows = [row for row in updated["rows"] if row["status"] == "보유 중"]
     assert len(rows) == 1
+    assert len([row for row in updated["rows"] if row["status"] == "매수 보류"]) == 1
     assert rows[0]["strategy"] == "2. 상승 추세 이평선 눌림목"
     assert "restoreSignalCounts" not in rows[0]
     assert updated["meta"]["appendedOpenTrades"] == 0
@@ -1307,8 +1312,9 @@ def test_offlist_held_trade_keeps_tracking_but_blocks_additional_buy(monkeypatch
     assert stock["opinion"] == "관망"
 
 
-def test_held_trade_buy_signal_without_add_slot_keeps_buy_opinion(monkeypatch, tmp_path):
-    # 동일 종목 1포지션 규칙은 실제 추가 배분만 막고 전략 신호는 보존한다.
+def test_published_false_buy_is_repaired_using_persisted_watch_date(monkeypatch, tmp_path):
+    # 직전 캐시가 이미 매수여도 관망 기록이 있으면 추가 진입 조건을 다시 확인한다.
+    monkeypatch.setattr(logs, "should_defer_market_signal", lambda *args: False)
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["INTC"]})
     public_path.parent.mkdir(parents=True)
@@ -1342,15 +1348,16 @@ def test_held_trade_buy_signal_without_add_slot_keeps_buy_opinion(monkeypatch, t
     # 추가 슬롯은 생성되지 않는다(추가매수 조건 미충족).
     assert updated["meta"]["appendedOpenTrades"] == 0
     assert changed is True
-    assert stock["opinion"] == "매수"
-    assert stock["strategies"] == ["2. 상승 추세 이평선 눌림목"]
-    assert stock["allocationStatus"] == "보유"
-    assert technical["INTC"]["opinion"] == "매수"
-    assert technical["INTC"]["entrySignalCodes"] == "2"
+    assert stock["opinion"] == "관망"
+    assert stock["strategies"] == []
+    assert technical["INTC"]["opinion"] == "관망"
+    assert technical["INTC"]["entrySignalCodes"] == ""
 
 
-def test_held_watch_returns_to_buy_signal_but_allocation_stays_hold(monkeypatch, tmp_path):
-    # 전략 신호와 실제 배분을 분리해 관망→매수 전환은 알리고 추가 포지션만 막는다.
+def test_held_watch_stays_watch_without_valid_reentry(monkeypatch, tmp_path):
+    monkeypatch.setattr(logs, "evaluate_exit_condition", lambda *args, **kwargs: {"shouldExit": False, "reason": None})
+    monkeypatch.setattr(logs, "should_defer_market_signal", lambda *args: False)
+    # 보유 유지 조건 회복만으로 관망→매수 전환을 알리지 않는다.
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["BE"]})
     public_path.parent.mkdir(parents=True)
@@ -1382,14 +1389,15 @@ def test_held_watch_returns_to_buy_signal_but_allocation_stays_hold(monkeypatch,
     be_rows = [row for row in updated["rows"] if row["ticker"] == "BE"]
     assert len(be_rows) == 1
     assert updated["meta"]["appendedOpenTrades"] == 0
-    assert stock["opinion"] == "매수"
-    assert stock["strategies"] == ["5. 저항선 돌파 후 눌림"]
-    assert stock["allocationStatus"] == "보유"
-    assert technical["BE"]["opinion"] == "매수"
-    assert technical["BE"]["entrySignalCodes"] == "5"
+    assert stock["opinion"] == "관망"
+    assert stock["strategies"] == []
+    assert technical["BE"]["opinion"] == "관망"
+    assert technical["BE"]["entrySignalCodes"] == ""
 
 
-def test_event_watch_restore_returns_to_buy_without_additional_slot(monkeypatch, tmp_path):
+def test_event_watch_stays_watch_without_valid_reentry(monkeypatch, tmp_path):
+    monkeypatch.setattr(logs, "evaluate_exit_condition", lambda *args, **kwargs: {"shouldExit": False, "reason": None})
+    monkeypatch.setattr(logs, "should_defer_market_signal", lambda *args: False)
     cache_path, public_path = patch_log_paths(monkeypatch, tmp_path)
     monkeypatch.setattr(logs, "load_watchlist_tickers_by_type", lambda stocks: {"long_term": [], "swing": ["STX"]})
     public_path.parent.mkdir(parents=True)
@@ -1440,11 +1448,10 @@ def test_event_watch_restore_returns_to_buy_without_additional_slot(monkeypatch,
     assert len(stx_rows) == 1
     assert updated["meta"]["appendedOpenTrades"] == 0
     assert changed is True
-    assert stock["opinion"] == "매수"
-    assert stock["strategies"] == ["3. 정상장 볼린저 워시아웃"]
-    assert stock["allocationStatus"] == "보유"
-    assert technical["STX"]["opinion"] == "매수"
-    assert technical["STX"]["entrySignalCodes"] == "3"
+    assert stock["opinion"] == "관망"
+    assert stock["strategies"] == []
+    assert technical["STX"]["opinion"] == "관망"
+    assert technical["STX"]["entrySignalCodes"] == ""
 
 
 def test_offlist_held_trade_still_liquidates_on_exit(monkeypatch, tmp_path):
