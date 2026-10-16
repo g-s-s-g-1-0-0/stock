@@ -2841,6 +2841,44 @@ def opinion_notification_key(recipient: Recipient, change: dict[str, Any]) -> st
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
+def record_signal_email_times(
+    previous_path: Path | None,
+    current_path: Path,
+    changes: list[dict[str, Any]],
+    investment_type: str,
+    sent_at: str,
+) -> None:
+    if previous_path is None:
+        return
+    previous = {trade_key(row): row for row in trade_rows(previous_path)}
+    payload = read_json(current_path)
+    rows = payload.get("rows") if isinstance(payload, dict) else None
+    if not isinstance(rows, list):
+        return
+    updated = False
+    for row in rows:
+        if notification_trade_investment_type(row) != investment_type:
+            continue
+        old = previous.get(trade_key(row))
+        for change in changes:
+            if trade_ticker(change) != trade_ticker(row):
+                continue
+            is_entry = change.get("to") == "매수" and old is None
+            is_exit = change.get("to") == "매도" and old is not None and is_open_trade(old) and not is_open_trade(row)
+            if not (is_entry or is_exit):
+                continue
+            row["lastSignalEmailSentAt"] = sent_at
+            row["lastSignalEmailDate"] = row.get("sellDate") if is_exit else row.get("buyDate")
+            print(f"Signal email recorded: ticker={trade_ticker(row)} slot={row.get('slotId', '-')} sentAt={sent_at}")
+            updated = True
+            break
+    if updated:
+        payload.setdefault("meta", {})["updatedAt"] = sent_at
+        write_json(current_path, payload)
+        if current_path.resolve() == DEFAULT_CURRENT_TRADE_LOGS.resolve():
+            write_json(ROOT_DIR / "data" / "cache" / "trade-logs.json", payload)
+
+
 def send_opinion_notifications(
     previous: Path,
     current: Path,
@@ -3008,7 +3046,15 @@ def send_opinion_notifications(
 
         subject_tickers = list(dict.fromkeys(str(change["ticker"]) for change in my_changes))
         subject = "투자의견 변경 알림 (" + ", ".join(subject_tickers[:8]) + ")"
-        send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
+        channel = send_notification(recipient, subject, append_notification_footer(body, recipient, "opinionChangeEmail"))
+        if channel == "email":
+            record_signal_email_times(
+                previous_trade_logs,
+                current_trade_logs or DEFAULT_CURRENT_TRADE_LOGS,
+                my_changes,
+                recipient.investment_type,
+                datetime.now(KST).isoformat(),
+            )
         newly_sent_keys.update(key for _, key in keyed_changes)
         sent += 1
 

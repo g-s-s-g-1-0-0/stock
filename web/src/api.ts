@@ -1,3 +1,5 @@
+import { readRequest } from './readRequest'
+
 export type RuntimeMeta = {
   kind?: string
   schedule?: string
@@ -100,9 +102,9 @@ const dataPaths = {
   stockSearch: import.meta.env.DEV ? ['/api/stock-search.json', '/api/stock-search', 'http://127.0.0.1:8787/api/stock-search'] : productionCachePaths('stock-search.json'),
 }
 
-export async function fetchAppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog = unknown>() {
+async function loadAppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog = unknown>() {
   if (import.meta.env.PROD) {
-    const response = await fetch(`/api/app-data?v=${Date.now()}`, { cache: 'no-store' })
+    const response = await readRequest('/api/app-data')
     if (!response.ok) throw new Error('최신 데이터를 불러오지 못했습니다. 다시 시도해 주세요.')
     const data = await response.json() as AppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog>
     if (!data.stocks || !data.valuation || !data.technical || !data.marketEvents || !data.marketTrends || !data.tradeLogs) {
@@ -120,6 +122,15 @@ export async function fetchAppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog
   ])
 
   return { stocks, valuation, technical, marketEvents, marketTrends, tradeLogs }
+}
+
+let appDataRequest: Promise<AppData<unknown, unknown, unknown, unknown, unknown>> | undefined
+
+export function fetchAppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog = unknown>() {
+  if (!appDataRequest) {
+    appDataRequest = loadAppData().finally(() => { appDataRequest = undefined })
+  }
+  return appDataRequest as Promise<AppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog>>
 }
 
 export async function fetchStockSearchData<TStock>() {

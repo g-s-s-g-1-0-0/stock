@@ -10,19 +10,38 @@ const FILES = {
 let snapshotKey
 let snapshotPromise
 
+async function readSource(url, options) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const response = await fetch(url, { ...options, signal: AbortSignal.timeout(8000) })
+      if (response.ok || ![408, 429, 500, 502, 503, 504].includes(response.status) || attempt >= 1) return response
+    } catch (error) {
+      if (attempt >= 1) throw error
+    }
+    await new Promise((resolve) => setTimeout(resolve, 200))
+  }
+}
+
 function readSnapshot(repo, sha, headers) {
   const key = `${repo}:${sha}`
   if (snapshotKey === key && snapshotPromise) return snapshotPromise
   snapshotKey = key
   snapshotPromise = Promise.all(Object.entries(FILES).map(async ([key, name]) => {
     const path = `web/public/api/${name}`
-    let response = await fetch(`https://raw.githubusercontent.com/${repo}/${sha}/${path}`)
-    if (!response.ok) {
-      response = await fetch(`https://api.github.com/repos/${repo}/contents/${path}?ref=${sha}`, {
+    let response
+    try {
+      response = await fetch(`https://raw.githubusercontent.com/${repo}/${sha}/${path}`, { signal: AbortSignal.timeout(5000) })
+      if (response.ok) {
+        const payload = await response.json()
+        if (payload && typeof payload === 'object') return [key, payload]
+      }
+    } catch {
+      // A disconnected raw host must also reach the authenticated fallback.
+    }
+    response = await readSource(`https://api.github.com/repos/${repo}/contents/${path}?ref=${sha}`, {
         cache: 'no-store',
         headers: { ...headers, accept: 'application/vnd.github.raw+json' },
-      })
-    }
+    })
     if (!response.ok) throw new Error(`${name}: ${response.status}`)
     const payload = await response.json()
     if (!payload || typeof payload !== 'object') throw new Error(`${name}: Invalid payload.`)
@@ -56,7 +75,7 @@ export default async function handler(req, res) {
     let sha = ''
     let lastStatus = 0
     for (const ref of refs) {
-      const head = await fetch(`https://api.github.com/repos/${repo}/commits/${encodeURIComponent(ref)}`, { cache: 'no-store', headers })
+      const head = await readSource(`https://api.github.com/repos/${repo}/commits/${encodeURIComponent(ref)}`, { cache: 'no-store', headers })
       lastStatus = head.status
       if (!head.ok) continue
       const body = await head.json()

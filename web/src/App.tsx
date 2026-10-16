@@ -7,6 +7,7 @@ import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, s
 import { UsageDashboard } from './UsageDashboard'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 import { isUsagePage, seoulDate } from './usageMetrics'
+import { compareTradeSignals } from './tradeOrder'
 
 type Market = 'KR' | 'US'
 type Valuation = '저평가' | '보통' | '고평가' | '판단 불가'
@@ -119,6 +120,8 @@ type TradeLog = {
   manualEntry?: boolean
   // 서버 자동 기록 엔진의 관리 필드. 화면에서는 쓰지 않지만 저장 시 유실되지 않게 보존한다.
   sellTimestamp?: string
+  lastSignalEmailSentAt?: string
+  lastSignalEmailDate?: string
   exitReason?: string
   restoreWatchDate?: string
   restoreSignalCounts?: Record<string, number>
@@ -1072,6 +1075,8 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     manualExit: candidate.manualExit === true ? true : undefined,
     manualEntry: candidate.manualEntry === true ? true : undefined,
     sellTimestamp: typeof candidate.sellTimestamp === 'string' ? candidate.sellTimestamp : undefined,
+    lastSignalEmailSentAt: typeof candidate.lastSignalEmailSentAt === 'string' ? candidate.lastSignalEmailSentAt : undefined,
+    lastSignalEmailDate: typeof candidate.lastSignalEmailDate === 'string' ? candidate.lastSignalEmailDate : undefined,
     exitReason: typeof candidate.exitReason === 'string' ? candidate.exitReason : undefined,
     restoreWatchDate: typeof candidate.restoreWatchDate === 'string' ? candidate.restoreWatchDate : undefined,
     restoreSignalCounts: candidate.restoreSignalCounts && typeof candidate.restoreSignalCounts === 'object' ? candidate.restoreSignalCounts : undefined,
@@ -7284,6 +7289,7 @@ function App() {
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
   const [isInitialAppDataLoaded, setIsInitialAppDataLoaded] = useState(false)
   const [initialDataError, setInitialDataError] = useState('')
+  const [appDataError, setAppDataError] = useState('')
   const [apiStocks, setApiStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
   const [apiSearchStocks, setApiSearchStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
   const [isStockSearchLoaded, setIsStockSearchLoaded] = useState(false)
@@ -8242,6 +8248,7 @@ function App() {
         }
       }
       setIsRemoteDataReady(true)
+      setInitialDataError('')
     } catch {
       setIsRemoteDataReady(false)
       setInitialDataError('최신 계정 데이터를 불러오지 못했습니다. 다시 시도해 주세요.')
@@ -8262,8 +8269,9 @@ function App() {
           applyLoadedData(data)
         }
         setIsInitialAppDataLoaded(true)
+        setAppDataError('')
       } catch (error) {
-        if (isMounted && forceApply) setInitialDataError(error instanceof Error ? error.message : '최신 데이터를 불러오지 못했습니다.')
+        if (isMounted && (forceApply || !apiMetasRef.current.stocks)) setAppDataError(error instanceof Error ? error.message : '최신 데이터를 불러오지 못했습니다.')
       } finally {
         isCheckingLatestData = false
       }
@@ -8575,14 +8583,11 @@ function App() {
   const scopedTrades = rawScopedTrades
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const visibleProfileTrades = scopedTrades
+  const tradeSignalOrder = new Map(visibleProfileTrades.map((trade, index) => [tradeKey(trade), index]))
   const filteredTrades = visibleProfileTrades
     .filter((trade) => selectedStrategy === '전체' || strategyCode(trade.strategy) === selectedStrategy)
     .slice()
-    .sort((a, b) => {
-      const aTime = new Date(a.buyDate.replaceAll('.', '-')).getTime()
-      const bTime = new Date(b.buyDate.replaceAll('.', '-')).getTime()
-      return sortDirection === 'desc' ? bTime - aTime : aTime - bTime
-    })
+    .sort((a, b) => compareTradeSignals(a, b, sortDirection, tradeSignalOrder.get(tradeKey(a)), tradeSignalOrder.get(tradeKey(b))))
   const displayedTradeRows = filteredTrades.map((trade, index) => ({
     trade,
     rowNumber: index + 1,
@@ -10737,10 +10742,10 @@ function App() {
       </header>
 
       {!isInitialAppDataLoaded || !isRemoteDataReady ? (
-        initialDataError ? (
+        initialDataError || appDataError ? (
         <section className="panel app-data-loading" role="status" aria-live="polite">
             <div>
-              <p>{initialDataError}</p>
+              <p>{initialDataError || appDataError}</p>
               <button type="button" onClick={() => window.location.reload()}>다시 시도</button>
             </div>
         </section>

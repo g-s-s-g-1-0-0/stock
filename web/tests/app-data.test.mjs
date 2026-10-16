@@ -85,3 +85,35 @@ test('reuse is allowed only after checking that the head is still current', asyn
   assert.equal(headReads, 2)
   assert.equal(fileReads, 6)
 })
+
+test('a raw network failure reaches the fallback at the same revision', async () => {
+  const sha = 'e'.repeat(40)
+  let fallbackReads = 0
+  mock.method(globalThis, 'fetch', async (url) => {
+    if (url.includes('/commits/')) return Response.json({ sha })
+    if (url.includes('raw.githubusercontent.com')) throw new TypeError('fetch failed')
+    fallbackReads += 1
+    assert.ok(url.endsWith(`?ref=${sha}`))
+    return Response.json({ rows: [] })
+  })
+  const res = response()
+  await handler({ method: 'GET' }, res)
+  assert.equal(res.statusCode, 200)
+  assert.equal(fallbackReads, 6)
+})
+
+test('a temporary head failure recovers without returning a loading error', async () => {
+  const sha = 'f'.repeat(40)
+  let attempts = 0
+  mock.method(globalThis, 'fetch', async (url) => {
+    if (url.includes('/commits/')) {
+      attempts += 1
+      return attempts === 1 ? new Response('', { status: 503 }) : Response.json({ sha })
+    }
+    return Response.json({ rows: [] })
+  })
+  const res = response()
+  await handler({ method: 'GET' }, res)
+  assert.equal(res.statusCode, 200)
+  assert.equal(attempts, 2)
+})

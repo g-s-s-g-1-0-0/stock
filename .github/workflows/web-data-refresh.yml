@@ -310,8 +310,8 @@ jobs:
       - name: Commit notification send state
         if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' }}
         run: |
-          git add data/cache/web-notification-state.json
-          if git diff --cached --quiet -- data/cache/web-notification-state.json; then
+          git add data/cache/web-notification-state.json data/cache/trade-logs.json web/public/api/trade-logs.json
+          if git diff --cached --quiet -- data/cache/web-notification-state.json data/cache/trade-logs.json web/public/api/trade-logs.json; then
             echo "No notification state changes."
             exit 0
           fi
