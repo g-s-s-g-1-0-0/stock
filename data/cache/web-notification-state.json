@@ -77,7 +77,7 @@
   },
   "marketHighSignalStatus": "경고",
   "marketHighSignals": {
-    "breadth": "경고",
+    "breadth": "주의",
     "credit": "주의",
     "overallStatus": "경고",
     "treasury": "정상"
@@ -157,6 +157,7 @@
       "8d9ecab371620e2748a15b8ed44e7b1ee73b6a3b4ca1011a3a46f80b50d412d2",
       "8fd29e3eb843b1d792f3dd869a5437d3d2b4bc01eb7f5b36b9bfaf5463a2a5f8",
       "92a872d4ea44ccd174e0f7e1f9de7be8d347246878ce69ce616bb11a5e28af66",
+      "9aece9b4b20ac8fc2c0d2017aa4273f50995827d8a85085d64e8b3efbd55380c",
       "9d59c33f3539c8c4577caee0cc9c43e25f555021b5f1ceb42ee7eeffeef4fe6f",
       "9dd4d2839a56950e6cf3ee3d703cb6e93c5041c1661bc6684d8c2ad5b98b0a1c",
       "a87e12a0d3cfb862f33bcc8f27b385ced5c36ffe6185d48157e7cbc0f4f7685c",
@@ -177,6 +178,7 @@
       "d21b44ee498be7568623f5cfa6b389259d8921ae306bbec6569c7da8f50e13cc",
       "d24bb2ed18e19f1130de97134b2eb871d9a477a533ab0c4a7a6ece5654c66104",
       "d2c42a829db4fba4c52cba5dd1c3496799628baac34c5552ddecb789322f8582",
+      "d5252c7b0b3fa1ada32a63fb4a8a7445fa5368b7a3c7d0f06689a8e1fd1c2335",
       "dcc77348dc8aa8e90fd8c9920a0de3375d1523e3a41366347b51af422c95d2b4",
       "dee40bb6543f5fe58f130404a0e3e1da1a9b4dca97f0213e5521acb457d12f99",
       "e30f989bce3b92d4f4d8849b3211f5379200c90e3c8b19ec5b9fb6469fc6f0a3",
@@ -187,7 +189,7 @@
       "f4ccb86201e837af1dce7916e7efa15052cd1aa6bc82e5a708bf4f7537be1e81",
       "ffe759f69cf48289a3580a7beb09fa58ccede03fe835e6d112bd5c1a1536f95c"
     ],
-    "updatedAt": "2026-10-15T21:00:06.037255+00:00"
+    "updatedAt": "2026-10-16T01:00:05.960331+00:00"
   },
   "regimeShift": {
     "isRecoveryMarket": false,
@@ -199,7 +201,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-10-15T21:00:00+00:00"
+    "updatedAt": "2026-10-16T01:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
