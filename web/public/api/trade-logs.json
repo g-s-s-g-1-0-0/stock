@@ -2,7 +2,7 @@
   "meta": {
     "kind": "trade-logs",
     "schedule": "auto",
-    "updatedAt": "2026-10-16T07:00:00Z",
+    "updatedAt": "2026-10-16T07:22:57.853379+00:00",
     "lastSuccessfulRun": "2026-10-16T07:00:00Z",
     "failedReason": null,
     "appendedOpenTrades": 0,
@@ -758,7 +758,10 @@
       "currentRiskGroupPercent": 15.0,
       "postRiskGroupPercent": 25.0,
       "openPositionCount": 7,
-      "maxPositionCount": 10
+      "maxPositionCount": 10,
+      "lastSignalEmailSentAt": "2026-10-15T17:00:05.6514705Z",
+      "lastSignalEmailDate": "2026.10.16",
+      "lastSignalEmailSourceRun": 38772976606
     },
     {
       "slotId": "NBIS_swing_7_20261016_1",
@@ -782,7 +785,10 @@
       "currentRiskGroupPercent": 15.0,
       "postRiskGroupPercent": 25.0,
       "openPositionCount": 7,
-      "maxPositionCount": 10
+      "maxPositionCount": 10,
+      "lastSignalEmailSentAt": "2026-10-15T21:00:06.0388225Z",
+      "lastSignalEmailDate": "2026.10.16",
+      "lastSignalEmailSourceRun": 38805808880
     },
     {
       "slotId": "039030_swing_7_20261016_1",
@@ -806,7 +812,10 @@
       "currentRiskGroupPercent": 15.0,
       "postRiskGroupPercent": 25.0,
       "openPositionCount": 7,
-      "maxPositionCount": 10
+      "maxPositionCount": 10,
+      "lastSignalEmailSentAt": "2026-10-16T01:00:05.9620319Z",
+      "lastSignalEmailDate": "2026.10.16",
+      "lastSignalEmailSourceRun": 38832219003
     }
   ]
 }
