@@ -1,7 +1,7 @@
-type SignalDates = { buyDate: string; sellDate: string; sellTimestamp?: string }
+type SignalDates = { buyDate: string; sellDate: string; sellTimestamp?: string; lastSignalEmailSentAt?: string; lastSignalEmailDate?: string }
 
 function timestamp(value: string) {
-  const parsed = Date.parse(value.replaceAll('.', '-'))
+  const parsed = Date.parse(value.replace(/^(\d{4})\.(\d{2})\.(\d{2})/, '$1-$2-$3'))
   return Number.isFinite(parsed) ? parsed : 0
 }
 
@@ -10,6 +10,8 @@ export function compareTradeSignals(a: SignalDates, b: SignalDates, direction: '
     const value = timestamp(trade.sellDate) ? trade.sellDate : trade.buyDate
     return timestamp(value.replaceAll('.', '-').slice(0, 10))
   }
-  const difference = lastDay(a) - lastDay(b) || timestamp(a.buyDate) - timestamp(b.buyDate) || aOrder - bOrder
+  const mailTime = (trade: SignalDates) => trade.lastSignalEmailDate && timestamp(trade.lastSignalEmailDate) === lastDay(trade)
+    ? timestamp(trade.lastSignalEmailSentAt || '') : 0
+  const difference = lastDay(a) - lastDay(b) || mailTime(a) - mailTime(b) || timestamp(a.buyDate) - timestamp(b.buyDate) || aOrder - bOrder
   return difference === 0 ? 0 : direction === 'asc' ? difference : -difference
 }

@@ -48,6 +48,17 @@ test('date-only signals use newest appended record first, including the reported
   assert.deepEqual(sort('asc'), ['VST', 'NBIS', '039030'])
 })
 
+test('same-day signals follow successful email time rather than array order', () => {
+  const common = { buyDate: '2026.10.16', sellDate: '-', lastSignalEmailDate: '2026.10.16' }
+  const early = { ...common, lastSignalEmailSentAt: '2026-10-16T10:00:00.123456+09:00' }
+  const late = { ...common, lastSignalEmailSentAt: '2026-10-16T11:00:00.123456+09:00' }
+  assert.ok(compareTradeSignals(late, early, 'desc', 0, 99) < 0)
+  assert.ok(compareTradeSignals(late, early, 'asc', 0, 99) > 0)
+  const staleBuyMail = { ...late, sellDate: '2026.10.17' }
+  const sold = { ...early, sellDate: '2026.10.17' }
+  assert.equal(compareTradeSignals(staleBuyMail, sold), 0)
+})
+
 test('healthy reads have no additional request and temporary failures recover', async () => {
   let calls = 0
   mock.method(globalThis, 'fetch', async () => {

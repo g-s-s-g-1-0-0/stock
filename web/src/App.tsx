@@ -120,6 +120,8 @@ type TradeLog = {
   manualEntry?: boolean
   // 서버 자동 기록 엔진의 관리 필드. 화면에서는 쓰지 않지만 저장 시 유실되지 않게 보존한다.
   sellTimestamp?: string
+  lastSignalEmailSentAt?: string
+  lastSignalEmailDate?: string
   exitReason?: string
   restoreWatchDate?: string
   restoreSignalCounts?: Record<string, number>
@@ -1073,6 +1075,8 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     manualExit: candidate.manualExit === true ? true : undefined,
     manualEntry: candidate.manualEntry === true ? true : undefined,
     sellTimestamp: typeof candidate.sellTimestamp === 'string' ? candidate.sellTimestamp : undefined,
+    lastSignalEmailSentAt: typeof candidate.lastSignalEmailSentAt === 'string' ? candidate.lastSignalEmailSentAt : undefined,
+    lastSignalEmailDate: typeof candidate.lastSignalEmailDate === 'string' ? candidate.lastSignalEmailDate : undefined,
     exitReason: typeof candidate.exitReason === 'string' ? candidate.exitReason : undefined,
     restoreWatchDate: typeof candidate.restoreWatchDate === 'string' ? candidate.restoreWatchDate : undefined,
     restoreSignalCounts: candidate.restoreSignalCounts && typeof candidate.restoreSignalCounts === 'object' ? candidate.restoreSignalCounts : undefined,
