@@ -8,6 +8,7 @@ import { UsageDashboard } from './UsageDashboard'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 import { isUsagePage, seoulDate } from './usageMetrics'
 import { compareTradeSignals } from './tradeOrder'
+import { calculateAccountPortfolio } from './accountAllocation.mjs'
 
 type Market = 'KR' | 'US'
 type Valuation = '저평가' | '보통' | '고평가' | '판단 불가'
@@ -102,6 +103,9 @@ type TradeLog = {
   slotId?: string
   investmentType?: InvestmentType
   investmentAmount?: number
+  allocationRequestedAmount?: number
+  allocationSource?: string
+  allocationSignalStatus?: TradeStatus
   ticker: string
   name?: string
   market?: Market
@@ -223,27 +227,6 @@ type ContributionSettingsDraft = {
     slotPercents: string[]
     megaTrendOnly: boolean
   }>
-}
-
-type PortfolioSummary = {
-  cash: number
-  projectedCash: number
-  totalCapital: number
-  investedAmount: number
-  openInvestmentAmount: number
-  cumulativeInvestmentAmount: number
-  positionValue: number
-  totalAsset: number
-  profitAmount: number
-  realizedProfitAmount: number
-  unrealizedProfitAmount: number
-  profitRate: number
-  amountByTradeKey: Map<string, number>
-}
-
-type TradeBuyPriority = {
-  megaRank: number
-  trendRank: number
 }
 
 type TechnicalColumn = {
@@ -1088,6 +1071,9 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     supportLevel: typeof candidate.supportLevel === 'string' ? candidate.supportLevel : undefined,
     trendSignalDate: typeof candidate.trendSignalDate === 'string' ? candidate.trendSignalDate : undefined,
     entrySessionDate: typeof candidate.entrySessionDate === 'string' ? candidate.entrySessionDate : undefined,
+    allocationRequestedAmount: typeof candidate.allocationRequestedAmount === 'number' ? candidate.allocationRequestedAmount : undefined,
+    allocationSource: typeof candidate.allocationSource === 'string' ? candidate.allocationSource : undefined,
+    allocationSignalStatus: typeof candidate.allocationSignalStatus === 'string' ? candidate.allocationSignalStatus as TradeStatus : undefined,
     allocationStatus: typeof candidate.allocationStatus === 'string' ? candidate.allocationStatus : undefined,
     allocationReason: typeof candidate.allocationReason === 'string' ? candidate.allocationReason : undefined,
     recommendedAllocationPercent: typeof candidate.recommendedAllocationPercent === 'number' && Number.isFinite(candidate.recommendedAllocationPercent) ? candidate.recommendedAllocationPercent : undefined,
@@ -2636,10 +2622,10 @@ function tradeResultInfo(trade: TradeLog) {
     return '보유중인 종목에 직접 추가한 항목입니다. 입력한 매수일·평단가 기준으로 자동 청산 로직이 동일하게 적용되며, 청산 조건을 충족하면 자동으로 청산됩니다.'
   }
   if (trade.status === '매수 보류') {
-    return '슬롯·위험군 한도 때문에 실제 매수는 보류했지만, 전략 신호는 기록해 같은 청산 기준으로 추적합니다. 현금·슬롯·평가액에는 넣지 않습니다.'
+    return `${trade.allocationReason || '계정 배분 조건 미충족'} — 실제 매수는 보류하고 전략 신호만 추적합니다. 현금·슬롯·평가액에는 넣지 않습니다.`
   }
   if (trade.status !== '보유 중') return tradeCriteriaInfo(trade.strategy)
-  return '아직 매도 신호가 없어 성공/실패를 확정하지 않은 보유 중 거래입니다. 보유 여부는 투자금 산정과 별개로 구분해서 봅니다.'
+  return '계정의 투자금이 배정된 보유 거래입니다. 청산 전까지 투자금과 슬롯에 반영합니다.'
 }
 
 function isSystemHolding(ticker: string, targetTrades: TradeLog[]) {
@@ -3789,10 +3775,10 @@ function tradeKey(trade: TradeLog) {
 function mergePersonalTradeLogs(local: TradeLog[], remote: TradeLog[], deletedKeys: Set<string>): TradeLog[] {
   const localKeys = new Set(local.map((trade) => tradeKey(trade)))
   const merged = local.map((trade) => {
-    if (trade.status !== '보유 중' || trade.manualExit) return trade
+    if (!isOpenTradeStatus(trade.status) || trade.manualExit) return trade
     const remoteTrade = remote.find((item) => tradeKey(item) === tradeKey(trade))
-    // 엔진이 원격에서 자동 청산한 거래는 청산된 상태를 유지한다.
-    return remoteTrade && remoteTrade.status !== '보유 중' ? remoteTrade : trade
+    // 배분 상태·금액과 자동 청산을 같은 서버 결과로 갱신한다.
+    return remoteTrade ?? trade
   })
   for (const remoteTrade of remote) {
     const key = tradeKey(remoteTrade)
@@ -3807,33 +3793,6 @@ function tradeMatchesInvestmentType(trade: TradeLog, targetInvestmentType: Inves
   return trade.manualExit !== true
 }
 
-function tradeDateObject(value: string) {
-  return new Date(value.replaceAll('.', '-'))
-}
-
-function sameOrBeforeDate(a: Date, b: Date) {
-  return a.getTime() <= b.getTime()
-}
-
-function nextDay(date: Date) {
-  const next = new Date(date)
-  next.setDate(next.getDate() + 1)
-  return next
-}
-
-function scheduledContributionBetween(startExclusive: Date, endInclusive: Date, settings: ContributionSettings) {
-  let total = 0
-  for (let day = nextDay(startExclusive); sameOrBeforeDate(day, endInclusive); day = nextDay(day)) {
-    if (settings.frequency === 'weekly' && day.getDay() === settings.dayOfWeek) {
-      total += settings.amount
-    }
-    if (settings.frequency === 'monthly' && day.getDate() === settings.dayOfMonth) {
-      total += settings.amount
-    }
-  }
-  return total
-}
-
 function contributionDayMessage(value: string) {
   if (value.trim() === '') return '입금일을 입력해 주세요.'
   const day = Number(value)
@@ -3845,12 +3804,6 @@ function contributionDayMessage(value: string) {
   if (day === 31) return '31일이 없는 달에는 해당 월 입금이 건너뜁니다.'
   return ''
 }
-
-function allocationWeightsForProfile(investmentType: InvestmentType, settings: ContributionSettings) {
-  const allocation = settings.allocationByInvestmentType[investmentType]
-  return allocation.slotPercents.slice(0, allocation.slotCount).map((percent) => percent / 100)
-}
-
 
 function swingRiskGroupForFields(ticker: string, name?: string, industryValue?: string) {
   const industry = displayIndustryLabel(industryValue)
@@ -3939,169 +3892,6 @@ function allocationSummaryText(settings: AllocationSettings) {
   return `제한 슬롯 ${settings.slotCount}개 · 슬롯 비중 ${percents.join('% / ')}%`
 }
 
-function buildPortfolioSummary(
-  trades: TradeLog[],
-  stocks: Stock[],
-  buyPriorityForTrade: (trade: TradeLog) => TradeBuyPriority,
-  settings: ContributionSettings,
-  investmentType: InvestmentType,
-  initialCash = settings.initialCapital,
-): PortfolioSummary {
-  let runningCash = initialCash
-  const slotWeights = allocationWeightsForProfile(investmentType, settings)
-  const megaTrendOnly = settings.allocationByInvestmentType[investmentType].megaTrendOnly
-  const stocksByTicker = new Map(stocks.map((stock) => [stock.ticker, stock]))
-  const occupiedSlots = new Map<string, number>()
-  const occupiedTickerCounts = new Map<string, number>()
-  const swingRiskGroupPercent = new Map<string, number>()
-  const swingAllocationByTradeKey = new Map<string, { group: string; percent: number }>()
-  const amountByTradeKey = new Map<string, number>()
-  let openInvestmentAmount = 0
-  let cumulativeInvestmentAmount = 0
-  let positionValue = 0
-  let profitAmount = 0
-  let realizedProfitAmount = 0
-  let unrealizedProfitAmount = 0
-  const eventsByDate = new Map<string, { buys: TradeLog[]; sells: TradeLog[] }>()
-  const addEvent = (date: string, field: 'buys' | 'sells', trade: TradeLog) => {
-    const bucket = eventsByDate.get(date) ?? { buys: [], sells: [] }
-    bucket[field].push(trade)
-    eventsByDate.set(date, bucket)
-  }
-
-  for (const trade of trades) {
-    addEvent(trade.buyDate, 'buys', trade)
-    if (trade.status !== '보유 중' && trade.sellDate !== '-') {
-      addEvent(trade.sellDate, 'sells', trade)
-    }
-  }
-
-  const orderedDates = [...eventsByDate.keys()].sort((a, b) => parseTradeDate(a) - parseTradeDate(b))
-  let contributionCursor = orderedDates[0] ? tradeDateObject(orderedDates[0]) : new Date()
-
-  for (const date of orderedDates) {
-    const tradeDate = tradeDateObject(date)
-    runningCash += scheduledContributionBetween(contributionCursor, tradeDate, settings)
-    contributionCursor = tradeDate
-    const events = eventsByDate.get(date)
-    if (!events) continue
-
-    for (const trade of events.sells) {
-      const key = tradeKey(trade)
-      const amount = amountByTradeKey.get(key) ?? 0
-      const tradeProfit = Math.round(amount * (displayedTradeReturnPct(trade, stocks) ?? 0) / 100)
-      runningCash += amount + tradeProfit
-      occupiedSlots.delete(key)
-      const tickerCount = occupiedTickerCounts.get(trade.ticker) ?? 0
-      if (tickerCount <= 1) occupiedTickerCounts.delete(trade.ticker)
-      else occupiedTickerCounts.set(trade.ticker, tickerCount - 1)
-      const swingAllocation = swingAllocationByTradeKey.get(key)
-      if (swingAllocation) {
-        const nextPercent = Math.max(0, (swingRiskGroupPercent.get(swingAllocation.group) ?? 0) - swingAllocation.percent)
-        if (nextPercent === 0) swingRiskGroupPercent.delete(swingAllocation.group)
-        else swingRiskGroupPercent.set(swingAllocation.group, nextPercent)
-        swingAllocationByTradeKey.delete(key)
-      }
-    }
-
-    const cashBeforeBuys = runningCash
-    const allocationBaseBeforeBuys = cashBeforeBuys + [...occupiedSlots.keys()].reduce(
-      (sum, key) => sum + (amountByTradeKey.get(key) ?? 0),
-      0,
-    )
-    const orderedBuys = [...events.buys].sort((a, b) => {
-      const aPriority = buyPriorityForTrade(a)
-      const bPriority = buyPriorityForTrade(b)
-      return aPriority.megaRank - bPriority.megaRank
-        || aPriority.trendRank - bPriority.trendRank
-        || a.ticker.localeCompare(b.ticker)
-    })
-
-    for (const trade of orderedBuys) {
-      const key = tradeKey(trade)
-      if (trade.status === '매수 보류') {
-        amountByTradeKey.set(key, 0)
-        continue
-      }
-      const fixedAmount = typeof trade.investmentAmount === 'number' && Number.isFinite(trade.investmentAmount)
-        ? Math.max(0, Math.round(trade.investmentAmount))
-        : null
-      const blockedByMegaTrend = megaTrendOnly && fixedAmount === null && buyPriorityForTrade(trade).megaRank !== 0
-      const duplicateSwingTicker = investmentType === 'swing' && (occupiedTickerCounts.get(trade.ticker) ?? 0) > 0
-      const riskGroup = investmentType === 'swing' ? swingRiskGroupForTrade(trade, stocksByTicker) : ''
-      const slotIndex = fixedAmount === 0 || blockedByMegaTrend || duplicateSwingTicker
-        ? -1
-        : slotWeights.findIndex((_, index) => ![...occupiedSlots.values()].includes(index))
-      const configuredPercent = slotIndex >= 0 ? slotWeights[slotIndex] * 100 : 0
-      const fixedPercent = fixedAmount !== null && allocationBaseBeforeBuys > 0 ? fixedAmount / allocationBaseBeforeBuys * 100 : null
-      const leveragedEtf = investmentType === 'swing' && isLeveragedEtfTrade(trade, stocksByTicker)
-      const recommendedPercent = investmentType === 'swing'
-        ? (fixedPercent ?? (leveragedEtf ? 5 : (configuredPercent || trade.recommendedAllocationPercent || 10)))
-        : configuredPercent
-      const blockedByRiskGroup = investmentType === 'swing'
-        && (
-          riskGroup === '분류 확인 필요'
-          || (swingRiskGroupPercent.get(riskGroup) ?? 0) + recommendedPercent > SWING_RISK_GROUP_MAX_PERCENT
-        )
-      const blockedByPositionSize = investmentType === 'swing'
-        && fixedPercent !== null
-        && fixedPercent > (leveragedEtf ? 5 : Math.max(configuredPercent, 10))
-      const amount = slotIndex >= 0 && !blockedByRiskGroup && !blockedByPositionSize
-        ? fixedAmount !== null
-          ? Math.min(runningCash, fixedAmount)
-          : Math.min(runningCash, Math.max(0, Math.floor(allocationBaseBeforeBuys * recommendedPercent / 100)))
-        : 0
-      amountByTradeKey.set(key, amount)
-      if (slotIndex >= 0 && amount > 0) {
-        occupiedSlots.set(key, slotIndex)
-        occupiedTickerCounts.set(trade.ticker, (occupiedTickerCounts.get(trade.ticker) ?? 0) + 1)
-        if (investmentType === 'swing') {
-          swingRiskGroupPercent.set(riskGroup, (swingRiskGroupPercent.get(riskGroup) ?? 0) + recommendedPercent)
-          swingAllocationByTradeKey.set(key, { group: riskGroup, percent: recommendedPercent })
-        }
-      }
-      cumulativeInvestmentAmount += amount
-      runningCash -= amount
-    }
-  }
-
-  for (const trade of trades) {
-    const amount = amountByTradeKey.get(tradeKey(trade)) ?? 0
-    const tradeProfit = Math.round(amount * (displayedTradeReturnPct(trade, stocks) ?? 0) / 100)
-    profitAmount += tradeProfit
-    if (trade.status === '보유 중') {
-      unrealizedProfitAmount += tradeProfit
-      openInvestmentAmount += amount
-      positionValue += amount + tradeProfit
-    } else if (trade.status !== '매수 보류') {
-      realizedProfitAmount += tradeProfit
-    }
-  }
-
-  runningCash += scheduledContributionBetween(contributionCursor, new Date(), settings)
-  const projectedCash = Math.round(runningCash)
-  const cash = projectedCash
-  const investedAmount = openInvestmentAmount
-  const totalCapital = openInvestmentAmount
-  const totalAsset = cash + positionValue
-  const profitRate = cumulativeInvestmentAmount > 0 ? profitAmount / cumulativeInvestmentAmount * 100 : 0
-
-  return {
-    cash,
-    projectedCash,
-    totalCapital,
-    investedAmount,
-    openInvestmentAmount,
-    cumulativeInvestmentAmount,
-    positionValue,
-    totalAsset,
-    profitAmount,
-    realizedProfitAmount,
-    unrealizedProfitAmount,
-    profitRate,
-    amountByTradeKey,
-  }
-}
 
 function displayIndustryLabel(industry?: string) {
   const value = industry?.trim()
@@ -8580,7 +8370,11 @@ function App() {
       ? systemTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
       : systemTradeLogs
     : personalTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
-  const scopedTrades = rawScopedTrades
+  const portfolioSummary = calculateAccountPortfolio(
+    rawScopedTrades, apiStocks, apiMarketTrendRows, contributionSettings, displayedInvestmentType,
+    userSession || isOperatorDataMode ? contributionSettings.initialCapital : 0,
+  )
+  const scopedTrades: TradeLog[] = portfolioSummary.trades
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const visibleProfileTrades = scopedTrades
   const tradeSignalOrder = new Map(visibleProfileTrades.map((trade, index) => [tradeKey(trade), index]))
@@ -8600,14 +8394,6 @@ function App() {
   ].join(', ')
   const longTermCriteriaLine = '가치투자형은 청산된 거래가 슬롯을 비우고, 현재 보유 중인 거래만 투자금 슬롯을 차지합니다.'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
-  const portfolioSummary = buildPortfolioSummary(
-    visibleProfileTrades,
-    apiStocks,
-    tradeBuyPriority,
-    contributionSettings,
-    displayedInvestmentType,
-    userSession || isOperatorDataMode ? contributionSettings.initialCapital : 0,
-  )
   const contributionDayValidationMessage = contributionDraft?.frequency === 'monthly'
     ? contributionDayMessage(contributionDraft.dayOfMonth)
     : ''
@@ -10312,17 +10098,6 @@ function App() {
     }
   }
 
-  function trendReportRankForTrade(trade: TradeLog) {
-    return trendReportMatchForTrade(trade)?.rank ?? null
-  }
-
-  function tradeBuyPriority(trade: TradeLog): TradeBuyPriority {
-    const rank = trendReportRankForTrade(trade)
-    return {
-      megaRank: rank !== null && rank <= MEGA_TREND_INVESTMENT_RANK_LIMIT ? 0 : 1,
-      trendRank: rank ?? 99,
-    }
-  }
   const exampleStock = rawTableStocks[0]
   const fairPricePendingLabel = nextMidnightUpdateLabel()
   const currentPricePendingLabel = nextTwoHourUpdateLabel()
