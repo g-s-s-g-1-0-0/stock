@@ -1295,6 +1295,12 @@ def sync_account_allocation_guidance(stocks, technical, trades) -> bool:
         ticker = str(stock.get('ticker') or '').upper()
         if ticker in latest:
             changed = apply_allocation_guidance(stock, technical.get(ticker, {}), latest[ticker]) or changed
+            if latest[ticker].get('status') == DEFERRED_BUY_STATUS:
+                for target in (stock, technical.get(ticker, {})):
+                    reason = str(target.get('opinionReason') or '')
+                    if '보유 유지' in reason:
+                        target['opinionReason'] = reason.replace('보유 유지', '매수 보류 유지')
+                        changed = True
     return changed
 
 

@@ -56,3 +56,17 @@ def test_valid_reentry_is_recorded_as_deferred_when_same_ticker_slot_is_blocked(
     assert result['trades'][-1]['status'] == '매수 보류'
     assert stock['opinion'] == '매수'
     assert row.get('restoreWatchDate') is None
+
+
+def test_deferred_reason_never_claims_actual_holdings():
+    from calculator.opinion_reasons import build_held_watch_opinion_reason
+    row = holding()
+    row['status'] = '매수 보류'
+    reason = build_held_watch_opinion_reason('3', trade=row, additional_buy_blocked=True)
+    assert '매수 보류 유지' in reason
+    assert '보유 유지' not in reason
+    stock = {'ticker':'QQQ','opinionReason':'매수 조건 해제 · 보유 유지'}
+    row['allocationSource'] = 'account'
+    technical = {'QQQ': dict(stock)}
+    assert logs.sync_account_allocation_guidance([stock],technical,[row])
+    assert stock['opinionReason'] == technical['QQQ']['opinionReason'] == '매수 조건 해제 · 매수 보류 유지'
