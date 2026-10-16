@@ -5,7 +5,7 @@ function timestamp(value: string) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-export function compareTradeSignals(a: SignalDates, b: SignalDates, direction: 'asc' | 'desc' = 'asc') {
+export function compareTradeSignals(a: SignalDates, b: SignalDates, direction: 'asc' | 'desc' = 'desc') {
   const lastDay = (trade: SignalDates) => {
     const value = timestamp(trade.sellDate) ? trade.sellDate : trade.buyDate
     return timestamp(value.replaceAll('.', '-').slice(0, 10))

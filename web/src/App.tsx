@@ -7239,7 +7239,7 @@ function App() {
   const [viewMode, setViewMode] = useState<'personal' | 'operator'>(() => readStoredViewMode())
   const [showViewModeHint, setShowViewModeHint] = useState(() => localStorage.getItem(VIEW_MODE_HINT_STORAGE_KEY) !== 'true')
   const [selectedStrategy, setSelectedStrategy] = useState('전체')
-  const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('asc')
+  const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc')
   const [activeTooltip, setActiveTooltip] = useState<TooltipState | null>(null)
 
   const openFloatingTooltip = useCallback((tooltip: TooltipState) => {

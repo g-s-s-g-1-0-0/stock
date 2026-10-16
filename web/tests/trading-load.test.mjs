@@ -36,7 +36,7 @@ test('last signal day ignores sell time and uses earliest first signal for ties'
     { buyDate: '2026.09.01', sellDate: '2026.10.02T22:00:00Z' },
     { buyDate: '2026.09.30', sellDate: '보유 중' },
   ]
-  assert.deepEqual(trades.slice().sort(compareTradeSignals).map((t) => t.buyDate), ['2026.09.30', '2026.09.01', '2026.09.02'])
+  assert.deepEqual(trades.slice().sort(compareTradeSignals).map((t) => t.buyDate), ['2026.09.01', '2026.09.02', '2026.09.30'])
   assert.equal(compareTradeSignals(trades[0], { ...trades[0] }), 0)
   assert.ok(compareTradeSignals(trades[1], trades[0], 'desc') < 0)
 })
