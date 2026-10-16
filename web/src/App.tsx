@@ -7,6 +7,7 @@ import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, s
 import { UsageDashboard } from './UsageDashboard'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 import { isUsagePage, seoulDate } from './usageMetrics'
+import { compareTradeSignals } from './tradeOrder'
 
 type Market = 'KR' | 'US'
 type Valuation = '저평가' | '보통' | '고평가' | '판단 불가'
@@ -7230,7 +7231,7 @@ function App() {
   const [viewMode, setViewMode] = useState<'personal' | 'operator'>(() => readStoredViewMode())
   const [showViewModeHint, setShowViewModeHint] = useState(() => localStorage.getItem(VIEW_MODE_HINT_STORAGE_KEY) !== 'true')
   const [selectedStrategy, setSelectedStrategy] = useState('전체')
-  const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc')
+  const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('asc')
   const [activeTooltip, setActiveTooltip] = useState<TooltipState | null>(null)
 
   const openFloatingTooltip = useCallback((tooltip: TooltipState) => {
@@ -8570,11 +8571,7 @@ function App() {
   const filteredTrades = visibleProfileTrades
     .filter((trade) => selectedStrategy === '전체' || strategyCode(trade.strategy) === selectedStrategy)
     .slice()
-    .sort((a, b) => {
-      const aTime = new Date(a.buyDate.replaceAll('.', '-')).getTime()
-      const bTime = new Date(b.buyDate.replaceAll('.', '-')).getTime()
-      return sortDirection === 'desc' ? bTime - aTime : aTime - bTime
-    })
+    .sort((a, b) => compareTradeSignals(a, b, sortDirection))
   const displayedTradeRows = filteredTrades.map((trade, index) => ({
     trade,
     rowNumber: index + 1,
@@ -10771,7 +10768,7 @@ function App() {
                   type="button"
                   onClick={() => setSortDirection((current) => current === 'desc' ? 'asc' : 'desc')}
                 >
-                  정렬
+                  마지막 신호일
                   <span aria-hidden="true">{sortDirection === 'desc' ? '↓' : '↑'}</span>
                 </button>
               </div>
