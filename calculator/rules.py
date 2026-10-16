@@ -201,6 +201,7 @@ def evaluate_buy_condition(
     trend_signal: dict[str, Any] | None = None,
     trend_market_allowed: bool = False,
     holding_signal_close: float | None = None,
+    inverse: bool = False,
 ) -> dict[str, Any]:
     """Evaluate Strategy 1/2/3/4 entry and hold conditions.
 
@@ -260,6 +261,25 @@ def evaluate_buy_condition(
         and ind.macd_hist > 0
     )
     s4_cond3 = regime in {"하락장", "정상장"}
+    # Inverse products reuse strategies 1–7. Flip only the market-direction
+    # comparisons. Own-chart MA, RSI, %B, and MACD stay on the product candles.
+    # Recovery widens the long ceiling and is not a short entry zone, so shorts
+    # use the normal +9% floor and never the recovery +14% cap.
+    short_floor = float(s["NASDAQ_BUY_BLOCK_MAX"])
+    nasdaq_extended = ixic_dist is not None and ixic_dist >= short_floor
+    if inverse:
+        s1_cond6 = nasdaq_extended
+        s2_cond2 = not is_recovery_market
+        s2_cond3 = nasdaq_extended
+        s3_cond1 = (
+            not is_recovery_market
+            and ixic_dist is not None
+            and ixic_dist >= float(s["S3_ENTRY_QQQ_MAX"])
+        )
+        s4_cond3 = nasdaq_extended and not is_recovery_market
+        entry_1 = s1_cond1 and s1_cond2 and s1_cond3 and s1_cond4 and s1_cond5 and s1_cond6
+        entry_2 = s2_cond1 and s2_cond2 and s2_cond3 and s2_cond4 and not entry_1
+        entry_3 = s3_cond1 and s3_cond2 and s3_cond3 and s3_cond4 and not entry_1 and not entry_2
     s4_cond4 = stock_ma200_dist is not None and stock_ma200_dist >= float(s["S4_STOCK_MA200_DIST_MIN"])
     entry_4 = (
         s4_cond1
@@ -276,7 +296,10 @@ def evaluate_buy_condition(
         "1" if entry_1 else "2" if entry_2 else "3" if entry_3 else "4" if entry_4 else None
     )
     trend = trend_signal or {}
-    trend_market = trend_market_allowed and nasdaq_below_buy_block and ixic_dist is not None and ixic_dist >= -3
+    if inverse:
+        trend_market = nasdaq_extended and not is_recovery_market
+    else:
+        trend_market = trend_market_allowed and nasdaq_below_buy_block and ixic_dist is not None and ixic_dist >= -3
     signal_close = _num(trend.get("signalClose"))
     candidate_price = _num(trend.get("candidatePrice")) or ind.current_price
     gap_ok = signal_close is not None and candidate_price <= signal_close * 1.03
@@ -326,6 +349,11 @@ def evaluate_buy_condition(
             )
             triggered = trend_market and price_window_ok
             entry_strategy = None
+        elif holding_code == "7":
+            # The moving-average touch is the entry event. Once in, keep the buy
+            # while that same pair of conditions still holds. A passing check must
+            # not fall through to 관망.
+            triggered = all(s7_conditions) or entry_strategy is not None
 
     return {
         "triggered": triggered,

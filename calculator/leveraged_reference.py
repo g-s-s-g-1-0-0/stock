@@ -98,6 +98,18 @@ def _single_name(text: str, product: str) -> str | None:
     return None
 
 
+def is_inverse_product(stock: dict[str, Any]) -> bool:
+    """True only for a known short product (leverage multiple below zero)."""
+
+    reference = resolve_leveraged_reference(stock)
+    if not reference:
+        return False
+    try:
+        return float(reference["multiple"]) < 0
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 def resolve_leveraged_reference(stock: dict[str, Any]) -> dict[str, Any] | None:
     """Return the 1x reference for a 2x/3x product, or None for everything else."""
 

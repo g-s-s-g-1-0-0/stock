@@ -28,7 +28,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from .industry_classification import CATEGORY_VALUES, classify_stock, is_curated_ticker, looks_like_etf, summarize_industry
-from .leveraged_reference import resolve_leveraged_reference
+from .leveraged_reference import is_inverse_product, resolve_leveraged_reference
 from .industry_review import reviewed_industry_is_fresh
 from .market_regime import build_qqq_market_state, qqq_recent_ma200_min_distance
 from .market_signals import build_market_signals, market_signal_rows
@@ -906,17 +906,23 @@ def daily_price_date_label(raw_date: Any, market: str) -> str:
     return text
 
 
+# 매수 보류는 슬롯·권장 행동만 다르고, 매수 유지와 관망 전환은 보유 중과 같다.
+TRACKED_OPINION_STATUSES = {"보유 중", "매수 보류"}
+
+
+def _tracked_opinion_row(row: dict[str, Any]) -> bool:
+    return str(row.get("status") or "").strip() in TRACKED_OPINION_STATUSES
+
+
 def open_holding_strategies() -> dict[str, str]:
-    """현재 '보유 중'인 종목의 PRIMARY 전략 코드 맵 (ticker → 1|2)."""
+    """보유 중·매수 보류 종목의 PRIMARY 전략 코드 맵 (ticker → 1|2|…)."""
 
     rows = read_cache("trade-logs").get("rows", [])
     holdings: dict[str, str] = {}
     if not isinstance(rows, list):
         return holdings
     for row in rows:
-        if not isinstance(row, dict):
-            continue
-        if str(row.get("status") or "").strip() != "보유 중":
+        if not isinstance(row, dict) or not _tracked_opinion_row(row):
             continue
         ticker = str(row.get("ticker") or "").strip().upper()
         code = parse_holding_strategy_code(row.get("strategy"))
@@ -926,16 +932,14 @@ def open_holding_strategies() -> dict[str, str]:
 
 
 def open_holding_trades() -> dict[str, dict[str, Any]]:
-    """현재 '보유 중'인 종목의 대표 trade-log row (ticker → row)."""
+    """보유 중·매수 보류 종목의 대표 trade-log row (ticker → row)."""
 
     rows = read_cache("trade-logs").get("rows", [])
     holdings: dict[str, dict[str, Any]] = {}
     if not isinstance(rows, list):
         return holdings
     for row in rows:
-        if not isinstance(row, dict):
-            continue
-        if str(row.get("status") or "").strip() != "보유 중":
+        if not isinstance(row, dict) or not _tracked_opinion_row(row):
             continue
         ticker = str(row.get("ticker") or "").strip().upper()
         if ticker and ticker not in holdings:
@@ -951,7 +955,7 @@ def open_holding_signal_closes() -> dict[str, float]:
     if not isinstance(rows, list):
         return signal_closes
     for row in rows:
-        if not isinstance(row, dict) or str(row.get("status") or "").strip() != "보유 중":
+        if not isinstance(row, dict) or not _tracked_opinion_row(row):
             continue
         ticker = str(row.get("ticker") or "").strip().upper()
         code = parse_holding_strategy_code(row.get("strategy"))
@@ -964,6 +968,31 @@ def open_holding_signal_closes() -> dict[str, float]:
         if signal_close > 0:
             signal_closes[ticker] = signal_close
     return signal_closes
+
+
+def maintenance_strategy_code(
+    ticker: str,
+    holdings: dict[str, str],
+    existing_row: dict[str, Any] | None,
+) -> str | None:
+    """전략 유지 코드.
+
+    보유 중·매수 보류 기록이 우선이다. 기록이 없어도 직전 갱신이 매수였으면
+    그 전략의 유지 조건을 그대로 쓴다. 신규 진입 조건을 매 시간 다시 보지 않는다.
+    """
+
+    code = holdings.get(ticker)
+    if code:
+        return code
+    if not isinstance(existing_row, dict):
+        return None
+    if str(existing_row.get("opinion") or "").strip() != "매수":
+        return None
+    for raw in str(existing_row.get("entrySignalCodes") or "").split(","):
+        parsed = parse_holding_strategy_code(raw)
+        if parsed:
+            return parsed
+    return parse_holding_strategy_code(existing_row.get("entryStrategy"))
 
 
 def latest_technical_row(
@@ -1026,6 +1055,7 @@ def latest_technical_row(
     warn_triggered = bool(qqq_market_state.get("warnTriggered")) if qqq_market_state else False
     trend_signal = {**(row.get("trendSignal") or {}), "candidatePrice": display_price}
     trend_market_allowed = bool(qqq_market_state) and not qqq_market_state.get("trendEntryBlocked", True) and not qqq_market_state.get("peakTriggered", False)
+    inverse = is_inverse_product(stock)
     buy = evaluate_buy_condition(
         ind,
         vix=vix,
@@ -1040,6 +1070,7 @@ def latest_technical_row(
         trend_signal=trend_signal,
         trend_market_allowed=trend_market_allowed,
         holding_signal_close=holding_signal_close,
+        inverse=inverse,
     )
     event_watch_active = market_event != "당분간 없음"
     if event_watch_active:
@@ -1060,6 +1091,7 @@ def latest_technical_row(
                 ind=ind,
                 holding_signal_close=holding_signal_close,
                 trade=holding_trade,
+                inverse=inverse,
             )
     else:
         opinion = "매수" if buy["entryTriggered"] else "관망"
@@ -1079,12 +1111,26 @@ def latest_technical_row(
     else:
         strategy = "-"
         entry_signal_codes = []
-    downtrend_label = f"QQQ 하락장(<{float(STRATEGY_RULES['NASDAQ_DIST_UPPER']):.0f}%)"
-    buy_block_label = (
-        f"QQQ ≤ 매수 차단선(≤{float(nasdaq_buy_block_max):.0f}%)"
-        if nasdaq_buy_block_max is not None
-        else "QQQ ≤ 매수 차단선"
-    )
+    short_floor = float(STRATEGY_RULES["NASDAQ_BUY_BLOCK_MAX"])
+    s3_cap = float(STRATEGY_RULES["S3_ENTRY_QQQ_MAX"])
+    if inverse:
+        downtrend_label = f"QQQ ≥ 매수 차단선(≥{short_floor:.0f}%)"
+        buy_block_label = downtrend_label
+        recovery_label = "회복장 아님"
+        s3_market_label = f"회복장 아님 및 QQQ ≥ +{s3_cap:.0f}%"
+        s4_market_label = f"QQQ ≥ 매수 차단선(≥{short_floor:.0f}%)"
+        trend_label = f"QQQ ≥ 매수 차단선(≥{short_floor:.0f}%, 회복장 제외)"
+    else:
+        downtrend_label = f"QQQ 하락장(<{float(STRATEGY_RULES['NASDAQ_DIST_UPPER']):.0f}%)"
+        buy_block_label = (
+            f"QQQ ≤ 매수 차단선(≤{float(nasdaq_buy_block_max):.0f}%)"
+            if nasdaq_buy_block_max is not None
+            else "QQQ ≤ 매수 차단선"
+        )
+        recovery_label = "회복장"
+        s3_market_label = f"정상장 및 QQQ ≤ +{s3_cap:.0f}%"
+        s4_market_label = "QQQ 하락/정상장"
+        trend_label = "QQQ 매수 허용 구간"
     strategy_labels = {
         "1": [
             "현재가 < MA200",
@@ -1094,17 +1140,17 @@ def latest_technical_row(
             "저가 추세선 터치",
             downtrend_label,
         ],
-        "2": ["시즌 열림", "회복장", buy_block_label, "MA20/60/144/200 터치"],
+        "2": ["시즌 열림", recovery_label, buy_block_label, "MA20/60/144/200 터치"],
         "3": [
-            f"정상장 및 QQQ ≤ +{float(STRATEGY_RULES['S3_ENTRY_QQQ_MAX']):.0f}%",
+            s3_market_label,
             "현재가 > MA200",
             f"저가 %B ≤ {float(STRATEGY_RULES['S3_PCT_B_LOW_MAX']):.0f}",
             f"RSI ≤ {float(STRATEGY_RULES['S3_RSI_MAX']):.0f}",
         ],
-        "4": ["현재가 < MA200", "MACD 히스토그램 양수 전환", "QQQ 하락/정상장", "MA200 대비 -25% 이상"],
-        "5": ["QQQ 매수 허용 구간", "돌파 후 10거래일 내 눌림 지지", "신호 가격 대비 +3% 이내"],
-        "6": ["QQQ 매수 허용 구간", "하락 추세 이탈 시도 첫 신호", "신호 가격 대비 +3% 이내", "지지선 손절까지 8% 이내"],
-        "7": ["QQQ 매수 허용 구간", "20/50/120/200일선 중 하나 터치", "이평선 위 양봉 회복", "진입가 -8% 손절"],
+        "4": ["현재가 < MA200", "MACD 히스토그램 양수 전환", s4_market_label, "MA200 대비 -25% 이상"],
+        "5": [trend_label, "돌파 후 10거래일 내 눌림 지지", "신호 가격 대비 +3% 이내"],
+        "6": [trend_label, "하락 추세 이탈 시도 첫 신호", "신호 가격 대비 +3% 이내", "지지선 손절까지 8% 이내"],
+        "7": [trend_label, "20/50/120/200일선 중 하나 터치", "이평선 위 양봉 회복", "진입가 -8% 손절"],
     }
     condition_summaries = []
     for group, labels in strategy_labels.items():
@@ -1281,15 +1327,22 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
             earnings_date = refresh_earnings_date_label(
                 metric.get("earningsDate", "-") if isinstance(metric, dict) else "-"
             )
+            ticker_key = str(stock["ticker"]).strip().upper()
+            existing_row = existing_rows.get(stock["ticker"]) or existing_rows.get(ticker_key) or {}
+            holding_code = maintenance_strategy_code(
+                ticker_key,
+                holdings,
+                existing_row if isinstance(existing_row, dict) else None,
+            )
             row = latest_technical_row(
                 stock,
                 earnings_date=earnings_date,
                 qqq_market_state=qqq_market_state,
                 vix=vix_today,
                 market_event=market_event,
-                holding_strategy_type=holdings.get(str(stock["ticker"]).strip().upper()),
-                holding_signal_close=holding_signal_closes.get(str(stock["ticker"]).strip().upper()),
-                holding_trade=holding_trades.get(str(stock["ticker"]).strip().upper()),
+                holding_strategy_type=holding_code,
+                holding_signal_close=holding_signal_closes.get(ticker_key),
+                holding_trade=holding_trades.get(ticker_key),
                 season_open=season_open,
             )
             if row:
@@ -1304,8 +1357,6 @@ def build_technical_cache(universe: list[dict[str, str]] | None = None) -> dict[
                 if chart:
                     row["추세 차트 데이터"] = json.dumps(chart, ensure_ascii=False, separators=(",", ":"))
                 _attach_reference_trend_chart(row, stock, reference_charts, errors)
-                existing_row = existing_rows.get(stock["ticker"], {})
-                ticker_key = str(stock["ticker"]).strip().upper()
                 # Only keep 매도/exitReason while that ticker still has an open holding.
                 # After trade-log reset (or full exit), stale exitReason must not pin opinion to 매도.
                 if isinstance(existing_row, dict) and ticker_key in holdings:
