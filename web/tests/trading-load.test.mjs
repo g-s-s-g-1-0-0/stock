@@ -30,13 +30,13 @@ test('overlapping app loads share one request and the next refresh reads again',
   assert.equal(calls, 2)
 })
 
-test('last signal day ignores sell time and uses latest first signal for descending ties', () => {
+test('buy date alone orders trades even when older positions exit later', () => {
   const trades = [
     { buyDate: '2026.09.02', sellDate: '2026.10.02T01:00:00Z' },
     { buyDate: '2026.09.01', sellDate: '2026.10.02T22:00:00Z' },
     { buyDate: '2026.09.30', sellDate: '보유 중' },
   ]
-  assert.deepEqual(trades.slice().sort(compareTradeSignals).map((t) => t.buyDate), ['2026.09.02', '2026.09.01', '2026.09.30'])
+  assert.deepEqual(trades.slice().sort(compareTradeSignals).map((t) => t.buyDate), ['2026.09.30', '2026.09.02', '2026.09.01'])
   assert.equal(compareTradeSignals(trades[0], { ...trades[0] }), 0)
   assert.ok(compareTradeSignals(trades[1], trades[0], 'desc') > 0)
 })
@@ -48,15 +48,19 @@ test('date-only signals use newest appended record first, including the reported
   assert.deepEqual(sort('asc'), ['VST', 'NBIS', '039030'])
 })
 
-test('same-day signals follow successful email time rather than array order', () => {
-  const common = { buyDate: '2026.10.16', sellDate: '-', lastSignalEmailDate: '2026.10.16' }
-  const early = { ...common, lastSignalEmailSentAt: '2026-10-16T10:00:00.123456+09:00' }
-  const late = { ...common, lastSignalEmailSentAt: '2026-10-16T11:00:00.123456+09:00' }
-  assert.ok(compareTradeSignals(late, early, 'desc', 0, 99) < 0)
-  assert.ok(compareTradeSignals(late, early, 'asc', 0, 99) > 0)
-  const staleBuyMail = { ...late, sellDate: '2026.10.17' }
-  const sold = { ...early, sellDate: '2026.10.17' }
-  assert.equal(compareTradeSignals(staleBuyMail, sold), 0)
+test('NBIS stays below the later EO Technics buy after a stop loss or any email', () => {
+  const nebius = { ticker: 'NBIS', buyDate: '2026.10.16', sellDate: '보유 중' }
+  const eo = { ticker: '039030', buyDate: '2026.10.16', sellDate: '보유 중' }
+  const sort = (nbis, direction) => [nbis, eo].sort((a, b) => compareTradeSignals(
+    a, b, direction, a.ticker === 'NBIS' ? 1 : 2, b.ticker === 'NBIS' ? 1 : 2,
+  )).map((t) => t.ticker)
+  const exited = { ...nebius, sellDate: '2026.10.17', sellTimestamp: '2026-10-17T10:00:00Z',
+    lastSignalEmailSentAt: '2026-10-17T10:01:00Z', lastSignalEmailDate: '2026.10.17' }
+  assert.deepEqual(sort(nebius, 'desc'), ['039030', 'NBIS'])
+  assert.deepEqual(sort(exited, 'desc'), sort(nebius, 'desc'))
+  assert.deepEqual(sort(exited, 'asc'), ['NBIS', '039030'])
+  // Even a same-day sale email cannot alter the original buy order.
+  assert.deepEqual(sort({ ...exited, sellDate: '2026.10.16', lastSignalEmailDate: '2026.10.16' }, 'desc'), sort(nebius, 'desc'))
 })
 
 test('healthy reads have no additional request and temporary failures recover', async () => {
