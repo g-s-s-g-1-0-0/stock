@@ -10779,7 +10779,7 @@ function App() {
                   type="button"
                   onClick={() => setSortDirection((current) => current === 'desc' ? 'asc' : 'desc')}
                 >
-                  마지막 신호일
+                  정렬
                   <span aria-hidden="true">{sortDirection === 'desc' ? '↓' : '↑'}</span>
                 </button>
               </div>
