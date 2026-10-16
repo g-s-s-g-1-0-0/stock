@@ -233,8 +233,9 @@ def build_held_watch_opinion_reason(
     criteria = exit_criteria_summary(strategy_code, trade)
     criteria_suffix = f" ({criteria})" if criteria else ""
 
+    tracking_label = "매수 보류 유지" if (trade or {}).get("status") == "매수 보류" else "보유 유지"
     if additional_buy_blocked:
-        return f"보유 유지 — {label} · 추가매수 대기{criteria_suffix}"
+        return f"{tracking_label} — {label} · 추가매수 대기{criteria_suffix}"
 
     detail = _holding_release_detail(
         strategy_code or "",
@@ -244,7 +245,7 @@ def build_held_watch_opinion_reason(
         holding_signal_close=holding_signal_close,
         inverse=inverse,
     )
-    return f"매수 조건 해제 — {label}: {detail} · 보유 유지{criteria_suffix}"
+    return f"매수 조건 해제 — {label}: {detail} · {tracking_label}{criteria_suffix}"
 
 
 def build_plain_watch_opinion_reason(

@@ -71,7 +71,13 @@ const SWING_RISK_GROUP_MAX_PERCENT = 20
 const price = (value) => Number(String(value || '').replace(/[^0-9.-]/g, '')) || 0
 const parseTradeDate = (value) => Date.parse(String(value || '').replaceAll('.', '-').slice(0, 10)) || 0
 const tradeDateObject = (value) => new Date(parseTradeDate(value))
-const tradeKey = (trade) => trade.slotId || `${trade.investmentType ?? 'shared'}-${trade.ticker}-${trade.buyDate}-${String(trade.strategy || '').split('.')[0]}-${trade.buyPrice}`
+export function accountTradeKey(trade) {
+  const strategy = String(trade.strategy || '')
+  const code = strategy.trim().match(/^([1-7])\b/)?.[1]
+    || (/^B\b/i.test(strategy.trim()) ? '1' : strategy.slice(0, 1))
+  return trade.slotId || `${trade.investmentType ?? 'shared'}-${trade.ticker}-${trade.buyDate}-${code}-${trade.buyPrice}`
+}
+const tradeKey = accountTradeKey
 const normalizeTrendText = (value) => String(value || '').toLowerCase().replace(/\s+/g, '').replace(/[·,|/()]/g, '')
 const normalizedKeywords = (values) => values.map(normalizeTrendText).filter((v) => v.length > 1 && v !== 'ai')
 function tradePriority(trade, stocks, trends) {

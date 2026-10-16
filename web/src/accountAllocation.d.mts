@@ -7,3 +7,5 @@ type Summary<T> = {
 }
 export function calculateAccountPortfolio<T>(trades: T[], stocks: unknown[], trends: unknown[], settings: unknown, investmentType: string, initialCashOverride?: number, asOf?: string): Summary<T>
 export function normalizeAccountSettings(settings?: unknown): unknown
+
+export function accountTradeKey(trade: unknown): string

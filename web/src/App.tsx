@@ -8,7 +8,7 @@ import { UsageDashboard } from './UsageDashboard'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 import { isUsagePage, seoulDate } from './usageMetrics'
 import { compareTradeSignals } from './tradeOrder'
-import { calculateAccountPortfolio } from './accountAllocation.mjs'
+import { calculateAccountPortfolio, accountTradeKey } from './accountAllocation.mjs'
 
 type Market = 'KR' | 'US'
 type Valuation = '저평가' | '보통' | '고평가' | '판단 불가'
@@ -3766,7 +3766,7 @@ function valuationFromPriceRange(currentPrice: string, fairPrice: string): Valua
 }
 
 function tradeKey(trade: TradeLog) {
-  return trade.slotId || `${trade.investmentType ?? 'shared'}-${trade.ticker}-${trade.buyDate}-${strategyCode(trade.strategy)}-${trade.buyPrice}`
+  return accountTradeKey(trade)
 }
 
 // 서버 자동 기록 엔진이 원격에 추가/청산한 거래를 화면의 오래된 상태로 덮어쓰지 않도록 병합한다.

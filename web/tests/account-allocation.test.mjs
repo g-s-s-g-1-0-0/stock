@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { calculateAccountPortfolio as calculate } from '../src/accountAllocation.mjs'
+import { calculateAccountPortfolio as calculate, accountTradeKey } from '../src/accountAllocation.mjs'
 
 const trade = (ticker, overrides = {}) => ({ slotId: ticker, ticker, name: ticker, investmentType: 'swing',
   strategy: '3. 정상장 볼린저 워시아웃', buyDate: '2026.10.15', buyPrice: '$100', currentPrice: '$100',
@@ -72,4 +72,13 @@ test('closing a deferred signal never invents an investment or releases another 
   assert.equal(result.trades[2].status,'매수 보류')
   assert.match(result.trades[2].allocationReason,/동일 종목/)
   assert.equal(result.realizedProfitAmount,0)
+})
+
+test('legacy and strategy-free records share the exact display amount key', () => {
+  for (const strategy of ['B. 기존 전략', '직접 기입: 전략과 무관', '3. 정상장 볼린저 워시아웃']) {
+    const row = trade('A',{slotId:undefined,strategy})
+    const summary = calc([row])
+    assert.equal(summary.amountByTradeKey.get(accountTradeKey(row)),1000000)
+    assert.equal(accountTradeKey(row).split('-').at(-2),strategy.startsWith('B') ? '1' : strategy.slice(0,1))
+  }
 })
