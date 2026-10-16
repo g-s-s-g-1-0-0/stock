@@ -8579,10 +8579,11 @@ function App() {
   const scopedTrades = rawScopedTrades
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const visibleProfileTrades = scopedTrades
+  const tradeSignalOrder = new Map(visibleProfileTrades.map((trade, index) => [tradeKey(trade), index]))
   const filteredTrades = visibleProfileTrades
     .filter((trade) => selectedStrategy === '전체' || strategyCode(trade.strategy) === selectedStrategy)
     .slice()
-    .sort((a, b) => compareTradeSignals(a, b, sortDirection))
+    .sort((a, b) => compareTradeSignals(a, b, sortDirection, tradeSignalOrder.get(tradeKey(a)), tradeSignalOrder.get(tradeKey(b))))
   const displayedTradeRows = filteredTrades.map((trade, index) => ({
     trade,
     rowNumber: index + 1,

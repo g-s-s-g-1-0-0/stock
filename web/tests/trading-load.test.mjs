@@ -30,15 +30,22 @@ test('overlapping app loads share one request and the next refresh reads again',
   assert.equal(calls, 2)
 })
 
-test('last signal day ignores sell time and uses earliest first signal for ties', () => {
+test('last signal day ignores sell time and uses latest first signal for descending ties', () => {
   const trades = [
     { buyDate: '2026.09.02', sellDate: '2026.10.02T01:00:00Z' },
     { buyDate: '2026.09.01', sellDate: '2026.10.02T22:00:00Z' },
     { buyDate: '2026.09.30', sellDate: '보유 중' },
   ]
-  assert.deepEqual(trades.slice().sort(compareTradeSignals).map((t) => t.buyDate), ['2026.09.01', '2026.09.02', '2026.09.30'])
+  assert.deepEqual(trades.slice().sort(compareTradeSignals).map((t) => t.buyDate), ['2026.09.02', '2026.09.01', '2026.09.30'])
   assert.equal(compareTradeSignals(trades[0], { ...trades[0] }), 0)
-  assert.ok(compareTradeSignals(trades[1], trades[0], 'desc') < 0)
+  assert.ok(compareTradeSignals(trades[1], trades[0], 'desc') > 0)
+})
+
+test('date-only signals use newest appended record first, including the reported three stocks', () => {
+  const trades = ['VST', 'NBIS', '039030'].map((ticker, index) => ({ ticker, index, buyDate: '2026.10.16', sellDate: '-' }))
+  const sort = (direction) => trades.slice().sort((a, b) => compareTradeSignals(a, b, direction, a.index, b.index)).map((trade) => trade.ticker)
+  assert.deepEqual(sort('desc'), ['039030', 'NBIS', 'VST'])
+  assert.deepEqual(sort('asc'), ['VST', 'NBIS', '039030'])
 })
 
 test('healthy reads have no additional request and temporary failures recover', async () => {
