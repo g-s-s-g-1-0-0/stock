@@ -14,7 +14,13 @@ async function readSource(url, options) {
   for (let attempt = 0; ; attempt += 1) {
     try {
       const response = await fetch(url, { ...options, signal: AbortSignal.timeout(8000) })
-      if (response.ok || ![408, 429, 500, 502, 503, 504].includes(response.status) || attempt >= 1) return response
+      if (response.ok) {
+        // Include body-transfer failures in the source retry, not just headers.
+        const body = await response.arrayBuffer()
+        return new Response(body, { status: response.status, headers: response.headers })
+      }
+      if (![408, 429, 500, 502, 503, 504].includes(response.status) || attempt >= 1) return response
+      void response.body?.cancel().catch(() => undefined)
     } catch (error) {
       if (attempt >= 1) throw error
     }
