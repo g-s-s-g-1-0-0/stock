@@ -117,3 +117,20 @@ test('a temporary head failure recovers without returning a loading error', asyn
   assert.equal(res.statusCode, 200)
   assert.equal(attempts, 2)
 })
+
+test('head lookup retries a body connection failure after successful headers', async () => {
+  const sha = '1'.repeat(40)
+  let heads=0
+  mock.method(globalThis,'fetch',async(url)=>{
+    if(url.includes('/commits/')) {
+      if (++heads===1) return new Response(new ReadableStream({start(c){c.error(new TypeError('terminated'))}}))
+      return Response.json({sha})
+    }
+    return Response.json({rows:[]})
+  })
+  const res=response()
+  await handler({method:'GET'},res)
+  assert.equal(res.statusCode,200)
+  assert.equal(res.body.sourceRevision,sha)
+  assert.equal(heads,2)
+})

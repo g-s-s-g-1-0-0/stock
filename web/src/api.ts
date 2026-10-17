@@ -104,8 +104,8 @@ const dataPaths = {
 
 async function loadAppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog = unknown>() {
   if (import.meta.env.PROD) {
-    const response = await readRequest('/api/app-data')
-    if (!response.ok) throw new Error('최신 데이터를 불러오지 못했습니다. 다시 시도해 주세요.')
+    const response = await readRequest('/api/app-data', undefined, 3, 30000)
+    if (!response.ok) throw Object.assign(new Error('최신 데이터 연결을 복구하고 있습니다. 잠시 기다려 주세요.'), { retryable: response.status >= 500 || [408, 429].includes(response.status) })
     const data = await response.json() as AppData<TStock, TMetric, TGroup, TTrendRow, TTradeLog>
     if (!data.stocks || !data.valuation || !data.technical || !data.marketEvents || !data.marketTrends || !data.tradeLogs) {
       throw new Error('최신 데이터가 완전하지 않습니다. 다시 시도해 주세요.')

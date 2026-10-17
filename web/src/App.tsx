@@ -8,6 +8,7 @@ import { UsageDashboard } from './UsageDashboard'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 import { isUsagePage, seoulDate } from './usageMetrics'
 import { compareTradeSignals } from './tradeOrder'
+import { createReadRecovery } from './readRecovery'
 import { calculateAccountPortfolio, accountTradeKey } from './accountAllocation.mjs'
 
 type Market = 'KR' | 'US'
@@ -7079,6 +7080,7 @@ function App() {
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
   const [isInitialAppDataLoaded, setIsInitialAppDataLoaded] = useState(false)
   const [initialDataError, setInitialDataError] = useState('')
+  const serviceReadRecoveryRef = useRef<ReturnType<typeof createReadRecovery<void>> | null>(null)
   const [appDataError, setAppDataError] = useState('')
   const [apiStocks, setApiStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
   const [apiSearchStocks, setApiSearchStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
@@ -7924,148 +7926,172 @@ function App() {
   }
 
   async function loadServiceData(session: UserSession | null) {
-    try {
-      const accountRow = session && supabase ? loadAccountRow(session) : undefined
-      const personalTickersPromise = session ? loadWatchlist('personal', session) : Promise.resolve(null)
-      const loadedSettingsPromise = loadUserSettings(session, accountRow)
-      const loadedPortfolioStatePromise = loadPortfolioState(session, accountRow)
-      if (ADMIN_BOARD_FEATURE_ENABLED) {
-        void loadBoardPosts().catch(() => undefined)
-      }
-      const [operatorTickersFromDb, personalTickers, loadedSettings, loadedPortfolioState] = await Promise.all([
-        loadWatchlist('operator', session), personalTickersPromise, loadedSettingsPromise, loadedPortfolioStatePromise,
-      ])
-      const operatorDefaultSort = operatorTickersFromDb?.watchlistSort
-      const remoteOperatorTickers = operatorTickersFromDb?.tickers ?? null
-      operatorWatchlistRemoteUpdatedAtRef.current = operatorTickersFromDb?.updatedAt ?? null
-      const resolvedOperatorWatchlist = resolveWatchlistWithPending(
-        { tickers: remoteOperatorTickers, updatedAt: operatorTickersFromDb?.updatedAt ?? null },
-        readPendingOperatorWatchlist(),
-      )
-      if (resolvedOperatorWatchlist.clearPending) {
-        clearPendingOperatorWatchlist()
-      }
+    serviceReadRecoveryRef.current?.stop()
+    const recovery: ReturnType<typeof createReadRecovery<void>> = createReadRecovery<void>({
+      load: () => readServiceData(session, () => serviceReadRecoveryRef.current === recovery),
+      isVisible: () => document.visibilityState === 'visible',
+      onSuccess: () => { setIsRemoteDataReady(true); setInitialDataError('') },
+      onError: () => {
+        setIsRemoteDataReady(false)
+        setInitialDataError('최신 계정 데이터 연결을 복구하고 있습니다. 잠시 기다려 주세요.')
+      },
+    })
+    serviceReadRecoveryRef.current = recovery
+    await recovery.refresh(true)
+  }
 
-      const nextSortSettings = session ? loadedSettings.watchlistSort : operatorDefaultSort ?? loadedSettings.watchlistSort
-      personalWatchlistRemoteUpdatedAtRef.current = personalTickers?.updatedAt ?? null
-      setWatchlistSortSettings(nextSortSettings)
-      if (session && isConfiguredAdminEmail(session.email)) {
-        void persistOperatorWatchlistSort(loadedSettings.watchlistSort, session)
-      } else if (operatorDefaultSort) {
-        storeOperatorWatchlistSortSettings(operatorDefaultSort)
-      }
-      setNotificationPreferences(loadedSettings.notificationPreferences)
-      setInvestmentType(loadedSettings.investmentType)
-      setContributionSettings(loadedPortfolioState.contributionSettings)
-      setPersonalTradeLogs(loadedPortfolioState.personalTradeLogs)
+  async function readServiceData(session: UserSession | null, isCurrent: () => boolean) {
+    const accountRow = session && supabase ? loadAccountRow(session) : undefined
+    const personalTickersPromise = session ? loadWatchlist('personal', session) : Promise.resolve(null)
+    const loadedSettingsPromise = loadUserSettings(session, accountRow)
+    const loadedPortfolioStatePromise = loadPortfolioState(session, accountRow)
+    if (ADMIN_BOARD_FEATURE_ENABLED) {
+      void loadBoardPosts().catch(() => undefined)
+    }
+    const [operatorTickersFromDb, personalTickers, loadedSettings, loadedPortfolioState] = await Promise.all([
+      loadWatchlist('operator', session), personalTickersPromise, loadedSettingsPromise, loadedPortfolioStatePromise,
+    ])
+    if (!isCurrent()) return
+    const operatorDefaultSort = operatorTickersFromDb?.watchlistSort
+    const remoteOperatorTickers = operatorTickersFromDb?.tickers ?? null
+    operatorWatchlistRemoteUpdatedAtRef.current = operatorTickersFromDb?.updatedAt ?? null
+    const resolvedOperatorWatchlist = resolveWatchlistWithPending(
+      { tickers: remoteOperatorTickers, updatedAt: operatorTickersFromDb?.updatedAt ?? null },
+      readPendingOperatorWatchlist(),
+    )
+    if (resolvedOperatorWatchlist.clearPending) {
+      clearPendingOperatorWatchlist()
+    }
 
-      const activeType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
-      const operatorByTypeFromDb = operatorTickersFromDb?.tickersByType
-      const activeOperatorTickersFromDb = operatorByTypeFromDb?.[activeType]
-      const resolvedActiveOperatorTickers = resolvedOperatorWatchlist.pendingToSync
-        ? resolvedOperatorWatchlist.tickers
-        : activeOperatorTickersFromDb ?? resolvedOperatorWatchlist.tickers
-      const localOperatorByType = readOperatorWatchlistByType()
-      const nextOperatorByType: Record<InvestmentType, string[]> = operatorByTypeFromDb
-        ? {
-            long_term: activeType === 'long_term'
-              ? resolvedActiveOperatorTickers
-              : resolvedStoredWatchlistForType(operatorByTypeFromDb, localOperatorByType, 'long_term'),
-            swing: activeType === 'swing'
-              ? resolvedActiveOperatorTickers
-              : resolvedStoredWatchlistForType(operatorByTypeFromDb, localOperatorByType, 'swing'),
-          }
-        : watchlistByTypeFromCanonical(resolvedActiveOperatorTickers)
-      setOperatorWatchlist(resolvedActiveOperatorTickers)
-      storeRemoteOperatorWatchlist(resolvedActiveOperatorTickers)
-      setOperatorWatchlistByType(nextOperatorByType)
-      storeOperatorWatchlistByType(nextOperatorByType)
-      operatorWatchlistByTypeLoadedRef.current = true
-      if (!resolvedOperatorWatchlist.clearPending && resolvedOperatorWatchlist.pendingToSync && session && isConfiguredAdminEmail(session.email)) {
-        void persistWatchlist('operator', resolvedOperatorWatchlist.pendingToSync, session, nextOperatorByType)
+    const nextSortSettings = session ? loadedSettings.watchlistSort : operatorDefaultSort ?? loadedSettings.watchlistSort
+    personalWatchlistRemoteUpdatedAtRef.current = personalTickers?.updatedAt ?? null
+    setWatchlistSortSettings(nextSortSettings)
+    if (session && isConfiguredAdminEmail(session.email)) {
+      void persistOperatorWatchlistSort(loadedSettings.watchlistSort, session)
+    } else if (operatorDefaultSort) {
+      storeOperatorWatchlistSortSettings(operatorDefaultSort)
+    }
+    setNotificationPreferences(loadedSettings.notificationPreferences)
+    setInvestmentType(loadedSettings.investmentType)
+    setContributionSettings(loadedPortfolioState.contributionSettings)
+    setPersonalTradeLogs(loadedPortfolioState.personalTradeLogs)
+
+    const activeType = loadedSettings.investmentType ?? DEFAULT_INVESTMENT_TYPE
+    const operatorByTypeFromDb = operatorTickersFromDb?.tickersByType
+    const activeOperatorTickersFromDb = operatorByTypeFromDb?.[activeType]
+    const resolvedActiveOperatorTickers = resolvedOperatorWatchlist.pendingToSync
+      ? resolvedOperatorWatchlist.tickers
+      : activeOperatorTickersFromDb ?? resolvedOperatorWatchlist.tickers
+    const localOperatorByType = readOperatorWatchlistByType()
+    const nextOperatorByType: Record<InvestmentType, string[]> = operatorByTypeFromDb
+      ? {
+          long_term: activeType === 'long_term'
+            ? resolvedActiveOperatorTickers
+            : resolvedStoredWatchlistForType(operatorByTypeFromDb, localOperatorByType, 'long_term'),
+          swing: activeType === 'swing'
+            ? resolvedActiveOperatorTickers
+            : resolvedStoredWatchlistForType(operatorByTypeFromDb, localOperatorByType, 'swing'),
+        }
+      : watchlistByTypeFromCanonical(resolvedActiveOperatorTickers)
+    setOperatorWatchlist(resolvedActiveOperatorTickers)
+    storeRemoteOperatorWatchlist(resolvedActiveOperatorTickers)
+    setOperatorWatchlistByType(nextOperatorByType)
+    storeOperatorWatchlistByType(nextOperatorByType)
+    operatorWatchlistByTypeLoadedRef.current = true
+    if (!resolvedOperatorWatchlist.clearPending && resolvedOperatorWatchlist.pendingToSync && session && isConfiguredAdminEmail(session.email)) {
+      void persistWatchlist('operator', resolvedOperatorWatchlist.pendingToSync, session, nextOperatorByType)
+        .then(notifyWatchlistPersistFailure)
+        .catch(() => notifyWatchlistPersistFailure({ ok: false }))
+    }
+    const legacyTickers = session ? readLegacyWatchlist(session) : null
+    const remotePersonalTickers = personalTickers?.tickers ?? null
+    const resolvedPersonalWatchlist = resolveWatchlistWithPending(
+      { tickers: remotePersonalTickers, updatedAt: personalTickers?.updatedAt ?? null },
+      readPendingPersonalWatchlist(session),
+    )
+    const personalByTypeFromDb = personalTickers?.tickersByType
+    const activePersonalTickersFromDb = personalByTypeFromDb?.[activeType]
+    // 서버의 유형별 목록(tickers_by_type)을 정본으로 삼는다. 비활성 유형은 서버값을 그대로 보존해
+    // 활성 유형값으로 덮어쓰지 않도록 한다. (가치투자/스윙투자 독립 유지)
+    const otherType: InvestmentType = activeType === 'long_term' ? 'swing' : 'long_term'
+    const otherTypeTickersFromDb = personalByTypeFromDb?.[otherType] ?? null
+    // 활성 유형 목록은 pending(미동기화 로컬 변경) > 서버 유형별 > 서버 flat > 로컬 폴백 순으로 결정한다.
+    // 서버 flat(tickers)은 '마지막에 활성이던 유형'의 값이라 현재 유형과 다를 수 있으므로,
+    // 유형별 값(tickers_by_type)이 있으면 반드시 그것을 우선해 유형 간 목록이 섞이지 않게 한다.
+    const nextPersonalTickers = resolvedPersonalWatchlist.pendingToSync
+      ? resolvedPersonalWatchlist.tickers
+      : activePersonalTickersFromDb
+        ?? remotePersonalTickers
+        ?? (resolvedPersonalWatchlist.tickers.length > 0 ? resolvedPersonalWatchlist.tickers : legacyTickers ?? initialWatchlist)
+
+    const resolvedActivePersonalTickers = session ? nextPersonalTickers : readStoredWatchlist(null)
+    setWatchlist(resolvedActivePersonalTickers)
+    if (resolvedPersonalWatchlist.clearPending) {
+      clearPendingPersonalWatchlist(session)
+    }
+
+    // 활성 유형은 위에서 해결한 목록으로, 비활성 유형은 서버 유형별 값으로 채워 유형별 정본을 복원한다.
+    if (session) {
+      const localByType = readPersonalWatchlistByType(session)
+      const nextPersonalByType: Record<InvestmentType, string[]> = {
+        long_term: activeType === 'long_term'
+          ? resolvedActivePersonalTickers
+          : resolvedStoredWatchlistForType(personalByTypeFromDb, localByType, 'long_term'),
+        swing: activeType === 'swing'
+          ? resolvedActivePersonalTickers
+          : resolvedStoredWatchlistForType(personalByTypeFromDb, localByType, 'swing'),
+      }
+      setPersonalWatchlistByType(nextPersonalByType)
+      storePersonalWatchlistByType(session, nextPersonalByType)
+      personalWatchlistByTypeLoadedRef.current = true
+      if (resolvedPersonalWatchlist.pendingToSync) {
+        void persistWatchlist('personal', resolvedPersonalWatchlist.pendingToSync, session, nextPersonalByType)
           .then(notifyWatchlistPersistFailure)
           .catch(() => notifyWatchlistPersistFailure({ ok: false }))
       }
-      const legacyTickers = session ? readLegacyWatchlist(session) : null
-      const remotePersonalTickers = personalTickers?.tickers ?? null
-      const resolvedPersonalWatchlist = resolveWatchlistWithPending(
-        { tickers: remotePersonalTickers, updatedAt: personalTickers?.updatedAt ?? null },
-        readPendingPersonalWatchlist(session),
-      )
-      const personalByTypeFromDb = personalTickers?.tickersByType
-      const activePersonalTickersFromDb = personalByTypeFromDb?.[activeType]
-      // 서버의 유형별 목록(tickers_by_type)을 정본으로 삼는다. 비활성 유형은 서버값을 그대로 보존해
-      // 활성 유형값으로 덮어쓰지 않도록 한다. (가치투자/스윙투자 독립 유지)
-      const otherType: InvestmentType = activeType === 'long_term' ? 'swing' : 'long_term'
-      const otherTypeTickersFromDb = personalByTypeFromDb?.[otherType] ?? null
-      // 활성 유형 목록은 pending(미동기화 로컬 변경) > 서버 유형별 > 서버 flat > 로컬 폴백 순으로 결정한다.
-      // 서버 flat(tickers)은 '마지막에 활성이던 유형'의 값이라 현재 유형과 다를 수 있으므로,
-      // 유형별 값(tickers_by_type)이 있으면 반드시 그것을 우선해 유형 간 목록이 섞이지 않게 한다.
-      const nextPersonalTickers = resolvedPersonalWatchlist.pendingToSync
-        ? resolvedPersonalWatchlist.tickers
-        : activePersonalTickersFromDb
-          ?? remotePersonalTickers
-          ?? (resolvedPersonalWatchlist.tickers.length > 0 ? resolvedPersonalWatchlist.tickers : legacyTickers ?? initialWatchlist)
-
-      const resolvedActivePersonalTickers = session ? nextPersonalTickers : readStoredWatchlist(null)
-      setWatchlist(resolvedActivePersonalTickers)
-      if (resolvedPersonalWatchlist.clearPending) {
-        clearPendingPersonalWatchlist(session)
+      // 서버에 유형별 데이터가 전혀 없던 구버전 행이면, 현재 정본을 한 번 올려 다른 기기와 맞춘다.
+      if (otherTypeTickersFromDb === null && activePersonalTickersFromDb === undefined && !resolvedPersonalWatchlist.pendingToSync && (legacyTickers || remotePersonalTickers)) {
+        await persistWatchlist('personal', resolvedActivePersonalTickers, session, nextPersonalByType)
       }
-
-      // 활성 유형은 위에서 해결한 목록으로, 비활성 유형은 서버 유형별 값으로 채워 유형별 정본을 복원한다.
-      if (session) {
-        const localByType = readPersonalWatchlistByType(session)
-        const nextPersonalByType: Record<InvestmentType, string[]> = {
-          long_term: activeType === 'long_term'
-            ? resolvedActivePersonalTickers
-            : resolvedStoredWatchlistForType(personalByTypeFromDb, localByType, 'long_term'),
-          swing: activeType === 'swing'
-            ? resolvedActivePersonalTickers
-            : resolvedStoredWatchlistForType(personalByTypeFromDb, localByType, 'swing'),
-        }
-        setPersonalWatchlistByType(nextPersonalByType)
-        storePersonalWatchlistByType(session, nextPersonalByType)
-        personalWatchlistByTypeLoadedRef.current = true
-        if (resolvedPersonalWatchlist.pendingToSync) {
-          void persistWatchlist('personal', resolvedPersonalWatchlist.pendingToSync, session, nextPersonalByType)
-            .then(notifyWatchlistPersistFailure)
-            .catch(() => notifyWatchlistPersistFailure({ ok: false }))
-        }
-        // 서버에 유형별 데이터가 전혀 없던 구버전 행이면, 현재 정본을 한 번 올려 다른 기기와 맞춘다.
-        if (otherTypeTickersFromDb === null && activePersonalTickersFromDb === undefined && !resolvedPersonalWatchlist.pendingToSync && (legacyTickers || remotePersonalTickers)) {
-          await persistWatchlist('personal', resolvedActivePersonalTickers, session, nextPersonalByType)
-        }
-      }
-      setIsRemoteDataReady(true)
-      setInitialDataError('')
-    } catch {
-      setIsRemoteDataReady(false)
-      setInitialDataError('최신 계정 데이터를 불러오지 못했습니다. 다시 시도해 주세요.')
     }
   }
 
   useEffect(() => {
-    let isMounted = true
-    let isCheckingLatestData = false
+    const resumeAccountRead = () => {
+      if (document.visibilityState === 'visible') void serviceReadRecoveryRef.current?.refresh()
+    }
+    window.addEventListener('online', resumeAccountRead)
+    window.addEventListener('focus', resumeAccountRead)
+    document.addEventListener('visibilitychange', resumeAccountRead)
+    return () => {
+      serviceReadRecoveryRef.current?.stop()
+      serviceReadRecoveryRef.current = null
+      window.removeEventListener('online', resumeAccountRead)
+      window.removeEventListener('focus', resumeAccountRead)
+      document.removeEventListener('visibilitychange', resumeAccountRead)
+    }
+  }, [])
 
-    const loadLatestData = async (forceApply = false) => {
-      if (isCheckingLatestData) return
-      isCheckingLatestData = true
-      try {
-        const data = await fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>()
+  useEffect(() => {
+    let isMounted = true
+    const recovery = createReadRecovery({
+      load: () => fetchAppData<Stock, ValuationMetric, MarketEventGroup, MarketTrendRow, TradeLog>(),
+      isVisible: () => document.visibilityState === 'visible',
+      onSuccess: (data, forceApply) => {
         if (!isMounted) return
-        if (forceApply || appDataMetaChanged(data, apiMetasRef.current)) {
-          applyLoadedData(data)
-        }
+        if (forceApply || appDataMetaChanged(data, apiMetasRef.current)) applyLoadedData(data)
         setIsInitialAppDataLoaded(true)
         setAppDataError('')
-      } catch (error) {
-        if (isMounted && (forceApply || !apiMetasRef.current.stocks)) setAppDataError(error instanceof Error ? error.message : '최신 데이터를 불러오지 못했습니다.')
-      } finally {
-        isCheckingLatestData = false
-      }
-    }
+      },
+      onError: (error, forceApply) => {
+        if (isMounted && (forceApply || !apiMetasRef.current.stocks)) {
+          const message = error instanceof Error && 'retryable' in error && error.retryable === false
+            ? error.message : '최신 데이터 연결을 복구하고 있습니다. 잠시 기다려 주세요.'
+          setAppDataError(message)
+        }
+      },
+    })
+    const loadLatestData = recovery.refresh
 
     const loadLatestDataWhenVisible = () => {
       if (document.visibilityState === 'visible') {
@@ -8076,11 +8102,14 @@ function App() {
     void loadLatestData(true)
     const refreshInterval = window.setInterval(loadLatestDataWhenVisible, APP_DATA_AUTO_REFRESH_INTERVAL_MS)
     window.addEventListener('focus', loadLatestDataWhenVisible)
+    window.addEventListener('online', loadLatestDataWhenVisible)
     document.addEventListener('visibilitychange', loadLatestDataWhenVisible)
 
     return () => {
       isMounted = false
+      recovery.stop()
       window.clearInterval(refreshInterval)
+      window.removeEventListener('online', loadLatestDataWhenVisible)
       window.removeEventListener('focus', loadLatestDataWhenVisible)
       document.removeEventListener('visibilitychange', loadLatestDataWhenVisible)
     }
@@ -8148,6 +8177,17 @@ function App() {
       }
     }
     const authClient = supabase
+    const sessionRecovery = createReadRecovery({
+      load: async () => {
+        const result = await authClient.auth.getSession()
+        const status = result.error?.status ?? 0
+        if (result.error && (status === 0 || status >= 500 || [408, 429].includes(status))) throw result.error
+        return result
+      },
+      isVisible: () => document.visibilityState === 'visible',
+      onSuccess: ({ data }) => { void syncAuthUser(data.session?.user ?? null) },
+      onError: () => { if (isMounted) setInitialDataError('계정 연결을 복구하고 있습니다. 잠시 기다려 주세요.') },
+    })
     let syncingUserId: string | null | undefined
 
     const authErrorMessage = authCallbackMessage()
@@ -8251,12 +8291,14 @@ function App() {
         })
       })
     } else {
-      authClient.auth.getSession().then(({ data }) => {
-        void syncAuthUser(data.session?.user ?? null)
-      }).catch(() => {
-        if (isMounted) setInitialDataError('계정 정보를 확인하지 못했습니다. 다시 시도해 주세요.')
-      })
+      void sessionRecovery.refresh()
     }
+
+    const resumeSession = () => {
+      if (document.visibilityState === 'visible') void sessionRecovery.refresh()
+    }
+    window.addEventListener('online', resumeSession)
+    document.addEventListener('visibilitychange', resumeSession)
 
     const { data: authListener } = authClient.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
@@ -8279,6 +8321,9 @@ function App() {
 
     return () => {
       isMounted = false
+      sessionRecovery.stop()
+      window.removeEventListener('online', resumeSession)
+      document.removeEventListener('visibilitychange', resumeSession)
       authListener.subscription.unsubscribe()
     }
     // Supabase auth subscription is intentionally established once on mount.
