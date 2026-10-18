@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-10-18T16:56:50+00:00",
-    "lastSuccessfulRun": "2026-10-18T16:56:50+00:00",
+    "updatedAt": "2026-10-18T17:40:38+00:00",
+    "lastSuccessfulRun": "2026-10-18T17:40:38+00:00",
     "failedReason": null
   },
   "rows": [
@@ -4782,13 +4782,6 @@
       "industry": "건설, 토목·인프라, 플랜트"
     },
     {
-      "ticker": "028080",
-      "name": "휴맥스홀딩스",
-      "market": "KR",
-      "category": "가치주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
-    },
-    {
       "ticker": "028100",
       "name": "동아지질",
       "market": "KR",
@@ -9564,7 +9557,7 @@
     },
     {
       "ticker": "091340",
-      "name": "S&K폴리텍",
+      "name": "S&K글로벌",
       "market": "KR",
       "category": "성장주",
       "industry": "고밀도폴리우레탄폼시트"
@@ -53162,7 +53155,7 @@
       "ticker": "GNRC",
       "name": "Generac Holdlings",
       "market": "US",
-      "category": "성장주",
+      "category": "가치주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
