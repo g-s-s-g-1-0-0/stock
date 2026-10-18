@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-10-18T13:52:01+00:00",
-    "lastSuccessfulRun": "2026-10-18T13:52:01+00:00",
+    "updatedAt": "2026-10-18T14:57:11+00:00",
+    "lastSuccessfulRun": "2026-10-18T14:57:11+00:00",
     "failedReason": null
   },
   "rows": [
@@ -103,15 +103,7 @@
       ],
       "category": "성장주",
       "industry": "반도체 레이저 장비, HBM·AI 반도체, 레이저 어닐링, 그루빙·다이싱",
-      "updatedAt": "2026-10-18T13:51:36+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:36+00:00"
     },
     {
       "ticker": "042700",
@@ -193,15 +185,7 @@
       ],
       "category": "성장주",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
-      "updatedAt": "2026-10-18T13:51:42+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 5,
-      "postRiskGroupPercent": 15,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:42+00:00"
     },
     {
       "ticker": "ASTS",
@@ -235,15 +219,7 @@
       ],
       "category": "성장주",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
-      "updatedAt": "2026-10-18T13:51:43+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:43+00:00"
     },
     {
       "ticker": "BE",
@@ -261,15 +237,7 @@
       ],
       "category": "성장주",
       "industry": "AI 인프라, 에너지, 연료전지·수소, 데이터센터 전력",
-      "updatedAt": "2026-10-18T13:51:43+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:43+00:00"
     },
     {
       "ticker": "CIFR",
@@ -335,15 +303,7 @@
       ],
       "category": "성장주",
       "industry": "반도체, 데이터센터·AI 서버 칩, 파운드리, 네트워크·5G",
-      "updatedAt": "2026-10-18T13:51:45+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:45+00:00"
     },
     {
       "ticker": "IONQ",
@@ -393,15 +353,7 @@
       ],
       "category": "성장주",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
-      "updatedAt": "2026-10-18T13:51:46+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:46+00:00"
     },
     {
       "ticker": "MU",
@@ -419,15 +371,7 @@
       ],
       "category": "혼합주",
       "industry": "반도체, 메모리, DRAM, NAND, HBM",
-      "updatedAt": "2026-10-18T13:51:47+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:47+00:00"
     },
     {
       "ticker": "NBIS",
@@ -493,15 +437,7 @@
       ],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
-      "updatedAt": "2026-10-18T13:51:48+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:48+00:00"
     },
     {
       "ticker": "SOXL",
@@ -583,15 +519,7 @@
       ],
       "category": "성장주",
       "industry": "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머",
-      "updatedAt": "2026-10-18T13:51:50+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:50+00:00"
     },
     {
       "ticker": "VRT",
@@ -719,15 +647,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "전력 발전, 원전·가스, AI 데이터센터 전력수요, AI 인프라",
-      "updatedAt": "2026-10-18T13:51:54+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:54+00:00"
     },
     {
       "ticker": "GNRC",
@@ -745,10 +665,7 @@
       ],
       "category": "가치주",
       "industry": "산업재, 장비·제조, 자동화",
-      "updatedAt": "2026-10-18T13:51:54+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0
+      "updatedAt": "2026-10-18T13:51:54+00:00"
     },
     {
       "ticker": "QQQ",
@@ -766,15 +683,7 @@
       ],
       "category": "스윙주",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
-      "updatedAt": "2026-10-18T13:51:55+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "나스닥100 지수 ETF(1배)",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:55+00:00"
     },
     {
       "ticker": "QLD",
@@ -792,15 +701,7 @@
       ],
       "category": "스윙주",
       "industry": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
-      "updatedAt": "2026-10-18T13:51:55+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 5,
-      "openPositionCount": 4,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:55+00:00"
     },
     {
       "ticker": "USD",
@@ -816,15 +717,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "다우존스 미국 반도체 지수 2배 레버리지 ETF(일일 2배)",
-      "updatedAt": "2026-10-18T13:51:56+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 20,
-      "openPositionCount": 5,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:56+00:00"
     },
     {
       "ticker": "ARM",
@@ -842,15 +735,7 @@
       ],
       "category": "성장주",
       "industry": "반도체, 광전자·포토닉스, 데이터센터",
-      "updatedAt": "2026-10-18T13:51:56+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 20%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 20,
-      "postRiskGroupPercent": 30,
-      "openPositionCount": 6,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:56+00:00"
     },
     {
       "ticker": "SOXS",
@@ -884,15 +769,7 @@
       ],
       "category": "가치주",
       "industry": "산업재, 장비·제조, 자동화",
-      "updatedAt": "2026-10-18T13:51:57+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "산업재·건설",
-      "currentRiskGroupPercent": 10,
-      "postRiskGroupPercent": 20,
-      "openPositionCount": 6,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:57+00:00"
     },
     {
       "ticker": "SPCX",
@@ -924,15 +801,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
-      "updatedAt": "2026-10-18T13:51:58+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "소프트웨어·클라우드",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-18T13:51:58+00:00"
     },
     {
       "ticker": "AAPL",
