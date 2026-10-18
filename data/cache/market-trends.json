@@ -2,28 +2,12 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-10-12T02:25:29+00:00",
-    "lastSuccessfulRun": "2026-10-12T02:25:29+00:00",
+    "updatedAt": "2026-10-18T15:02:01+00:00",
+    "lastSuccessfulRun": "2026-10-18T15:02:01+00:00",
     "analysisStatus": "news-verified",
     "failedReason": null
   },
   "rows": [
-    {
-      "date": "2026.04.13",
-      "ranks": [
-        "AI 인프라 | 광통신, 트랜시버, 데이터센터냉각",
-        "AI 애플리케이션 | ChatGPT, Claude, AI 보안",
-        "전기차 | EV 배터리, 충전 인프라, 자율 주행",
-        "생명공학 | 제네릭 의약품, 바이오 테크, 암 치료",
-        "클라우드 컴퓨팅 | AWS, Azure, Google Cloud, AI 채택",
-        "반도체 | AI 칩, GPU, 하이테크 제조",
-        "재생 에너지 | 태양광, 풍력, 에너지 저장",
-        "금융 기술 | 디지털 결제, 모바일 뱅킹, 금융 보안",
-        "사이버 보안 | 네트워크 보안, 데이터 보호, AI 기반 보안",
-        "교육 기술 | 온라인 교육, 에듀테크, 교육 플랫폼"
-      ],
-      "summary": "이번 주 전체 시장 분위기는 지속적인 불확실성과 혼조로 특징지어지며, 투자자들은 다양한 섹터와 테마에 관심을 두고 있습니다."
-    },
     {
       "date": "2026.04.20",
       "ranks": [
@@ -613,6 +597,210 @@
           "https://www.cnbc.com/id/19854910/device/rss/rss.html"
         ],
         "recoveryErrors": []
+      }
+    },
+    {
+      "date": "2026.10.19",
+      "ranks": [
+        "AI 반도체 | AI칩, GPU, HBM, ASIC, 첨단패키징",
+        "AI 인프라 | 데이터센터, 전력·냉각, GPU 클러스터, HPC, AI 클라우드",
+        "나스닥100 | 나스닥100, 지수, 1배, 대형, 묶음",
+        "전력 인프라 | 전력망, 원전, SMR, 데이터센터 전력, 에너지 저장",
+        "소프트웨어 | 소프트웨어, 클라우드, AI, 플랫폼",
+        "인공지능 | AI, 주가 변동, 투자 위험",
+        "반도체 | 반도체, AI 수요, 한국, 수출",
+        "우주·발사 서비스 | SpaceX, Blue Origin, 우주 발사, 인프라",
+        "채권·헤지펀드 | 채권 시장, 헤지펀드, 충격 위험",
+        "옵션 ETF | 옵션, ETF, 월간 수익, 세금"
+      ],
+      "summary": "인공지능과 반도체 중심의 기술주가 주목받는 가운데, 채권·예산 압박과 항공 보안 이슈가 시장 변동성을 키우고 있습니다.",
+      "newsEvidence": [
+        {
+          "sector": "인공지능",
+          "articles": [
+            {
+              "title": "AI stocks plunge. Inflation heats up. Where we're still finding opportunities",
+              "url": "https://www.cnbc.com/investingclub/2026/10/17/ai-stocks-plunge-inflation-heats-up-where-were-still-finding-opportunities.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-17T15:42:34+00:00"
+            },
+            {
+              "title": "Jim Cramer says this week's AI sell-off offers a crucial lesson for investors",
+              "url": "https://www.cnbc.com/2026/10/15/jim-cramer-ai-stocks-diversification.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-15T22:16:13+00:00"
+            },
+            {
+              "title": "AWS, Anthropic race to deploy army of specialized engineers key to proving AI spending will pay off",
+              "url": "https://www.cnbc.com/2026/10/15/aws-anthropic-racing-to-deploy-army-of-specialized-ai-engineers.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-15T14:10:14+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "반도체",
+          "articles": [
+            {
+              "title": "Semiconductor market to remain solid ‘at least through next year,’ South Korea finance minister says",
+              "url": "https://www.cnbc.com/2026/10/17/south-korea-semiconductor-outlook-lee-hyoung-il.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-18T11:10:44+00:00"
+            },
+            {
+              "title": "TSMC chip capacity is ‘fierce’ battleground for AI customers, amid record quarter",
+              "url": "https://www.cnbc.com/2026/10/15/nvidia-apple-broadcom-in-fierce-battle-to-make-chips-at-tsmc.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-15T16:56:07+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "우주·발사 서비스",
+          "articles": [
+            {
+              "title": "Blue Origin plans $330 million Florida expansion to ramp New Glenn launches",
+              "url": "https://www.cnbc.com/2026/10/16/blue-origin-new-glenn-florida-expansion.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-16T14:26:05+00:00"
+            },
+            {
+              "title": "Europe's answer to SpaceX rises 18% as Ukraine's Starshield limits raise concerns",
+              "url": "https://www.cnbc.com/2026/10/16/eutelsat-starshield-ukraine-spacex.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-16T15:45:35+00:00"
+            },
+            {
+              "title": "SpaceX AI policy leader grilled by NYC Council on Grok safety, sexualized images",
+              "url": "https://www.cnbc.com/2026/10/16/spacex-policy-manger-to-testify-in-nyc-council-ai-safety-investigation.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-16T19:30:51+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "채권·헤지펀드",
+          "articles": [
+            {
+              "title": "Why hedge funds could be making a bond market shock more likely",
+              "url": "https://www.cnbc.com/2026/10/18/hedge-funds-bond-market-turmoil.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-18T06:13:05+00:00"
+            },
+            {
+              "title": "Semiconductor market to remain solid ‘at least through next year,’ South Korea finance minister says",
+              "url": "https://www.cnbc.com/2026/10/17/south-korea-semiconductor-outlook-lee-hyoung-il.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-18T11:10:44+00:00"
+            },
+            {
+              "title": "CoreWeave credit default swaps hit distress levels as investors sour on AI debt",
+              "url": "https://www.cnbc.com/2026/10/15/coreweave-credit-default-swaps-hit-distress-levels-as-investors-sour-on-ai-debt.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-15T21:33:24+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "옵션 ETF",
+          "articles": [
+            {
+              "title": "Boomers are buying into the promise of monthly income from options ETFs, but there's a tax catch",
+              "url": "https://www.cnbc.com/2026/10/18/retirement-income-funds-taxes.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-18T13:10:33+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "목재·임산물",
+          "articles": [
+            {
+              "title": "Investors are buying up vast tracts of timberland across U.S. in one of market's longest-term bets",
+              "url": "https://www.cnbc.com/2026/10/17/timberland-investing-returns-risk.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-17T16:31:06+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "재정·예산",
+          "articles": [
+            {
+              "title": "U.S. budget deficit swells to almost $2 trillion for fiscal 2026, up 12% in a single year",
+              "url": "https://www.cnbc.com/2026/10/16/us-budget-deficit-2026.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-16T22:34:29+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "항공·보안",
+          "articles": [
+            {
+              "title": "Airport attacks put aviation in crosshairs of geopolitical conflicts",
+              "url": "https://www.cnbc.com/2026/10/13/riyadh-airport-attacks-aviation.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-13T18:33:42+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "프리미엄 스마트폰",
+          "articles": [
+            {
+              "title": "Apple’s $1,999 iPhone Duo puts the company's status-symbol power to the test",
+              "url": "https://www.cnbc.com/2026/10/16/apple-iphone-duo-demand-price.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-16T22:31:26+00:00"
+            },
+            {
+              "title": "Is Apple’s foldable iPhone Duo worth $2,000? See how it stacks up against other foldable phones.",
+              "url": "https://www.marketwatch.com/story/is-apples-foldable-iphone-duo-worth-2-000-see-how-it-stacks-up-against-other-foldable-phones-c9066b13?mod=mw_rss_topstories",
+              "source": "https://feeds.marketwatch.com/marketwatch/topstories/",
+              "publishedAt": "2026-10-17T18:40:00+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "정치·자금 흐름",
+          "articles": [
+            {
+              "title": "Elon Musk cash infusion helps GOP Senate super PAC raise record $273 million",
+              "url": "https://www.cnbc.com/2026/10/15/elon-musk-senate-leadership-fund-fundraising.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-16T12:17:29+00:00"
+            }
+          ]
+        }
+      ],
+      "newsRanks": [
+        "인공지능 | AI, 주가 변동, 투자 위험",
+        "반도체 | 반도체, AI 수요, 한국, 수출",
+        "우주·발사 서비스 | SpaceX, Blue Origin, 우주 발사, 인프라",
+        "채권·헤지펀드 | 채권 시장, 헤지펀드, 충격 위험",
+        "옵션 ETF | 옵션, ETF, 월간 수익, 세금",
+        "목재·임산물 | 목재, 임산물 투자, 장기 베팅",
+        "재정·예산 | 미국, 예산 적자, 재정 압박",
+        "항공·보안 | 공항 공격, 항공 보안, 지정학",
+        "프리미엄 스마트폰 | 아이폰 듀오, 고가 스마트폰, 소비자 반응",
+        "정치·자금 흐름 | 정치 기부, 엘론 머스크, 공화당, 선거"
+      ],
+      "analysis": {
+        "status": "news-verified",
+        "model": "openai/gpt-oss-120b",
+        "attempts": 3,
+        "newsCount": 63,
+        "sources": [
+          "https://feeds.marketwatch.com/marketwatch/topstories/",
+          "https://trends.google.com/trending/rss?geo=US",
+          "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+          "https://www.cnbc.com/id/19854910/device/rss/rss.html"
+        ],
+        "recoveryErrors": [
+          "HTTP 400: {\"error\":{\"message\":\"Generated JSON does not match the expected schema. Please adjust your prompt. See 'failed_generation' for more details. Error: jsonschema: '/ranks' does not validate with /properties/ranks/minItems: minItems: got 1, want 10\",\"type\":\"invalid_request_error\",\"code\":\"json_validate_failed\",\"failed_generation\":\"{\\\"ranks\\\":[{\\\"sector\\\":\\\"인공지능\\\",\\\"keywords\\\":[\\\"AI\\\",\\\"주식\\\",\\\"주가변동\\\"],\\\"headlineIds\\\":[13,33,24,39,34,41,35,38,29,30,31,32,36,37,40,42,43,44,45,46,47,48,49,50,51",
+          "HTTP 400: {\"error\":{\"message\":\"Generated JSON does not match the expected schema. Please adjust your prompt. See 'failed_generation' for more details. Error: jsonschema: '/ranks' does not validate with /properties/ranks/maxItems: maxItems: got 11, want 10\",\"type\":\"invalid_request_error\",\"code\":\"json_validate_failed\",\"failed_generation\":\"{\\\"ranks\\\":[{\\\"sector\\\":\\\"인공지능\\\",\\\"keywords\\\":[\\\"AI\\\",\\\"주식\\\",\\\"주가변동\\\"],\\\"headlineIds\\\":[13,33,24,39,34,41,35,38,29,30,31,32,36,37,40,42,43,44,45,46,47,48,49,50,5"
+        ]
       }
     }
   ]
