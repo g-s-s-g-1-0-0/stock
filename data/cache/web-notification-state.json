@@ -11,9 +11,10 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:IREN:2026-08-28",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:LPTH:2026-09-11",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:MU:2026-10-01",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:PL:2026-09-04"
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:PL:2026-09-04",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:SPCX:2026-10-21"
     ],
-    "updatedAt": "2026-09-29T15:00:05.961436+00:00"
+    "updatedAt": "2026-10-19T15:04:05.272501+00:00"
   },
   "maSupportSignals": {
     "sentDailyKeys": [
