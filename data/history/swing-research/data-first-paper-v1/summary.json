@@ -1,7 +1,7 @@
 {
   "version": "data-first-paper-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-10-16",
+  "lastSession": "2026-10-19",
   "observations": 426,
   "signalCounts": {
     "data_S3_ma200_distance25_base": 11,
@@ -94,20 +94,20 @@
       "knownObservations": 422,
       "unknownObservations": 4,
       "data_S7_high52_drawdown30_base": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 1,
+        "entryDates": 1
       },
       "data_S7_high52_drawdown30_filtered": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 1,
+        "entryDates": 1
       }
     },
     "N_expanded_below200": {
       "knownObservations": 422,
       "unknownObservations": 4,
       "data_N_expanded_below200_base": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 2,
+        "entryDates": 1
       },
       "data_N_expanded_below200_filtered": {
         "closed": 0,
@@ -118,8 +118,8 @@
       "knownObservations": 422,
       "unknownObservations": 4,
       "data_N_rsi_ahead_macd_base": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 2,
+        "entryDates": 1
       },
       "data_N_rsi_ahead_macd_filtered": {
         "closed": 0,
@@ -130,14 +130,14 @@
       "knownObservations": 370,
       "unknownObservations": 56,
       "data_N_value_laggard_base": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 2,
+        "entryDates": 1
       },
       "data_N_value_laggard_filtered": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 1,
+        "entryDates": 1
       }
     }
   },
-  "waitingForSource": 1
+  "waitingForSource": 44
 }

@@ -1,8 +1,8 @@
 {
   "version": "candidate-final-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-10-16",
-  "observations": 426,
+  "lastSession": "2026-10-19",
+  "observations": 469,
   "signalCounts": {
     "final_p_breakout_first_retest": 1,
     "final_p_failed_breakout_reclaim": 0,
@@ -14,8 +14,8 @@
     "final_s2_fresh_ma_support": 0,
     "final_s2_intraday_supported_trend": 0,
     "final_s2_weekly_uptrend": 0,
-    "final_s3_intraday_supported_trend": 4,
-    "final_s3_nearby_price_support": 7,
+    "final_s3_intraday_supported_trend": 7,
+    "final_s3_nearby_price_support": 15,
     "final_s4_few_distribution_days": 0,
     "final_s6_few_distribution_days": 0,
     "final_s7_intraday_supported_trend": 3
