@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15517,
-    "industryEnrichedAt": "2026-10-18T17:42:32+00:00",
-    "industryEnrichedTickers": 1,
+    "industryEnrichedAt": "2026-10-20T12:56:56+00:00",
+    "industryEnrichedTickers": 6,
     "industryReviewedAt": "2026-10-18T17:40:34+00:00",
     "industryReviewedTickers": 9
   },
@@ -122982,7 +122982,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "Robinhood(HOOD) 단일종목 2배 레버리지 ETF(일일 2배)",
-      "rawIndustry": "Financial | Exchange Traded Fund",
+      "rawIndustry": "Financial",
       "products": "-",
       "updatedAt": "2026-10-18T17:40:08+00:00",
       "etfFlag": true
@@ -183596,7 +183596,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
-      "rawIndustry": "Financial | Exchange Traded Fund",
+      "rawIndustry": "Financial",
       "products": "-",
       "updatedAt": "2026-10-18T17:40:08+00:00",
       "etfFlag": true
@@ -184321,7 +184321,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
-      "rawIndustry": "Financial | Exchange Traded Fund",
+      "rawIndustry": "Financial",
       "products": "-",
       "updatedAt": "2026-10-18T17:40:08+00:00",
       "etfFlag": true
@@ -202627,7 +202627,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "NYSE 반도체 지수 3배 레버리지 ETF(일일 3배)",
-      "rawIndustry": "Financial | Exchange Traded Fund",
+      "rawIndustry": "Financial",
       "products": "-",
       "updatedAt": "2026-10-18T17:40:08+00:00",
       "etfFlag": true
@@ -202659,7 +202659,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "반도체 지수 3배 인버스 레버리지 ETF(일일 3배)",
-      "rawIndustry": "Financial | Exchange Traded Fund",
+      "rawIndustry": "Financial",
       "products": "-",
       "updatedAt": "2026-10-18T17:40:08+00:00",
       "etfFlag": true
@@ -221213,7 +221213,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "다우존스 미국 반도체 지수 2배 레버리지 ETF(일일 2배)",
-      "rawIndustry": "Financial | Exchange Traded Fund",
+      "rawIndustry": "Financial",
       "products": "-",
       "updatedAt": "2026-10-18T17:40:08+00:00",
       "etfFlag": true
