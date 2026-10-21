@@ -128,6 +128,7 @@
   "opinionChange": {
     "sentKeys": [
       "004e786be4411ee2e5a9a3b31f92b0f875bab1b3b57fdff174a3844ae409fecb",
+      "063176fe7723167cab36c585adbf3f2fec037acf11548ce8c362ccf9ea62993a",
       "0730ebc20484ccecaf679d38a0289093f804af0c1284a6e73f0ef6b01ae4c21f",
       "085994cd244c203bb3a4086b151637569e7754b68bb352d4120f27dfae737939",
       "08f1743f6b6e78cef8e3c27ddac65420b348556b3d3adb09cc74997e1850aca1",
@@ -223,7 +224,7 @@
       "fd9b89cad04d08be50d6531e47f2a1848f8c5daf1bedf1b949af0d989ef7d10f",
       "ffe759f69cf48289a3580a7beb09fa58ccede03fe835e6d112bd5c1a1536f95c"
     ],
-    "updatedAt": "2026-10-21T17:00:08.073145+00:00"
+    "updatedAt": "2026-10-21T19:00:06.309133+00:00"
   },
   "regimeShift": {
     "isRecoveryMarket": false,
@@ -235,7 +236,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-10-21T17:00:00+00:00"
+    "updatedAt": "2026-10-21T19:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
