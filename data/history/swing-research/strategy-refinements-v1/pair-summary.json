@@ -28,7 +28,7 @@
       "refine_s4_base": {
         "closed": 0,
         "entryDates": 0,
-        "signals": 0
+        "signals": 1
       },
       "refine_s4_ma200_rising": {
         "closed": 0,
