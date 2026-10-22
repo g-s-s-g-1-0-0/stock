@@ -79,51 +79,21 @@
     ],
     "updatedAt": "2026-07-20T00:02:15.464806+00:00"
   },
-  "marketHighSignalStatus": "주의",
+  "marketHighSignalStatus": "경고",
   "marketHighSignals": {
     "breadth": "주의",
-    "credit": "판단 불가",
-    "overallStatus": "주의",
+    "credit": "주의",
+    "overallStatus": "경고",
     "treasury": "정상"
   },
-  "marketHighSignalsSentAt": "2026-10-22T14:00:11.345249+00:00",
+  "marketHighSignalsSentAt": "2026-10-22T15:00:09.202840+00:00",
   "nasdaqPeak": {
     "resetAt": "2026-05-14T20:55:50.998617+00:00",
     "sent": false
   },
   "nasdaqWarn": {
-    "sent": true,
-    "sentAt": "2026-10-06T14:00:06.702814+00:00",
-    "snapshot": {
-      "buyBlockMax": 9.0,
-      "confirmThreshold": 763.9491553344727,
-      "currentPrice": 761.317626953125,
-      "dailyRsi": 83.19,
-      "dailyRsiPrev": 82.16,
-      "directThreshold": 777.3517720947266,
-      "isRecoveryMarket": false,
-      "ma200": 670.1308380126953,
-      "macdHist": 2.51,
-      "macdHistD1": 2.11,
-      "macdHistD2": 1.72,
-      "macdHistSlowing": false,
-      "peakConfirmDist": 14.0,
-      "peakDirectDist": 16.0,
-      "peakResetDist": 5.0,
-      "peakTriggered": false,
-      "peakWarnDist": 13.0,
-      "peakWarnResetDist": 5.0,
-      "premiumPercent": 13.607311254448229,
-      "recent60MinPremiumPercent": 2.7313520357855836,
-      "regimeLabel": "횡보장 고점",
-      "resetThreshold": 703.6373799133302,
-      "rsiHotAndFalling": false,
-      "triggered": false,
-      "warnResetThreshold": 703.6373799133302,
-      "warnThreshold": 757.2478469543456,
-      "warnTriggered": true,
-      "weeklyRsi": 61.06
-    }
+    "resetAt": "2026-10-22T15:00:07.883055+00:00",
+    "sent": false
   },
   "opinionChange": {
     "sentKeys": [
@@ -158,6 +128,7 @@
       "61cff1fa0669202ce131f53e9d23c4d223afe8d0c95d250eb9fbb1fd4ad1471c",
       "61d37feb70925edcacc9c0c42fcd803995301935812f63b0327e246c59b252c8",
       "62534c413907e3cea3ec7e3b6cab8ef83fa127aee7389310ee184deb6b0543f0",
+      "6253b30ed84700f22cc1391050efcc5008c2dfd5ad870089c73ac1055d1adebc",
       "62c8f981ec4815b3c6ba77cc48c5cda2c9f262a2b07bcf518232eec908539ccb",
       "6336b998f8b458ae8850e004267fc79ca8e36dc364dd6fcc964496a277fea4a6",
       "6503fc1f959a34a49a8422374e9b7236e4146b27bcdf1615d2bb03ae20b00cdc",
@@ -229,7 +200,7 @@
       "fd9b89cad04d08be50d6531e47f2a1848f8c5daf1bedf1b949af0d989ef7d10f",
       "ffe759f69cf48289a3580a7beb09fa58ccede03fe835e6d112bd5c1a1536f95c"
     ],
-    "updatedAt": "2026-10-22T14:00:08.226869+00:00"
+    "updatedAt": "2026-10-22T15:00:05.938714+00:00"
   },
   "regimeShift": {
     "isRecoveryMarket": false,
@@ -241,7 +212,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-10-22T14:00:00+00:00"
+    "updatedAt": "2026-10-22T15:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
