@@ -79,14 +79,14 @@
     ],
     "updatedAt": "2026-07-20T00:02:15.464806+00:00"
   },
-  "marketHighSignalStatus": "경고",
+  "marketHighSignalStatus": "주의",
   "marketHighSignals": {
     "breadth": "주의",
-    "credit": "주의",
-    "overallStatus": "경고",
+    "credit": "판단 불가",
+    "overallStatus": "주의",
     "treasury": "정상"
   },
-  "marketHighSignalsSentAt": "2026-10-01T05:00:03.448296+00:00",
+  "marketHighSignalsSentAt": "2026-10-22T14:00:11.345249+00:00",
   "nasdaqPeak": {
     "resetAt": "2026-05-14T20:55:50.998617+00:00",
     "sent": false
@@ -179,6 +179,7 @@
       "8d9ecab371620e2748a15b8ed44e7b1ee73b6a3b4ca1011a3a46f80b50d412d2",
       "8fd29e3eb843b1d792f3dd869a5437d3d2b4bc01eb7f5b36b9bfaf5463a2a5f8",
       "92a872d4ea44ccd174e0f7e1f9de7be8d347246878ce69ce616bb11a5e28af66",
+      "96f88699a8540032b7be3d2591c795ad9b2d4a7df7c9ac2fc64ad051f82fe987",
       "9aece9b4b20ac8fc2c0d2017aa4273f50995827d8a85085d64e8b3efbd55380c",
       "9d59c33f3539c8c4577caee0cc9c43e25f555021b5f1ceb42ee7eeffeef4fe6f",
       "9dd4d2839a56950e6cf3ee3d703cb6e93c5041c1661bc6684d8c2ad5b98b0a1c",
@@ -215,8 +216,10 @@
       "dc5bd8ba9ff5988904b1b1cf5378f2a457749434e58ad0ece7214f533be605fa",
       "dcc77348dc8aa8e90fd8c9920a0de3375d1523e3a41366347b51af422c95d2b4",
       "dee40bb6543f5fe58f130404a0e3e1da1a9b4dca97f0213e5521acb457d12f99",
+      "df2036f08a30b5d1336a131ccb36335b709f84bd42e205683f1902b353b3bb8f",
       "e30f989bce3b92d4f4d8849b3211f5379200c90e3c8b19ec5b9fb6469fc6f0a3",
       "e4cfcb387c3b883622b280fccfaed1b2c7448e15de37032ee9419e227d5d6903",
+      "ea5e1d317dd752f16a0e5173edaaca5eb919175dff746a24cb328ae00d6390e6",
       "eaa7b7c9f1c654d6ebfdd8857f0aa9621f9fb0b6a2c47a7b6249c2c41751e7a3",
       "eb14a5b92f2de1bd8b41b53dd514ec9ace9c296cc5074b9d213b1663ea79bfc4",
       "ec9318396b9484851c628ac560658f3701a0e4c9050e0a81da728ba27f5c6c3b",
@@ -226,7 +229,7 @@
       "fd9b89cad04d08be50d6531e47f2a1848f8c5daf1bedf1b949af0d989ef7d10f",
       "ffe759f69cf48289a3580a7beb09fa58ccede03fe835e6d112bd5c1a1536f95c"
     ],
-    "updatedAt": "2026-10-22T09:00:07.349946+00:00"
+    "updatedAt": "2026-10-22T14:00:08.226869+00:00"
   },
   "regimeShift": {
     "isRecoveryMarket": false,
@@ -238,7 +241,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-10-22T13:00:00+00:00"
+    "updatedAt": "2026-10-22T14:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
