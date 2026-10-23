@@ -1,74 +1,74 @@
 {
   "version": "data-first-paper-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-10-22",
-  "observations": 598,
+  "lastSession": "2026-10-23",
+  "observations": 641,
   "signalCounts": {
-    "data_S3_ma200_distance25_base": 41,
-    "data_S3_ma200_distance25_filtered": 34,
-    "data_S3_rsi35_base": 41,
-    "data_S3_rsi35_filtered": 30,
-    "data_S3_intraday_positive_base": 41,
-    "data_S3_intraday_positive_filtered": 14,
+    "data_S3_ma200_distance25_base": 49,
+    "data_S3_ma200_distance25_filtered": 41,
+    "data_S3_rsi35_base": 49,
+    "data_S3_rsi35_filtered": 38,
+    "data_S3_intraday_positive_base": 49,
+    "data_S3_intraday_positive_filtered": 19,
     "data_S4_debt1_base": 1,
     "data_S4_debt1_filtered": 1,
     "data_S4_eps_growth_base": 1,
     "data_S4_eps_growth_filtered": 0,
-    "data_S7_high52_drawdown30_base": 18,
-    "data_S7_high52_drawdown30_filtered": 5,
-    "data_N_expanded_below200_base": 228,
-    "data_N_expanded_below200_filtered": 73,
-    "data_N_rsi_ahead_macd_base": 228,
-    "data_N_rsi_ahead_macd_filtered": 13,
-    "data_N_value_laggard_base": 228,
-    "data_N_value_laggard_filtered": 30
+    "data_S7_high52_drawdown30_base": 22,
+    "data_S7_high52_drawdown30_filtered": 7,
+    "data_N_expanded_below200_base": 266,
+    "data_N_expanded_below200_filtered": 94,
+    "data_N_rsi_ahead_macd_base": 266,
+    "data_N_rsi_ahead_macd_filtered": 14,
+    "data_N_value_laggard_base": 266,
+    "data_N_value_laggard_filtered": 35
   },
-  "filteredClosed": 0,
-  "filteredEntryDates": 0,
+  "filteredClosed": 4,
+  "filteredEntryDates": 1,
   "earliestReviewKST": "2026-12-08",
   "sampleReady": null,
   "status": "collecting",
   "collectorHash": "aa0d08cd3744aa0a6681f0e0f539bd888ff491a731adec78e9af7daa8ad5484d",
   "pairs": {
     "S3_ma200_distance25": {
-      "knownObservations": 594,
+      "knownObservations": 637,
       "unknownObservations": 4,
       "data_S3_ma200_distance25_base": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 6,
+        "entryDates": 1
       },
       "data_S3_ma200_distance25_filtered": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 6,
+        "entryDates": 1
       }
     },
     "S3_rsi35": {
-      "knownObservations": 594,
+      "knownObservations": 637,
       "unknownObservations": 4,
       "data_S3_rsi35_base": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 6,
+        "entryDates": 1
       },
       "data_S3_rsi35_filtered": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 4,
+        "entryDates": 1
       }
     },
     "S3_intraday_positive": {
-      "knownObservations": 591,
+      "knownObservations": 634,
       "unknownObservations": 7,
       "data_S3_intraday_positive_base": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 6,
+        "entryDates": 1
       },
       "data_S3_intraday_positive_filtered": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 6,
+        "entryDates": 2
       }
     },
     "S4_debt1": {
-      "knownObservations": 522,
-      "unknownObservations": 76,
+      "knownObservations": 560,
+      "unknownObservations": 81,
       "data_S4_debt1_base": {
         "closed": 0,
         "entryDates": 0
@@ -79,8 +79,8 @@
       }
     },
     "S4_eps_growth": {
-      "knownObservations": 522,
-      "unknownObservations": 76,
+      "knownObservations": 560,
+      "unknownObservations": 81,
       "data_S4_eps_growth_base": {
         "closed": 0,
         "entryDates": 0
@@ -91,7 +91,7 @@
       }
     },
     "S7_high52_drawdown30": {
-      "knownObservations": 594,
+      "knownObservations": 637,
       "unknownObservations": 4,
       "data_S7_high52_drawdown30_base": {
         "closed": 1,
@@ -103,23 +103,23 @@
       }
     },
     "N_expanded_below200": {
-      "knownObservations": 594,
+      "knownObservations": 637,
       "unknownObservations": 4,
       "data_N_expanded_below200_base": {
-        "closed": 4,
-        "entryDates": 1
+        "closed": 21,
+        "entryDates": 2
       },
       "data_N_expanded_below200_filtered": {
-        "closed": 2,
-        "entryDates": 1
+        "closed": 8,
+        "entryDates": 2
       }
     },
     "N_rsi_ahead_macd": {
-      "knownObservations": 594,
+      "knownObservations": 637,
       "unknownObservations": 4,
       "data_N_rsi_ahead_macd_base": {
-        "closed": 4,
-        "entryDates": 1
+        "closed": 21,
+        "entryDates": 2
       },
       "data_N_rsi_ahead_macd_filtered": {
         "closed": 0,
@@ -127,15 +127,15 @@
       }
     },
     "N_value_laggard": {
-      "knownObservations": 522,
-      "unknownObservations": 76,
+      "knownObservations": 560,
+      "unknownObservations": 81,
       "data_N_value_laggard_base": {
-        "closed": 4,
-        "entryDates": 1
+        "closed": 21,
+        "entryDates": 2
       },
       "data_N_value_laggard_filtered": {
-        "closed": 2,
-        "entryDates": 1
+        "closed": 5,
+        "entryDates": 2
       }
     }
   },
