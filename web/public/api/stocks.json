@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-10-23T14:57:05+00:00",
-    "lastSuccessfulRun": "2026-10-23T14:57:05+00:00",
+    "updatedAt": "2026-10-23T15:03:53+00:00",
+    "lastSuccessfulRun": "2026-10-23T15:03:53+00:00",
     "failedReason": null
   },
   "rows": [
@@ -178,7 +178,9 @@
       "opinion": "매도",
       "opinionReason": "3. 정상장 볼린저 워시아웃 · 진입 지지선 이탈 청산 (MA60 513.96)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
       "updatedAt": "2026-10-23T14:56:44+00:00"
@@ -210,7 +212,9 @@
       "opinion": "매도",
       "opinionReason": "3. 정상장 볼린저 워시아웃 · 진입 지지선 이탈 청산 (MA60 38.91)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
       "updatedAt": "2026-10-23T14:56:44+00:00"
@@ -219,7 +223,7 @@
       "ticker": "BE",
       "name": "Bloom Energy Class A",
       "market": "US",
-      "fairPrice": "$22.52 ~ $30.47",
+      "fairPrice": "$52.14 ~ $70.54",
       "fairPriceReason": null,
       "currentPrice": "$193.65",
       "valuation": "고평가",
@@ -290,18 +294,12 @@
       "opinion": "관망",
       "opinionReason": "매수 보류 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 지지선 이탈 $81.49 · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "반도체, 데이터센터·AI 서버 칩, 파운드리, 네트워크·5G",
-      "updatedAt": "2026-10-23T14:56:46+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-23T14:56:46+00:00"
     },
     {
       "ticker": "IONQ",
@@ -349,15 +347,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
-      "updatedAt": "2026-10-23T14:56:47+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-23T14:56:47+00:00"
     },
     {
       "ticker": "MU",
@@ -370,18 +360,12 @@
       "opinion": "관망",
       "opinionReason": "매수 보류 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 지지선 이탈 $816.46 · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "혼합주",
       "industry": "반도체, 메모리, DRAM, NAND, HBM",
-      "updatedAt": "2026-10-23T14:56:48+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-23T14:56:48+00:00"
     },
     {
       "ticker": "NBIS",
@@ -442,18 +426,12 @@
       "opinion": "관망",
       "opinionReason": "매수 보류 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 지지선 이탈 $1,158.04 · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
-      "updatedAt": "2026-10-23T14:56:49+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-23T14:56:49+00:00"
     },
     {
       "ticker": "SOXL",
@@ -530,18 +508,12 @@
       "opinion": "관망",
       "opinionReason": "매수 보류 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 지지선 이탈 $236.99 · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머",
-      "updatedAt": "2026-10-23T14:56:51+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-23T14:56:51+00:00"
     },
     {
       "ticker": "VRT",
@@ -563,7 +535,7 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "fairPrice": "₩258,376 ~ ₩349,567",
+      "fairPrice": "₩254,541 ~ ₩344,380",
       "fairPriceReason": null,
       "currentPrice": "₩465,500",
       "valuation": "고평가",
@@ -698,7 +670,9 @@
       "opinion": "매도",
       "opinionReason": "3. 정상장 볼린저 워시아웃 · 진입 지지선 이탈 청산 (MA120 711.13)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "스윙주",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
       "updatedAt": "2026-10-23T14:56:57+00:00"
@@ -714,18 +688,12 @@
       "opinion": "관망",
       "opinionReason": "매수 보류 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 지지선 이탈 $86.16 · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "스윙주",
       "industry": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
-      "updatedAt": "2026-10-23T14:56:57+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 5,
-      "openPositionCount": 4,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-23T14:56:57+00:00"
     },
     {
       "ticker": "USD",
@@ -786,7 +754,9 @@
       "opinion": "매도",
       "opinionReason": "3. 정상장 볼린저 워시아웃 · 진입 지지선 이탈 청산 (MA144 50.10)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화",
       "updatedAt": "2026-10-23T14:56:59+00:00"
@@ -805,15 +775,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 발사체, 위성통신, Starlink",
-      "updatedAt": "2026-10-23T14:57:00+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "방산·우주",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-23T14:57:00+00:00"
     },
     {
       "ticker": "UBER",
@@ -829,15 +791,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
-      "updatedAt": "2026-10-23T14:57:00+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "소프트웨어·클라우드",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-23T14:57:00+00:00"
     },
     {
       "ticker": "AAPL",
@@ -895,7 +849,7 @@
       "ticker": "META",
       "name": "Meta Platforms Class A",
       "market": "US",
-      "fairPrice": "$692.01 ~ $936.25",
+      "fairPrice": "$693.38 ~ $938.10",
       "fairPriceReason": null,
       "currentPrice": "$647.58",
       "valuation": "저평가",
