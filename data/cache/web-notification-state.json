@@ -87,6 +87,10 @@
     "treasury": "정상"
   },
   "marketHighSignalsSentAt": "2026-10-22T15:00:09.202840+00:00",
+  "marketHighWarningEpisode": {
+    "active": true,
+    "normalSessions": 0
+  },
   "nasdaqPeak": {
     "resetAt": "2026-05-14T20:55:50.998617+00:00",
     "sent": false
@@ -224,7 +228,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-10-24T05:00:00+00:00"
+    "updatedAt": "2026-10-24T07:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
