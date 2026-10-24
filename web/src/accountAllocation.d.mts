@@ -9,3 +9,5 @@ export function calculateAccountPortfolio<T>(trades: T[], stocks: unknown[], tre
 export function normalizeAccountSettings(settings?: unknown): unknown
 
 export function accountTradeKey(trade: unknown): string
+
+export function swingRiskGroupOverride(ticker: string): string | null

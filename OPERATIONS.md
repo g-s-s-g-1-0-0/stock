@@ -165,3 +165,10 @@ Then push again:
 ```bash
 git push
 ```
+
+
+## Strategy 3 support exit verification (2026-10-25)
+
+The support stop remains a completed regular-session close rule, not an intraday stop. Each refresh checks the latest completed candle from the cached trend chart; a same-day dailyPriceDate no longer suppresses this check. A snapshot captured before the session close is not treated as final. Missing/malformed chart data cannot establish a support exit. New entries record buyTimestamp; a close before entry cannot trigger a stop. Legacy entries without a timestamp require the completed close to fall on a later KST date than buyDate. US/Korean normal closes are 16:00 ET/15:30 KST; shortened sessions are conservatively recognized after the normal close. On confirmation the log uses the currently observed quote and records supportExitConfirmation (session/close), without inventing a historical fill. The existing -25% live circuit and entry filters remain in place. This is a polling signal service, not a broker stop order or a guaranteed loss cap.
+
+COHU uses the semiconductor/AI risk group for active/new allocation decisions in both the server and browser. Already-closed trade classifications and historical exits are preserved; this correction does not recalculate past fills. Candidate research protocols remain unchanged.

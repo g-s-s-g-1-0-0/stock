@@ -1,4 +1,5 @@
 from pathlib import Path
+import pytest
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -1512,3 +1513,68 @@ def test_strategy_4_live_stop_precedes_fresh_daily_close():
         now=datetime(2026,10,12,15,tzinfo=timezone.utc), today="2026.10.12", today_date=date(2026,10,12), mutate_public_state=False)
     assert trade["status"] == "손절"
     assert trade["sellPrice"] == "$90"
+
+
+@pytest.mark.parametrize("quote", ["$48", "$39"])
+@pytest.mark.parametrize("market_exit", [None, "peak", "recovery"])
+def test_s3_support_exit_uses_completed_close_even_when_daily_date_is_unchanged(monkeypatch, quote, market_exit):
+    from datetime import datetime, timezone
+    monkeypatch.setattr(logs, "should_defer_market_signal", lambda *args: False)
+    trade = {"slotId": "COHU_test", "ticker": "COHU", "market": "US", "investmentType": "swing",
+             "strategy": "3. 정상장 볼린저 워시아웃", "buyDate": "2026.10.15", "buyPrice": "$53.71",
+             "status": "보유 중", "supportStopPrice": 50.10, "supportLevel": "MA144"}
+    candle = {"date": str(int(datetime(2026, 10, 22, 13, 30, tzinfo=timezone.utc).timestamp())), "close": 49.05}
+    row = {"dailyPriceDate": "2026-10-23", "C - Close": "$52", "현재가": "$48",
+           "updatedAt": "2026-10-23T13:55:00Z", "추세 차트 데이터": logs.json.dumps({"candles": [candle]})}
+    stock = {"ticker": "COHU", "market": "US", "currentPrice": quote, "opinion": "관망"}
+    now = datetime(2026, 10, 23, 14, tzinfo=timezone.utc)
+    result = logs.run_trade_engine([trade], {"swing": [], "long_term": []}, stocks=[stock],
+        stocks_by_symbol={"COHU": stock}, previous_stocks={}, technical={"COHU": row},
+        previous_technical={"COHU": {"dailyPriceDate": "2026-10-23"}}, season={}, deferred_tickers=set(),
+        nasdaq_peak_alert=market_exit == "peak", recovery_ended=market_exit == "recovery", seed_after_reset=False, now=now,
+        today="2026.10.23", today_date=now.date(), mutate_public_state=False)
+    assert result["closed"] == 1
+    assert trade["sellPrice"] == quote  # Never backdate a fill at the historical close.
+    if quote == "$48":
+        assert trade["supportExitConfirmation"] == {"session": "2026-10-22", "close": 49.05}
+    else:
+        assert "손절 기준 도달" in trade["exitReason"]
+        assert "supportExitConfirmation" not in trade
+
+
+def test_completed_support_close_rejects_unfinished_stale_and_pre_entry_candles():
+    from datetime import datetime, timezone
+    trade = {"ticker": "COHU", "market": "US", "buyDate": "2026.10.22"}
+    candle = {"date": str(int(datetime(2026, 10, 22, 13, 30, tzinfo=timezone.utc).timestamp())), "close": 49.05}
+    row = {"updatedAt": "2026-10-22T19:55:00Z", "추세 차트 데이터": logs.json.dumps({"candles": [candle]})}
+    assert logs.completed_support_close(row, trade, datetime(2026, 10, 22, 19, 55, tzinfo=timezone.utc)) is None
+    # Waiting after the close does not make a pre-close snapshot final.
+    assert logs.completed_support_close(row, trade, datetime(2026, 10, 22, 21, tzinfo=timezone.utc)) is None
+    row["updatedAt"] = "2026-10-22T20:05:00Z"
+    assert logs.completed_support_close(row, trade, datetime(2026, 10, 22, 21, tzinfo=timezone.utc)) == ("2026-10-22", 49.05)
+    trade["buyDate"] = "2026.10.24"
+    assert logs.completed_support_close(row, trade, datetime(2026, 10, 24, 21, tzinfo=timezone.utc)) is None
+    row["추세 차트 데이터"] = "invalid"
+    assert logs.completed_support_close(row, trade, datetime(2026, 10, 24, 21, tzinfo=timezone.utc)) is None
+
+
+def test_completed_support_close_uses_korean_session_close():
+    from datetime import datetime, timezone
+    candle = {"date": str(int(datetime(2026, 10, 22, tzinfo=timezone.utc).timestamp())), "close": 100}
+    row = {"updatedAt": "2026-10-22T06:29:00Z", "추세 차트 데이터": logs.json.dumps({"candles": [candle]})}
+    trade = {"ticker": "005930", "market": "KR", "buyDate": "2026.10.22", "buyTimestamp": "2026-10-22T01:00:00Z"}
+    now = datetime(2026, 10, 22, 7, tzinfo=timezone.utc)
+    assert logs.completed_support_close(row, trade, now) is None
+    row["updatedAt"] = "2026-10-22T06:35:00Z"
+    assert logs.completed_support_close(row, trade, now) == ("2026-10-22", 100)
+
+
+def test_completed_support_close_never_uses_a_close_before_entry():
+    from datetime import datetime, timezone
+    candle = {"date": str(int(datetime(2026, 10, 22, 13, 30, tzinfo=timezone.utc).timestamp())), "close": 49}
+    row = {"updatedAt": "2026-10-23T15:00:00Z", "추세 차트 데이터": logs.json.dumps({"candles": [candle]})}
+    trade = {"ticker": "COHU", "market": "US", "buyDate": "2026.10.23", "buyTimestamp": "2026-10-23T14:00:00Z"}
+    now = datetime(2026, 10, 23, 15, tzinfo=timezone.utc)
+    assert logs.completed_support_close(row, trade, now) is None
+    del trade["buyTimestamp"]  # Legacy rows without entry times use a conservative next-date boundary.
+    assert logs.completed_support_close(row, trade, now) is None

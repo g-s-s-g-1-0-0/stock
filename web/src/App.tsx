@@ -9,7 +9,7 @@ import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 import { isUsagePage, seoulDate } from './usageMetrics'
 import { compareTradeSignals } from './tradeOrder'
 import { createReadRecovery } from './readRecovery'
-import { calculateAccountPortfolio, accountTradeKey } from './accountAllocation.mjs'
+import { calculateAccountPortfolio, accountTradeKey, swingRiskGroupOverride } from './accountAllocation.mjs'
 
 type Market = 'KR' | 'US'
 type Valuation = '저평가' | '보통' | '고평가' | '판단 불가'
@@ -113,6 +113,7 @@ type TradeLog = {
   currentPrice?: string
   strategy: string
   buyDate: string
+  buyTimestamp?: string
   buyPrice: string
   sellDate: string
   sellPrice: string
@@ -1050,6 +1051,7 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     currentPrice: typeof candidate.currentPrice === 'string' ? candidate.currentPrice : undefined,
     strategy: typeof candidate.strategy === 'string' ? candidate.strategy : '-',
     buyDate: candidate.buyDate,
+    buyTimestamp: typeof candidate.buyTimestamp === 'string' ? candidate.buyTimestamp : undefined,
     buyPrice: typeof candidate.buyPrice === 'string' ? candidate.buyPrice : '-',
     sellDate: typeof candidate.sellDate === 'string' ? candidate.sellDate : '-',
     sellPrice: typeof candidate.sellPrice === 'string' ? candidate.sellPrice : '-',
@@ -3807,6 +3809,8 @@ function contributionDayMessage(value: string) {
 }
 
 function swingRiskGroupForFields(ticker: string, name?: string, industryValue?: string) {
+  const override = swingRiskGroupOverride(ticker)
+  if (override) return override
   const industry = displayIndustryLabel(industryValue)
   const text = `${ticker} ${name ?? ''} ${industry}`.toLowerCase()
   const matchedRule = SWING_RISK_GROUP_RULES.find(([, keywords]) => keywords.some((keyword) => text.includes(keyword)))
@@ -3816,6 +3820,8 @@ function swingRiskGroupForFields(ticker: string, name?: string, industryValue?: 
 }
 
 function swingRiskGroupForTrade(trade: TradeLog, stocksByTicker: Map<string, Stock>) {
+  const override = swingRiskGroupOverride(trade.ticker)
+  if (override && ['보유 중', '매수 보류'].includes(trade.status)) return override
   if (trade.riskGroup && trade.riskGroup !== '분류 확인 필요') return trade.riskGroup
   const stock = stocksByTicker.get(trade.ticker)
   return swingRiskGroupForFields(trade.ticker, trade.name ?? stock?.name, stock?.industry)

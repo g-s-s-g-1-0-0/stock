@@ -70,3 +70,23 @@ def test_deferred_reason_never_claims_actual_holdings():
     technical = {'QQQ': dict(stock)}
     assert logs.sync_account_allocation_guidance([stock],technical,[row])
     assert stock['opinionReason'] == technical['QQQ']['opinionReason'] == '매수 조건 해제 · 매수 보류 유지'
+
+
+def test_cohu_correction_applies_to_new_holdings_without_rewriting_closed_classification():
+    import subprocess
+    from calculator.account_allocation import ROOT
+    script = """
+      import {calculateAccountPortfolio} from './web/src/accountAllocation.mjs';
+      const trade={slotId:'cohu',ticker:'COHU',investmentType:'swing',strategy:'3. test',buyDate:'2026.10.15',buyPrice:'$100',currentPrice:'$100',status:'보유 중',riskGroup:'산업재·건설'};
+      const settings={initialCapital:10000000,amount:0,swingMegaTrendOnly:false};
+      const stock={ticker:'COHU',industry:'산업재, 장비·제조, 자동화'};
+      const open=calculateAccountPortfolio([trade],[stock],[],settings,'swing').trades[0];
+      const closed=calculateAccountPortfolio([{...trade,status:'손절',sellDate:'2026.10.23',sellPrice:'$90',returnPct:-10}],[stock],[],settings,'swing').trades[0];
+      const limited={...settings,allocationByInvestmentType:{swing:{slotCount:2,slotPercents:[15,10]}}};
+      const amd={...trade,slotId:'amd',ticker:'AMD',buyDate:'2026.10.14',riskGroup:'반도체·AI 인프라'};
+      const capped=calculateAccountPortfolio([amd,trade],[stock],[],limited,'swing').trades[1];
+      console.log(JSON.stringify({open:open.riskGroup,closed:closed.riskGroup,capped:capped.investmentAmount,reason:capped.allocationReason}));
+    """
+    result = subprocess.run(['node','--input-type=module','-e',script],cwd=ROOT,text=True,capture_output=True,check=True)
+    assert json.loads(result.stdout) == {'open':'반도체·AI 인프라','closed':'산업재·건설',
+                                       'capped':0,'reason':'반도체·AI 인프라 산업 비중 20% 한도 초과'}
