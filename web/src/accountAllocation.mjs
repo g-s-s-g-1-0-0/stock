@@ -90,7 +90,12 @@ function tradePriority(trade, stocks, trends) {
   })) ?? -1
   return { megaRank: index >= 0 && index < 5 ? 0 : 1, trendRank: index >= 0 ? index + 1 : 99 }
 }
+export function swingRiskGroupOverride(ticker) {
+  return String(ticker || '').toUpperCase() === 'COHU' ? '반도체·AI 인프라' : null
+}
 function swingRiskGroupForTrade(trade, stocks) {
+  const override = swingRiskGroupOverride(trade.ticker)
+  if (override && ['보유 중', '매수 보류'].includes(trade.status)) return override
   if (trade.riskGroup && trade.riskGroup !== '분류 확인 필요') return trade.riskGroup
   const stock = stocks.get(trade.ticker) || {}
   const industry = stock.industry || ''
@@ -301,6 +306,7 @@ export function calculateAccountPortfolio(inputTrades, stocks = [], trends = [],
       ...original,
       allocationSignalStatus: allocationSignalStatus || trade.status,
       allocationSource: 'account',
+      ...(tracked && investmentType === 'swing' ? { riskGroup: swingRiskGroupForTrade(trade, stocksByTicker) } : {}),
       ...(trade.allocationRequestedAmount !== undefined || trade.allocationSource !== 'account' && typeof trade.investmentAmount === 'number' ? { allocationRequestedAmount: trade.allocationRequestedAmount ?? trade.investmentAmount } : {}),
       investmentAmount: amount,
       ...(tracked ? {

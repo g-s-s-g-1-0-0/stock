@@ -869,6 +869,35 @@ def daily_price_date(row: dict[str, Any]) -> date | None:
         return None
 
 
+def completed_support_close(row: dict[str, Any], trade: dict[str, Any], now: datetime) -> tuple[str, float] | None:
+    """Use completed regular-session candles, never an evolving daily close."""
+    market = normalize_market(trade.get("market"), str(trade.get("ticker") or ""))
+    zone = ET if market == "US" else KST
+    close_hour, close_minute = (16, 0) if market == "US" else (15, 30)
+    try:
+        chart = row.get("추세 차트 데이터") or {}
+        if isinstance(chart, str):
+            chart = json.loads(chart)
+        candles = chart.get("candles", [])
+        captured = parse_trade_datetime(row.get("updatedAt"))
+        bought = parse_trade_date(trade.get("buyDate"))
+        bought_at = parse_trade_datetime(trade.get("buyTimestamp"))
+        completed = []
+        for candle in candles:
+            day = datetime.fromtimestamp(float(candle["date"]), zone).date()
+            closed_at = datetime(day.year, day.month, day.day, close_hour, close_minute, tzinfo=zone)
+            price = parse_price(candle.get("close"))
+            if (price is not None and price > 0 and captured is not None
+                    and captured >= closed_at and now >= closed_at
+                    and bought is not None
+                    and (closed_at >= bought_at if bought_at is not None
+                         else closed_at.astimezone(KST).date() > bought)):
+                completed.append((day.isoformat(), price))
+        return max(completed, default=None)
+    except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+        return None
+
+
 def has_new_daily_price(row: dict[str, Any], previous_row: dict[str, Any] | None) -> bool:
     current_date = daily_price_date(row)
     previous_date = daily_price_date(previous_row or {})
@@ -1580,6 +1609,14 @@ def run_trade_engine(
                 recovery_ended=recovery_ended,
                 trading_days=trend_held_sessions(trade, row),
             )
+        elif (strategy == "3" and live_ind is not None
+              and live_ind.current_price <= live_ind.entry_price * (1 - STRATEGY_RULES["S3_HARD_CIRCUIT_PCT"])):
+            exit_result = evaluate_exit_condition(live_ind, strategy_type=strategy)
+        elif (strategy == "3" and parse_price(trade.get("supportStopPrice")) is not None
+              and (support_close := completed_support_close(row, trade, now)) is not None
+              and support_close[1] <= parse_price(trade.get("supportStopPrice"))):
+            exit_result = {"shouldExit": True, "reason": f"진입 지지선 이탈 청산 ({trade.get('supportLevel') or '지지선'} {float(trade['supportStopPrice']):.2f}; {support_close[0]} 종가 확인)"}
+            trade["supportExitConfirmation"] = {"session": support_close[0], "close": support_close[1]}
         elif strategy == "3" and confirm_strategy_3_market_exit(trade, market_premium, held_trading_days, today):
             exit_result = {
                 "shouldExit": True,
@@ -1610,17 +1647,13 @@ def run_trade_engine(
                 regime_label=regime_label,
             )
         elif daily_ind is not None and isinstance(row, dict) and has_new_daily_price(row, previous_row if isinstance(previous_row, dict) else None):
-            support_stop = parse_price(trade.get("supportStopPrice"))
-            if strategy == "3" and support_stop is not None and daily_ind.current_price <= support_stop:
-                exit_result = {"shouldExit": True, "reason": f"진입 지지선 이탈 청산 ({trade.get('supportLevel') or '지지선'} {support_stop:.2f})"}
-            else:
-                exit_result = evaluate_exit_condition(
-                    daily_ind,
-                    strategy_type=strategy,
-                    nasdaq_peak_alert=False,
-                    trading_days=held_trading_days,
-                    regime_label=regime_label,
-                )
+            exit_result = evaluate_exit_condition(
+                daily_ind,
+                strategy_type=strategy,
+                nasdaq_peak_alert=False,
+                trading_days=held_trading_days,
+                regime_label=regime_label,
+            )
             exit_price = daily_sell_price
         elif live_ind is not None:
             exit_result = evaluate_exit_condition(
@@ -1850,6 +1883,7 @@ def run_trade_engine(
                     "currentPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
                     "strategy": strategy_display_name(code),
                     "buyDate": today,
+                    "buyTimestamp": now.astimezone(timezone.utc).isoformat(),
                     "buyPrice": stock.get("currentPrice") or tech_value(row, "현재가"),
                     "sellDate": OPEN_POSITION_STATUS if status == OPEN_POSITION_STATUS else "-",
                     "sellPrice": "-",
