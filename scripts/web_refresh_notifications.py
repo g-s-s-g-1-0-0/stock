@@ -2554,11 +2554,32 @@ def send_market_signal_notifications() -> int:
     if not isinstance(previous_status, str):
         previous_parts = [str(previous[key]) for key in keys if previous.get(key) in {"정상", "주의", "경고", "판단 불가"}]
         previous_status = aggregate_market_signal_status(previous_parts) if previous_parts else current_status
-    if current_status == previous_status:
-        state["marketHighSignals"] = {**current, "overallStatus": current_status}
-        state["marketHighSignalStatus"] = current_status
+    # Missing feeds must never clear an alert or arm another warning.
+    if any(value not in {"정상", "주의", "경고"} for value in current.values()):
+        print("Market signal data is incomplete; preserving alert state.")
+        return 0
+
+    episode = state.get("marketHighWarningEpisode")
+    if not isinstance(episode, dict):
+        episode = {"active": previous_status == "경고" and bool(state.get("marketHighSignalsSentAt"))}
+    state["marketHighWarningEpisode"] = episode
+    state["marketHighSignals"] = {**current, "overallStatus": current_status}
+    state["marketHighSignalStatus"] = current_status
+    session = datetime.now(ET).date()
+    if all(value == "정상" for value in current.values()):
+        # Multiple refreshes in one session count as only one recovery check.
+        if session.weekday() < 5 and episode.get("normalSession") != session.isoformat():
+            episode["normalSessions"] = int(episode.get("normalSessions", 0)) + 1
+            episode["normalSession"] = session.isoformat()
+        if episode.get("normalSessions", 0) >= 2:
+            episode["active"] = False
+            episode.pop("sentEmails", None)
+    else:
+        episode["normalSessions"] = 0
+        episode.pop("normalSession", None)
+    if current_status != "경고" or episode.get("active"):
         write_json(NOTIFICATION_STATE, state)
-        print("Market signal status has not changed.")
+        print("Market warning already sent or not triggered.")
         return 0
 
     admin_recipients = dedupe_recipients([
@@ -2580,14 +2601,24 @@ def send_market_signal_notifications() -> int:
 
     subject = f"미국 시장 고점 신호 {signals.get('status', '판단 불가')} 알림"
     body = market_signal_email_body(signals)
+    sent_emails = set(episode.get("sentEmails", []))
+    sent = 0
     for recipient in recipients:
+        email_key = recipient.email.strip().lower()
+        if email_key in sent_emails:
+            continue
         send_email(recipient.email, subject, body)
+        sent += 1
+        sent_emails.add(email_key)
+        episode["sentEmails"] = sorted(sent_emails)
+        write_json(NOTIFICATION_STATE, state)
+    episode["active"] = True
     state["marketHighSignals"] = {**current, "overallStatus": current_status}
     state["marketHighSignalStatus"] = current_status
     state["marketHighSignalsSentAt"] = datetime.now().astimezone().isoformat()
     write_json(NOTIFICATION_STATE, state)
-    print(f"Sent market signal notifications to admins: {len(recipients)}")
-    return len(recipients)
+    print(f"Sent market signal notifications to admins: {sent}")
+    return sent
 
 
 

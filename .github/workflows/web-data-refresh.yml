@@ -319,7 +319,7 @@ jobs:
           bash scripts/publish_live_data.sh "Collect gap-and-go observations"
 
       - name: Commit notification send state
-        if: ${{ env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' }}
+        if: ${{ always() && env.SKIP_REFRESH != 'true' && env.SEND_NOTIFICATIONS == 'true' }}
         run: |
           git add data/cache/web-notification-state.json data/cache/trade-logs.json web/public/api/trade-logs.json
           if git diff --cached --quiet -- data/cache/web-notification-state.json data/cache/trade-logs.json web/public/api/trade-logs.json; then

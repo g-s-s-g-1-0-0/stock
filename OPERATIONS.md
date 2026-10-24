@@ -33,6 +33,8 @@ Watch these values before public traffic spikes:
 
 ## Email Notifications
 
+- Market high-signal mail is sent once per warning episode, per normalized email address. Caution, normal, and unavailable states do not send mail. Missing component feeds preserve the episode. A new warning can notify only after all three components have been normal on two distinct New York weekdays; repeated refreshes on one date count once, and any valid non-normal observation resets recovery. Existing sent warnings migrate without another email. Notification state is published even if a later workflow step fails.
+
 Required GitHub Secrets:
 
 - `SMTP_USER`
