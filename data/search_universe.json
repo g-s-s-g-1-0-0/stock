@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15513,
-    "industryEnrichedAt": "2026-10-25T15:01:47+00:00",
-    "industryEnrichedTickers": 33,
+    "industryEnrichedAt": "2026-10-25T16:56:24+00:00",
+    "industryEnrichedTickers": 12,
     "industryReviewedAt": "2026-10-25T15:01:49+00:00",
     "industryReviewedTickers": 9
   },
@@ -201379,7 +201379,7 @@
       "strategies": [],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Computer Hardware",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00"
     },
@@ -202559,7 +202559,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "NYSE 반도체 지수 3배 레버리지 ETF(일일 3배)",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00",
       "etfFlag": true
@@ -202591,11 +202591,10 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "반도체 지수 3배 인버스 레버리지 ETF(일일 3배)",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00",
-      "etfFlag": true,
-      "industryReviewedAt": "2026-10-25T15:01:49+00:00"
+      "etfFlag": true
     },
     {
       "ticker": "SOXX",
@@ -203036,7 +203035,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 발사체, 위성통신, Starlink",
-      "rawIndustry": "-",
+      "rawIndustry": "Industrials | Aerospace &amp; Defense",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00"
     },
@@ -206671,7 +206670,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Computer Hardware",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00"
     },
@@ -210865,7 +210864,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "반도체 테스트 장비, 자동화 테스트, 협동로봇",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Semiconductor Equipment &amp; Materials",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00"
     },
@@ -216493,7 +216492,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "전기차, 에너지, AI, FSD, 로보택시",
-      "rawIndustry": "-",
+      "rawIndustry": "Consumer Cyclical | Auto Manufacturers",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00"
     },
@@ -218738,7 +218737,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Software - Application",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00",
       "industryReviewedAt": "2026-10-25T15:01:49+00:00"
@@ -221193,7 +221192,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "다우존스 미국 반도체 지수 2배 레버리지 ETF(일일 2배)",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00",
       "etfFlag": true
@@ -226539,7 +226538,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 데이터센터 전력·냉각, 액침냉각, UPS",
-      "rawIndustry": "-",
+      "rawIndustry": "Industrials | Electrical Equipment &amp; Parts",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00"
     },
@@ -226894,7 +226893,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "전력 발전, 원전·가스, AI 데이터센터 전력수요, AI 인프라",
-      "rawIndustry": "-",
+      "rawIndustry": "Utilities | Utilities - Independent Power Producers",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00"
     },
@@ -231389,7 +231388,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial | Capital Markets",
       "products": "-",
       "updatedAt": "2026-10-25T15:01:34+00:00"
     },
