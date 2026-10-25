@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-10-25T16:57:07+00:00",
-    "lastSuccessfulRun": "2026-10-25T16:57:07+00:00",
+    "updatedAt": "2026-10-25T17:59:29+00:00",
+    "lastSuccessfulRun": "2026-10-25T17:59:29+00:00",
     "failedReason": null
   },
   "rows": [
@@ -4332,6 +4332,13 @@
       "market": "KR",
       "category": "가치주",
       "industry": "자동차, 전기차, 모빌리티"
+    },
+    {
+      "ticker": "0230E0",
+      "name": "이스트엔드",
+      "market": "KR",
+      "category": "성장주",
+      "industry": "뷰티테크, 화장품·건기식, D2C 브랜드"
     },
     {
       "ticker": "023150",
@@ -53134,7 +53141,7 @@
       "ticker": "GNRC",
       "name": "Generac Holdlings",
       "market": "US",
-      "category": "스윙주",
+      "category": "가치주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
@@ -69122,7 +69129,7 @@
       "ticker": "META",
       "name": "Meta Platforms Class A",
       "market": "US",
-      "category": "가치주",
+      "category": "성장주",
       "industry": "Communication Services | Internet Content & Information"
     },
     {

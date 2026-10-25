@@ -2,8 +2,8 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-10-25T15:01:52+00:00",
-    "lastSuccessfulRun": "2026-10-25T15:01:52+00:00",
+    "updatedAt": "2026-10-25T17:59:29+00:00",
+    "lastSuccessfulRun": "2026-10-25T17:59:29+00:00",
     "analysisStatus": "news-verified",
     "failedReason": null
   },
@@ -819,33 +819,44 @@
         "방산·드론 | 방산, 드론, 무인체계, 유도무기, 레이더",
         "전기차·배터리 | 전기차, 배터리, 리튬, 자율주행, 로보택시",
         "AI | AI, 광고, 클라우드, Waymo, TPU",
-        "바이오테크 | 신약, 암, 임상, Amgen",
-        "인공지능 | AI, Nvidia, OpenAI, 투자",
-        "반도체 | SK하이닉스, Solidigm, IPO, 주가",
-        "우주·항공 | SpaceX, Starlink, 우주, 투자",
-        "자동차·전기차 | Tesla, Musk, 전기차, 주가"
+        "자동차·공정 | Audi, 제조, 미국",
+        "바이오테크 | Biotech, 신약, 주가",
+        "항공·여행 | 항공사, 운임, 수요",
+        "대형주·투자 | Berkshire, 주가, 블루칩",
+        "반도체·메모리 | SK Hynix, 주가, Solidigm"
       ],
-      "summary": "최근 7일간 인공지능과 바이오테크, 우주·항공, 반도체 등 기술 중심의 투자 테마가 주목받으며입니다.",
+      "summary": "인공지능과 반도체, 바이오테크 등 성장 산업에 대한 투자 관심이 높아지면서 주식시장 전반에 긍정적 분위기가 형성되고 있습니다.",
       "newsEvidence": [
+        {
+          "sector": "자동차·공정",
+          "articles": [
+            {
+              "title": "Audi defends plans for a $4 billion Georgia plant amid VW restructuring, tariffs",
+              "url": "https://www.cnbc.com/2026/10/25/audi-georgia-us-plant-tariffs-volkswagen.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-25T16:42:42+00:00"
+            }
+          ]
+        },
         {
           "sector": "바이오테크",
           "articles": [
-            {
-              "title": "Amgen says drug combo cuts risk of death by 58% in patients with aggressive lung cancer",
-              "url": "https://www.cnbc.com/2026/10/24/amgen-imdelltra-lung-cancer-data.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-10-24T14:30:01+00:00"
-            },
             {
               "title": "Biotech stocks are surging. How investors can play the new drug innovation boom",
               "url": "https://www.cnbc.com/2026/10/24/biotech-stocks-drug-innovation-rally.html",
               "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
               "publishedAt": "2026-10-24T18:56:29+00:00"
+            },
+            {
+              "title": "Amgen says drug combo cuts risk of death by 58% in patients with aggressive lung cancer",
+              "url": "https://www.cnbc.com/2026/10/24/amgen-imdelltra-lung-cancer-data.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-24T14:30:01+00:00"
             }
           ]
         },
         {
-          "sector": "인공지능",
+          "sector": "AI·반도체",
           "articles": [
             {
               "title": "Nvidia's role as AI financier faces first big test as neoclouds take market hit",
@@ -854,21 +865,43 @@
               "publishedAt": "2026-10-24T11:00:01+00:00"
             },
             {
-              "title": "AI funding fears rattle Wall Street. Here's how we're adjusting our portfolio",
-              "url": "https://www.cnbc.com/investingclub/2026/10/24/ai-funding-fears-rattle-wall-street-heres-how-were-adjusting-our-portfolio.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-10-24T16:14:00+00:00"
+              "title": "Turmoil hits AI buildout as neoclouds face pressure, credit risks mount and Solidigm pulls IPO",
+              "url": "https://www.cnbc.com/2026/10/23/ai-turmoil-neoclouds-struggle-credit-risks-jump-solidigm-pulls-ipo.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-24T06:41:14+00:00"
             },
             {
-              "title": "OpenAI nears up to $30 billion funding round at $1.25 trillion valuation led by UAE investors",
-              "url": "https://www.cnbc.com/2026/10/22/openai-funding-round-uae-investors.html",
+              "title": "On the ground at Nvidia's AI showpiece: Jensen-mania, robot ducks and neocloud distress",
+              "url": "https://www.cnbc.com/2026/10/23/jensen-huang-gtc-robot-ducks-neocloud-distress.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-10-23T12:39:27+00:00"
+              "publishedAt": "2026-10-23T12:08:30+00:00"
             }
           ]
         },
         {
-          "sector": "반도체",
+          "sector": "항공·여행",
+          "articles": [
+            {
+              "title": "Fewer people are flying as airfare soars. Here's why airlines aren't worried",
+              "url": "https://www.cnbc.com/2026/10/23/airfare-airline-capacity.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-24T15:53:30+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "대형주·투자",
+          "articles": [
+            {
+              "title": "Berkshire shares shake the Buffett blues with new all-time highs",
+              "url": "https://www.cnbc.com/2026/10/24/berkshire-record-high-without-buffett.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-24T12:48:32+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "반도체·메모리",
           "articles": [
             {
               "title": "SK Hynix shares jump over 4% after early losses as chipmaker scraps Solidigm IPO plans",
@@ -879,26 +912,30 @@
           ]
         },
         {
-          "sector": "우주·항공",
+          "sector": "AI 투자",
           "articles": [
             {
-              "title": "After SpaceX restores high-speed service, Musk claims Ukraine violated Starlink agreement",
-              "url": "https://www.cnbc.com/2026/10/24/ukraine-starlink-starshield-service-restored.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-10-24T20:38:30+00:00"
-            },
-            {
-              "title": "In hunt for Starlink alternative, Ukraine partners with Nokia and satellite maker ICEYE",
-              "url": "https://www.cnbc.com/2026/10/23/ukraine-partners-with-nokia-and-iceye-for-starlink-alternative.html",
+              "title": "OpenAI nears up to $30 billion funding round at $1.25 trillion valuation led by UAE investors",
+              "url": "https://www.cnbc.com/2026/10/22/openai-funding-round-uae-investors.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-10-23T20:52:23+00:00"
-            },
+              "publishedAt": "2026-10-23T12:39:27+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "주식시장·수익",
+          "articles": [
             {
-              "title": "Musk's SpaceX is still restricting Starlink in Ukraine and the toll is rising",
-              "url": "https://www.cnbc.com/2026/10/23/ukraine-says-starlink-restrictions-remain-despite-trump-assurances.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-10-23T19:50:26+00:00"
-            },
+              "title": "More than a third of S&P 500 companies are about to report earnings as market confidence cracks",
+              "url": "https://www.marketwatch.com/story/more-than-a-third-of-s-p-500-companies-are-about-to-report-earnings-as-market-confidence-cracks-03b7a8f1?mod=mw_rss_topstories",
+              "source": "https://feeds.marketwatch.com/marketwatch/topstories/",
+              "publishedAt": "2026-10-25T14:00:00+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "우주·우주기술",
+          "articles": [
             {
               "title": "SpaceX records $561 million investment gain from stake in Elon Musk's Boring Co.",
               "url": "https://www.cnbc.com/2026/10/22/spacex-records-561-million-investment-gain-from-stake-in-boring-co.html",
@@ -915,124 +952,27 @@
               "url": "https://www.cnbc.com/2026/10/23/spacex-tesla-merger-chatter-takes-center-stage-after-earnings.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
               "publishedAt": "2026-10-23T11:00:01+00:00"
-            },
-            {
-              "title": "SpaceX and Tesla have high election stakes as Elon Musk pours $366 million into campaigns",
-              "url": "https://www.cnbc.com/2026/10/22/elon-musk-midterm-election-spacex-tesla.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-10-22T21:58:42+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "소비자·리테일",
-          "articles": [
-            {
-              "title": "Etsy bans AI-generated recipes and patterns from its online marketplace",
-              "url": "https://www.cnbc.com/2026/10/22/etsy-bans-ai-generated-recipes-patterns-from-its-online-marketplace.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-10-22T23:45:50+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "금융·보험",
-          "articles": [
-            {
-              "title": "Trump's executive order targets mortgage insurance, refinance costs. What it means for borrowers",
-              "url": "https://www.cnbc.com/2026/10/23/trump-mortgage-executive-order-costs.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-10-23T22:27:06+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "에너지",
-          "articles": [
-            {
-              "title": "Why popular airplanes are getting scrapped years early",
-              "url": "https://www.cnbc.com/2026/10/24/spirit-airlines-planes-scrapped-engine-shortage.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-10-24T15:18:30+00:00"
-            },
-            {
-              "title": "Fewer people are flying as airfare soars. Here's why airlines aren't worried",
-              "url": "https://www.cnbc.com/2026/10/23/airfare-airline-capacity.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-10-24T15:53:30+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "정치·정책",
-          "articles": [
-            {
-              "title": "America by the numbers: How voters feel about the economy, inflation, AI and Trump",
-              "url": "https://www.cnbc.com/2026/10/23/america-by-the-numbers-how-voters-feel-about-the-economy-inflation-ai-and-trump.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-10-24T10:58:30+00:00"
-            },
-            {
-              "title": "American embassies tighten security as Iran threat warnings intensify ahead of U.S. midterm elections",
-              "url": "https://www.cnbc.com/2026/10/24/iran-threats-us-embassies-middle-east.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-10-24T21:07:01+00:00"
-            },
-            {
-              "title": "Trump dropping some Canada tariffs but 'replacing' them with other products",
-              "url": "https://www.cnbc.com/2026/10/23/trump-tariffs-canada-susan-collins.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-10-23T21:26:59+00:00"
-            },
-            {
-              "title": "Safe haven search is on Friday as investors keep rotating",
-              "url": "https://www.cnbc.com/2026/10/23/safe-haven-search-is-on-friday-as-investors-keep-rotating.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-10-23T11:05:13+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "주식시장·투자전략",
-          "articles": [
-            {
-              "title": "Here are 4 big things we're watching in the stock market this week",
-              "url": "https://www.cnbc.com/investingclub/2026/10/25/here-are-4-big-things-were-watching-in-the-stock-market-this-week.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-10-25T14:58:26+00:00"
-            },
-            {
-              "title": "More than a third of S&P 500 companies are about to report earnings as market confidence cracks",
-              "url": "https://www.marketwatch.com/story/more-than-a-third-of-s-p-500-companies-are-about-to-report-earnings-as-market-confidence-cracks-03b7a8f1?mod=mw_rss_topstories",
-              "source": "https://feeds.marketwatch.com/marketwatch/topstories/",
-              "publishedAt": "2026-10-25T14:00:00+00:00"
-            },
-            {
-              "title": "Worried about this stock-market selloff? Relief may be coming after the midterms — no matter who wins.",
-              "url": "https://www.marketwatch.com/story/worried-about-this-stock-market-selloff-relief-may-be-coming-after-the-midterms-no-matter-who-wins-39322c07?mod=mw_rss_topstories",
-              "source": "https://feeds.marketwatch.com/marketwatch/topstories/",
-              "publishedAt": "2026-10-25T13:00:00+00:00"
             }
           ]
         }
       ],
       "newsRanks": [
-        "바이오테크 | 신약, 암, 임상, Amgen",
-        "인공지능 | AI, Nvidia, OpenAI, 투자",
-        "반도체 | SK하이닉스, Solidigm, IPO, 주가",
-        "우주·항공 | SpaceX, Starlink, 우주, 투자",
-        "자동차·전기차 | Tesla, Musk, 전기차, 주가",
-        "소비자·리테일 | Etsy, AI, 규제, 주가",
-        "금융·보험 | Mortgage, Refinance, 정책, 주가",
-        "에너지 | 탄소배출, 전력, 투자, 정책",
-        "정치·정책 | 미국정책, 중간선거, 정책, 시장",
-        "주식시장·투자전략 | Earnings, 시장신뢰, 투자전략, 주가"
+        "자동차·공정 | Audi, 제조, 미국",
+        "바이오테크 | Biotech, 신약, 주가",
+        "AI·반도체 | Nvidia, AI, 클라우드",
+        "항공·여행 | 항공사, 운임, 수요",
+        "대형주·투자 | Berkshire, 주가, 블루칩",
+        "반도체·메모리 | SK Hynix, 주가, Solidigm",
+        "AI 투자 | OpenAI, 자금, 평가",
+        "주식시장·수익 | S&P 500, 실적, 신뢰",
+        "우주·우주기술 | SpaceX, 투자, Boring Co.",
+        "자동차·전기차 | Tesla, 마케팅, 주가"
       ],
       "analysis": {
         "status": "news-verified",
         "model": "openai/gpt-oss-20b",
         "attempts": 1,
-        "newsCount": 65,
+        "newsCount": 66,
         "sources": [
           "https://feeds.marketwatch.com/marketwatch/topstories/",
           "https://trends.google.com/trending/rss?geo=US",
