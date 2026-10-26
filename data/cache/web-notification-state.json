@@ -11,14 +11,18 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:BE:2026-10-23",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:CRDO:2026-09-02",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:GLW:2026-10-27",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:GNRC:2026-10-28",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:IREN:2026-08-28",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:LPTH:2026-09-11",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:LRCX:2026-10-22",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:MU:2026-10-01",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:PL:2026-09-04",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:SPCX:2026-10-21"
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:SPCX:2026-10-21",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:STX:2026-10-28",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:TER:2026-10-28",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VRT:2026-10-28"
     ],
-    "updatedAt": "2026-10-25T18:02:24.711553+00:00"
+    "updatedAt": "2026-10-26T15:03:45.611738+00:00"
   },
   "maSupportSignals": {
     "sentDailyKeys": [
