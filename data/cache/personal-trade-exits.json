@@ -1,7 +1,42 @@
 {
   "meta": {
     "kind": "personal-trade-exits",
-    "updatedAt": "2026-10-26T08:56:47Z"
+    "updatedAt": "2026-10-26T10:56:57Z"
   },
-  "events": []
+  "events": [
+    {
+      "ownerId": "8d43baaf-3e29-40d0-b516-6ea8ccd1615e",
+      "trades": [
+        {
+          "name": "Coinbase Global Class A",
+          "market": "US",
+          "slotId": "COIN_swing_7_20261016_1",
+          "status": "손절",
+          "ticker": "COIN",
+          "buyDate": "2026.10.16",
+          "buyPrice": "$175.86",
+          "sellDate": "2026.10.26",
+          "strategy": "7. 이평선 눌림 반등",
+          "returnPct": -8.09,
+          "riskGroup": "금융·가상자산",
+          "sellPrice": "$161.63",
+          "holdingDays": "-",
+          "currentPrice": "$161.63",
+          "investmentType": "swing",
+          "allocationReason": "",
+          "allocationSource": "account",
+          "allocationStatus": "진입 가능",
+          "investmentAmount": 200000,
+          "maxPositionCount": 10,
+          "openPositionCount": 0,
+          "postRiskGroupPercent": 10,
+          "currentRiskGroupPercent": 0,
+          "recommendedAllocationPercent": 10,
+          "sellTimestamp": "2026-10-26T11:00:00Z",
+          "exitReason": "손절 기준 도달 -8.09% [이평선 눌림 반등 기준 -8%]",
+          "allocationSignalStatus": "보유 중"
+        }
+      ]
+    }
+  ]
 }
