@@ -1,7 +1,7 @@
 {
   "version": "data-first-paper-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-10-23",
+  "lastSession": "2026-10-26",
   "observations": 641,
   "signalCounts": {
     "data_S3_ma200_distance25_base": 49,
@@ -23,8 +23,8 @@
     "data_N_value_laggard_base": 266,
     "data_N_value_laggard_filtered": 35
   },
-  "filteredClosed": 4,
-  "filteredEntryDates": 1,
+  "filteredClosed": 6,
+  "filteredEntryDates": 2,
   "earliestReviewKST": "2026-12-08",
   "sampleReady": null,
   "status": "collecting",
@@ -34,11 +34,11 @@
       "knownObservations": 637,
       "unknownObservations": 4,
       "data_S3_ma200_distance25_base": {
-        "closed": 6,
+        "closed": 8,
         "entryDates": 1
       },
       "data_S3_ma200_distance25_filtered": {
-        "closed": 6,
+        "closed": 8,
         "entryDates": 1
       }
     },
@@ -46,23 +46,23 @@
       "knownObservations": 637,
       "unknownObservations": 4,
       "data_S3_rsi35_base": {
-        "closed": 6,
+        "closed": 8,
         "entryDates": 1
       },
       "data_S3_rsi35_filtered": {
-        "closed": 4,
-        "entryDates": 1
+        "closed": 6,
+        "entryDates": 2
       }
     },
     "S3_intraday_positive": {
       "knownObservations": 634,
       "unknownObservations": 7,
       "data_S3_intraday_positive_base": {
-        "closed": 6,
+        "closed": 8,
         "entryDates": 1
       },
       "data_S3_intraday_positive_filtered": {
-        "closed": 6,
+        "closed": 7,
         "entryDates": 2
       }
     },
@@ -94,11 +94,11 @@
       "knownObservations": 637,
       "unknownObservations": 4,
       "data_S7_high52_drawdown30_base": {
-        "closed": 1,
+        "closed": 4,
         "entryDates": 1
       },
       "data_S7_high52_drawdown30_filtered": {
-        "closed": 1,
+        "closed": 2,
         "entryDates": 1
       }
     },
@@ -106,19 +106,19 @@
       "knownObservations": 637,
       "unknownObservations": 4,
       "data_N_expanded_below200_base": {
-        "closed": 21,
+        "closed": 27,
         "entryDates": 2
       },
       "data_N_expanded_below200_filtered": {
-        "closed": 8,
-        "entryDates": 2
+        "closed": 10,
+        "entryDates": 3
       }
     },
     "N_rsi_ahead_macd": {
       "knownObservations": 637,
       "unknownObservations": 4,
       "data_N_rsi_ahead_macd_base": {
-        "closed": 21,
+        "closed": 27,
         "entryDates": 2
       },
       "data_N_rsi_ahead_macd_filtered": {
@@ -130,7 +130,7 @@
       "knownObservations": 560,
       "unknownObservations": 81,
       "data_N_value_laggard_base": {
-        "closed": 21,
+        "closed": 27,
         "entryDates": 2
       },
       "data_N_value_laggard_filtered": {
@@ -139,5 +139,5 @@
       }
     }
   },
-  "waitingForSource": 1
+  "waitingForSource": 44
 }
