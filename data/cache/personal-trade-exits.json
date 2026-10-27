@@ -1,42 +1,7 @@
 {
   "meta": {
     "kind": "personal-trade-exits",
-    "updatedAt": "2026-10-27T13:52:25Z"
+    "updatedAt": "2026-10-27T14:57:09Z"
   },
-  "events": [
-    {
-      "ownerId": "8d43baaf-3e29-40d0-b516-6ea8ccd1615e",
-      "trades": [
-        {
-          "name": "Tesla",
-          "market": "US",
-          "slotId": "TSLA_swing_7_20261019_1",
-          "status": "익절",
-          "ticker": "TSLA",
-          "buyDate": "2026.10.19",
-          "buyPrice": "$362.05",
-          "sellDate": "2026.10.27",
-          "strategy": "7. 이평선 눌림 반등",
-          "returnPct": 11.21,
-          "riskGroup": "전력·에너지",
-          "sellPrice": "$402.65",
-          "holdingDays": "-",
-          "currentPrice": "$402.93",
-          "investmentType": "swing",
-          "allocationReason": "",
-          "allocationSource": "account",
-          "allocationStatus": "진입 가능",
-          "investmentAmount": 200000,
-          "maxPositionCount": 10,
-          "openPositionCount": 1,
-          "postRiskGroupPercent": 10,
-          "currentRiskGroupPercent": 0,
-          "recommendedAllocationPercent": 10,
-          "sellTimestamp": "2026-10-27T14:00:00Z",
-          "exitReason": "익절 기준 도달 +11.21% [이평선 눌림 반등 기준 +10% 또는 회복장 종료 청산]",
-          "allocationSignalStatus": "보유 중"
-        }
-      ]
-    }
-  ]
+  "events": []
 }
