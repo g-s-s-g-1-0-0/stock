@@ -23,8 +23,8 @@ def test_post_sell_watch_reason_is_short_even_with_market_details():
 
 def test_historical_13_preview_has_no_false_entry_or_actual_sell():
     changes, body = build_preview()
-    assert len(changes) == 13
+    assert len(changes) == 12
     assert all(c['to'] == '관망' for c in changes)
-    qld = next(c for c in changes if c['ticker'] == 'QLD')
-    assert qld['fromLabel'] == '매수 보류' and qld['toLabel'] == '매수 후보 종료'
+    assert not any(c['ticker'] == 'QLD' for c in changes)
+    assert '매수 후보 종료' not in body
     assert '신규 진입' not in body and '수익률' not in body

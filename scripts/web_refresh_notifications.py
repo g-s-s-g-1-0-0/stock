@@ -430,7 +430,9 @@ def opinion_changes(
         if new_opinion == "매도" and previous_ticker_trades:
             deferred = [row for row in previous_ticker_trades if row.get("status") == "매수 보류"]
             if deferred and not any(is_open_trade(row) for row in previous_ticker_trades):
-                change.update(to="관망", fromLabel="매수 보류", toLabel="매수 후보 종료", reason="매수 조건 미충족")
+                if old_opinion == "관망":
+                    continue
+                change.update(to="관망", reason="매수 조건 미충족")
         if new_opinion == "매수":
             added_trade = added_for_ticker[0] if added_for_ticker else None
             holding_open = any(is_open_trade(row) for row in previous_ticker_trades)

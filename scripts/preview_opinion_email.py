@@ -51,7 +51,7 @@ def build_preview():
             changes = mail.opinion_changes(paths['previous'], paths['current'], paths['technical'],
                                           paths['previous_trades'], paths['current_trades'])
     changes = [change for change in changes if change['ticker'] in TICKERS]
-    assert len(changes) == 13 and {c['ticker'] for c in changes} == TICKERS
+    assert len(changes) == 12 and {c['ticker'] for c in changes} == TICKERS - {'QLD'}
     assert all(c['to'] == '관망' for c in changes)
     assert all('entryNote' not in c for c in changes)
     stocks = {r['ticker']: r for r in current['rows']}
@@ -79,5 +79,5 @@ if __name__ == '__main__':
         if len(recipients) != 1 or not recipients[0].email:
             raise RuntimeError('Expected exactly one swing administrator email recipient')
         recipient = recipients[0]
-        result = mail.send_email(recipient.email, '[임시 확인용] 투자의견 변경 13개 항목 · 10/26 18시 기준', body)
+        result = mail.send_email(recipient.email, '[임시 확인용] 투자의견 변경 12개 항목 · 10/26 18시 기준', body)
         print('Preview email accepted:', mail.masked_email(recipient.email), result)
