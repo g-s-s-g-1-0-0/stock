@@ -1339,9 +1339,21 @@ def repair_unqualified_buy_opinions(stocks, technical, trades, today_date) -> bo
     for stock in stocks:
         ticker = str(stock.get('ticker') or '').upper()
         watched = [t for t in tracked.get(ticker, []) if t.get('restoreWatchDate')]
-        if stock.get('opinion') != '매수' or not watched:
+        if stock.get('opinion') != '매수':
             continue
         current_price = parse_price(stock.get('currentPrice'))
+        closed = latest_closed_trade_for_ticker(
+            [t for t in trades if trade_investment_type(t) == 'swing'], ticker)
+        if not tracked.get(ticker) and closed and not sell_reentry_allowed(closed, current_price, today_date):
+            reason = '관망 — 재매수 조건 미충족'
+            for target in (stock, technical.get(ticker, {})):
+                target.update(opinion='관망', opinionReason=reason)
+            stock['strategies'] = []
+            technical.get(ticker, {}).update(entryStrategy='-', entrySignalCodes='', entrySignals='')
+            changed = True
+            continue
+        if not watched:
+            continue
         if any(hold_restore_allowed(t, current_price, today_date) for t in watched):
             continue
         changed = block_held_public_buy_signal(stock, technical.get(ticker, {}), '관망', '', watched[0]) or changed
