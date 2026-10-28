@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-10-28T18:57:16+00:00",
-    "lastSuccessfulRun": "2026-10-28T18:57:16+00:00",
+    "updatedAt": "2026-10-28T20:01:08+00:00",
+    "lastSuccessfulRun": "2026-10-28T20:01:08+00:00",
     "failedReason": null
   },
   "rows": [
@@ -34,20 +34,10 @@
       "opinion": "관망",
       "opinionReason": "매수 조건 해제 — 4. 장기선 아래 반등 초입: 200일선 위 회복 · 보유 유지 (익절 +15% 또는 회복장 종료 청산 · 손절 -8%)",
       "marketEvent": "개인소비지출물가지수 발표 (PCE)",
-      "strategies": [
-        "4. 장기선 아래 반등 초입"
-      ],
+      "strategies": [],
       "category": "성장주",
       "industry": "반도체, 메모리, HBM, AI 메모리, DRAM",
-      "updatedAt": "2026-10-28T18:56:40+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-28T18:56:40+00:00"
     },
     {
       "ticker": "005380",
@@ -81,15 +71,7 @@
       ],
       "category": "혼합주",
       "industry": "반도체, 메모리·파운드리, 스마트폰, 소비자 가전",
-      "updatedAt": "2026-10-28T18:56:43+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 0,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-28T18:56:43+00:00"
     },
     {
       "ticker": "011070",
@@ -157,15 +139,7 @@
       ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
-      "updatedAt": "2026-10-28T18:56:51+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "산업재·건설",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-28T18:56:51+00:00"
     },
     {
       "ticker": "278470",
@@ -329,15 +303,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, 데이터센터·AI 서버 칩, 파운드리, 네트워크·5G",
-      "updatedAt": "2026-10-28T18:56:57+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-28T18:56:57+00:00"
     },
     {
       "ticker": "IONQ",
@@ -435,15 +401,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 위성 지구관측 데이터, 위성 이미지",
-      "updatedAt": "2026-10-28T18:57:00+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "방산·우주",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 0,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-28T18:57:00+00:00"
     },
     {
       "ticker": "RKLB",
@@ -475,15 +433,7 @@
       "strategies": [],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
-      "updatedAt": "2026-10-28T18:57:01+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-28T18:57:01+00:00"
     },
     {
       "ticker": "SOXL",
@@ -505,10 +455,10 @@
       "ticker": "STX",
       "name": "Seagate Technology Holdings",
       "market": "US",
-      "fairPrice": "$463.33 ~ $626.85",
+      "fairPrice": "$635.70 ~ $860.06",
       "fairPriceReason": null,
       "currentPrice": "$687.65",
-      "valuation": "고평가",
+      "valuation": "보통",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (개인소비지출물가지수 발표 (PCE))",
       "marketEvent": "개인소비지출물가지수 발표 (PCE)",
@@ -537,7 +487,7 @@
       "ticker": "GLW",
       "name": "Corning",
       "market": "US",
-      "fairPrice": "$67.26 ~ $91.00",
+      "fairPrice": "$75.90 ~ $102.69",
       "fairPriceReason": null,
       "currentPrice": "$131.87",
       "valuation": "고평가",
@@ -563,15 +513,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머",
-      "updatedAt": "2026-10-28T18:57:04+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-28T18:57:04+00:00"
     },
     {
       "ticker": "VRT",
@@ -589,15 +531,7 @@
       ],
       "category": "성장주",
       "industry": "AI 인프라, 데이터센터 전력·냉각, 액침냉각, UPS",
-      "updatedAt": "2026-10-28T18:57:05+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-28T18:57:05+00:00"
     },
     {
       "ticker": "079550",
@@ -683,7 +617,7 @@
       "ticker": "TER",
       "name": "Teradyne",
       "market": "US",
-      "fairPrice": "$243.52 ~ $329.47",
+      "fairPrice": "$285.20 ~ $385.85",
       "fairPriceReason": null,
       "currentPrice": "$312.99",
       "valuation": "보통",
@@ -839,15 +773,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 발사체, 위성통신, Starlink",
-      "updatedAt": "2026-10-28T18:57:12+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "방산·우주",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-28T18:57:12+00:00"
     },
     {
       "ticker": "UBER",
@@ -863,15 +789,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
-      "updatedAt": "2026-10-28T18:57:12+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "소프트웨어·클라우드",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-28T18:57:12+00:00"
     },
     {
       "ticker": "AAPL",
