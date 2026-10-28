@@ -337,8 +337,8 @@ def evaluate_buy_condition(
             # Once in, drop washout-only filters; keep regime + MA200 structure.
             triggered = s3_cond1 and s3_cond2
         elif holding_code == "4":
-            # Once in, drop MACD golden; keep below-MA200 + QQQ lane + depth floor.
-            triggered = s4_cond1 and s4_cond3 and s4_cond4
+            # Recovering above MA200 is progress after entry, not a lost holding condition.
+            triggered = s4_cond3 and s4_cond4
         elif holding_code in {"5", "6"}:
             # The event itself is one-shot; keep the buy opinion only while the
             # original signal price remains within the entry chase limit and the

@@ -234,3 +234,30 @@ def test_previous_buy_without_a_trade_keeps_that_strategy():
     assert pipeline.maintenance_strategy_code("NVDA", {}, {"opinion": "매수", "entrySignalCodes": "3"}) == "3"
     assert pipeline.maintenance_strategy_code("NVDA", {"NVDA": "3"}, {"opinion": "관망"}) == "3"
     assert pipeline.maintenance_strategy_code("NVDA", {}, {"opinion": "관망", "entrySignalCodes": "3"}) is None
+
+
+@pytest.mark.parametrize("ticker,market", [("000660", "KR"), ("AMD", "US")])
+def test_held_strategy4_does_not_whipsaw_at_ma200(monkeypatch, ticker, market):
+    opinions = []
+    for price, ma200 in [(1465000, 1485120), (1472000, 1485155),
+                         (1487000, 1485230), (1480000, 1485230)]:
+        row = make_technical_row(close=price, ma200=ma200, rsi=65,
+                                 macdHist=0.5, macdHistD1=0.4)
+        patch_sources(monkeypatch, row)
+        result = pipeline.latest_technical_row(
+            {"ticker": ticker, "name": ticker, "market": market},
+            qqq_market_state={**RECOVERY_MARKET, "isRecoveryMarket": False,
+                              "regimeLabel": "정상장", "premiumPercent": 5.0},
+            vix=15, holding_strategy_type="4", season_open=True)
+        opinions.append(result["opinion"])
+    assert opinions == ["매수"] * 4
+
+
+def test_unheld_strategy4_does_not_buy_above_ma200(monkeypatch):
+    row = make_technical_row(close=101, ma200=100, rsi=65,
+                             macdHist=0.1, macdHistD1=-0.1)
+    patch_sources(monkeypatch, row)
+    result = pipeline.latest_technical_row(
+        STOCK, qqq_market_state={**RECOVERY_MARKET, "isRecoveryMarket": False,
+                                "regimeLabel": "정상장", "premiumPercent": 5.0}, vix=15)
+    assert result["opinion"] == "관망"
