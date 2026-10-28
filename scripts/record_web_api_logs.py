@@ -1760,6 +1760,13 @@ def run_trade_engine(
         previous_reason = str(previous_stock.get("opinionReason") or "").strip()
         if current_opinion != "매수" or nasdaq_peak_alert:
             continue
+        # Undo only the obsolete MA200-recovery watch boundary for strategy 4.
+        if previous_opinion == "관망" and "200일선 위 회복" in previous_reason:
+            recovered = [trade for trade in open_for_ticker_all if strategy_code(trade.get("strategy")) == "4"]
+            if recovered:
+                for trade in recovered:
+                    trade.pop("restoreWatchDate", None)
+                previous_opinion = "매수"
         # A recovered maintenance condition is not a new entry. Persist the
         # watch boundary so already-published false buy opinions are repaired too.
         watched_trades = [

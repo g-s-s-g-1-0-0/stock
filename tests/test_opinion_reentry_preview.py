@@ -28,3 +28,23 @@ def test_historical_13_preview_has_no_false_entry_or_actual_sell():
     assert not any(c['ticker'] == 'QLD' for c in changes)
     assert '매수 후보 종료' not in body
     assert '신규 진입' not in body and '수익률' not in body
+
+
+def test_strategy4_repairs_false_recovery_watch_without_new_trade():
+    from datetime import datetime, timezone
+    stock = {'ticker': '000660', 'market': 'KR', 'opinion': '매수', 'currentPrice': '1487000'}
+    trade = {'ticker': '000660', 'market': 'KR', 'investmentType': 'swing',
+             'strategy': '4. 장기선 아래 반등 초입', 'status': '보유 중',
+             'buyDate': '2026.10.28', 'buyPrice': '1465000', 'restoreWatchDate': '2026.10.28'}
+    technical = {'000660': {'현재가': '1487000', 'entrySignalCodes': '4'}}
+    with patch.object(logs, 'save_strategy_season_state'), patch.object(logs, 'should_defer_market_signal', return_value=False):
+        result = logs.run_trade_engine(
+            [trade], {'swing': ['000660']}, stocks=[stock], stocks_by_symbol={'000660': stock},
+            previous_stocks={'000660': {'opinion': '관망', 'opinionReason': '매수 조건 해제 — 200일선 위 회복'}},
+            technical=technical, previous_technical={}, season={}, deferred_tickers=set(),
+            nasdaq_peak_alert=False, recovery_ended=False, seed_after_reset=False,
+            now=datetime(2026, 10, 28, 7, tzinfo=timezone.utc), today='2026.10.28',
+            today_date=date(2026, 10, 28), mutate_public_state=True)
+    assert stock['opinion'] == '매수'
+    assert len(result['trades']) == 1 and result['appended'] == 0
+    assert 'restoreWatchDate' not in trade
