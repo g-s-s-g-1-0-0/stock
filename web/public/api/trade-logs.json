@@ -1,20 +1,19 @@
 {
   "meta": {
+    "kind": "trade-logs",
+    "schedule": "auto",
+    "updatedAt": "2026-10-29T14:00:00Z",
+    "lastSuccessfulRun": "2026-10-29T14:00:00Z",
+    "failedReason": null,
     "appendedOpenTrades": 1,
     "closedTrades": 0,
     "correctedClosedStatuses": 0,
-    "failedReason": null,
-    "kind": "trade-logs",
-    "lastSuccessfulRun": "2026-10-29T13:00:00Z",
     "nasdaqPeakLiquidation": false,
     "recoveryEndedLiquidation": false,
-    "schedule": "auto",
-    "strategySeasonOpen": true,
-    "updatedAt": "2026-10-29T22:00:04.573444+09:00"
+    "strategySeasonOpen": true
   },
   "rows": [
     {
-      "allocationSignalStatus": "손절",
       "allocationSource": "account",
       "buyDate": "2026.08.27",
       "buyPrice": "₩471,000",
@@ -32,14 +31,14 @@
       "slotId": "277810_swing_4_20260827_1",
       "status": "손절",
       "strategy": "4. 장기선 아래 반등 초입",
-      "ticker": "277810"
+      "ticker": "277810",
+      "allocationSignalStatus": "손절"
     },
     {
-      "allocationSignalStatus": "익절",
       "allocationSource": "account",
       "buyDate": "2026.09.03",
       "buyPrice": "$15.72",
-      "currentPrice": "$8.46",
+      "currentPrice": "$8.32",
       "exitReason": "익절 기준 도달 +16.48% [장기선 아래 반등 초입 기준 +15% 또는 회복장 종료 청산]",
       "holdingDays": "-",
       "investmentAmount": 1375000,
@@ -53,15 +52,15 @@
       "slotId": "CIFR_swing_4_20260903_1",
       "status": "익절",
       "strategy": "4. 장기선 아래 반등 초입",
-      "ticker": "CIFR"
+      "ticker": "CIFR",
+      "allocationSignalStatus": "익절"
     },
     {
-      "allocationSignalStatus": "손절",
       "allocationSource": "account",
       "breakoutLevel": null,
       "buyDate": "2026.09.11",
       "buyPrice": "$256.37",
-      "currentPrice": "$233.65",
+      "currentPrice": "$241.10",
       "entrySessionDate": "2026-09-11",
       "exitReason": "손절 기준 도달 -8.49% [하락 추세 이탈 시도 기준 진입 시 고정한 최근 20거래일 최저가의 -3%]",
       "heldTradingSessions": 0,
@@ -81,15 +80,15 @@
       "supportStopPrice": 237.4269041442871,
       "ticker": "VRT",
       "trendSignalClose": 256.3699951171875,
-      "trendSignalDate": "1789133400"
+      "trendSignalDate": "1789133400",
+      "allocationSignalStatus": "손절"
     },
     {
-      "allocationSignalStatus": "익절",
       "allocationSource": "account",
       "breakoutLevel": 253.30999755859375,
       "buyDate": "2026.09.14",
       "buyPrice": "$258.67",
-      "currentPrice": "$218.22",
+      "currentPrice": "$224.44",
       "entrySessionDate": "2026-09-14",
       "exitReason": "익절 기준 도달 +11.73% [저항선 돌파 후 눌림 기준 +10% 또는 회복장 종료 청산]",
       "heldTradingSessions": 13,
@@ -109,14 +108,14 @@
       "supportStopPrice": 237.9764,
       "ticker": "BE",
       "trendSignalClose": 258.75,
-      "trendSignalDate": "1789392600"
+      "trendSignalDate": "1789392600",
+      "allocationSignalStatus": "익절"
     },
     {
-      "allocationSignalStatus": "실패 익절",
       "allocationSource": "account",
       "buyDate": "2026.09.14",
       "buyPrice": "$278.65",
-      "currentPrice": "$249.71",
+      "currentPrice": "$253.80",
       "exitReason": "횡보장 고점 확인 청산 (+11.40%)",
       "holdingDays": "-",
       "investmentAmount": 1375000,
@@ -134,14 +133,14 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA200",
       "supportStopPrice": 257.32,
-      "ticker": "LRCX"
+      "ticker": "LRCX",
+      "allocationSignalStatus": "실패 익절"
     },
     {
-      "allocationSignalStatus": "실패 익절",
       "allocationSource": "account",
       "buyDate": "2026.09.14",
       "buyPrice": "$427.14",
-      "currentPrice": "$410.52",
+      "currentPrice": "$411.67",
       "exitReason": "횡보장 고점 확인 청산 (+11.40%)",
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -159,14 +158,14 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "BB하단",
       "supportStopPrice": 408.27,
-      "ticker": "AMAT"
+      "ticker": "AMAT",
+      "allocationSignalStatus": "실패 익절"
     },
     {
-      "allocationSignalStatus": "익절",
       "allocationSource": "account",
       "buyDate": "2026.09.15",
       "buyPrice": "$63.74",
-      "currentPrice": "$57.10",
+      "currentPrice": "$58.72",
       "exitReason": "익절 기준 도달 +15.85% [장기선 아래 반등 초입 기준 +15% 또는 회복장 종료 청산]",
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -180,15 +179,15 @@
       "slotId": "RKLB_swing_4_20260915_1",
       "status": "익절",
       "strategy": "4. 장기선 아래 반등 초입",
-      "ticker": "RKLB"
+      "ticker": "RKLB",
+      "allocationSignalStatus": "익절"
     },
     {
-      "allocationSignalStatus": "익절",
       "allocationSource": "account",
       "breakoutLevel": null,
       "buyDate": "2026.09.15",
       "buyPrice": "$260.04",
-      "currentPrice": "$286.12",
+      "currentPrice": "$281.97",
       "entrySessionDate": "2026-09-15",
       "exitReason": "익절 기준 도달 +12.51% [하락 추세 이탈 시도 기준 +12%]",
       "heldTradingSessions": 2,
@@ -208,14 +207,14 @@
       "supportStopPrice": 248.81470947265623,
       "ticker": "ALAB",
       "trendSignalClose": 260.0400085449219,
-      "trendSignalDate": "1789479000"
+      "trendSignalDate": "1789479000",
+      "allocationSignalStatus": "익절"
     },
     {
-      "allocationSignalStatus": "익절",
       "allocationSource": "account",
       "buyDate": "2026.09.15",
       "buyPrice": "$771.00",
-      "currentPrice": "$677.95",
+      "currentPrice": "$683.98",
       "exitReason": "익절 기준 도달 +13.72% [정상장 볼린저 워시아웃 기준 +12%]",
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -231,14 +230,14 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "BB하단",
       "supportStopPrice": 744.99,
-      "ticker": "STX"
+      "ticker": "STX",
+      "allocationSignalStatus": "익절"
     },
     {
-      "allocationSignalStatus": "익절",
       "allocationSource": "account",
       "buyDate": "2026.09.15",
       "buyPrice": "$327.15",
-      "currentPrice": "$304.99",
+      "currentPrice": "$290.78",
       "exitReason": "익절 기준 도달 +13.40% [정상장 볼린저 워시아웃 기준 +12%]",
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -254,10 +253,10 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "BB하단",
       "supportStopPrice": 311.67,
-      "ticker": "TER"
+      "ticker": "TER",
+      "allocationSignalStatus": "익절"
     },
     {
-      "allocationSignalStatus": "실패 익절",
       "allocationSource": "account",
       "buyDate": "2026.09.16",
       "buyPrice": "₩354,500",
@@ -279,14 +278,14 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA200",
       "supportStopPrice": 330151.83,
-      "ticker": "278470"
+      "ticker": "278470",
+      "allocationSignalStatus": "실패 익절"
     },
     {
-      "allocationSignalStatus": "손절",
       "allocationSource": "account",
       "buyDate": "2026.09.17",
       "buyPrice": "$62.97",
-      "currentPrice": "$41.08",
+      "currentPrice": "$42.88",
       "exitReason": "손절 기준 도달 -20.84% [장기선 아래 반등 초입 기준 -8%]",
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -300,16 +299,16 @@
       "slotId": "ASTS_swing_4_20260917_1",
       "status": "손절",
       "strategy": "4. 장기선 아래 반등 초입",
-      "ticker": "ASTS"
+      "ticker": "ASTS",
+      "allocationSignalStatus": "손절"
     },
     {
       "allocationReason": "메가트렌드 Top 5 미충족",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.09.18",
       "buyPrice": "$203.68",
-      "currentPrice": "$198.12",
+      "currentPrice": "$208.26",
       "exitReason": "손절 기준 도달 -8.33% [장기선 아래 반등 초입 기준 -8%]",
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -324,14 +323,14 @@
       "slotId": "GNRC_swing_4_20260918_1",
       "status": "손절",
       "strategy": "4. 장기선 아래 반등 초입",
-      "ticker": "GNRC"
+      "ticker": "GNRC",
+      "allocationSignalStatus": "보유 중"
     },
     {
-      "allocationSignalStatus": "손절",
       "allocationSource": "account",
       "buyDate": "2026.09.18",
       "buyPrice": "$40.59",
-      "currentPrice": "$31.65",
+      "currentPrice": "$31.30",
       "exitReason": "손절 기준 도달 -9.93% [장기선 아래 반등 초입 기준 -8%]",
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -345,11 +344,11 @@
       "slotId": "IONQ_swing_4_20260918_1",
       "status": "손절",
       "strategy": "4. 장기선 아래 반등 초입",
-      "ticker": "IONQ"
+      "ticker": "IONQ",
+      "allocationSignalStatus": "손절"
     },
     {
       "allocationReason": "전체 10슬롯 사용 중",
-      "allocationSignalStatus": "익절",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.09.21",
@@ -374,11 +373,11 @@
       "slotId": "042700_swing_4_20260921_1",
       "status": "익절",
       "strategy": "4. 장기선 아래 반등 초입",
-      "ticker": "042700"
+      "ticker": "042700",
+      "allocationSignalStatus": "익절"
     },
     {
       "allocationReason": "",
-      "allocationSignalStatus": "손절",
       "allocationSource": "account",
       "allocationStatus": "진입 가능",
       "breakoutLevel": null,
@@ -410,16 +409,16 @@
       "supportStopPrice": 347260,
       "ticker": "005380",
       "trendSignalClose": 367500,
-      "trendSignalDate": "20260922"
+      "trendSignalDate": "20260922",
+      "allocationSignalStatus": "손절"
     },
     {
       "allocationReason": "",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "진입 가능",
       "buyDate": "2026.10.15",
       "buyPrice": "$536.62",
-      "currentPrice": "$563.20",
+      "currentPrice": "$563.43",
       "currentRiskGroupPercent": 5,
       "exitReason": "진입 지지선 이탈 청산 (MA60 513.96)",
       "holdingDays": "-",
@@ -443,16 +442,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA60",
       "supportStopPrice": 513.96,
-      "ticker": "AMD"
+      "ticker": "AMD",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "allocationSignalStatus": "매수 보류",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.15",
       "buyPrice": "$40.99",
-      "currentPrice": "$42.30",
+      "currentPrice": "$42.34",
       "currentRiskGroupPercent": 15,
       "exitReason": "진입 지지선 이탈 청산 (MA60 38.91)",
       "holdingDays": "-",
@@ -474,16 +473,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA60",
       "supportStopPrice": 38.91,
-      "ticker": "ASX"
+      "ticker": "ASX",
+      "allocationSignalStatus": "매수 보류"
     },
     {
       "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "allocationSignalStatus": "매수 보류",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.15",
       "buyPrice": "$218.76",
-      "currentPrice": "$218.22",
+      "currentPrice": "$224.44",
       "currentRiskGroupPercent": 15,
       "exitReason": "진입 지지선 이탈 청산 (MA200 205.56)",
       "holdingDays": "-",
@@ -505,16 +504,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA200",
       "supportStopPrice": 205.56,
-      "ticker": "BE"
+      "ticker": "BE",
+      "allocationSignalStatus": "매수 보류"
     },
     {
       "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "allocationSignalStatus": "매수 보류",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.15",
       "buyPrice": "$91.54",
-      "currentPrice": "$92.70",
+      "currentPrice": "$91.75",
       "currentRiskGroupPercent": 15,
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -535,16 +534,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA200",
       "supportStopPrice": 81.49,
-      "ticker": "INTC"
+      "ticker": "INTC",
+      "allocationSignalStatus": "매수 보류"
     },
     {
       "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "allocationSignalStatus": "매수 보류",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.15",
       "buyPrice": "$810.12",
-      "currentPrice": "$982.00",
+      "currentPrice": "$908.86",
       "currentRiskGroupPercent": 15,
       "exitReason": "익절 기준 도달 +12.87% [정상장 볼린저 워시아웃 기준 +12%]",
       "holdingDays": "-",
@@ -566,16 +565,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA200",
       "supportStopPrice": 736.79,
-      "ticker": "LITE"
+      "ticker": "LITE",
+      "allocationSignalStatus": "매수 보류"
     },
     {
       "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "allocationSignalStatus": "매수 보류",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.15",
       "buyPrice": "$867.83",
-      "currentPrice": "$959.74",
+      "currentPrice": "$946.90",
       "currentRiskGroupPercent": 15,
       "exitReason": "익절 기준 도달 +12.62% [정상장 볼린저 워시아웃 기준 +12%]",
       "holdingDays": "-",
@@ -597,16 +596,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA144",
       "supportStopPrice": 816.46,
-      "ticker": "MU"
+      "ticker": "MU",
+      "allocationSignalStatus": "매수 보류"
     },
     {
       "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "allocationSignalStatus": "매수 보류",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.15",
       "buyPrice": "$1,297.13",
-      "currentPrice": "$1,372.00",
+      "currentPrice": "$1,352.43",
       "currentRiskGroupPercent": 15,
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -627,16 +626,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA200",
       "supportStopPrice": 1158.04,
-      "ticker": "SNDK"
+      "ticker": "SNDK",
+      "allocationSignalStatus": "매수 보류"
     },
     {
       "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "allocationSignalStatus": "매수 보류",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.15",
       "buyPrice": "$286.98",
-      "currentPrice": "$286.12",
+      "currentPrice": "$281.97",
       "currentRiskGroupPercent": 15,
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -657,16 +656,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA200",
       "supportStopPrice": 236.99,
-      "ticker": "ALAB"
+      "ticker": "ALAB",
+      "allocationSignalStatus": "매수 보류"
     },
     {
       "allocationReason": "메가트렌드 Top 5 미충족",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.15",
       "buyPrice": "$718.28",
-      "currentPrice": "$717.48",
+      "currentPrice": "$713.36",
       "currentRiskGroupPercent": 0,
       "exitReason": "진입 지지선 이탈 청산 (MA120 711.13)",
       "holdingDays": "-",
@@ -688,16 +687,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA120",
       "supportStopPrice": 711.13,
-      "ticker": "QQQ"
+      "ticker": "QQQ",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "메가트렌드 Top 5 미충족",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.15",
       "buyPrice": "$89.92",
-      "currentPrice": "$89.29",
+      "currentPrice": "$88.28",
       "currentRiskGroupPercent": 0,
       "exitReason": "진입 지지선 이탈 청산 (MA144 86.16; 2026-10-23 종가 확인)",
       "holdingDays": "-",
@@ -723,16 +722,16 @@
       },
       "supportLevel": "MA144",
       "supportStopPrice": 86.16,
-      "ticker": "QLD"
+      "ticker": "QLD",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "진입 가능",
       "buyDate": "2026.10.15",
       "buyPrice": "$78.05",
-      "currentPrice": "$79.85",
+      "currentPrice": "$79.36",
       "currentRiskGroupPercent": 15,
       "exitReason": "진입 지지선 이탈 청산 (MA200 74.88)",
       "holdingDays": "-",
@@ -756,16 +755,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA200",
       "supportStopPrice": 74.88,
-      "ticker": "USD"
+      "ticker": "USD",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "반도체·AI 인프라 20%로 산업 한도 20% 초과",
-      "allocationSignalStatus": "매수 보류",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.15",
       "buyPrice": "$230.01",
-      "currentPrice": "$228.47",
+      "currentPrice": "$225.95",
       "currentRiskGroupPercent": 20,
       "exitReason": "진입 지지선 이탈 청산 (MA200 214.76)",
       "holdingDays": "-",
@@ -787,16 +786,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA200",
       "supportStopPrice": 214.76,
-      "ticker": "ARM"
+      "ticker": "ARM",
+      "allocationSignalStatus": "매수 보류"
     },
     {
       "allocationReason": "",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "진입 가능",
       "buyDate": "2026.10.15",
       "buyPrice": "$53.71",
-      "currentPrice": "$59.29",
+      "currentPrice": "$55.29",
       "currentRiskGroupPercent": 10,
       "exitReason": "진입 지지선 이탈 청산 (MA144 50.10)",
       "holdingDays": "-",
@@ -820,16 +819,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA144",
       "supportStopPrice": 50.1,
-      "ticker": "COHU"
+      "ticker": "COHU",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "메가트렌드 Top 5 미충족",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.15",
       "buyPrice": "$69.75",
-      "currentPrice": "$65.78",
+      "currentPrice": "$64.94",
       "currentRiskGroupPercent": 0,
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -848,16 +847,16 @@
       "slotId": "UBER_swing_7_20261015_1",
       "status": "매수 보류",
       "strategy": "7. 이평선 눌림 반등",
-      "ticker": "UBER"
+      "ticker": "UBER",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "allocationSignalStatus": "매수 보류",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.16",
       "buyPrice": "$151.80",
-      "currentPrice": "$141.01",
+      "currentPrice": "$142.67",
       "currentRiskGroupPercent": 15,
       "exitReason": "손절 기준 도달 -9.12% [이평선 눌림 반등 기준 -8%]",
       "holdingDays": "-",
@@ -880,16 +879,16 @@
       "slotId": "VST_swing_7_20261016_1",
       "status": "손절",
       "strategy": "7. 이평선 눌림 반등",
-      "ticker": "VST"
+      "ticker": "VST",
+      "allocationSignalStatus": "매수 보류"
     },
     {
       "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "allocationSignalStatus": "매수 보류",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.16",
       "buyPrice": "$189.60",
-      "currentPrice": "$170.16",
+      "currentPrice": "$171.00",
       "currentRiskGroupPercent": 15,
       "exitReason": "손절 기준 도달 -10.55% [이평선 눌림 반등 기준 -8%]",
       "holdingDays": "-",
@@ -912,11 +911,11 @@
       "slotId": "NBIS_swing_7_20261016_1",
       "status": "손절",
       "strategy": "7. 이평선 눌림 반등",
-      "ticker": "NBIS"
+      "ticker": "NBIS",
+      "allocationSignalStatus": "매수 보류"
     },
     {
       "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "allocationSignalStatus": "매수 보류",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.16",
@@ -944,16 +943,16 @@
       "slotId": "039030_swing_7_20261016_1",
       "status": "손절",
       "strategy": "7. 이평선 눌림 반등",
-      "ticker": "039030"
+      "ticker": "039030",
+      "allocationSignalStatus": "매수 보류"
     },
     {
       "allocationReason": "메가트렌드 Top 5 미충족",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.19",
       "buyPrice": "$149.70",
-      "currentPrice": "$142.96",
+      "currentPrice": "$142.48",
       "currentRiskGroupPercent": 0,
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -974,16 +973,16 @@
       "slotId": "SPCX_swing_7_20261019_1",
       "status": "매수 보류",
       "strategy": "7. 이평선 눌림 반등",
-      "ticker": "SPCX"
+      "ticker": "SPCX",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.21",
       "buyPrice": "$678.72",
-      "currentPrice": "$677.95",
+      "currentPrice": "$683.98",
       "currentRiskGroupPercent": 17.5,
       "exitReason": "진입 지지선 이탈 청산 (MA200 654.58)",
       "holdingDays": "-",
@@ -1007,16 +1006,16 @@
       "strategy": "3. 정상장 볼린저 워시아웃",
       "supportLevel": "MA200",
       "supportStopPrice": 654.58,
-      "ticker": "STX"
+      "ticker": "STX",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.22",
       "buyPrice": "$184.11",
-      "currentPrice": "$166.99",
+      "currentPrice": "$164.79",
       "currentRiskGroupPercent": 17.5,
       "exitReason": "손절 기준 도달 -9.66% [이평선 눌림 반등 기준 -8%]",
       "holdingDays": "-",
@@ -1038,16 +1037,16 @@
       "slotId": "CRDO_swing_7_20261022_1",
       "status": "손절",
       "strategy": "7. 이평선 눌림 반등",
-      "ticker": "CRDO"
+      "ticker": "CRDO",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.22",
       "buyPrice": "$348.76",
-      "currentPrice": "$304.99",
+      "currentPrice": "$290.78",
       "currentRiskGroupPercent": 17.5,
       "exitReason": "손절 기준 도달 -9.34% [이평선 눌림 반등 기준 -8%]",
       "holdingDays": "-",
@@ -1069,21 +1068,21 @@
       "slotId": "TER_swing_7_20261022_1",
       "status": "손절",
       "strategy": "7. 이평선 눌림 반등",
-      "ticker": "TER"
+      "ticker": "TER",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "메가트렌드 Top 5 미충족",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "breakoutLevel": null,
       "buyDate": "2026.10.26",
       "buyPrice": "$13.48",
       "buyTimestamp": "2026-10-26T13:52:21.283672+00:00",
-      "currentPrice": "$13.95",
+      "currentPrice": "$14.36",
       "currentRiskGroupPercent": 0,
       "entrySessionDate": "2026-10-26",
-      "heldTradingSessions": 2,
+      "heldTradingSessions": 3,
       "holdingDays": "-",
       "investmentAmount": 0,
       "investmentType": "swing",
@@ -1107,11 +1106,11 @@
       "supportStopPrice": 12.406299962997435,
       "ticker": "PL",
       "trendSignalClose": 13.479999542236328,
-      "trendSignalDate": "1793021400"
+      "trendSignalDate": "1793021400",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.28",
@@ -1138,11 +1137,11 @@
       "slotId": "005930_swing_7_20261028_1",
       "status": "매수 보류",
       "strategy": "7. 이평선 눌림 반등",
-      "ticker": "005930"
+      "ticker": "005930",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "메가트렌드 Top 5 미충족",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.28",
@@ -1169,11 +1168,11 @@
       "slotId": "277810_swing_7_20261028_1",
       "status": "매수 보류",
       "strategy": "7. 이평선 눌림 반등",
-      "ticker": "277810"
+      "ticker": "277810",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "진입 가능",
       "buyDate": "2026.10.28",
@@ -1200,17 +1199,17 @@
       "slotId": "000660_swing_4_20261028_1",
       "status": "보유 중",
       "strategy": "4. 장기선 아래 반등 초입",
-      "ticker": "000660"
+      "ticker": "000660",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "매수 보류",
       "buyDate": "2026.10.28",
       "buyPrice": "$234.74",
       "buyTimestamp": "2026-10-28T13:52:12.167630+00:00",
-      "currentPrice": "$233.65",
+      "currentPrice": "$241.10",
       "currentRiskGroupPercent": 12.5,
       "holdingDays": "-",
       "investmentAmount": 0,
@@ -1231,17 +1230,17 @@
       "slotId": "VRT_swing_4_20261028_1",
       "status": "매수 보류",
       "strategy": "4. 장기선 아래 반등 초입",
-      "ticker": "VRT"
+      "ticker": "VRT",
+      "allocationSignalStatus": "보유 중"
     },
     {
       "allocationReason": "",
-      "allocationSignalStatus": "보유 중",
       "allocationSource": "account",
       "allocationStatus": "진입 가능",
       "buyDate": "2026.10.29",
       "buyPrice": "$12.85",
       "buyTimestamp": "2026-10-29T12:57:00.869083+00:00",
-      "currentPrice": "$12.85",
+      "currentPrice": "$13.06",
       "currentRiskGroupPercent": 0,
       "holdingDays": "-",
       "investmentAmount": 1495555,
@@ -1261,7 +1260,37 @@
       "slotId": "WULF_swing_7_20261029_1",
       "status": "보유 중",
       "strategy": "7. 이평선 눌림 반등",
-      "ticker": "WULF"
+      "ticker": "WULF",
+      "restoreWatchDate": "2026.10.29",
+      "allocationSignalStatus": "보유 중"
+    },
+    {
+      "slotId": "STX_swing_4_20261029_1",
+      "investmentType": "swing",
+      "ticker": "STX",
+      "name": "Seagate Technology Holdings",
+      "market": "US",
+      "currentPrice": "$683.98",
+      "strategy": "4. 장기선 아래 반등 초입",
+      "buyDate": "2026.10.29",
+      "buyTimestamp": "2026-10-29T13:52:00.059144+00:00",
+      "buyPrice": "$683.98",
+      "sellDate": "-",
+      "sellPrice": "-",
+      "returnPct": 0,
+      "holdingDays": "-",
+      "status": "매수 보류",
+      "allocationStatus": "매수 보류",
+      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
+      "recommendedAllocationPercent": 12.5,
+      "riskGroup": "반도체·AI 인프라",
+      "currentRiskGroupPercent": 12.5,
+      "postRiskGroupPercent": 22.5,
+      "openPositionCount": 2,
+      "maxPositionCount": 10,
+      "allocationSource": "account",
+      "investmentAmount": 0,
+      "allocationSignalStatus": "보유 중"
     }
   ]
 }
