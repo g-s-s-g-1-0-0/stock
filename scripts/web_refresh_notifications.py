@@ -376,6 +376,14 @@ def attach_allocation_fields(change: dict[str, Any], *sources: dict[str, Any] | 
                 break
 
 
+def attach_deferred_note(change: dict[str, Any], trade: dict[str, Any]) -> None:
+    """Allocation is context for a signal, never a replacement opinion."""
+    if not any(trade.get(key) == "매수 보류" for key in ("status", "allocationStatus", "allocationSignalStatus")):
+        return
+    reason = str(trade.get("allocationReason") or "").strip()
+    change["allocationNote"] = "이 신호는 자금 배분 기준상 매수 보류로 기록된 종목입니다." + (f" ({reason})" if reason else "")
+
+
 def opinion_changes(
     previous_path: Path,
     current_path: Path,
@@ -427,12 +435,6 @@ def opinion_changes(
             "signalUpdatedAt": current_stock.get("updatedAt") or technical_row.get("updatedAt") or "",
             "reason": concise_opinion_reason(old_opinion, new_opinion, previous_stock, current_stock, technical_row),
         }
-        if new_opinion == "매도" and previous_ticker_trades:
-            deferred = [row for row in previous_ticker_trades if row.get("status") == "매수 보류"]
-            if deferred and not any(is_open_trade(row) for row in previous_ticker_trades):
-                if old_opinion == "관망":
-                    continue
-                change.update(to="관망", reason="매수 조건 미충족")
         if new_opinion == "매수":
             added_trade = added_for_ticker[0] if added_for_ticker else None
             holding_open = any(is_open_trade(row) for row in previous_ticker_trades)
@@ -468,6 +470,10 @@ def opinion_changes(
                 )
             attach_allocation_fields(change, added_trade, current_stock, technical_row)
             buy_transition_tickers.add(normalized_ticker)
+        reference_trade = next((row for row in reversed(current_ticker_trades) if row.get("status") in {"보유 중", "매수 보류"}), None)
+        if reference_trade is None and current_ticker_trades:
+            reference_trade = current_ticker_trades[-1]
+        attach_deferred_note(change, reference_trade or (previous_ticker_trades[-1] if previous_ticker_trades else {}))
         changes.append(change)
 
     for trade in added_open_trades(previous_trade_rows, current_trade_rows):
@@ -610,7 +616,7 @@ def exit_change_from_trade(
         return_pct_value,
         trade=current,
     )
-    return {
+    change = {
         "ticker": current.get("ticker") or fallback_ticker,
         "name": current.get("name") or previous_trade.get("name") or fallback_ticker,
         "from": "보유 중",
@@ -623,13 +629,16 @@ def exit_change_from_trade(
         "entryNote": f"진입가 {buy_price} ({buy_date}) · 수익률 {result_text}",
         "status": current_status,
     }
+    attach_deferred_note(change, previous_trade)
+    attach_deferred_note(change, current)
+    return change
 
 
 def trade_exit_changes(previous_path: Path, current_path: Path) -> list[dict[str, Any]]:
     previous = {
         trade_key(row): row
         for row in trade_rows(previous_path)
-        if str(row.get("status") or "") == "보유 중"
+        if str(row.get("status") or "") in {"보유 중", "매수 보류"}
     }
     changes: list[dict[str, Any]] = []
     for current in trade_rows(current_path):
@@ -1202,12 +1211,14 @@ def enrich_swing_change_risk(
     enriched = dict(change)
     target_opinion = str(enriched.get("to") or "")
     ticker = str(enriched.get("ticker") or "").strip().upper()
+    reference_trade = next((trade for trade in reversed(open_trades) if trade_ticker(trade) == ticker), {})
+    attach_deferred_note(enriched, reference_trade)
     is_held = any(trade_ticker(trade) == ticker and is_open_trade(trade) for trade in open_trades)
     if target_opinion == "관망":
         if is_held:
             enriched["actionLabel"] = "기존 보유 유지 · 신규·추가매수 없음"
         elif any(trade_ticker(trade) == ticker and trade.get('status') == '매수 보류' for trade in open_trades):
-            enriched['actionLabel'] = '매수 보류 유지 · 신규·추가매수 없음'
+            enriched['actionLabel'] = '관망 · 신규·추가매수 없음'
         return enriched
     if target_opinion == "매도":
         enriched["actionLabel"] = "매도"
@@ -1221,7 +1232,7 @@ def enrich_swing_change_risk(
         enriched.update({key: account_trade.get(key) for key in ('allocationStatus', 'allocationReason',
             'recommendedAllocationPercent', 'riskGroup', 'investmentAmount')})
         if account_trade.get('status') == '매수 보류':
-            enriched['actionLabel'] = '매수 보류'
+            enriched['actionLabel'] = '매수'
         elif entry_note.startswith('보유 유지'):
             enriched['actionLabel'] = '추가매수 없음 · 기존 보유 유지'
         else:
@@ -1237,7 +1248,8 @@ def enrich_swing_change_risk(
         elif decision["allocationStatus"] == "보유":
             enriched["actionLabel"] = "추가매수 없음 · 기존 보유 유지"
         else:
-            enriched["actionLabel"] = "매수 보류"
+            enriched["actionLabel"] = "매수"
+            attach_deferred_note(enriched, decision)
     if enriched.get("allocationStatus") != "진입 가능":
         return enriched
     stop_guidance, stop_risk_pct = stop_guidance_for_change(enriched, stock, technical_row)
@@ -1699,9 +1711,13 @@ def opinion_email_body(
             if action_label
             else ""
         )
+        allocation_note = str(change.get("allocationNote") or "").strip()
+        allocation_note_html = (
+            f'<br><span style="font-size:12px;color:#78716c;">※ {html.escape(allocation_note)}</span>'
+            if allocation_note else ""
+        )
         allocation_status = str(change.get("allocationStatus") or "").strip()
         risk_group = str(change.get("riskGroup") or "").strip()
-        allocation_reason = str(change.get("allocationReason") or "").strip()
         current_group_pct = change.get("currentRiskGroupPercent")
         post_group_pct = change.get("postRiskGroupPercent")
         allocation_html = ""
@@ -1718,11 +1734,7 @@ def opinion_email_body(
             allocation_html = (
                 f'<br><span style="font-size:12px;color:#666;">산업 비중: {html.escape(risk_group)}'
                 f'{f" · {html.escape(exposure_text)}" if exposure_text else ""}</span>'
-                + (
-                    f'<br><span style="font-size:12px;color:#c0392b;">보류 사유: {html.escape(allocation_reason)}</span>'
-                    if allocation_reason
-                    else ""
-                )
+
             )
         stop_guidance = str(change.get("stopGuidance") or "").strip()
         max_account_loss = change.get("maxAccountLossPercent")
@@ -1752,6 +1764,7 @@ def opinion_email_body(
                 {allocation_html}
                 {stop_html}
                 {entry_note_html}
+                {allocation_note_html}
                 {f'<br><span style="font-size:12px;color:#78716c;">산업: {html.escape(industry)}</span>' if industry and industry != '-' else ''}
                 {f'<br><span style="font-size:12px;color:#c2410c;">{html.escape(trend_badge)}</span>' if trend_badge else ''}
               </div>
@@ -2912,7 +2925,7 @@ def record_signal_email_times(
             if trade_ticker(change) != trade_ticker(row):
                 continue
             is_entry = change.get("to") == "매수" and old is None
-            is_exit = change.get("to") == "매도" and old is not None and is_open_trade(old) and not is_open_trade(row)
+            is_exit = change.get("to") == "매도" and old is not None and old.get("status") in {"보유 중", "매수 보류"} and row.get("status") not in {"보유 중", "매수 보류"}
             if not (is_entry or is_exit):
                 continue
             row["lastSignalEmailSentAt"] = sent_at
