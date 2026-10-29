@@ -2,7 +2,7 @@
   "kind": "valuation",
   "status": "recorded",
   "sourceSha256": "b1305557437f08429202ca843192c2f649ef0ed7262169f56e91efbf3a8fd007",
-  "availableAt": "2026-10-29T18:59:04.679023Z",
+  "availableAt": "2026-10-29T19:00:16.196286Z",
   "sourceUpdatedAt": "2026-10-29T15:00:00Z",
   "revision": null,
   "revisionCommittedAt": null,
@@ -17,7 +17,7 @@
   },
   "rows": {
     "AAPL": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -48,7 +48,7 @@
       }
     },
     "AEHR": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -79,7 +79,7 @@
       }
     },
     "ALAB": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -110,7 +110,7 @@
       }
     },
     "AMAT": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -141,7 +141,7 @@
       }
     },
     "AMD": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -172,7 +172,7 @@
       }
     },
     "ARM": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -203,7 +203,7 @@
       }
     },
     "ASTS": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -234,7 +234,7 @@
       }
     },
     "ASX": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -265,7 +265,7 @@
       }
     },
     "BE": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -296,7 +296,7 @@
       }
     },
     "CIFR": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -327,7 +327,7 @@
       }
     },
     "COHR": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -358,7 +358,7 @@
       }
     },
     "COHU": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -389,7 +389,7 @@
       }
     },
     "COIN": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -420,7 +420,7 @@
       }
     },
     "CRDO": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -451,7 +451,7 @@
       }
     },
     "CRWV": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -482,7 +482,7 @@
       }
     },
     "GLW": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -513,7 +513,7 @@
       }
     },
     "GNRC": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -544,7 +544,7 @@
       }
     },
     "GOOGL": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -575,7 +575,7 @@
       }
     },
     "HOOG": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -606,7 +606,7 @@
       }
     },
     "INTC": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -637,7 +637,7 @@
       }
     },
     "IONQ": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -668,7 +668,7 @@
       }
     },
     "IREN": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -699,7 +699,7 @@
       }
     },
     "LITE": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -730,7 +730,7 @@
       }
     },
     "LRCX": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -761,7 +761,7 @@
       }
     },
     "META": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -792,7 +792,7 @@
       }
     },
     "MU": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -823,7 +823,7 @@
       }
     },
     "NBIS": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -854,7 +854,7 @@
       }
     },
     "NVDA": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -885,7 +885,7 @@
       }
     },
     "PL": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -916,7 +916,7 @@
       }
     },
     "PLTR": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -947,7 +947,7 @@
       }
     },
     "QLD": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -978,7 +978,7 @@
       }
     },
     "QQQ": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1009,7 +1009,7 @@
       }
     },
     "RKLB": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1040,7 +1040,7 @@
       }
     },
     "SNDK": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1071,7 +1071,7 @@
       }
     },
     "SOXL": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1102,7 +1102,7 @@
       }
     },
     "SOXS": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1133,7 +1133,7 @@
       }
     },
     "SPCX": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1164,7 +1164,7 @@
       }
     },
     "STX": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1195,7 +1195,7 @@
       }
     },
     "TER": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1226,7 +1226,7 @@
       }
     },
     "TSLA": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1257,7 +1257,7 @@
       }
     },
     "UBER": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1288,7 +1288,7 @@
       }
     },
     "USD": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1319,7 +1319,7 @@
       }
     },
     "VRT": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1350,7 +1350,7 @@
       }
     },
     "VST": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
@@ -1381,7 +1381,7 @@
       }
     },
     "WULF": {
-      "availableAt": "2026-10-29T18:59:04.679023Z",
+      "availableAt": "2026-10-29T19:00:16.196286Z",
       "sourceUpdatedAt": "2026-10-29T15:00:00Z",
       "futureTimestamp": false,
       "data": {
