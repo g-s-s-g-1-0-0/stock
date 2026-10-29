@@ -913,6 +913,8 @@ def close_trade(
     today: str,
     reason: str,
 ) -> None:
+    if trade_status(trade) == DEFERRED_BUY_STATUS:
+        trade["allocationSignalStatus"] = DEFERRED_BUY_STATUS
     result = return_pct(trade.get("buyPrice"), sell_price)
     trade["sellDate"] = today
     trade["sellTimestamp"] = publish_iso()
@@ -1245,7 +1247,7 @@ def process_personal_trade_logs(
 
     owners = {owner_id for owner_id, by_type in personal_watchlists.items() if any(by_type.values())}
     for owner_id, trades in logs_by_owner.items():
-        if any(str(trade.get("status") or "") == "보유 중" for trade in trades):
+        if any(is_tracked_trade(trade) for trade in trades):
             owners.add(owner_id)
 
     processed = 0
@@ -1258,7 +1260,7 @@ def process_personal_trade_logs(
         before_trades = logs_by_owner[owner_id]
         before_by_key = {trade_key(trade): serialize_trade(trade) for trade in before_trades}
         before_open_keys = {
-            trade_key(trade) for trade in before_trades if str(trade.get("status") or "") == "보유 중"
+            trade_key(trade) for trade in before_trades if is_tracked_trade(trade)
         }
         entry_tickers_by_type = personal_watchlists.get(owner_id) or {
             investment_type: [] for investment_type in INVESTMENT_TYPES
@@ -1324,12 +1326,6 @@ def sync_account_allocation_guidance(stocks, technical, trades) -> bool:
         ticker = str(stock.get('ticker') or '').upper()
         if ticker in latest:
             changed = apply_allocation_guidance(stock, technical.get(ticker, {}), latest[ticker]) or changed
-            if latest[ticker].get('status') == DEFERRED_BUY_STATUS:
-                for target in (stock, technical.get(ticker, {})):
-                    reason = str(target.get('opinionReason') or '')
-                    if '보유 유지' in reason:
-                        target['opinionReason'] = reason.replace('보유 유지', '매수 보류 유지')
-                        changed = True
     return changed
 
 

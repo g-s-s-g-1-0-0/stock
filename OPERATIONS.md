@@ -33,6 +33,8 @@ Watch these values before public traffic spikes:
 
 ## Email Notifications
 
+- Swing allocation deferrals stay in the trade log. They follow the same buy/watch/sell strategy signals and profit/stop exits as funded positions. Opinion and exit emails must not suppress or downgrade those signals; explain the deferred allocation in a note below the signal. Include deferred exits for both operator and personal accounts, preserve their allocation origin after closure, and use the existing notification deduplication.
+
 - Market high-signal mail is sent once per warning episode, per normalized email address. Caution, normal, and unavailable states do not send mail. Missing component feeds preserve the episode. A new warning can notify only after all three components have been normal on two distinct New York weekdays; repeated refreshes on one date count once, and any valid non-normal observation resets recovery. Existing sent warnings migrate without another email. Notification state is published even if a later workflow step fails.
 
 Required GitHub Secrets:
