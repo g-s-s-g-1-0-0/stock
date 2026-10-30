@@ -1,43 +1,7 @@
 {
   "meta": {
     "kind": "personal-trade-exits",
-    "updatedAt": "2026-10-30T02:56:52Z"
+    "updatedAt": "2026-10-30T04:56:49Z"
   },
-  "events": [
-    {
-      "ownerId": "8d43baaf-3e29-40d0-b516-6ea8ccd1615e",
-      "trades": [
-        {
-          "name": "삼성전자",
-          "market": "KR",
-          "slotId": "005930_swing_7_20261028_1",
-          "status": "손절",
-          "ticker": "005930",
-          "buyDate": "2026.10.28",
-          "buyPrice": "₩237,500",
-          "sellDate": "2026.10.30",
-          "strategy": "7. 이평선 눌림 반등",
-          "returnPct": -8.21,
-          "riskGroup": "반도체·AI 인프라",
-          "sellPrice": "₩218,000",
-          "holdingDays": "-",
-          "buyTimestamp": "2026-10-28T00:57:18.666427+00:00",
-          "currentPrice": "₩218,000",
-          "investmentType": "swing",
-          "allocationReason": "",
-          "allocationSource": "account",
-          "allocationStatus": "진입 가능",
-          "investmentAmount": 200624,
-          "maxPositionCount": 10,
-          "openPositionCount": 1,
-          "postRiskGroupPercent": 10,
-          "currentRiskGroupPercent": 0,
-          "recommendedAllocationPercent": 10,
-          "sellTimestamp": "2026-10-30T03:00:00Z",
-          "exitReason": "손절 기준 도달 -8.21% [이평선 눌림 반등 기준 -8%]",
-          "allocationSignalStatus": "보유 중"
-        }
-      ]
-    }
-  ]
+  "events": []
 }
