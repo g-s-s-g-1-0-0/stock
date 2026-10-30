@@ -1,7 +1,7 @@
 {
   "meta": {
     "kind": "watchlists",
-    "updatedAt": "2026-10-30T08:57:02Z",
+    "updatedAt": "2026-10-30T10:56:07Z",
     "rowCount": 9
   },
   "rows": [
@@ -194,21 +194,6 @@
       "remoteUpdatedAt": "2026-10-10T06:13:53.273782+00:00"
     },
     {
-      "id": "df0e56ce-9185-41eb-a324-d63558cf4833",
-      "scope": "personal",
-      "ownerId": "86752d75-255f-4704-83f1-72b62227e624",
-      "tickers": [],
-      "tickersByType": {
-        "swing": [],
-        "long_term": []
-      },
-      "watchlistSort": {
-        "primary": "registered",
-        "secondary": "registered"
-      },
-      "remoteUpdatedAt": "2026-10-11T07:17:50.428732+00:00"
-    },
-    {
       "id": "ebfa4661-5b76-4aa6-8b4b-0ece4064d316",
       "scope": "personal",
       "ownerId": "938cdd73-98bc-4861-9539-1ade026b6656",
@@ -266,6 +251,47 @@
         "secondary": "registered"
       },
       "remoteUpdatedAt": "2026-10-29T15:37:17.304543+00:00"
+    },
+    {
+      "id": "df0e56ce-9185-41eb-a324-d63558cf4833",
+      "scope": "personal",
+      "ownerId": "86752d75-255f-4704-83f1-72b62227e624",
+      "tickers": [
+        "000660",
+        "NBIS",
+        "AAPL",
+        "GOOGL",
+        "BE",
+        "ALAB",
+        "CRDO",
+        "VST",
+        "QLD",
+        "USD",
+        "NVDA",
+        "META"
+      ],
+      "tickersByType": {
+        "swing": [],
+        "long_term": [
+          "000660",
+          "NBIS",
+          "AAPL",
+          "GOOGL",
+          "BE",
+          "ALAB",
+          "CRDO",
+          "VST",
+          "QLD",
+          "USD",
+          "NVDA",
+          "META"
+        ]
+      },
+      "watchlistSort": {
+        "primary": "registered",
+        "secondary": "registered"
+      },
+      "remoteUpdatedAt": "2026-10-30T10:31:48.780683+00:00"
     }
   ]
 }
