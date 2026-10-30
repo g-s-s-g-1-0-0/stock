@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-10-30T18:57:06+00:00",
-    "lastSuccessfulRun": "2026-10-30T18:57:06+00:00",
+    "updatedAt": "2026-10-30T19:49:16+00:00",
+    "lastSuccessfulRun": "2026-10-30T19:49:16+00:00",
     "failedReason": null
   },
   "rows": [
@@ -39,15 +39,7 @@
       ],
       "category": "성장주",
       "industry": "반도체, 메모리, HBM, AI 메모리, DRAM",
-      "updatedAt": "2026-10-30T18:56:39+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-30T18:56:39+00:00"
     },
     {
       "ticker": "005380",
@@ -193,15 +185,7 @@
       ],
       "category": "성장주",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
-      "updatedAt": "2026-10-30T18:56:48+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-30T18:56:48+00:00"
     },
     {
       "ticker": "ASTS",
@@ -406,18 +390,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 6. 하락 추세 이탈 시도 · 추가매수 대기 (익절 +12% · 손절 $12.41 · 최대 60거래일)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "6. 하락 추세 이탈 시도"
+      ],
       "category": "성장주",
       "industry": "우주 산업, 위성 지구관측 데이터, 위성 이미지",
-      "updatedAt": "2026-10-30T18:56:53+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "방산·우주",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 0,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-30T18:56:53+00:00"
     },
     {
       "ticker": "RKLB",
@@ -449,15 +427,7 @@
       "strategies": [],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
-      "updatedAt": "2026-10-30T18:56:54+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-30T18:56:54+00:00"
     },
     {
       "ticker": "SOXL",
@@ -486,7 +456,9 @@
       "opinion": "매도",
       "opinionReason": "4. 장기선 아래 반등 초입 · 손절 기준 도달 -8.13% [장기선 아래 반등 초입 기준 -8%]",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
       "updatedAt": "2026-10-30T18:56:54+00:00"
@@ -537,15 +509,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머",
-      "updatedAt": "2026-10-30T18:56:55+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 15%로 산업 한도 20% 초과",
-      "recommendedAllocationPercent": 10,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 15,
-      "postRiskGroupPercent": 25,
-      "openPositionCount": 3,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-30T18:56:55+00:00"
     },
     {
       "ticker": "VRT",
@@ -558,18 +522,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 4. 장기선 아래 반등 초입 · 추가매수 대기 (익절 +15% 또는 회복장 종료 청산 · 손절 -8%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "AI 인프라, 데이터센터 전력·냉각, 액침냉각, UPS",
-      "updatedAt": "2026-10-30T18:56:56+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-30T18:56:56+00:00"
     },
     {
       "ticker": "079550",
@@ -710,18 +668,12 @@
       "opinion": "관망",
       "opinionReason": "관망 — 재매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "스윙주",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
-      "updatedAt": "2026-10-30T18:57:00+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 10.0,
-      "riskGroup": "나스닥100 지수 ETF(1배)",
-      "currentRiskGroupPercent": 0.0,
-      "postRiskGroupPercent": 10.0,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-30T18:57:00+00:00"
     },
     {
       "ticker": "QLD",
@@ -737,15 +689,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
-      "updatedAt": "2026-10-30T18:57:00+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 5,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-30T18:57:00+00:00"
     },
     {
       "ticker": "USD",
@@ -822,7 +766,9 @@
       "opinion": "매도",
       "opinionReason": "7. 이평선 눌림 반등 · 손절 기준 도달 -8.04% [이평선 눌림 반등 기준 -8%]",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "성장주",
       "industry": "우주 산업, 발사체, 위성통신, Starlink",
       "updatedAt": "2026-10-30T18:57:02+00:00"
@@ -841,15 +787,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
-      "updatedAt": "2026-10-30T18:57:02+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "소프트웨어·클라우드",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "updatedAt": "2026-10-30T18:57:02+00:00"
     },
     {
       "ticker": "AAPL",
@@ -903,7 +841,7 @@
       "ticker": "META",
       "name": "Meta Platforms Class A",
       "market": "US",
-      "fairPrice": "$698.17 ~ $944.59",
+      "fairPrice": "$697.77 ~ $944.04",
       "fairPriceReason": null,
       "currentPrice": "$612.66",
       "valuation": "저평가",
