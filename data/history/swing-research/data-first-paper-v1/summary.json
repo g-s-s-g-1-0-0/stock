@@ -1,14 +1,14 @@
 {
   "version": "data-first-paper-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-10-29",
-  "observations": 813,
+  "lastSession": "2026-10-30",
+  "observations": 856,
   "signalCounts": {
-    "data_S3_ma200_distance25_base": 51,
-    "data_S3_ma200_distance25_filtered": 43,
-    "data_S3_rsi35_base": 51,
-    "data_S3_rsi35_filtered": 40,
-    "data_S3_intraday_positive_base": 51,
+    "data_S3_ma200_distance25_base": 54,
+    "data_S3_ma200_distance25_filtered": 46,
+    "data_S3_rsi35_base": 54,
+    "data_S3_rsi35_filtered": 42,
+    "data_S3_intraday_positive_base": 54,
     "data_S3_intraday_positive_filtered": 21,
     "data_S4_debt1_base": 1,
     "data_S4_debt1_filtered": 1,
@@ -16,12 +16,12 @@
     "data_S4_eps_growth_filtered": 0,
     "data_S7_high52_drawdown30_base": 36,
     "data_S7_high52_drawdown30_filtered": 11,
-    "data_N_expanded_below200_base": 380,
-    "data_N_expanded_below200_filtered": 153,
-    "data_N_rsi_ahead_macd_base": 380,
-    "data_N_rsi_ahead_macd_filtered": 17,
-    "data_N_value_laggard_base": 380,
-    "data_N_value_laggard_filtered": 50
+    "data_N_expanded_below200_base": 418,
+    "data_N_expanded_below200_filtered": 174,
+    "data_N_rsi_ahead_macd_base": 418,
+    "data_N_rsi_ahead_macd_filtered": 18,
+    "data_N_value_laggard_base": 418,
+    "data_N_value_laggard_filtered": 56
   },
   "filteredClosed": 7,
   "filteredEntryDates": 3,
@@ -31,7 +31,7 @@
   "collectorHash": "aa0d08cd3744aa0a6681f0e0f539bd888ff491a731adec78e9af7daa8ad5484d",
   "pairs": {
     "S3_ma200_distance25": {
-      "knownObservations": 809,
+      "knownObservations": 852,
       "unknownObservations": 4,
       "data_S3_ma200_distance25_base": {
         "closed": 9,
@@ -43,7 +43,7 @@
       }
     },
     "S3_rsi35": {
-      "knownObservations": 809,
+      "knownObservations": 852,
       "unknownObservations": 4,
       "data_S3_rsi35_base": {
         "closed": 9,
@@ -55,7 +55,7 @@
       }
     },
     "S3_intraday_positive": {
-      "knownObservations": 806,
+      "knownObservations": 849,
       "unknownObservations": 7,
       "data_S3_intraday_positive_base": {
         "closed": 9,
@@ -67,8 +67,8 @@
       }
     },
     "S4_debt1": {
-      "knownObservations": 712,
-      "unknownObservations": 101,
+      "knownObservations": 750,
+      "unknownObservations": 106,
       "data_S4_debt1_base": {
         "closed": 0,
         "entryDates": 0
@@ -79,8 +79,8 @@
       }
     },
     "S4_eps_growth": {
-      "knownObservations": 712,
-      "unknownObservations": 101,
+      "knownObservations": 750,
+      "unknownObservations": 106,
       "data_S4_eps_growth_base": {
         "closed": 0,
         "entryDates": 0
@@ -91,7 +91,7 @@
       }
     },
     "S7_high52_drawdown30": {
-      "knownObservations": 809,
+      "knownObservations": 852,
       "unknownObservations": 4,
       "data_S7_high52_drawdown30_base": {
         "closed": 5,
@@ -103,35 +103,35 @@
       }
     },
     "N_expanded_below200": {
-      "knownObservations": 809,
+      "knownObservations": 852,
       "unknownObservations": 4,
       "data_N_expanded_below200_base": {
-        "closed": 32,
-        "entryDates": 4
+        "closed": 33,
+        "entryDates": 5
       },
       "data_N_expanded_below200_filtered": {
-        "closed": 17,
-        "entryDates": 6
+        "closed": 18,
+        "entryDates": 7
       }
     },
     "N_rsi_ahead_macd": {
-      "knownObservations": 809,
+      "knownObservations": 852,
       "unknownObservations": 4,
       "data_N_rsi_ahead_macd_base": {
-        "closed": 32,
-        "entryDates": 4
+        "closed": 33,
+        "entryDates": 5
       },
       "data_N_rsi_ahead_macd_filtered": {
-        "closed": 0,
-        "entryDates": 0
+        "closed": 1,
+        "entryDates": 1
       }
     },
     "N_value_laggard": {
-      "knownObservations": 712,
-      "unknownObservations": 101,
+      "knownObservations": 750,
+      "unknownObservations": 106,
       "data_N_value_laggard_base": {
-        "closed": 32,
-        "entryDates": 4
+        "closed": 33,
+        "entryDates": 5
       },
       "data_N_value_laggard_filtered": {
         "closed": 7,
