@@ -401,6 +401,9 @@ def strategy_target_criterion_label(strategy_type: str) -> str:
 
 def strategy_stop_criterion_label(strategy_type: str) -> str:
     code = normalize_strategy_code(strategy_type) or strategy_type
+    if code == "3":
+        circuit_pct = float(STRATEGY_RULES["S3_HARD_CIRCUIT_PCT"])
+        return f"{STRATEGY_LABELS[code]} 기준 비상 손절 -{int(round(circuit_pct * 100))}%"
     circuit_pct = float(STRATEGY_RULES.get(f"CIRCUIT_PCT_{code}", STRATEGY_RULES["CIRCUIT_PCT_1"]))
     base = STRATEGY_LABELS.get(code, code)
     if code == "6":
