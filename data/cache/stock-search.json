@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-11-01T18:56:57+00:00",
-    "lastSuccessfulRun": "2026-11-01T18:56:57+00:00",
+    "updatedAt": "2026-11-01T19:17:48+00:00",
+    "lastSuccessfulRun": "2026-11-01T19:17:48+00:00",
     "failedReason": null
   },
   "rows": [
@@ -16661,6 +16661,13 @@
       "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
+      "ticker": "359410",
+      "name": "영광",
+      "market": "KR",
+      "category": "성장주",
+      "industry": "비철금속, 구리·알루미늄, 산업 소재"
+    },
+    {
       "ticker": "360070",
       "name": "탑머티리얼",
       "market": "KR",
@@ -18682,13 +18689,6 @@
       "market": "KR",
       "category": "성장주",
       "industry": "비철금속, 구리·알루미늄, 산업 소재"
-    },
-    {
-      "ticker": "475240",
-      "name": "하나32호스팩",
-      "market": "KR",
-      "category": "가치주",
-      "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
       "ticker": "475250",
@@ -53190,7 +53190,7 @@
       "ticker": "GNRC",
       "name": "Generac Holdlings",
       "market": "US",
-      "category": "가치주",
+      "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
