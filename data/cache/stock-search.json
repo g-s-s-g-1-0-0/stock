@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-11-01T14:57:17+00:00",
-    "lastSuccessfulRun": "2026-11-01T14:57:17+00:00",
+    "updatedAt": "2026-11-01T15:01:53+00:00",
+    "lastSuccessfulRun": "2026-11-01T15:01:53+00:00",
     "failedReason": null
   },
   "rows": [
@@ -1814,6 +1814,13 @@
       "industry": "자동차, 피지컬 AI, 자율주행·SDV, 로보틱스, 전기차"
     },
     {
+      "ticker": "0053F0",
+      "name": "티앤이코리아",
+      "market": "KR",
+      "category": "성장주",
+      "industry": "친환경 산업용 터보기계, On-site 발전용 터보기계, 친환경 차량용 터보기계"
+    },
+    {
       "ticker": "005420",
       "name": "코스모화학",
       "market": "KR",
@@ -3326,6 +3333,13 @@
       "industry": "바이오, 제약·헬스케어"
     },
     {
+      "ticker": "0127E0",
+      "name": "한화플러스제6호스팩",
+      "market": "KR",
+      "category": "가치주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
+    },
+    {
       "ticker": "012800",
       "name": "대창",
       "market": "KR",
@@ -4220,6 +4234,13 @@
       "market": "KR",
       "category": "성장주",
       "industry": "우주항공, 위성·발사체, 항공기 부품"
+    },
+    {
+      "ticker": "0205H0",
+      "name": "에스케이증권제14호기업인수목적",
+      "market": "KR",
+      "category": "가치주",
+      "industry": "금융, 은행·보험·증권, 지주회사"
     },
     {
       "ticker": "020710",
@@ -17732,6 +17753,13 @@
       "industry": "바이오, 제약·헬스케어"
     },
     {
+      "ticker": "420610",
+      "name": "인텔리빅스",
+      "market": "KR",
+      "category": "성장주",
+      "industry": "소프트웨어·클라우드, 보안, AI 플랫폼"
+    },
+    {
       "ticker": "420770",
       "name": "기가비스",
       "market": "KR",
@@ -17884,6 +17912,13 @@
       "market": "KR",
       "category": "성장주",
       "industry": "조선, LNG선, 해양 플랜트, 방산 선박"
+    },
+    {
+      "ticker": "439270",
+      "name": "크리에이츠",
+      "market": "KR",
+      "category": "성장주",
+      "industry": "골프 론치모니터"
     },
     {
       "ticker": "439580",
@@ -19916,13 +19951,6 @@
       "industry": "-"
     },
     {
-      "ticker": "ACA",
-      "name": "Arcosa",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
       "ticker": "ACAA",
       "name": "Averin Capital Acquisition Class A",
       "market": "US",
@@ -20173,6 +20201,13 @@
       "market": "US",
       "category": "스윙주",
       "industry": "Innovator Index Autocallable Income Stra ETF"
+    },
+    {
+      "ticker": "ACIN",
+      "name": "Hartford Alpha Capture International Equity ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "Hartford Alpha Capture International Equ ETF"
     },
     {
       "ticker": "ACIO",
@@ -20693,13 +20728,6 @@
       "industry": "-"
     },
     {
-      "ticker": "ADIL",
-      "name": "Adial Pharmaceuticals",
-      "market": "US",
-      "category": "성장주",
-      "industry": "바이오, 제약·헬스케어"
-    },
-    {
       "ticker": "ADIU",
       "name": "Leverage Shares 2X Long ADI Daily ETF",
       "market": "US",
@@ -21118,6 +21146,13 @@
       "market": "US",
       "category": "스윙주",
       "industry": "Anfield U.S. Equity Sector Rotation ETF"
+    },
+    {
+      "ticker": "AETR",
+      "name": "Aetherion Technologies",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "가상화폐, 핀테크, 블록체인"
     },
     {
       "ticker": "AEVA",
@@ -25117,6 +25152,13 @@
       "industry": "스팩·권리증권, 이벤트성 상장상품"
     },
     {
+      "ticker": "ASPE",
+      "name": "Aspen Neuroscience",
+      "market": "US",
+      "category": "성장주",
+      "industry": "바이오, 제약·헬스케어"
+    },
+    {
       "ticker": "ASPI",
       "name": "ASP Isotopes",
       "market": "US",
@@ -26545,6 +26587,13 @@
       "industry": "전기차, 자동차, 모빌리티"
     },
     {
+      "ticker": "AZR",
+      "name": "Azora Therapeutics",
+      "market": "US",
+      "category": "성장주",
+      "industry": "바이오, 제약·헬스케어"
+    },
+    {
       "ticker": "AZTA",
       "name": "Azenta",
       "market": "US",
@@ -27313,6 +27362,13 @@
       "market": "US",
       "category": "가치주",
       "industry": "금융, 은행·자산운용·증권"
+    },
+    {
+      "ticker": "BBTX",
+      "name": "Bambusa Therapeutics, Inc. - Common stock",
+      "market": "US",
+      "category": "성장주",
+      "industry": "바이오, 제약·헬스케어"
     },
     {
       "ticker": "BBUC",
@@ -28552,6 +28608,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "BHAIU",
+      "name": "BHAV Acquisition Corp II - Units",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "스팩·권리증권, 이벤트성 상장상품"
     },
     {
       "ticker": "BHAV",
@@ -32901,6 +32964,13 @@
       "industry": "-"
     },
     {
+      "ticker": "CAYN",
+      "name": "Calamos Least-Of Autocallable Income ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "Calamos Least-Of Autocallable Income ETF"
+    },
+    {
       "ticker": "CB",
       "name": "Chubb",
       "market": "US",
@@ -33592,13 +33662,6 @@
       "market": "US",
       "category": "성장주",
       "industry": "원자재, 광산·금속 소재, 배터리 공급망"
-    },
-    {
-      "ticker": "CDEI",
-      "name": "Calvert US Large-Cap Diversity, Equity and Inclusion Index ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "Calvert US Large-Cap Diversity, Equity a ETF"
     },
     {
       "ticker": "CDIG",
@@ -35604,10 +35667,10 @@
     },
     {
       "ticker": "CMDT",
-      "name": "PIMCO Commodity Strategy Active Exchange-Traded Fund",
+      "name": "PIMCO Commodity and Bond Strategy Active Exchange-Traded Fund",
       "market": "US",
       "category": "스윙주",
-      "industry": "PIMCO Commodity Strategy Active Exchange ETF"
+      "industry": "채권·국채 ETF"
     },
     {
       "ticker": "CMDY",
@@ -36194,7 +36257,7 @@
       "ticker": "COIN",
       "name": "Coinbase Global Class A",
       "market": "US",
-      "category": "스윙주",
+      "category": "성장주",
       "industry": "가상화폐, 핀테크, 블록체인"
     },
     {
@@ -36458,7 +36521,7 @@
     },
     {
       "ticker": "CORP",
-      "name": "PIMCO Investment Grade Corporate Bond Index Exchange-Traded Fund",
+      "name": "PIMCO Investment Grade Corporate Bond Exchange-Traded Fund",
       "market": "US",
       "category": "스윙주",
       "industry": "채권·국채 ETF"
@@ -42036,13 +42099,6 @@
       "industry": "-"
     },
     {
-      "ticker": "DVAL",
-      "name": "BrandywineGLOBAL-Dynamic US Large Cap Value ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "BrandywineGLOBAL-Dynamic US Large Cap Va ETF"
-    },
-    {
       "ticker": "DVDN",
       "name": "Kingsbarn Dividend Opportunity ETF",
       "market": "US",
@@ -42349,27 +42405,6 @@
       "market": "US",
       "category": "스윙주",
       "industry": "채권·국채 ETF"
-    },
-    {
-      "ticker": "DYNC",
-      "name": "Dynamix Class A",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
-      "ticker": "DYNCU",
-      "name": "Dynamix Corporation - Unit",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
-      "ticker": "DYNCW",
-      "name": "Dynamix Corporation - Warrant",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "스팩·권리증권, 이벤트성 상장상품"
     },
     {
       "ticker": "DYNF",
@@ -43429,13 +43464,6 @@
       "industry": "-"
     },
     {
-      "ticker": "EICA",
-      "name": "Eagle Point Income Company 5.00% Term Shares due 2026 Series A Pref",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
       "ticker": "EIDO",
       "name": "iShares MSCI Indonesia ETF",
       "market": "US",
@@ -43583,6 +43611,13 @@
       "industry": "금융, 은행·자산운용·증권"
     },
     {
+      "ticker": "ELCF",
+      "name": "Eventide Large Cap Focus ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "Eventide Large Cap Focus ETF"
+    },
+    {
       "ticker": "ELCV",
       "name": "Strategy Shares Eventide High Dividend ETF",
       "market": "US",
@@ -43655,13 +43690,6 @@
     {
       "ticker": "ELMD",
       "name": "Electromed",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
-      "ticker": "ELME",
-      "name": "Elme Communities",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -43891,13 +43919,6 @@
       "industry": "-"
     },
     {
-      "ticker": "EMEM",
-      "name": "Sophus Capital Emerging Market ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "Sophus Capital Emerging Market ETF"
-    },
-    {
       "ticker": "EMEQ",
       "name": "Nomura Focused Emerging Markets Equity ETF",
       "market": "US",
@@ -44046,10 +44067,10 @@
     },
     {
       "ticker": "EMNT",
-      "name": "PIMCO Enhanced Short Maturity Active ESG Exchange-Traded Fund",
+      "name": "PIMCO Enhanced Short Maturity Active ESG and Bond Exchange-Traded Fund",
       "market": "US",
       "category": "스윙주",
-      "industry": "PIMCO Enhanced Short Maturity Active ESG 인버스 ETF"
+      "industry": "채권·국채 인버스 ETF"
     },
     {
       "ticker": "EMO",
@@ -45156,6 +45177,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "ETDG",
+      "name": "Eventide Dividend Growth ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "Eventide Dividend Growth ETF"
     },
     {
       "ticker": "ETEC",
@@ -46495,6 +46523,13 @@
       "industry": "-"
     },
     {
+      "ticker": "FBEQ",
+      "name": "Franklin US Equity Bitcoin Drip Index ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "비트코인 ETF"
+    },
+    {
       "ticker": "FBGL",
       "name": "FBS Global",
       "market": "US",
@@ -46707,6 +46742,13 @@
     {
       "ticker": "FCCO",
       "name": "First Community",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
+    },
+    {
+      "ticker": "FCDH",
+      "name": "Forcendra Holding Class A",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -47678,6 +47720,13 @@
       "industry": "Fidelity Fundamental Small-Mid Cap ETF"
     },
     {
+      "ticker": "FFTT",
+      "name": "Masonglory Class A",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
+    },
+    {
       "ticker": "FFTY",
       "name": "CapForce IBD 50 ETF",
       "market": "US",
@@ -47907,6 +47956,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "FIBT",
+      "name": "Franklin US Innovation Bitcoin DRIP Index ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "비트코인 ETF"
     },
     {
       "ticker": "FICO",
@@ -51255,6 +51311,13 @@
       "industry": "금융, 은행·자산운용·증권"
     },
     {
+      "ticker": "GBC",
+      "name": "Georgia Banking Company",
+      "market": "US",
+      "category": "가치주",
+      "industry": "금융, 은행·자산운용·증권"
+    },
+    {
       "ticker": "GBCI",
       "name": "Glacier Bancorp",
       "market": "US",
@@ -51470,13 +51533,6 @@
       "market": "US",
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼"
-    },
-    {
-      "ticker": "GCTK",
-      "name": "GlucoTrack",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
     },
     {
       "ticker": "GCTS",
@@ -51988,13 +52044,6 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
-    },
-    {
-      "ticker": "GFGF",
-      "name": "Guru Favorite Stocks ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "Guru Favorite Stocks ETF"
     },
     {
       "ticker": "GFI",
@@ -54487,6 +54536,13 @@
       "market": "US",
       "category": "스윙주",
       "industry": "금 인버스 ETF"
+    },
+    {
+      "ticker": "GUNN",
+      "name": "Gunnison Copper",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
     },
     {
       "ticker": "GUNR",
@@ -57402,7 +57458,7 @@
     },
     {
       "ticker": "HYS",
-      "name": "PIMCO 0-5 Year High Yield Corporat Bond Index Exchange-Traded Fund",
+      "name": "PIMCO 0-5 Year High Yield Corporate Bond Exchange-Traded Fund",
       "market": "US",
       "category": "스윙주",
       "industry": "채권·국채 ETF"
@@ -63107,7 +63163,7 @@
     },
     {
       "ticker": "JSM",
-      "name": "Navient Corporation - 6% Senior Notes due December 15, 2043",
+      "name": "Navient LLC - 6% Senior Notes due December 15, 2043",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -63526,25 +63582,11 @@
       "industry": "KraneShares Bosera MSCI China A 50 Conne ETF"
     },
     {
-      "ticker": "KBAB",
-      "name": "KraneShares 2x Long BABA Daily ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "KraneShares 2x Long BABA 2배 레버리지 ETF"
-    },
-    {
       "ticker": "KBDC",
       "name": "Kayne Anderson BDC",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
-    },
-    {
-      "ticker": "KBDU",
-      "name": "KraneShares 2x Long BIDU Daily ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "KraneShares 2x Long BIDU 2배 레버리지 ETF"
     },
     {
       "ticker": "KBE",
@@ -63643,13 +63685,6 @@
       "market": "US",
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼"
-    },
-    {
-      "ticker": "KCAI",
-      "name": "KraneShares China Alpha Index ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "KraneShares China Alpha Index ETF"
     },
     {
       "ticker": "KCCA",
@@ -64016,13 +64051,6 @@
       "industry": "Kensington Hedged Premium Income ETF"
     },
     {
-      "ticker": "KHYB",
-      "name": "KraneShares Asia Pacific High Income USD Bond ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "채권·국채 ETF"
-    },
-    {
       "ticker": "KIDS",
       "name": "OrthoPediatrics",
       "market": "US",
@@ -64098,13 +64126,6 @@
       "market": "US",
       "category": "스윙주",
       "industry": "Innovator U.S. Small Cap Power Buffer - ETF"
-    },
-    {
-      "ticker": "KJD",
-      "name": "KraneShares 2x Long JD Daily ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "KraneShares 2x Long JD 2배 레버리지 ETF"
     },
     {
       "ticker": "KJUL",
@@ -64280,13 +64301,6 @@
       "market": "US",
       "category": "스윙주",
       "industry": "Virtus KAR Mid-Cap ETF"
-    },
-    {
-      "ticker": "KMLI",
-      "name": "KraneShares 2x Long MELI Daily ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "KraneShares 2x Long MELI 2배 레버리지 ETF"
     },
     {
       "ticker": "KMLM",
@@ -64588,13 +64602,6 @@
       "market": "US",
       "category": "스윙주",
       "industry": "스팩·권리증권, 이벤트성 상장상품"
-    },
-    {
-      "ticker": "KPDD",
-      "name": "KraneShares 2x Long PDD Daily ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "KraneShares 2x Long PDD 2배 레버리지 ETF"
     },
     {
       "ticker": "KPET",
@@ -66634,13 +66641,6 @@
       "industry": "채권·국채 ETF"
     },
     {
-      "ticker": "LNAI",
-      "name": "Lunai Bioworks",
-      "market": "US",
-      "category": "성장주",
-      "industry": "소프트웨어·클라우드, AI 플랫폼"
-    },
-    {
       "ticker": "LNC",
       "name": "Lincoln National",
       "market": "US",
@@ -66845,10 +66845,10 @@
     },
     {
       "ticker": "LONZ",
-      "name": "PIMCO Senior Loan Active Exchange-Traded Fund",
+      "name": "PIMCO Senior Loan and Short-Term Active ETF",
       "market": "US",
       "category": "스윙주",
-      "industry": "PIMCO Senior Loan Active Exchange-Traded ETF"
+      "industry": "PIMCO Senior Loan and Short-Term Active 인버스 ETF"
     },
     {
       "ticker": "LOOP",
@@ -67458,13 +67458,6 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
-    },
-    {
-      "ticker": "LTRYW",
-      "name": "Sports Entertainment Gaming Global Corporation - Warrant",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "스팩·권리증권, 이벤트성 상장상품"
     },
     {
       "ticker": "LTTI",
@@ -69131,6 +69124,13 @@
       "market": "US",
       "category": "성장주",
       "industry": "Communication Services | Internet Content & Information"
+    },
+    {
+      "ticker": "METAM",
+      "name": "Meta Platforms Series A Pref",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
     },
     {
       "ticker": "METC",
@@ -71429,8 +71429,8 @@
       "industry": "소프트웨어·클라우드, AI 플랫폼"
     },
     {
-      "ticker": "MSGK.V",
-      "name": "Madison Square Garden Sports Class A",
+      "ticker": "MSGK",
+      "name": "MSG Knickerbockers Class A",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -71443,22 +71443,8 @@
       "industry": "전기차, 자동차, 모빌리티"
     },
     {
-      "ticker": "MSGR.V",
+      "ticker": "MSGR",
       "name": "MSG Rangers Class A",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
-      "ticker": "MSGS",
-      "name": "Madison Square Garden Sports Class A",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
-      "ticker": "MSGY",
-      "name": "Masonglory Class A",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -72008,13 +71994,6 @@
       "market": "US",
       "category": "스윙주",
       "industry": "GraniteShares 2x Long MU 2배 레버리지 ETF"
-    },
-    {
-      "ticker": "MULT",
-      "name": "Franklin Multisector Income ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "Franklin Multisector Income ETF"
     },
     {
       "ticker": "MUNA",
@@ -72829,13 +72808,6 @@
       "industry": "-"
     },
     {
-      "ticker": "NATH",
-      "name": "Nathan's Famous",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
       "ticker": "NATL",
       "name": "NCR Atleos",
       "market": "US",
@@ -72872,7 +72844,7 @@
     },
     {
       "ticker": "NAVI",
-      "name": "Navient",
+      "name": "Navient Holdings",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -74570,6 +74542,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "소비재, 식품·유통, 브랜드 커머스"
+    },
+    {
+      "ticker": "NORD",
+      "name": "Nordicus Partners",
+      "market": "US",
+      "category": "혼합주",
+      "industry": "-"
     },
     {
       "ticker": "NORW",
@@ -78688,13 +78667,6 @@
       "industry": "Parametric Equity Premium Income ETF"
     },
     {
-      "ticker": "PAPL",
-      "name": "Pineapple Financial",
-      "market": "US",
-      "category": "가치주",
-      "industry": "금융, 은행·자산운용·증권"
-    },
-    {
       "ticker": "PAPR",
       "name": "Innovator U.S. Equity Power Buffer ETF - April",
       "market": "US",
@@ -78710,14 +78682,14 @@
     },
     {
       "ticker": "PARA",
-      "name": "Banzai International Class A",
+      "name": "Parabolic Technologies Class A",
       "market": "US",
-      "category": "성장주",
-      "industry": "소프트웨어·클라우드, AI 플랫폼"
+      "category": "혼합주",
+      "industry": "-"
     },
     {
       "ticker": "PARAW",
-      "name": "Banzai International, Inc. - Warrant",
+      "name": "Parabolic Technologies, Inc. - Warrant",
       "market": "US",
       "category": "스윙주",
       "industry": "스팩·권리증권, 이벤트성 상장상품"
@@ -82769,6 +82741,13 @@
       "industry": "GraniteShares 2x Long PLTR 2배 레버리지 ETF"
     },
     {
+      "ticker": "PTIV",
+      "name": "Pineapple Financial",
+      "market": "US",
+      "category": "가치주",
+      "industry": "금융, 은행·자산운용·증권"
+    },
+    {
       "ticker": "PTL",
       "name": "Inspire 500 ETF",
       "market": "US",
@@ -84734,6 +84713,13 @@
       "market": "US",
       "category": "스윙주",
       "industry": "VanEck Data Center Supply Chain ETF"
+    },
+    {
+      "ticker": "RADD",
+      "name": "AB US Research Advanced ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "AB US Research Advanced ETF"
     },
     {
       "ticker": "RADX",
@@ -89069,6 +89055,13 @@
       "industry": "스팩·권리증권, 이벤트성 상장상품"
     },
     {
+      "ticker": "SCQCU",
+      "name": "SPACCircle Acquisition Corp. - Units",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "스팩·권리증권, 이벤트성 상장상품"
+    },
+    {
       "ticker": "SCSB",
       "name": "Sterling Capital Short Duration Bond ETF",
       "market": "US",
@@ -91072,7 +91065,7 @@
     },
     {
       "ticker": "SLMT",
-      "name": "Brera Holdings Class B",
+      "name": "Solmate Infrastructure Public Limited Company Class B",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -97763,13 +97756,6 @@
       "industry": "-"
     },
     {
-      "ticker": "TOT",
-      "name": "LionShares U.S. Equity Total Return ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "LionShares U.S. Equity Total Return ETF"
-    },
-    {
       "ticker": "TOTL",
       "name": "State Street DoubleLine Total Return Tactical ETF",
       "market": "US",
@@ -100878,13 +100864,6 @@
       "industry": "First Eagle US Equity ETF"
     },
     {
-      "ticker": "USFI",
-      "name": "BrandywineGLOBAL - U.S. Fixed Income ETF",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "BrandywineGLOBAL - U.S. Fixed Income ETF"
-    },
-    {
       "ticker": "USFR",
       "name": "WisdomTree Floating Rate Treasury Fund",
       "market": "US",
@@ -103335,13 +103314,6 @@
       "industry": "Applied Finance Valuation Large Cap ETF"
     },
     {
-      "ticker": "VSME",
-      "name": "VS Media Holdings Class A",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
       "ticker": "VSMV",
       "name": "VictoryShares US Multi-Factor Minimum Volatility ETF",
       "market": "US",
@@ -103993,6 +103965,13 @@
       "industry": "WBI Power Factor High Dividend ETF"
     },
     {
+      "ticker": "WBMO",
+      "name": "VanEck Wealth Builder ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "VanEck Wealth Builder ETF"
+    },
+    {
       "ticker": "WBTN",
       "name": "WEBTOON Entertainment Inc. - Common stock",
       "market": "US",
@@ -104243,13 +104222,6 @@
       "market": "US",
       "category": "스윙주",
       "industry": "Teucrium Wheat ETV ETF"
-    },
-    {
-      "ticker": "WEAV",
-      "name": "Weave Communications",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
     },
     {
       "ticker": "WEBL",
@@ -104961,13 +104933,6 @@
     {
       "ticker": "WPP",
       "name": "WPP",
-      "market": "US",
-      "category": "혼합주",
-      "industry": "-"
-    },
-    {
-      "ticker": "WPRT",
-      "name": "Westport Fuel Systems",
       "market": "US",
       "category": "혼합주",
       "industry": "-"
@@ -107654,27 +107619,6 @@
       "industry": "-"
     },
     {
-      "ticker": "YHNA",
-      "name": "YHN Acquisition I",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "스팩·권리증권, 이벤트성 상장상품"
-    },
-    {
-      "ticker": "YHNAR",
-      "name": "YHN Acquisition I Limited - Right",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "스팩·권리증권, 이벤트성 상장상품"
-    },
-    {
-      "ticker": "YHNAU",
-      "name": "YHN Acquisition I Limited - Unit",
-      "market": "US",
-      "category": "스윙주",
-      "industry": "스팩·권리증권, 이벤트성 상장상품"
-    },
-    {
       "ticker": "YI",
       "name": "111",
       "market": "US",
@@ -107904,6 +107848,13 @@
       "market": "US",
       "category": "혼합주",
       "industry": "-"
+    },
+    {
+      "ticker": "YSKH",
+      "name": "YieldMax SKHY Option Income Strategy ETF",
+      "market": "US",
+      "category": "스윙주",
+      "industry": "YieldMax SKHY Option Income Strategy ETF"
     },
     {
       "ticker": "YSPC",

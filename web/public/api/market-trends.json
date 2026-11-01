@@ -2,28 +2,12 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-10-25T17:59:29+00:00",
-    "lastSuccessfulRun": "2026-10-25T17:59:29+00:00",
+    "updatedAt": "2026-11-01T15:01:54+00:00",
+    "lastSuccessfulRun": "2026-11-01T15:01:54+00:00",
     "analysisStatus": "news-verified",
     "failedReason": null
   },
   "rows": [
-    {
-      "date": "2026.04.27",
-      "ranks": [
-        "AI 인프라 | 데이터센터, 클라우드 컴퓨팅, 서버 칩",
-        "반도체 | AI칩, GPU, 하이테크",
-        "클라우드 컴퓨팅 | AWS, Azure, Google Cloud",
-        "전기차 | 테슬라, EV 배터리, 자율주행",
-        "디지털 결제 | 모바일 결제, 온라인 뱅킹, 핀테크",
-        "소프트웨어 | SaaS, 클라우드 소프트웨어, AI 솔루션",
-        "통신 | 5G, 네트워크 보안, 광통신",
-        "비대면 서비스 | 원격 근무, 온라인 교육, 비대면 의료",
-        "게임 | 온라인 게임, 게임 엔진, 가상 현실",
-        "보안 | 사이버 보안, 데이터 보안, 네트워크 보안"
-      ],
-      "summary": "이번 주 전체 시장 분위기는 기술과 인공지능 관련 주가가 상승하며 활황을 보이고 있습니다."
-    },
     {
       "date": "2026.05.04",
       "ranks": [
@@ -973,6 +957,231 @@
         "model": "openai/gpt-oss-20b",
         "attempts": 1,
         "newsCount": 66,
+        "sources": [
+          "https://feeds.marketwatch.com/marketwatch/topstories/",
+          "https://trends.google.com/trending/rss?geo=US",
+          "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+          "https://www.cnbc.com/id/19854910/device/rss/rss.html"
+        ],
+        "recoveryErrors": []
+      }
+    },
+    {
+      "date": "2026.11.02",
+      "ranks": [
+        "AI 반도체 | AI칩, GPU, HBM, ASIC, 첨단패키징",
+        "AI 인프라 | 데이터센터, 전력·냉각, GPU 클러스터, HPC, AI 클라우드",
+        "전력 인프라 | 전력망, 원전, SMR, 데이터센터 전력, 에너지 저장",
+        "로봇·자동화 | 로봇, 자동화, 휴머노이드, 협동로봇, 로보틱스",
+        "전기차·배터리 | 전기차, 배터리, 리튬, 자율주행, 로보택시",
+        "AI·광고 | Meta, Google, AI",
+        "암호화폐 | Binance, 해킹, 보안",
+        "정치·선거자금 | 중간선거, PAC, 정책",
+        "주택·금융 | 401(k), 자동이체, 연금",
+        "자동차·3D프린팅 | Rivian, Ford, 3D프린팅"
+      ],
+      "summary": "인공지능과 정치·금융 이슈가 주도하며, 암호화폐 보안과 에너지 가격 변동이 시장에 영향을 주고 있습니다.",
+      "newsEvidence": [
+        {
+          "sector": "AI·광고",
+          "articles": [
+            {
+              "title": "Why AI is boosting Meta's ad business while hurting Google search",
+              "url": "https://www.cnbc.com/2026/11/01/ai-meta-ads-google-search.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-01T14:31:29+00:00"
+            },
+            {
+              "title": "Companies promised AI gains — here's how the payoff showed up in earnings",
+              "url": "https://www.cnbc.com/2026/11/01/ai-investments-company-earnings.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-01T12:34:06+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "암호화폐",
+          "articles": [
+            {
+              "title": "Binance resumes withdrawals following $6.3 billion hack, says 90% of stolen user assets are covered",
+              "url": "https://www.cnbc.com/2026/10/31/binance-hack-asset-coverage-withdrawals.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-01T12:19:33+00:00"
+            },
+            {
+              "title": "Binance’s $6.3 billion hack raises questions about crypto wallet safety",
+              "url": "https://www.cnbc.com/2026/10/31/binance-hack-crypto-wallet-safety.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-31T12:47:08+00:00"
+            },
+            {
+              "title": "Binance hack: Investigators in a 'cat and mouse game' to recover $6.3 billion in stolen funds",
+              "url": "https://www.cnbc.com/2026/10/30/binance-hack-stolen-crypto-recovery.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-30T19:27:03+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "정치·선거자금",
+          "articles": [
+            {
+              "title": "‘Pop-up’ super PACs pour $637 million into 2026 midterm races",
+              "url": "https://www.cnbc.com/2026/10/31/2026-midterm-election-super-pacs-donor-disclosure.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-31T12:00:01+00:00"
+            },
+            {
+              "title": "Crypto industry pours more than $200 million into 2026 midterms to pressure Congress on favorable rules",
+              "url": "https://www.cnbc.com/2026/10/31/crypto-industry-spends-more-than-200-million-to-sway-the-midterms.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-31T13:04:29+00:00"
+            },
+            {
+              "title": "Gamble on democracy: Inside suspicious election-contracts trading on prediction markets",
+              "url": "https://www.cnbc.com/2026/10/30/gamble-on-democracy-inside-suspicious-election-contracts-trading-on-prediction-markets-.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-30T22:00:53+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "주택·금융",
+          "articles": [
+            {
+              "title": "Automatic 401(k) rollovers reduce cash-outs, research finds — but few accounts reach new employer plans",
+              "url": "https://www.cnbc.com/2026/10/31/401k-cash-outs-automatic-rollovers.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-31T13:30:01+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "자동차·3D프린팅",
+          "articles": [
+            {
+              "title": "Automakers like Rivian and Ford are ‘democratizing 3D printing’ to reduce costs and increase speed",
+              "url": "https://www.cnbc.com/2026/10/31/automakers-3d-printing-ford-rivian-gm.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-31T12:00:01+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "채권·금리",
+          "articles": [
+            {
+              "title": "Treasury Department announces new Series I bond rate of 5.51% for the next six months",
+              "url": "https://www.cnbc.com/2026/10/30/treasury-i-bond-rate-through-april-2027.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-30T17:15:53+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "에너지·유류",
+          "articles": [
+            {
+              "title": "Trump promised to slash energy costs — but gasoline, diesel and jet fuel all soared instead",
+              "url": "https://www.cnbc.com/2026/10/31/trump-gas-diesel-price-midterm-election.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-31T12:49:58+00:00"
+            },
+            {
+              "title": "Trump called out Big Oil profits. Here’s how much their refining earnings have surged since",
+              "url": "https://www.cnbc.com/2026/10/31/trump-big-oil-refining-profits.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-31T06:00:02+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "기술주·투자",
+          "articles": [
+            {
+              "title": "Berkshire ekes out some new highs, but October rally stalls",
+              "url": "https://www.cnbc.com/2026/10/31/berkshire-ekes-out-some-new-highs-but-october-rally-stalls.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-10-31T12:26:00+00:00"
+            },
+            {
+              "title": "For JPMorgan, Amazon, fighting AI bots like Meta Muse may not be a winning long-term strategy",
+              "url": "https://www.cnbc.com/2026/11/01/jpmorgan-amazon-ai-agents-meta-muse.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-01T14:09:05+00:00"
+            },
+            {
+              "title": "Meta outlook revised downward by S&P on cash flow and capex concerns",
+              "url": "https://www.cnbc.com/2026/10/30/meta-outlook-to-revised-to-negative-by-sp-after-cash-flow-negative.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-30T22:42:26+00:00"
+            },
+            {
+              "title": "Reddit stock plunges 29% after weak outlook, wrapping its worst day ever",
+              "url": "https://www.cnbc.com/2026/10/30/reddit-stock-q3-earnings.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-30T20:11:12+00:00"
+            },
+            {
+              "title": "Tech giants need legacy businesses to keep growing as they pour trillions into the AI buildout",
+              "url": "https://www.cnbc.com/2026/10/30/tech-giants-alphabet-meta-microsoft-amazon-ai-buildouts.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-30T11:00:01+00:00"
+            },
+            {
+              "title": "Amazon AWS posts 39% revenue growth as cloud rivals also accelerate",
+              "url": "https://www.cnbc.com/2026/10/29/aws-q3-earnings-report-2026.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-29T21:59:31+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "주식시장·전망",
+          "articles": [
+            {
+              "title": "Cramer’s week ahead: Expect more volatility as tech earnings, midterms loom",
+              "url": "https://www.cnbc.com/2026/10/30/jim-cramer-week-ahead-apple-amd-jobs-report.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-30T22:17:13+00:00"
+            },
+            {
+              "title": "Jim Cramer says Wall Street is punishing the wrong tech stocks",
+              "url": "https://www.cnbc.com/2026/10/29/jim-cramer-earnings-guilt-by-association.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-29T23:00:01+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "AI·기업전략",
+          "articles": [
+            {
+              "title": "Microsoft plans to raise $25 billion in debt as it pursues AI buildout",
+              "url": "https://www.cnbc.com/2026/10/29/microsoft-25-billion-debt-offering.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-10-30T00:38:13+00:00"
+            }
+          ]
+        }
+      ],
+      "newsRanks": [
+        "AI·광고 | Meta, Google, AI",
+        "암호화폐 | Binance, 해킹, 보안",
+        "정치·선거자금 | 중간선거, PAC, 정책",
+        "주택·금융 | 401(k), 자동이체, 연금",
+        "자동차·3D프린팅 | Rivian, Ford, 3D프린팅",
+        "채권·금리 | Series I, 금리, 채권시장",
+        "에너지·유류 | 트럼프, 가솔린, 유가",
+        "기술주·투자 | Meta, Amazon, AI",
+        "주식시장·전망 | Cramer, 볼린저, 시장전망",
+        "AI·기업전략 | Microsoft, AI빌드아웃, 부채조달"
+      ],
+      "analysis": {
+        "status": "news-verified",
+        "model": "openai/gpt-oss-20b",
+        "attempts": 1,
+        "newsCount": 59,
         "sources": [
           "https://feeds.marketwatch.com/marketwatch/topstories/",
           "https://trends.google.com/trending/rss?geo=US",
