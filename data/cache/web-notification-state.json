@@ -1,7 +1,9 @@
 {
   "earnings": {
     "sentKeys": [
+      "86752d75-255f-4704-83f1-72b62227e624:AAPL:2026-11-03",
       "8d43baaf-3e29-40d0-b516-6ea8ccd1615e:COIN:2026-10-30",
+      "8d43baaf-3e29-40d0-b516-6ea8ccd1615e:PLTR:2026-11-03",
       "8d43baaf-3e29-40d0-b516-6ea8ccd1615e:TSLA:2026-10-22",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-30:AAPL",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-08-04:ALAB",
@@ -9,6 +11,8 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-08-11:ASTS,RKLB",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-08-12:COHR",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-08-13:COHR",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:AAPL:2026-11-03",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:AEHR:2026-11-03",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:ASX:2026-10-29",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:BE:2026-10-23",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:CIFR:2026-11-02",
@@ -28,7 +32,7 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:TER:2026-10-28",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VRT:2026-10-28"
     ],
-    "updatedAt": "2026-10-31T15:02:34.054535+00:00"
+    "updatedAt": "2026-11-01T19:20:29.199282+00:00"
   },
   "maSupportSignals": {
     "sentDailyKeys": [
