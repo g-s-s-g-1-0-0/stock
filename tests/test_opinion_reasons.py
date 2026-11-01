@@ -6,10 +6,25 @@ from calculator.opinion_reasons import (
     format_sell_opinion_reason,
     is_sparse_watch_reason,
 )
-from calculator.rules import IndicatorRow
+from calculator.rules import IndicatorRow, STRATEGY_RULES, evaluate_exit_condition, strategy_stop_criterion_label
 
 
 class OpinionReasonTests(unittest.TestCase):
+    def test_strategy_three_emergency_stop_description_matches_rule(self) -> None:
+        threshold = STRATEGY_RULES["S3_HARD_CIRCUIT_PCT"]
+        label = strategy_stop_criterion_label("3")
+        self.assertIn(f"비상 손절 -{round(threshold * 100)}%", label)
+        result = evaluate_exit_condition(
+            IndicatorRow(stock_name="TEST", current_price=74, entry_price=100),
+            strategy_type="3",
+        )
+        self.assertTrue(result["shouldExit"])
+        self.assertIn(label, result["reason"])
+        summary = exit_criteria_summary("3", {"supportStopPrice": 90})
+        self.assertIn("종가 지지선 이탈", summary)
+        self.assertIn("비상 손절 -25%", summary)
+        self.assertNotIn("-12%", summary)
+
     def test_held_watch_reason_includes_strategy_release_and_exit_criteria(self) -> None:
         trade = {
             "market": "KR",

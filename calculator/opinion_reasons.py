@@ -60,7 +60,9 @@ def exit_criteria_summary(code: str | None, trade: dict[str, Any] | None = None)
         parts.append(f"고정 익절 +{target_pct}%")
         support_stop = (trade or {}).get("supportStopPrice")
         if support_stop is not None:
-            parts.append(f"지지선 이탈 { _fmt_price(support_stop, market)}")
+            parts.append(f"종가 지지선 이탈 { _fmt_price(support_stop, market)}")
+        circuit_pct = int(round(float(STRATEGY_RULES["S3_HARD_CIRCUIT_PCT"]) * 100))
+        parts.append(f"비상 손절 -{circuit_pct}%")
         parts.append("횡보장 고점·시장 청산")
         return " · ".join(parts)
 
