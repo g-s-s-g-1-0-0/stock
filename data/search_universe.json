@@ -7,8 +7,8 @@
       "US"
     ],
     "count": 15507,
-    "industryEnrichedAt": "2026-11-01T15:01:47+00:00",
-    "industryEnrichedTickers": 33,
+    "industryEnrichedAt": "2026-11-01T16:56:20+00:00",
+    "industryEnrichedTickers": 3,
     "industryReviewedAt": "2026-11-01T15:01:50+00:00",
     "industryReviewedTickers": 9
   },
@@ -201374,7 +201374,7 @@
       "strategies": [],
       "category": "가치주",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
-      "rawIndustry": "-",
+      "rawIndustry": "Technology | Computer Hardware",
       "products": "-",
       "updatedAt": "2026-11-01T15:01:35+00:00"
     },
@@ -202554,7 +202554,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "NYSE 반도체 지수 3배 레버리지 ETF(일일 3배)",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial",
       "products": "-",
       "updatedAt": "2026-11-01T15:01:35+00:00",
       "etfFlag": true
@@ -202586,11 +202586,10 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "반도체 지수 3배 인버스 레버리지 ETF(일일 3배)",
-      "rawIndustry": "-",
+      "rawIndustry": "Financial",
       "products": "-",
       "updatedAt": "2026-11-01T15:01:35+00:00",
-      "etfFlag": true,
-      "industryReviewedAt": "2026-11-01T15:01:50+00:00"
+      "etfFlag": true
     },
     {
       "ticker": "SOXX",
