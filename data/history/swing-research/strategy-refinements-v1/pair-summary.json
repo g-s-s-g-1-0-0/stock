@@ -28,19 +28,19 @@
       "refine_s4_base": {
         "closed": 0,
         "entryDates": 0,
-        "signals": 1
+        "signals": 2
       },
       "refine_s4_ma200_rising": {
         "closed": 0,
         "entryDates": 0,
-        "signals": 0
+        "signals": 1
       }
     },
     "s6_ma50_above200": {
       "refine_s6_base": {
         "closed": 0,
         "entryDates": 0,
-        "signals": 1
+        "signals": 2
       },
       "refine_s6_ma50_above200": {
         "closed": 0,
