@@ -1,42 +1,7 @@
 {
   "meta": {
     "kind": "personal-trade-exits",
-    "updatedAt": "2026-11-02T20:57:16Z"
+    "updatedAt": "2026-11-02T22:57:07Z"
   },
-  "events": [
-    {
-      "ownerId": "8d43baaf-3e29-40d0-b516-6ea8ccd1615e",
-      "trades": [
-        {
-          "name": "Palantir Technologies Class A",
-          "market": "US",
-          "slotId": "PLTR_swing_7_20261019_1",
-          "status": "손절",
-          "ticker": "PLTR",
-          "buyDate": "2026.10.19",
-          "buyPrice": "$195.20",
-          "sellDate": "2026.11.03",
-          "strategy": "7. 이평선 눌림 반등",
-          "returnPct": -8.39,
-          "riskGroup": "방산·우주",
-          "sellPrice": "$178.83",
-          "holdingDays": "-",
-          "currentPrice": "$178.83",
-          "investmentType": "swing",
-          "allocationReason": "",
-          "allocationSource": "account",
-          "allocationStatus": "진입 가능",
-          "investmentAmount": 200000,
-          "maxPositionCount": 10,
-          "openPositionCount": 2,
-          "postRiskGroupPercent": 10,
-          "currentRiskGroupPercent": 0,
-          "recommendedAllocationPercent": 10,
-          "sellTimestamp": "2026-11-02T21:00:00Z",
-          "exitReason": "손절 기준 도달 -8.39% [이평선 눌림 반등 기준 -8%]",
-          "allocationSignalStatus": "보유 중"
-        }
-      ]
-    }
-  ]
+  "events": []
 }
