@@ -83,10 +83,20 @@ function nextTopOfHourIso() {
   return publishAt.toISOString().replace(/\.000Z$/, 'Z')
 }
 
-function scheduledPublishAtForCron(scope) {
-  // Weekly trend cron already runs at its intended publish time.
-  // Waiting for the next top of hour makes a 00:00 KST run send at 01:00 KST.
-  if (scope === 'market-trends') return ''
+export function scheduledPublishAtForCron(scope, now = new Date()) {
+  if (scope === 'market-trends') {
+    // Prepare on Sunday evening, then release at Monday 00:00 KST.
+    // A late Monday trigger must retain this week's target, not wait until 01:00.
+    const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+    const preparing = kst.getUTCDay() === 0 && kst.getUTCHours() === 23
+    const late = kst.getUTCDay() === 1 && kst.getUTCHours() < 3
+    // Unexpected out-of-slot calls must not occupy the shared runner for days.
+    if (!preparing && !late) return ''
+    const target = new Date(Date.UTC(
+      kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate() + (preparing ? 1 : 0),
+    ) - 9 * 60 * 60 * 1000)
+    return target.toISOString().replace(/\.000Z$/, 'Z')
+  }
   return nextTopOfHourIso()
 }
 
