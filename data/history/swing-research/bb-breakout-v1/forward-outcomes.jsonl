@@ -1,2 +1,3 @@
 {"entry": "2026-10-23", "horizon": 5, "mae": -0.023158534240109052, "mfe": 0.007490428154338424, "net": -0.004587160614696103, "signal": "2026-10-22", "signals": {"bb_squeeze_breakout": true}, "through": "2026-10-29", "ticker": "AAPL"}
 {"entry": "2026-10-27", "horizon": 5, "mae": -0.025744218877073455, "mfe": 0.04140688057205111, "net": 0.011235311267627338, "signal": "2026-10-26", "signals": {"bb_squeeze_breakout": true}, "through": "2026-11-02", "ticker": "TSLA"}
+{"entry": "2026-10-28", "horizon": 5, "mae": -0.055186477875416085, "mfe": 0.009935298165716144, "net": -0.03241608370977922, "signal": "2026-10-27", "signals": {"bb_squeeze_breakout": true}, "through": "2026-11-03", "ticker": "TSLA"}

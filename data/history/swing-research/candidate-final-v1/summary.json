@@ -1,8 +1,8 @@
 {
   "version": "candidate-final-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-11-02",
-  "observations": 899,
+  "lastSession": "2026-11-03",
+  "observations": 942,
   "signalCounts": {
     "final_p_breakout_first_retest": 2,
     "final_p_failed_breakout_reclaim": 0,
@@ -14,14 +14,14 @@
     "final_s2_fresh_ma_support": 0,
     "final_s2_intraday_supported_trend": 0,
     "final_s2_weekly_uptrend": 0,
-    "final_s3_intraday_supported_trend": 10,
-    "final_s3_nearby_price_support": 30,
-    "final_s4_few_distribution_days": 2,
+    "final_s3_intraday_supported_trend": 11,
+    "final_s3_nearby_price_support": 31,
+    "final_s4_few_distribution_days": 3,
     "final_s6_few_distribution_days": 2,
-    "final_s7_intraday_supported_trend": 16
+    "final_s7_intraday_supported_trend": 17
   },
-  "filteredClosed": 7,
-  "filteredEntryDates": 3,
+  "filteredClosed": 10,
+  "filteredEntryDates": 4,
   "earliestReviewKST": "2026-12-08",
   "sampleReady": null,
   "status": "collecting",
