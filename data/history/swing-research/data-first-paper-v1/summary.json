@@ -1,27 +1,27 @@
 {
   "version": "data-first-paper-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-11-03",
-  "observations": 942,
+  "lastSession": "2026-11-04",
+  "observations": 985,
   "signalCounts": {
-    "data_S3_ma200_distance25_base": 60,
-    "data_S3_ma200_distance25_filtered": 52,
-    "data_S3_rsi35_base": 60,
-    "data_S3_rsi35_filtered": 45,
+    "data_S3_ma200_distance25_base": 64,
+    "data_S3_ma200_distance25_filtered": 56,
+    "data_S3_rsi35_base": 64,
+    "data_S3_rsi35_filtered": 46,
     "data_S3_intraday_positive_base": 54,
     "data_S3_intraday_positive_filtered": 21,
-    "data_S4_debt1_base": 3,
-    "data_S4_debt1_filtered": 3,
-    "data_S4_eps_growth_base": 3,
-    "data_S4_eps_growth_filtered": 2,
-    "data_S7_high52_drawdown30_base": 38,
+    "data_S4_debt1_base": 4,
+    "data_S4_debt1_filtered": 4,
+    "data_S4_eps_growth_base": 4,
+    "data_S4_eps_growth_filtered": 3,
+    "data_S7_high52_drawdown30_base": 40,
     "data_S7_high52_drawdown30_filtered": 13,
-    "data_N_expanded_below200_base": 494,
-    "data_N_expanded_below200_filtered": 216,
-    "data_N_rsi_ahead_macd_base": 494,
-    "data_N_rsi_ahead_macd_filtered": 18,
-    "data_N_value_laggard_base": 494,
-    "data_N_value_laggard_filtered": 68
+    "data_N_expanded_below200_base": 532,
+    "data_N_expanded_below200_filtered": 233,
+    "data_N_rsi_ahead_macd_base": 532,
+    "data_N_rsi_ahead_macd_filtered": 19,
+    "data_N_value_laggard_base": 532,
+    "data_N_value_laggard_filtered": 74
   },
   "filteredClosed": 10,
   "filteredEntryDates": 4,
@@ -31,7 +31,7 @@
   "collectorHash": "aa0d08cd3744aa0a6681f0e0f539bd888ff491a731adec78e9af7daa8ad5484d",
   "pairs": {
     "S3_ma200_distance25": {
-      "knownObservations": 938,
+      "knownObservations": 981,
       "unknownObservations": 4,
       "data_S3_ma200_distance25_base": {
         "closed": 12,
@@ -43,7 +43,7 @@
       }
     },
     "S3_rsi35": {
-      "knownObservations": 938,
+      "knownObservations": 981,
       "unknownObservations": 4,
       "data_S3_rsi35_base": {
         "closed": 12,
@@ -56,7 +56,7 @@
     },
     "S3_intraday_positive": {
       "knownObservations": 849,
-      "unknownObservations": 93,
+      "unknownObservations": 136,
       "data_S3_intraday_positive_base": {
         "closed": 12,
         "entryDates": 3
@@ -67,8 +67,8 @@
       }
     },
     "S4_debt1": {
-      "knownObservations": 826,
-      "unknownObservations": 116,
+      "knownObservations": 864,
+      "unknownObservations": 121,
       "data_S4_debt1_base": {
         "closed": 0,
         "entryDates": 0
@@ -79,8 +79,8 @@
       }
     },
     "S4_eps_growth": {
-      "knownObservations": 826,
-      "unknownObservations": 116,
+      "knownObservations": 864,
+      "unknownObservations": 121,
       "data_S4_eps_growth_base": {
         "closed": 0,
         "entryDates": 0
@@ -91,11 +91,11 @@
       }
     },
     "S7_high52_drawdown30": {
-      "knownObservations": 938,
+      "knownObservations": 981,
       "unknownObservations": 4,
       "data_S7_high52_drawdown30_base": {
-        "closed": 13,
-        "entryDates": 6
+        "closed": 14,
+        "entryDates": 7
       },
       "data_S7_high52_drawdown30_filtered": {
         "closed": 7,
@@ -103,7 +103,7 @@
       }
     },
     "N_expanded_below200": {
-      "knownObservations": 938,
+      "knownObservations": 981,
       "unknownObservations": 4,
       "data_N_expanded_below200_base": {
         "closed": 55,
@@ -115,20 +115,20 @@
       }
     },
     "N_rsi_ahead_macd": {
-      "knownObservations": 938,
+      "knownObservations": 981,
       "unknownObservations": 4,
       "data_N_rsi_ahead_macd_base": {
         "closed": 55,
         "entryDates": 6
       },
       "data_N_rsi_ahead_macd_filtered": {
-        "closed": 2,
+        "closed": 3,
         "entryDates": 1
       }
     },
     "N_value_laggard": {
-      "knownObservations": 826,
-      "unknownObservations": 116,
+      "knownObservations": 864,
+      "unknownObservations": 121,
       "data_N_value_laggard_base": {
         "closed": 55,
         "entryDates": 6
