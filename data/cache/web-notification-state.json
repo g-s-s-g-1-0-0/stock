@@ -134,6 +134,7 @@
       "0923a204b62779e834380d9882631b1c2136ec2e9e7119aaa225fbc0fbaeb881",
       "09a3a20a505a99436157a72ac5d3faad9346770b2c30b96cfe0158036b671a4b",
       "09d199d8be39fc91de595289c69a6dcafd6e1b974551134e3171789091622ff3",
+      "0b2326a0a4fe15c01eabad18f57990f208ae21a9184273dc4e7ae7befda9188b",
       "0c4811e56d7ab174adabdfae175a32993e2102b853c609b0299b97347586ea5e",
       "0e3a797d84db53e42ca750b80c06d0446cc033c80eab59d0bdb45bdda6bf620b",
       "0ec361dfac5084eff0d29f29e7983331d6e84b415dde9742e8c0ffc5ae44db2b",
@@ -301,6 +302,7 @@
       "ea5e1d317dd752f16a0e5173edaaca5eb919175dff746a24cb328ae00d6390e6",
       "eaa7b7c9f1c654d6ebfdd8857f0aa9621f9fb0b6a2c47a7b6249c2c41751e7a3",
       "eb14a5b92f2de1bd8b41b53dd514ec9ace9c296cc5074b9d213b1663ea79bfc4",
+      "ebfc76738bc99e16af931d29c83d004800cad5166b8b003312be5b2e018188a4",
       "ec81e193277398e36521d619af64426f5892583846d372eceb88f3c5df8fba52",
       "ec9318396b9484851c628ac560658f3701a0e4c9050e0a81da728ba27f5c6c3b",
       "ed8fb7d8ff76cb8aba88e0bea391c0da975b52694f242f277fa54ae500d85eac",
@@ -317,7 +319,7 @@
       "fd9b89cad04d08be50d6531e47f2a1848f8c5daf1bedf1b949af0d989ef7d10f",
       "ffe759f69cf48289a3580a7beb09fa58ccede03fe835e6d112bd5c1a1536f95c"
     ],
-    "updatedAt": "2026-11-03T15:00:07.612416+00:00"
+    "updatedAt": "2026-11-04T03:00:06.453475+00:00"
   },
   "regimeShift": {
     "isRecoveryMarket": false,
@@ -329,7 +331,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-11-04T01:00:00+00:00"
+    "updatedAt": "2026-11-04T03:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
