@@ -3,7 +3,9 @@
     "sentKeys": [
       "86752d75-255f-4704-83f1-72b62227e624:AAPL:2026-11-03",
       "86752d75-255f-4704-83f1-72b62227e624:ALAB:2026-11-04",
+      "86752d75-255f-4704-83f1-72b62227e624:VST:2026-11-06",
       "8d43baaf-3e29-40d0-b516-6ea8ccd1615e:COIN:2026-10-30",
+      "8d43baaf-3e29-40d0-b516-6ea8ccd1615e:IONQ:2026-11-06",
       "8d43baaf-3e29-40d0-b516-6ea8ccd1615e:PLTR:2026-11-03",
       "8d43baaf-3e29-40d0-b516-6ea8ccd1615e:TSLA:2026-10-22",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:2026-07-30:AAPL",
@@ -26,7 +28,9 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:GLW:2026-10-27",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:GNRC:2026-10-28",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:INTC:2026-10-30",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:IONQ:2026-11-06",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:IREN:2026-08-28",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:IREN:2026-11-06",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:LPTH:2026-09-11",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:LRCX:2026-10-22",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:MU:2026-10-01",
@@ -36,9 +40,11 @@
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:STX:2026-10-28",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:TER:2026-10-28",
       "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:UBER:2026-11-04",
-      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VRT:2026-10-28"
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VRT:2026-10-28",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:VST:2026-11-06",
+      "a15b9df6-f8d8-4c3a-9ee0-09858fc5ce4c:WULF:2026-11-06"
     ],
-    "updatedAt": "2026-11-03T15:04:31.529817+00:00"
+    "updatedAt": "2026-11-04T15:04:25.679451+00:00"
   },
   "maSupportSignals": {
     "sentDailyKeys": [
