@@ -106,17 +106,18 @@
     ],
     "updatedAt": "2026-07-20T00:02:15.464806+00:00"
   },
-  "marketHighSignalStatus": "주의",
+  "marketHighSignalStatus": "정상",
   "marketHighSignals": {
-    "breadth": "주의",
+    "breadth": "정상",
     "credit": "정상",
-    "overallStatus": "주의",
+    "overallStatus": "정상",
     "treasury": "정상"
   },
   "marketHighSignalsSentAt": "2026-10-22T15:00:09.202840+00:00",
   "marketHighWarningEpisode": {
     "active": true,
-    "normalSessions": 0
+    "normalSession": "2026-11-04",
+    "normalSessions": 1
   },
   "nasdaqPeak": {
     "resetAt": "2026-05-14T20:55:50.998617+00:00",
@@ -340,7 +341,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-11-04T21:00:00+00:00"
+    "updatedAt": "2026-11-04T23:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
