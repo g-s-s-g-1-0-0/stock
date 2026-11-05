@@ -115,9 +115,9 @@
   },
   "marketHighSignalsSentAt": "2026-10-22T15:00:09.202840+00:00",
   "marketHighWarningEpisode": {
-    "active": true,
-    "normalSession": "2026-11-04",
-    "normalSessions": 1
+    "active": false,
+    "normalSession": "2026-11-05",
+    "normalSessions": 2
   },
   "nasdaqPeak": {
     "resetAt": "2026-05-14T20:55:50.998617+00:00",
@@ -345,7 +345,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-11-05T03:00:00+00:00"
+    "updatedAt": "2026-11-05T05:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
