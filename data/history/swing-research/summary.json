@@ -2,7 +2,7 @@
   "version": "swing-paired-v1",
   "startSession": "2026-10-05",
   "lastSession": "2026-11-04",
-  "observations": 985,
+  "observations": 986,
   "signalCounts": {
     "s7_base": 40,
     "s7_rs_positive": 20,
