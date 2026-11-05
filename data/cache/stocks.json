@@ -2,11 +2,43 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-11-05T15:03:55+00:00",
-    "lastSuccessfulRun": "2026-11-05T15:03:55+00:00",
+    "updatedAt": "2026-11-05T16:19:04+00:00",
+    "lastSuccessfulRun": "2026-11-05T16:19:04+00:00",
     "failedReason": null
   },
   "rows": [
+    {
+      "ticker": "QLD",
+      "name": "ProShares Ultra QQQ",
+      "market": "US",
+      "fairPrice": "-",
+      "fairPriceReason": "etf",
+      "currentPrice": "$76.62",
+      "valuation": "판단 불가",
+      "opinion": "관망",
+      "opinionReason": "관망 — 현재 신규 매수 조건 미충족",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "스윙주",
+      "industry": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
+      "updatedAt": "2026-11-05T14:57:15+00:00"
+    },
+    {
+      "ticker": "VOO",
+      "name": "Vanguard S&P 500 ETF",
+      "market": "US",
+      "fairPrice": "-",
+      "fairPriceReason": "etf",
+      "currentPrice": "-",
+      "valuation": "판단 불가",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "스윙주",
+      "industry": "S&P500 지수 ETF",
+      "updatedAt": "2026-11-05T16:19:04+00:00"
+    },
     {
       "ticker": "000150",
       "name": "두산",
@@ -664,22 +696,6 @@
       "category": "스윙주",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
       "updatedAt": "2026-11-05T14:57:14+00:00"
-    },
-    {
-      "ticker": "QLD",
-      "name": "ProShares Ultra QQQ",
-      "market": "US",
-      "fairPrice": "-",
-      "fairPriceReason": "etf",
-      "currentPrice": "$76.62",
-      "valuation": "판단 불가",
-      "opinion": "관망",
-      "opinionReason": "관망 — 현재 신규 매수 조건 미충족",
-      "marketEvent": "당분간 없음",
-      "strategies": [],
-      "category": "스윙주",
-      "industry": "나스닥100 지수 2배 레버리지 ETF(일일 2배)",
-      "updatedAt": "2026-11-05T14:57:15+00:00"
     },
     {
       "ticker": "USD",
