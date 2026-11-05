@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+SWING_MAINTENANCE = json.loads((ROOT_DIR / "data/service_availability.json").read_text())["swingMaintenance"]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
@@ -688,6 +689,9 @@ def supabase_request(path: str) -> list[dict[str, Any]]:
 
 
 def normalize_investment_type(value: Any) -> str:
+    # Apply the same effective profile as the UI, including admins and unmigrated accounts.
+    if SWING_MAINTENANCE:
+        return "long_term"
     # 온보딩 기본값이 가치투자(long_term)이므로 미설정/비정상 값은 long_term으로 본다.
     return "swing" if value == "swing" else "long_term"
 
@@ -797,6 +801,9 @@ def dedupe_recipients(recipients: list[Recipient]) -> list[Recipient]:
 
 
 def enabled(recipient: Recipient, key: str, *, default: bool = True) -> bool:
+    # Swing recording continues independently; suppress its delivery during maintenance.
+    if SWING_MAINTENANCE and recipient.investment_type == "swing" and key == "opinionChangeEmail":
+        return False
     value = recipient.preferences.get(key)
     return value if isinstance(value, bool) else default
 
@@ -1110,6 +1117,7 @@ STRATEGY_LABELS = {
     "4": "4. 장기선 아래 반등 초입",
     "5": "5. 저항선 돌파 후 눌림",
     "6": "6. 하락 추세 이탈 시도",
+    "7": "7. 이평선 눌림 반등",
 }
 
 
@@ -3032,11 +3040,11 @@ def send_opinion_notifications(
                     continue
                 codes = [strategy_code(value) for value in strategy_values(change.get("strategies"))]
                 codes = [code for code in codes if code]
-                if change.get("to") == "매수" and codes and set(codes) <= {"3", "4", "5", "6"}:
+                if change.get("to") == "매수" and codes and set(codes) <= {"3", "4", "5", "6", "7"}:
                     continue
                 reason_text = str(change.get("reason") or "")
                 if change.get("to") == "관망" and (
-                    any(STRATEGY_LABELS[code] in reason_text for code in ("3", "4", "5", "6"))
+                    any(STRATEGY_LABELS[code] in reason_text for code in ("3", "4", "5", "6", "7"))
                 ):
                     continue
                 my_changes.append(change)
@@ -3131,6 +3139,9 @@ def send_trade_exit_notifications(
     previous: Path,
     current: Path,
 ) -> int:
+    if SWING_MAINTENANCE:
+        print("Swing maintenance: trade exit delivery suppressed; logs retained.")
+        return 0
     changes = trade_exit_changes(previous, current)
     if not changes:
         print("No trade exit changes.")

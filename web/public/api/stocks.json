@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-11-05T16:19:04+00:00",
-    "lastSuccessfulRun": "2026-11-05T16:19:04+00:00",
+    "updatedAt": "2026-11-05T16:58:36+00:00",
+    "lastSuccessfulRun": "2026-11-05T16:58:36+00:00",
     "failedReason": null
   },
   "rows": [
@@ -37,7 +37,39 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "S&P500 지수 ETF",
-      "updatedAt": "2026-11-05T16:19:04+00:00"
+      "updatedAt": "2026-11-05T16:58:36+00:00"
+    },
+    {
+      "ticker": "418660",
+      "name": "TIGER 미국나스닥100레버리지(합성)",
+      "market": "KR",
+      "fairPrice": "-",
+      "fairPriceReason": "etf",
+      "currentPrice": "-",
+      "valuation": "판단 불가",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "스윙주",
+      "industry": "TIGER 미국나스닥100레버리지(합성) ETF",
+      "updatedAt": "2026-11-05T16:58:36+00:00"
+    },
+    {
+      "ticker": "360750",
+      "name": "TIGER 미국S&P500",
+      "market": "KR",
+      "fairPrice": "-",
+      "fairPriceReason": "etf",
+      "currentPrice": "-",
+      "valuation": "판단 불가",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "스윙주",
+      "industry": "S&P500 지수 ETF",
+      "updatedAt": "2026-11-05T16:58:36+00:00"
     },
     {
       "ticker": "000150",

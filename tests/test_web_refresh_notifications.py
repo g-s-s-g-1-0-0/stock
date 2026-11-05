@@ -147,6 +147,14 @@ class WebRefreshWorkflowTest(unittest.TestCase):
 class WebRefreshNotificationsTest(unittest.TestCase):
     def setUp(self) -> None:
         self.notifications = importlib.import_module("scripts.web_refresh_notifications")
+        maintenance = mock.patch.object(self.notifications, "SWING_MAINTENANCE", False)
+        maintenance.start()
+        self.addCleanup(maintenance.stop)
+        directory = TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        state = mock.patch.object(self.notifications, "NOTIFICATION_STATE", Path(directory.name) / "state.json")
+        state.start()
+        self.addCleanup(state.stop)
 
     def test_failed_news_analysis_never_sends_old_or_internal_only_report(self) -> None:
         with mock.patch.object(self.notifications, "is_weekly_report_window", return_value=True), \

@@ -175,3 +175,21 @@ git push
 The support stop remains a completed regular-session close rule, not an intraday stop. Each refresh checks the latest completed candle from the cached trend chart; a same-day dailyPriceDate no longer suppresses this check. A snapshot captured before the session close is not treated as final. Missing/malformed chart data cannot establish a support exit. New entries record buyTimestamp; a close before entry cannot trigger a stop. Legacy entries without a timestamp require the completed close to fall on a later KST date than buyDate. US/Korean normal closes are 16:00 ET/15:30 KST; shortened sessions are conservatively recognized after the normal close. On confirmation the log uses the currently observed quote and records supportExitConfirmation (session/close), without inventing a historical fill. The existing -25% live circuit and entry filters remain in place. This is a polling signal service, not a broker stop order or a guaranteed loss cap.
 
 COHU uses the semiconductor/AI risk group for active/new allocation decisions in both the server and browser. Already-closed trade classifications and historical exits are preserved; this correction does not recalculate past fills. Candidate research protocols remain unchanged.
+
+
+## Swing maintenance (2026-11-06)
+
+`data/service_availability.json` sets `swingMaintenance: true`. All visitors, including admins, use the value-investing view; swing selection and cross-profile watchlist import are disabled. The account notification loader also resolves stored swing preferences to long_term so this takes effect before the optional database migration. Swing-only opinion/exit delivery is suppressed; value-investing and unrelated operational notifications continue. This maintenance rule overrides the normal swing delivery policy above.
+
+The trade recorder still processes both investment types and preserves per-type watchlists, trade logs and allocations. No trading-engine or data-refresh schedules are disabled. Reopening swing shows the accumulated records without replaying old emails.
+
+`supabase/migrations/018_swing_maintenance.sql` additionally persists the value-investing preference for existing accounts and prevents older clients from selecting swing. A Git push does not execute SQL migrations. No trade logs, watchlists or allocations are rewritten by this migration.
+
+To reopen: set the JSON flag to false and deploy, and if migration 018 was applied, remove `investment_maintenance` on `public.user_settings` (and its function). Users can then select swing again.
+
+
+## Korean ETF/ETN search coverage (2026-11-06)
+
+The KIND corporation download only lists companies, so it cannot provide ETF/ETN search coverage. `calculator.build_stock_universe.load_kr_stocks` now merges equities with the separate Naver Finance `etfItemList.nhn` and `etnItemList.nhn` listings. Product rows retain `etfFlag` and `instrumentType` for classification and cache fallback. New six-character KRX codes beginning with a digit may include letters and must use Korean quote/history providers.
+
+The search-universe refresh automatically updates listed product names/codes. A product endpoint failure keeps that type's previously published rows; without any cached rows it fails the refresh rather than publishing an incomplete universe. This fallback may retain stale products during an outage; it does not certify that a broker currently permits purchases. Adding search coverage does not add all products to the technical refresh universe or any user's watchlist. The normal watchlist-driven refresh still applies.

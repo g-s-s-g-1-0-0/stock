@@ -1,5 +1,6 @@
 import './App.css'
 import marketSignalRules from '../../data/market_signal_rules.json'
+import serviceAvailability from '../../data/service_availability.json'
 import { Fragment, type CSSProperties, type FormEvent, type MouseEvent as ReactMouseEvent, type ReactNode, type RefObject, type TouchEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { User } from '@supabase/supabase-js'
@@ -41,6 +42,10 @@ type NotificationPreferences = {
 }
 
 type InvestmentType = 'swing' | 'long_term'
+
+function availableInvestmentType(value: unknown): InvestmentType {
+  return serviceAvailability.swingMaintenance ? 'long_term' : normalizeInvestmentType(value) ?? 'long_term'
+}
 
 type StoredUserSettings = {
   watchlistSort: WatchlistSortSettings
@@ -383,7 +388,7 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
 const DEFAULT_USER_SETTINGS: StoredUserSettings = {
   watchlistSort: DEFAULT_WATCHLIST_SORT,
   notificationPreferences: DEFAULT_NOTIFICATION_PREFERENCES,
-  investmentType: null,
+  investmentType: 'long_term',
 }
 const DEFAULT_INVESTMENT_TYPE: InvestmentType = 'long_term'
 const DEFAULT_PORTFOLIO_CASH = 10_000_000
@@ -444,8 +449,8 @@ const investmentProfileOptions: Array<{
   },
   {
     value: 'swing',
-    title: '스윙투자',
-    description: '흐름 맞춰 빠르게 매매해 기회 포착',
+    title: serviceAvailability.swingMaintenance ? '스윙투자 · 공사 중' : '스윙투자',
+    description: serviceAvailability.swingMaintenance ? '점검 중입니다. 현재는 가치투자만 이용할 수 있습니다.' : '흐름 맞춰 빠르게 매매해 기회 포착',
     bullets: ['시드가 작아 빠르게 불리고 싶어요', '리스크 감수하더라도 기회를 잡고 싶어요', '매수·매도 타이밍 적극적으로 보고 싶어요', '익절·손절 기준을 함께 볼게요', '거래 기록과 성과를 확인할게요'],
   },
 ]
@@ -1125,7 +1130,7 @@ function readStoredUserSettings(session: UserSession | null = null): StoredUserS
     return {
       watchlistSort: normalizeWatchlistSortSettings(parsed.watchlistSort),
       notificationPreferences: normalizeNotificationPreferences(parsed.notificationPreferences),
-      investmentType: normalizeInvestmentType(parsed.investmentType),
+      investmentType: availableInvestmentType(parsed.investmentType),
     }
   } catch {
     localStorage.removeItem(userSettingsStorageKey(session))
@@ -1154,7 +1159,7 @@ function readCachedRemoteUserSettings() {
     return {
       watchlistSort: normalizeWatchlistSortSettings(parsed.watchlistSort),
       notificationPreferences: normalizeNotificationPreferences(parsed.notificationPreferences),
-      investmentType: normalizeInvestmentType(parsed.investmentType),
+      investmentType: availableInvestmentType(parsed.investmentType),
     }
   } catch {
     localStorage.removeItem(USER_SETTINGS_REMOTE_CACHE_STORAGE_KEY)
@@ -7292,14 +7297,13 @@ function App() {
   async function loadUserSettings(session: UserSession | null, accountRow?: ReturnType<typeof loadAccountRow>) {
     if (!session || !supabase) return readStoredUserSettings(session)
 
-    const storedSettings = readStoredUserSettings(session)
     const { data, error } = await (accountRow ?? loadAccountRow(session))
     if (error) throw error
 
     const nextSettings = {
       watchlistSort: normalizeWatchlistSortSettings(data?.watchlist_sort),
       notificationPreferences: normalizeNotificationPreferences(data?.notification_preferences),
-      investmentType: data && 'investment_type' in data ? normalizeInvestmentType(data.investment_type) : storedSettings.investmentType,
+      investmentType: availableInvestmentType(data && 'investment_type' in data ? data.investment_type : null),
     }
     storeUserSettings(session, nextSettings.watchlistSort, nextSettings.notificationPreferences, nextSettings.investmentType)
     storeCachedRemoteUserSettings(nextSettings)
@@ -7312,6 +7316,7 @@ function App() {
     nextInvestmentType = investmentType,
     session = userSession,
   ) {
+    nextInvestmentType = availableInvestmentType(nextInvestmentType)
     const nextSettings = { watchlistSort, notificationPreferences, investmentType: nextInvestmentType }
     storeUserSettings(session, watchlistSort, notificationPreferences, nextInvestmentType)
     if (!supabase || !session) return
@@ -7507,7 +7512,7 @@ function App() {
       storeOperatorWatchlistSortSettings(nextSettings.watchlistSort)
     }
     setNotificationPreferences(nextSettings.notificationPreferences)
-    const nextInvestmentType = !isLocalAdmin ? nextSettings.investmentType ?? 'long_term' : nextSettings.investmentType
+    const nextInvestmentType = availableInvestmentType(nextSettings.investmentType)
     setInvestmentType(nextInvestmentType)
     setContributionSettings(readStoredContributionSettings(session))
     if (!isLocalAdmin && !nextSettings.investmentType) {
@@ -8412,9 +8417,9 @@ function App() {
 
   const effectiveViewMode = isAdminUser ? 'operator' : viewMode
   const isOperatorDataMode = effectiveViewMode === 'operator'
-  const displayedInvestmentType = investmentType ?? DEFAULT_INVESTMENT_TYPE
+  const displayedInvestmentType = availableInvestmentType(investmentType)
   // Admins are forced into operator data, but the operator preview still needs profile-specific views.
-  const shouldApplyInvestmentTypeView = isOperatorDataMode || !isAdminUser
+  const shouldApplyInvestmentTypeView = serviceAvailability.swingMaintenance || isOperatorDataMode || !isAdminUser
   const isLongTermInvestor = shouldApplyInvestmentTypeView && displayedInvestmentType === 'long_term'
   const rawScopedTrades = isOperatorDataMode
     ? shouldApplyInvestmentTypeView
@@ -9052,6 +9057,7 @@ function App() {
   }, [personalWatchlistByType, userSession?.id])
 
   const selectInvestmentType = (nextInvestmentType: InvestmentType) => {
+    if (serviceAvailability.swingMaintenance && nextInvestmentType === 'swing') return // 공사 중: 백엔드 기록은 유지하고 화면 진입만 차단
     const currentType = investmentType ?? DEFAULT_INVESTMENT_TYPE
     // 투자 유형 전환은 표시 기준과 함께 '활성 관심종목 목록'을 해당 유형의 보관소 값으로 바꾼다.
     // 현재 유형의 변경분은 미러링 effect가 이미 유형별 보관소에 반영해 두므로 여기선 다음 유형 목록만 로드한다.
@@ -10065,7 +10071,7 @@ function App() {
     [apiSearchStocks, apiStocks, otherTypeWatchlistTickers, currentWatchlistTickers],
   )
   const isWatchlistTypeImportSelectionFull = watchlistTypeImportTickers.length >= activeWatchlistRemainingSlots
-  const canShowWatchlistTypeImport = Boolean(userSession) && canEditCurrentWatchlist
+  const canShowWatchlistTypeImport = !serviceAvailability.swingMaintenance && Boolean(userSession) && canEditCurrentWatchlist
   const closeWatchlistTypeImportModal = () => {
     setIsWatchlistTypeImportOpen(false)
     setWatchlistTypeImportTickers([])
@@ -10401,7 +10407,7 @@ function App() {
           </section>
         </div>
       )}
-      {isWatchlistTypeImportOpen && (
+      {!serviceAvailability.swingMaintenance && isWatchlistTypeImportOpen && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, closeWatchlistTypeImportModal)}>
           <section
             aria-labelledby="watchlist-type-import-title"
@@ -11330,6 +11336,7 @@ function App() {
                   className={`investment-option-card ${onboardingInvestmentType === option.value ? 'active' : ''}`}
                   key={option.value}
                   type="button"
+                  disabled={serviceAvailability.swingMaintenance && option.value === 'swing'}
                   onClick={() => setOnboardingInvestmentType(option.value)}
                 >
                   <strong className="investment-option-title">
@@ -11503,6 +11510,7 @@ function App() {
                           className={`investment-option-card ${displayedInvestmentType === option.value ? 'active' : ''}`}
                           key={option.value}
                           type="button"
+                          disabled={serviceAvailability.swingMaintenance && option.value === 'swing'}
                           onClick={() => selectInvestmentType(option.value)}
                         >
                           <strong className="investment-option-title">

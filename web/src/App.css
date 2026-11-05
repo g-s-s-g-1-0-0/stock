@@ -7334,3 +7334,7 @@ html.modal-scroll-lock body {
     gap: 3px;
   }
 }
+
+/* The maintenance card stays visible as a status, without an active affordance. */
+.investment-option-card:disabled { opacity: .5; cursor: not-allowed; }
+.investment-option-card:disabled:hover { transform: none; box-shadow: none; }

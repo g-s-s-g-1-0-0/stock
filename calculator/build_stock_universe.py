@@ -158,7 +158,7 @@ def load_us_stocks() -> list[dict[str, str]]:
     return sorted(rows.values(), key=lambda item: item["ticker"])
 
 
-def load_kr_stocks() -> list[dict[str, str]]:
+def load_kr_equities() -> list[dict[str, str]]:
     rows = load_kr_stocks_from_kind()
     if rows:
         return refresh_kr_display_names(rows)
@@ -176,6 +176,62 @@ def load_kr_stocks() -> list[dict[str, str]]:
             if name:
                 rows[ticker] = {"ticker": ticker, "name": name, "market": "KR"}
     return sorted(rows.values(), key=lambda item: item["ticker"])
+
+
+def parse_kr_exchange_products(payload: dict[str, Any], kind: str) -> list[dict[str, Any]]:
+    """Naver publishes exchange-traded funds/notes outside the KIND company list."""
+    if not isinstance(payload, dict):
+        raise ValueError("Invalid listed product response")
+    if kind not in {"etf", "etn"}:
+        raise ValueError("Unsupported listed product type")
+    result = payload.get("result") if isinstance(payload, dict) else None
+    items = result.get(f"{kind}ItemList") if isinstance(result, dict) else None
+    if payload.get("resultCode") != "success" or not isinstance(items, list) or not items:
+        raise ValueError(f"Missing KR {kind.upper()} listing")
+    rows = {}
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        ticker = str(item.get("itemcode") or "").strip().upper()
+        name = str(item.get("itemname") or "").strip()
+        # New KRX short codes can contain letters (for example 0043B0).
+        if not re.fullmatch(r"[0-9][0-9A-Z]{5}", ticker) or not name:
+            continue
+        rows[ticker] = {"ticker": ticker, "name": name, "market": "KR",
+                        "etfFlag": True, "instrumentType": kind.upper(),
+                        "rawIndustry": f"국내상장 {kind.upper()}", "products": name}
+    if not rows:
+        raise ValueError(f"No valid KR {kind.upper()} listings")
+    return sorted(rows.values(), key=lambda row: row["ticker"])
+
+
+def load_kr_exchange_products() -> list[dict[str, Any]]:
+    rows = []
+    for kind in ("etf", "etn"):
+        try:
+            raw = fetch_bytes(f"https://finance.naver.com/api/sise/{kind}ItemList.nhn")
+            try:
+                text = raw.decode("utf-8")
+            except UnicodeDecodeError:
+                text = raw.decode("euc-kr")
+            rows.extend(parse_kr_exchange_products(json.loads(text), kind))
+        except (OSError, ValueError) as error:
+            # A transient listing outage must not delete already searchable products.
+            previous = json.loads(OUTPUT_PATH.read_text(encoding="utf-8")) if OUTPUT_PATH.exists() else {}
+            cached = [row for row in previous.get("rows", [])
+                      if isinstance(row, dict) and row.get("market") == "KR"
+                      and row.get("instrumentType") == kind.upper()]
+            if not cached:
+                raise RuntimeError(f"KR {kind.upper()} listing unavailable and no cached listings") from error
+            print(f"KR {kind.upper()} listing unavailable; retaining {len(cached)} cached products: {error}")
+            rows.extend(cached)
+    return rows
+
+
+def load_kr_stocks() -> list[dict[str, Any]]:
+    rows = {row["ticker"]: row for row in load_kr_equities()}
+    rows.update({row["ticker"]: row for row in load_kr_exchange_products()})
+    return sorted(rows.values(), key=lambda row: row["ticker"])
 
 
 def refresh_kr_display_names(rows: list[dict[str, str]]) -> list[dict[str, str]]:
@@ -240,6 +296,8 @@ def stock_shell(row: dict[str, str], updated_at: str) -> dict[str, Any]:
     }
     if row.get("etfFlag") is True:
         payload["etfFlag"] = True
+    if row.get("instrumentType") in {"ETF", "ETN"}:
+        payload["instrumentType"] = row["instrumentType"]
     return payload
 
 
