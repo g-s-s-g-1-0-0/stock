@@ -186,3 +186,10 @@ The trade recorder still processes both investment types and preserves per-type 
 `supabase/migrations/018_swing_maintenance.sql` additionally persists the value-investing preference for existing accounts and prevents older clients from selecting swing. A Git push does not execute SQL migrations. No trade logs, watchlists or allocations are rewritten by this migration.
 
 To reopen: set the JSON flag to false and deploy, and if migration 018 was applied, remove `investment_maintenance` on `public.user_settings` (and its function). Users can then select swing again.
+
+
+## Korean ETF/ETN search coverage (2026-11-06)
+
+The KIND corporation download only lists companies, so it cannot provide ETF/ETN search coverage. `calculator.build_stock_universe.load_kr_stocks` now merges equities with the separate Naver Finance `etfItemList.nhn` and `etnItemList.nhn` listings. Product rows retain `etfFlag` and `instrumentType` for classification and cache fallback. New six-character KRX codes beginning with a digit may include letters and must use Korean quote/history providers.
+
+The search-universe refresh automatically updates listed product names/codes. A product endpoint failure keeps that type's previously published rows; without any cached rows it fails the refresh rather than publishing an incomplete universe. This fallback may retain stale products during an outage; it does not certify that a broker currently permits purchases. Adding search coverage does not add all products to the technical refresh universe or any user's watchlist. The normal watchlist-driven refresh still applies.

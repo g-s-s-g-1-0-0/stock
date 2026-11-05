@@ -40,7 +40,7 @@ def fetch_text(url: str, *, encoding: str = "utf-8", timeout: float = 20) -> str
 
 
 def resolve_market(ticker: str) -> str:
-    return "KR" if re.fullmatch(r"\d{6}", ticker) else "US"
+    return "KR" if re.fullmatch(r"[0-9][0-9A-Z]{5}", ticker.upper()) else "US"
 
 
 def fetch_kr_ohlcv(code: str, count: int = 320) -> list[dict[str, float]]:
