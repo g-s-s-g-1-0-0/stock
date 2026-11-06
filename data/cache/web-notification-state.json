@@ -172,6 +172,7 @@
       "3b8a354a83342ce63ab0e27dbddd24fc0b0d2bed3372e3c9fb85464aa1f1eb4a",
       "3bca41df42f5e0d45bfdf814e108faa198f8c081131afaa665cbeb58124c56eb",
       "3bd42c02524a1749a5348a690c95c2cea1aff36031d4962e3f4488650cb3aef5",
+      "3bedf1c4edea1bcd53d75105528f54ba715dbe8a405a8c5db3c8acee9370b440",
       "3bfd118f1f6ffa6be8f6d5c573fe504ee14332adb6be12a8236e4191b3a4d00f",
       "3c704b7509e13dd81110dff6f04b8439c538285c99b20c6d09145a0a62ae10c2",
       "3e48eb851a0b73c27b0f09205fdb3226f2dd0f43d4c2abbc8baa40a5f59a1d88",
@@ -278,6 +279,7 @@
       "b3788cccd7f69f1942cf2f002f89c429e3ec83ef34ff7feb6d75bc9a04a49d68",
       "b3837b428d71e81f2f5a37030ddd4c2e8cb9370e2a356403102253ac8e24bc79",
       "b4ef8b75a288fb0697769eda5b1e7d3ba7ab9cf15f437aa46381c7ac2168b8f6",
+      "b5061c97edbd900f31521edae6bcb65eb01141256b380b9910c3d647070f2c09",
       "b54edd5091ea9dcdd08ba543416e5f24b4a021256cba87a9feb5eb03231c12e2",
       "b734c6f1a389cabade7c6f16b25cdd415967a1718562fe1941ee376e6b5140f7",
       "b86f17331a0bfa273738540999fb70ee56bb488b742fa69b2eb48548e8f0c0b3",
@@ -299,6 +301,7 @@
       "c69e512ac1125a937162a0270bc76ff0914c0ef090bb734abd7b3ef564546a08",
       "c6adc3a8f586940f6ba83cabf9ca7ef0323bbbfb303fe09460a812616dfcd7a7",
       "c875cc2a1b2e9b006a4830f3a342cbdeef2895864983ae71934014720adf51e6",
+      "c8fe83b0172cd6703b275ff0a5b9ae03a0bab6dbee47dafa27943bf89ac07a09",
       "ca373318d5eece47a0c220e33994b6860d407d6ba8f9b1c061775e8b620ecae0",
       "cbdd16eb9bf1affe2d9fa2f428eda251f97e72444df47c1ecd64fc1ba4ccab97",
       "cdcb26195024d4bc975663df7fb3e008ae870185fb293b7f32324a7c7f45ca91",
@@ -346,7 +349,7 @@
       "fe0b0eb35a45dd7fe9764e984bd50abd6dc04bbffd61ff05e8cfcdb3dd9b5cb3",
       "ffe759f69cf48289a3580a7beb09fa58ccede03fe835e6d112bd5c1a1536f95c"
     ],
-    "updatedAt": "2026-11-06T15:04:56.879447+00:00"
+    "updatedAt": "2026-11-06T19:00:07.189597+00:00"
   },
   "regimeShift": {
     "isRecoveryMarket": false,
@@ -358,7 +361,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-11-06T17:00:00+00:00"
+    "updatedAt": "2026-11-06T19:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
