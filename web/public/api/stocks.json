@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-11-06T18:57:05+00:00",
-    "lastSuccessfulRun": "2026-11-06T18:57:05+00:00",
+    "updatedAt": "2026-11-06T20:41:14+00:00",
+    "lastSuccessfulRun": "2026-11-06T20:41:14+00:00",
     "failedReason": null
   },
   "rows": [
@@ -117,15 +117,7 @@
       "strategies": [],
       "category": "가치주",
       "industry": "자동차, 피지컬 AI, 자율주행·SDV, 로보틱스, 전기차",
-      "updatedAt": "2026-11-06T18:56:38+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "자동차·배터리",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 0,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-06T18:56:38+00:00"
     },
     {
       "ticker": "005930",
@@ -253,15 +245,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
-      "updatedAt": "2026-11-06T18:56:47+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-06T18:56:47+00:00"
     },
     {
       "ticker": "ASTS",
@@ -290,7 +274,9 @@
       "opinion": "매도",
       "opinionReason": "3. 정상장 볼린저 워시아웃 · 진입 지지선 이탈 청산 (BB하단 34.35; 2026-11-05 종가 확인)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "성장주",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
       "updatedAt": "2026-11-06T18:56:47+00:00"
@@ -354,18 +340,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 1. 시장 공포 저점 진입 · 추가매수 대기 (익절 회복장 종료 청산 · 손절 -30%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "스윙주",
       "industry": "Robinhood(HOOD) 단일종목 2배 레버리지 ETF(일일 2배)",
-      "updatedAt": "2026-11-06T18:56:49+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "Robinhood(HOOD) 단일종목 2배 레버리지 ETF(일일 2배)",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-06T18:56:49+00:00"
     },
     {
       "ticker": "INTC",
@@ -399,15 +379,7 @@
       ],
       "category": "성장주",
       "industry": "양자컴퓨팅, 이온트랩, 양자 네트워크",
-      "updatedAt": "2026-11-06T18:56:49+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "양자컴퓨팅",
-      "currentRiskGroupPercent": 0.0,
-      "postRiskGroupPercent": 10.0,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-06T18:56:49+00:00"
     },
     {
       "ticker": "IREN",
@@ -436,18 +408,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 1. 시장 공포 저점 진입 · 추가매수 대기 (익절 회복장 종료 청산 · 손절 -30%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "성장주",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
-      "updatedAt": "2026-11-06T18:56:50+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-06T18:56:50+00:00"
     },
     {
       "ticker": "MU",
@@ -764,7 +730,9 @@
       "opinion": "매도",
       "opinionReason": "3. 정상장 볼린저 워시아웃 · 진입 지지선 이탈 청산 (MA200 672.33; 2026-11-05 종가 확인)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "스윙주",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
       "updatedAt": "2026-11-06T18:56:58+00:00"
@@ -828,18 +796,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 1. 시장 공포 저점 진입 · 추가매수 대기 (익절 회복장 종료 청산 · 손절 -30%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화",
-      "updatedAt": "2026-11-06T18:57:00+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-06T18:57:00+00:00"
     },
     {
       "ticker": "SPCX",
@@ -871,15 +833,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
-      "updatedAt": "2026-11-06T18:57:00+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "소프트웨어·클라우드",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-06T18:57:00+00:00"
     },
     {
       "ticker": "AAPL",
@@ -895,15 +849,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "스마트폰, 소비자 전자, 서비스, 자체 반도체",
-      "updatedAt": "2026-11-06T18:57:01+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-06T18:57:01+00:00"
     },
     {
       "ticker": "GOOGL",
