@@ -1,15 +1,15 @@
 {
   "version": "swing-paired-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-11-05",
-  "observations": 1030,
+  "lastSession": "2026-11-06",
+  "observations": 1074,
   "signalCounts": {
     "s7_base": 40,
     "s7_rs_positive": 20,
     "laggard_rebound": 0
   },
-  "filteredClosed": 7,
-  "filteredEntryDates": 4,
+  "filteredClosed": 9,
+  "filteredEntryDates": 5,
   "earliestReviewKST": "2026-12-08",
   "sampleReady": false,
   "status": "collecting",
