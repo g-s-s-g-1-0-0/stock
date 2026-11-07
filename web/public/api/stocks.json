@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-11-07T06:57:01+00:00",
-    "lastSuccessfulRun": "2026-11-07T06:57:01+00:00",
+    "updatedAt": "2026-11-07T08:26:21+00:00",
+    "lastSuccessfulRun": "2026-11-07T08:26:21+00:00",
     "failedReason": null
   },
   "rows": [
@@ -72,6 +72,22 @@
       "updatedAt": "2026-11-07T06:56:23+00:00"
     },
     {
+      "ticker": "435420",
+      "name": "TIGER 미국나스닥100채권혼합50",
+      "market": "KR",
+      "fairPrice": "-",
+      "fairPriceReason": "etf",
+      "currentPrice": "-",
+      "valuation": "판단 불가",
+      "opinion": "관망",
+      "opinionReason": "-",
+      "marketEvent": "당분간 없음",
+      "strategies": [],
+      "category": "스윙주",
+      "industry": "채권·국채 ETF",
+      "updatedAt": "2026-11-07T08:26:21+00:00"
+    },
+    {
       "ticker": "000150",
       "name": "두산",
       "market": "KR",
@@ -117,15 +133,7 @@
       "strategies": [],
       "category": "가치주",
       "industry": "자동차, 피지컬 AI, 자율주행·SDV, 로보틱스, 전기차",
-      "updatedAt": "2026-11-07T06:56:28+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "자동차·배터리",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 0,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-07T06:56:28+00:00"
     },
     {
       "ticker": "005930",
@@ -211,7 +219,7 @@
       "ticker": "278470",
       "name": "에이피알",
       "market": "KR",
-      "fairPrice": "₩321,114 ~ ₩434,449",
+      "fairPrice": "₩321,029 ~ ₩434,334",
       "fairPriceReason": null,
       "currentPrice": "₩255,000",
       "valuation": "저평가",
@@ -253,15 +261,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
-      "updatedAt": "2026-11-07T06:56:39+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-07T06:56:39+00:00"
     },
     {
       "ticker": "ASTS",
@@ -290,7 +290,9 @@
       "opinion": "매도",
       "opinionReason": "3. 정상장 볼린저 워시아웃 · 진입 지지선 이탈 청산 (BB하단 34.35; 2026-11-05 종가 확인)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "성장주",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
       "updatedAt": "2026-11-07T06:56:39+00:00"
@@ -354,18 +356,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 1. 시장 공포 저점 진입 · 추가매수 대기 (익절 회복장 종료 청산 · 손절 -30%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "스윙주",
       "industry": "Robinhood(HOOD) 단일종목 2배 레버리지 ETF(일일 2배)",
-      "updatedAt": "2026-11-07T06:56:41+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "Robinhood(HOOD) 단일종목 2배 레버리지 ETF(일일 2배)",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-07T06:56:41+00:00"
     },
     {
       "ticker": "INTC",
@@ -394,18 +390,12 @@
       "opinion": "매수",
       "opinionReason": "신호 추적 유지 — 4. 장기선 아래 반등 초입 · 추가매수 대기 (익절 +15% 또는 회복장 종료 청산 · 손절 -8%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "양자컴퓨팅, 이온트랩, 양자 네트워크",
-      "updatedAt": "2026-11-07T06:56:43+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "양자컴퓨팅",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-07T06:56:43+00:00"
     },
     {
       "ticker": "IREN",
@@ -434,18 +424,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 1. 시장 공포 저점 진입 · 추가매수 대기 (익절 회복장 종료 청산 · 손절 -30%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "성장주",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
-      "updatedAt": "2026-11-07T06:56:43+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-07T06:56:43+00:00"
     },
     {
       "ticker": "MU",
@@ -627,7 +611,7 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "fairPrice": "₩258,453 ~ ₩349,672",
+      "fairPrice": "₩262,855 ~ ₩355,627",
       "fairPriceReason": null,
       "currentPrice": "₩320,000",
       "valuation": "보통",
@@ -762,7 +746,9 @@
       "opinion": "매도",
       "opinionReason": "3. 정상장 볼린저 워시아웃 · 진입 지지선 이탈 청산 (MA200 672.33; 2026-11-05 종가 확인)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "스윙주",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
       "updatedAt": "2026-11-07T06:56:53+00:00"
@@ -826,18 +812,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 1. 시장 공포 저점 진입 · 추가매수 대기 (익절 회복장 종료 청산 · 손절 -30%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화",
-      "updatedAt": "2026-11-07T06:56:55+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-07T06:56:55+00:00"
     },
     {
       "ticker": "SPCX",
@@ -869,15 +849,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
-      "updatedAt": "2026-11-07T06:56:56+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "소프트웨어·클라우드",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-07T06:56:56+00:00"
     },
     {
       "ticker": "AAPL",
@@ -893,15 +865,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "스마트폰, 소비자 전자, 서비스, 자체 반도체",
-      "updatedAt": "2026-11-07T06:56:57+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-07T06:56:57+00:00"
     },
     {
       "ticker": "GOOGL",
@@ -941,7 +905,7 @@
       "ticker": "META",
       "name": "Meta Platforms Class A",
       "market": "US",
-      "fairPrice": "$699.77 ~ $946.75",
+      "fairPrice": "$700.17 ~ $947.29",
       "fairPriceReason": null,
       "currentPrice": "$612.00",
       "valuation": "저평가",
