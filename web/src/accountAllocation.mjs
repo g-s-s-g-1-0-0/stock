@@ -140,6 +140,11 @@ export function normalizeAccountSettings(candidate = {}) {
 }
 export function calculateAccountPortfolio(inputTrades, stocks = [], trends = [], rawSettings = {}, investmentType = 'swing', initialCashOverride, asOf = new Date().toISOString()) {
   const settings = normalizeAccountSettings(rawSettings)
+  const collectingActivation = investmentType === 'long_term' ? Date.parse(rawSettings.collectingSince ?? '') : NaN
+  const collectingStartDay = Number.isFinite(collectingActivation)
+    ? Date.parse(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' })
+      .format(collectingActivation))
+    : NaN
   const initialCash = initialCashOverride ?? settings.initialCapital
   const trades = inputTrades.map((t) => ({...t, status: t.allocationSource === 'account' && ['보유 중', '매수 보류'].includes(t.status) ? (t.allocationSignalStatus || t.status) : t.status}))
   const buyPriorityForTrade = (trade) => tradePriority(trade, stocks, trends)
@@ -226,6 +231,22 @@ export function calculateAccountPortfolio(inputTrades, stocks = [], trends = [],
       const requestedAmount = trade.allocationRequestedAmount ?? (trade.allocationSource !== 'account' ? trade.investmentAmount : null)
       const fixedAmount = typeof requestedAmount === 'number' && Number.isFinite(requestedAmount)
         ? Math.max(0, Math.round(requestedAmount)) : null
+      if (investmentType === 'long_term' && trade.collectingEntry) {
+        const amount = fixedAmount ?? 0
+        amountByTradeKey.set(key, amount)
+        cumulativeInvestmentAmount += amount
+        runningCash -= amount
+        continue
+      }
+      if (Number.isFinite(collectingActivation) && fixedAmount === null) {
+        const timestamp = Date.parse(trade.buyTimestamp ?? '')
+        // Keep existing same-day records that have no timestamp.
+        if (Number.isFinite(timestamp) ? timestamp >= collectingActivation : parseTradeDate(date) > collectingStartDay) {
+          amountByTradeKey.set(key, 0)
+          allocationReasons.set(key, '모으기 전환 이후 직접 기록한 매수금만 반영')
+          continue
+        }
+      }
       const blockedByMegaTrend = megaTrendOnly && fixedAmount === null && buyPriorityForTrade(trade).megaRank !== 0
       const duplicateSwingTicker = investmentType === 'swing' && (occupiedTickerCounts.get(trade.ticker) ?? 0) > 0
       const riskGroup = investmentType === 'swing' ? swingRiskGroupForTrade(trade, stocksByTicker) : ''
@@ -248,8 +269,8 @@ export function calculateAccountPortfolio(inputTrades, stocks = [], trends = [],
         && fixedPercent > (leveragedEtf ? 5 : Math.max(configuredPercent, 10))
       const amount = slotIndex >= 0 && !blockedByRiskGroup && !blockedByPositionSize
         ? fixedAmount !== null
-          ? Math.min(runningCash, fixedAmount)
-          : Math.min(runningCash, Math.max(0, Math.floor(allocationBaseBeforeBuys * recommendedPercent / 100)))
+          ? Math.min(Math.max(0, runningCash), fixedAmount)
+          : Math.min(Math.max(0, runningCash), Math.max(0, Math.floor(allocationBaseBeforeBuys * recommendedPercent / 100)))
         : 0
       amountByTradeKey.set(key, amount)
       allocationPercents.set(key, recommendedPercent)

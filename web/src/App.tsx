@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom'
 import type { User } from '@supabase/supabase-js'
 import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, saveTradeLogs, type AppData, type RuntimeMeta } from './api'
 import { UsageDashboard } from './UsageDashboard'
+import { accountTypes, buyTimings, normalizeInvestmentAccounts, type InvestmentAccount } from './InvestmentAccounts'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 import { isUsagePage, seoulDate } from './usageMetrics'
 import { compareTradeSignals } from './tradeOrder'
@@ -106,6 +107,10 @@ type Stock = {
 }
 
 type TradeLog = {
+  collectingEntry?: boolean
+  collectingRecordedAt?: string
+  investmentAccountId?: string
+  investmentAccountName?: string
   slotId?: string
   investmentType?: InvestmentType
   investmentAmount?: number
@@ -198,6 +203,8 @@ type HoldingLiquidationDraft = {
 }
 
 type ManualHoldingDraft = {
+  collectingAmount?: string
+  investmentAccountId?: string
   supportStopPrice?: string
   ticker: string
   buyDate: string
@@ -215,6 +222,8 @@ type AllocationSettings = {
 }
 
 type ContributionSettings = {
+  collectingSince?: string
+  accounts?: InvestmentAccount[]
   initialCapital: number
   frequency: ContributionFrequency
   amount: number
@@ -224,6 +233,7 @@ type ContributionSettings = {
 }
 
 type ContributionSettingsDraft = {
+  accounts: InvestmentAccount[]
   initialCapital: string
   frequency: ContributionFrequency
   amount: string
@@ -1047,6 +1057,10 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
   const normalizedStatus = String(candidate.status).replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim()
 
   return {
+    collectingEntry: candidate.collectingEntry === true || undefined,
+    collectingRecordedAt: typeof candidate.collectingRecordedAt === 'string' ? candidate.collectingRecordedAt : undefined,
+    investmentAccountId: typeof candidate.investmentAccountId === 'string' ? candidate.investmentAccountId : undefined,
+    investmentAccountName: typeof candidate.investmentAccountName === 'string' ? candidate.investmentAccountName : undefined,
     slotId: typeof candidate.slotId === 'string' ? candidate.slotId : undefined,
     investmentType: normalizeInvestmentType(candidate.investmentType) ?? undefined,
     investmentAmount: typeof candidate.investmentAmount === 'number' && Number.isFinite(candidate.investmentAmount) ? candidate.investmentAmount : undefined,
@@ -1238,6 +1252,8 @@ function normalizeContributionSettings(value: unknown): ContributionSettings {
     : DEFAULT_CONTRIBUTION_SETTINGS.amount
 
   return {
+    accounts: normalizeInvestmentAccounts(candidate.accounts),
+    collectingSince: typeof candidate.collectingSince === 'string' ? candidate.collectingSince : undefined,
     initialCapital,
     frequency,
     amount,
@@ -1577,7 +1593,7 @@ const initialWatchlist: string[] = []
 const operatorTickers: string[] = []
 const strategyFiltersByInvestmentType: Record<InvestmentType, string[]> = {
   swing: ['1', '2', '3', '4', '5', '6', '7'],
-  long_term: ['1', '2'],
+  long_term: ['1', '2', '3', '4'],
 }
 const personalTrades: TradeLog[] = []
 const localTestWatchlist = ['AVGO', 'NVDA', 'MSFT', '005930']
@@ -2419,6 +2435,26 @@ function strategyCode(strategy: string) {
   return String(strategy || '').slice(0, 1)
 }
 
+const longTermStrategyNames: Record<string, string> = {
+  '1': '월 정기매수',
+  '2': '간편 공포 매수',
+  '3': STRATEGY_LABELS['1'],
+  '4': STRATEGY_LABELS['2'],
+}
+
+function tradeStrategyCode(strategy: string, investmentType: InvestmentType) {
+  if (investmentType !== 'long_term') return strategyCode(strategy)
+  if (strategy === longTermStrategyNames['1']) return '1'
+  if (strategy === longTermStrategyNames['2']) return '2'
+  const code = strategyCode(strategy)
+  return code === '1' ? '3' : code === '2' ? '4' : code
+}
+
+function profileStrategyName(code: string, investmentType: InvestmentType) {
+  if (investmentType === 'long_term' && longTermStrategyNames[code]) return `${code}. ${longTermStrategyNames[code]}`
+  return strategyDisplayName(code)
+}
+
 function strategyDisplayName(strategy: string) {
   const code = strategyCode(strategy)
   if (code && STRATEGY_LABELS[code]) return `${code}. ${STRATEGY_LABELS[code]}`
@@ -2438,7 +2474,7 @@ function investmentProfileLabel(investmentType: InvestmentType) {
   return investmentType === 'swing' ? '스윙투자' : '가치투자'
 }
 
-function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing') {
+function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing', code = tradeStrategyCode(strategy, investmentType)) {
   if (isStrategyFreeTrade(strategy)) {
     return '전략과 무관하게 직접 기입한 보유 항목입니다. 자동 청산 조건이 적용되지 않으며, 직접 청산할 때까지 보유 상태로 유지됩니다.'
   }
@@ -2453,11 +2489,13 @@ function strategyInfo(strategy: string, investmentType: InvestmentType = 'swing'
       '4': '장기선 아래 반등 초입은 종가가 200일선 아래에 있을 때 MACD 히스토그램이 골든크로스로 돌아서는 반등 초입을 노리는 스윙 전용 전략입니다. 나스닥이 하락장·정상장일 때만 보고, 종목이 200일선보다 25% 넘게 깨진 자리는 제외합니다.',
     },
     long_term: {
-      '1': '시장 공포 저점 진입은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 장기 보유 후보를 처음 편입하는 전략입니다. 단기 반등보다 좋은 종목을 무리하지 않은 가격에 담는 데 초점을 둡니다.',
-      '2': '상승 추세 이평선 눌림목은 시장 공포 저점 진입으로 매수 시즌이 열린 뒤 회복장에서 장기 보유 후보를 추가로 담는 전략입니다. 계속 오른 가격을 따라 사지 않고, 상승 흐름 안에서 평균 가격선 근처까지 쉬어 갈 때만 봅니다.',
+      '1': '계좌별 적립식 매수입니다.',
+      '2': '시장 공포 지표로 여유자금 매수 시점을 판단합니다.',
+      '3': '시장 공포 저점 진입은 시장 전체가 겁을 먹고 좋은 종목까지 같이 싸졌을 때 장기 보유 후보를 처음 편입하는 전략입니다. 단기 반등보다 좋은 종목을 무리하지 않은 가격에 담는 데 초점을 둡니다.',
+      '4': '상승 추세 이평선 눌림목은 시장 공포 저점 진입으로 매수 시즌이 열린 뒤 회복장에서 장기 보유 후보를 추가로 담는 전략입니다. 계속 오른 가격을 따라 사지 않고, 상승 흐름 안에서 평균 가격선 근처까지 쉬어 갈 때만 봅니다.',
     },
   }
-  return descriptions[investmentType][strategyCode(strategy)] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
+  return descriptions[investmentType][code] ?? '전략 요약 정보가 준비 중입니다. 세부 수식보다 신호의 성격만 제공합니다.'
 }
 
 const NASDAQ_PEAK_EXIT_DESCRIPTION = '회복장에서는 QQQ 이격도 +18% 초과 시 청산합니다. 그 외에는 +16% 초과와 RSI 둔화, 또는 +14% 초과와 RSI·MACD 둔화가 함께 나타나면 청산합니다.'
@@ -2501,7 +2539,7 @@ const cycleExitGuide = [
 const longTermHoldingGuide: StrategyCriteriaRow[] = [
   { label: '보유', value: ['매수 의견이 관망으로 바뀌면 신규 매수를 멈추고 보유 종목을 점검합니다.', '자동 익절·손절·기간 청산은 적용하지 않습니다.'] },
   { label: '청산', value: '직접 매도한 거래만 청산 기록에 반영합니다.' },
-  { label: '추가', value: '빈 매수 자리가 있고 새 매수 조건을 충족하면 추가로 편입합니다.' },
+  { label: '추가', value: '새 매수 조건을 충족하면 여유자금으로 추가 편입을 검토합니다.' },
 ]
 
 const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string, StrategyCriteriaRow[]>> = {
@@ -2577,14 +2615,16 @@ const strategyCriteriaRowsByInvestmentType: Record<InvestmentType, Record<string
     ],
   },
   long_term: {
-    '1': [
+    '1': [{ label: '진입', value: '계좌에 설정한 월초·중순·월말 기준 거래일에 매수합니다.' }],
+    '2': [{ label: '진입', value: 'VIX 20 이상 또는 CNN 공포·탐욕지수 44 이하일 때 여유자금으로 매수를 검토합니다.' }],
+    '3': [
       { label: '진입', value: fearEntryGuide },
       { label: '설명', value: [...strategyMarketGuide, '이 전략의 진입 상한은 이격 -3% 미만입니다. 회복장 매수 차단 +14%보다 아래라, 회복장에서는 새로 사지 않습니다.', '시장이 하락하고 종목이 과매도된 구간에서 장기 보유 후보를 찾습니다.'] },
-      { label: '시즌', value: '전략 1 신호가 나오면 매수 시즌이 열립니다. 이후 회복장에서 전략 2도 사용할 수 있습니다.' },
+      { label: '시즌', value: '전략 3 신호가 나오면 매수 시즌이 열립니다. 이후 회복장에서 전략 4도 사용할 수 있습니다.' },
       ...longTermHoldingGuide,
     ],
-    '2': [
-      { label: '진입', value: pullbackEntryGuide },
+    '4': [
+      { label: '진입', value: pullbackEntryGuide.map((line) => line.replace('전략 1 신호', '전략 3 신호')) },
       { label: '설명', value: [...strategyMarketGuide, recoveryCeilingExplain, '회복장에서 평균선 근처까지 내려온 종목을 장기 보유 후보로 추가합니다.'] },
       { label: '대상', value: '가치투자 관심종목 중 조건을 충족한 종목을 기록합니다.' },
       ...longTermHoldingGuide,
@@ -2812,23 +2852,78 @@ function CustomSelect<T extends string | number>({
 }) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLUListElement>(null)
+  const [modalBackdrop, setModalBackdrop] = useState<Element | null>(null)
   const selected = options.find((option) => String(option.value) === String(value)) ?? options[0]
 
-  useEffect(() => {
-    if (!open) return undefined
+  useLayoutEffect(() => {
+    if (!open) return
+    const root = rootRef.current
+    const menu = menuRef.current
+    if (!root || !menu) return
+
+    const positionMenu = () => {
+      if (!modalBackdrop) return
+      const anchor = root.getBoundingClientRect()
+      const viewport = window.visualViewport
+      const viewportTop = viewport?.offsetTop ?? 0
+      const viewportBottom = viewportTop + (viewport?.height ?? window.innerHeight)
+      const below = viewportBottom - anchor.bottom - 14
+      const above = anchor.top - viewportTop - 14
+      const openAbove = menu.scrollHeight > below && above > below
+      menu.style.left = `${anchor.left}px`
+      menu.style.width = `${anchor.width}px`
+      menu.style.maxHeight = `${Math.max(0, openAbove ? above : below)}px`
+      menu.style.top = openAbove ? 'auto' : `${anchor.bottom + 6}px`
+      menu.style.bottom = openAbove ? `${window.innerHeight - anchor.top + 6}px` : 'auto'
+    }
     const handlePointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+      const target = event.target as Node
+      if (!root.contains(target) && !menu.contains(target)) setOpen(false)
     }
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      setOpen(false)
+      root.querySelector('button')?.focus()
     }
+
+    positionMenu()
     document.addEventListener('mousedown', handlePointerDown)
-    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('keydown', handleKeyDown, true)
+    window.addEventListener('resize', positionMenu)
+    window.addEventListener('scroll', positionMenu, true)
+    window.visualViewport?.addEventListener('resize', positionMenu)
+    window.visualViewport?.addEventListener('scroll', positionMenu)
     return () => {
       document.removeEventListener('mousedown', handlePointerDown)
-      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('keydown', handleKeyDown, true)
+      window.removeEventListener('resize', positionMenu)
+      window.removeEventListener('scroll', positionMenu, true)
+      window.visualViewport?.removeEventListener('resize', positionMenu)
+      window.visualViewport?.removeEventListener('scroll', positionMenu)
     }
-  }, [open])
+  }, [open, modalBackdrop])
+
+  const menu = open && (
+    <ul className={`custom-select-menu${modalBackdrop ? ' custom-select-menu-floating' : ''}`} ref={menuRef} role="listbox">
+      {options.map((option) => {
+        const isActive = String(option.value) === String(value)
+        return (
+          <li key={String(option.value)} role="option" aria-selected={isActive}>
+            <button className={isActive ? 'active' : ''} type="button" onClick={() => {
+              onChange(option.value)
+              setOpen(false)
+              rootRef.current?.querySelector('button')?.focus()
+            }}>
+              <span>{option.label}</span>
+              {isActive && <strong aria-hidden="true">✓</strong>}
+            </button>
+          </li>
+        )
+      })}
+    </ul>
+  )
 
   return (
     <div className={`custom-select${open ? ' open' : ''}`} ref={rootRef}>
@@ -2838,33 +2933,15 @@ function CustomSelect<T extends string | number>({
         aria-label={ariaLabel}
         className="custom-select-trigger"
         type="button"
-        onClick={() => setOpen((current) => !current)}
+        onClick={(event) => {
+          setModalBackdrop(event.currentTarget.closest('.modal-backdrop'))
+          setOpen(!open)
+        }}
       >
         <span>{selected?.label ?? ''}</span>
         <em aria-hidden="true" />
       </button>
-      {open && (
-        <ul className="custom-select-menu" role="listbox">
-          {options.map((option) => {
-            const isActive = String(option.value) === String(value)
-            return (
-              <li key={String(option.value)} role="option" aria-selected={isActive}>
-                <button
-                  className={isActive ? 'active' : ''}
-                  type="button"
-                  onClick={() => {
-                    onChange(option.value)
-                    setOpen(false)
-                  }}
-                >
-                  <span>{option.label}</span>
-                  {isActive && <strong aria-hidden="true">✓</strong>}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      )}
+      {modalBackdrop ? createPortal(menu, modalBackdrop) : menu}
     </div>
   )
 }
@@ -2933,10 +3010,10 @@ function StrategyCriteriaTable({ investmentType }: { investmentType: InvestmentT
             {filters.map((code) => (
               <tr key={code}>
                 <th scope="row">
-                  <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{strategyDisplayName(code)}</span>
+                  <span className={`strategy-pill strategy-${code.toLowerCase()}`}>{profileStrategyName(code, investmentType)}</span>
                 </th>
                 <td>
-                  <p className="strategy-criteria-summary">{strategyInfo(code, investmentType)}</p>
+                  <p className="strategy-criteria-summary">{strategyInfo(code, investmentType, code)}</p>
                 </td>
                 <td>
                   <dl className="strategy-criteria-list">
@@ -2969,7 +3046,9 @@ function StrategyCriteriaContent({ investmentType }: { investmentType: Investmen
       <h3 id="strategy-criteria-title">{investmentProfileLabel(investmentType)} 전략별 매수·청산 기준</h3>
       <div className="strategy-criteria-intro">
         <p>
-          전략별 매수·보유·매도 기준입니다. 매수 조건을 충족한 종목을 기록하고, 익절·손절·청산 조건에 따라 거래를 관리합니다.
+          {investmentType === 'long_term'
+            ? '시장 타이밍에 덜 의존하고 장기 보유할 종목을 꾸준히 모으기 위해 정해 둔 주기와 비중으로 매수합니다.'
+            : '전략별 매수·보유·매도 기준입니다. 매수 조건을 충족한 종목을 기록하고, 익절·손절·청산 조건에 따라 거래를 관리합니다.'}
         </p>
       </div>
       <StrategyCriteriaTable investmentType={investmentType} />
@@ -3275,7 +3354,9 @@ function StrategyTag({
   onTooltipOpen: (tooltip: TooltipState) => void
   onTooltipClose: () => void
 }) {
-  const displayStrategy = strategyDisplayName(strategy)
+  const code = tradeStrategyCode(strategy, investmentType)
+  const displayStrategy = longTermStrategyNames[code] && investmentType === 'long_term'
+    ? profileStrategyName(code, investmentType) : strategyDisplayName(strategy)
 
   const openTooltip = (element: HTMLElement, toggle = false) => {
     const rect = element.getBoundingClientRect()
@@ -3872,6 +3953,9 @@ function manualSwingEntryBlockReason(
 
 function contributionSettingsDraftFrom(settings: ContributionSettings): ContributionSettingsDraft {
   return {
+    accounts: settings.accounts?.some(({ id }) => id === 'default')
+      ? settings.accounts
+      : [{ id: 'default', nickname: '기본 계좌', accountNumber: '', type: '일반증권', monthlyDeposit: 0, buyTiming: '월초' }, ...(settings.accounts ?? [])],
     initialCapital: String(settings.initialCapital),
     frequency: settings.frequency,
     amount: String(settings.amount),
@@ -7063,6 +7147,10 @@ function App() {
   const [manualHoldingDraft, setManualHoldingDraft] = useState<ManualHoldingDraft | null>(null)
   const [contributionSettings, setContributionSettings] = useState<ContributionSettings>(() => readStoredContributionSettings(initialLocalTestSession))
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
+  const [cashAccountId, setCashAccountId] = useState('')
+  const [collectingAccountReturnId, setCollectingAccountReturnId] = useState<string | null>(null)
+  const [collectingImportTickers, setCollectingImportTickers] = useState<string[] | null>(null)
+  const [cashAccountDeleteOpen, setCashAccountDeleteOpen] = useState(false)
   const [contributionSettingsMode, setContributionSettingsMode] = useState<ContributionSettingsMode>('cash')
   const [isLoginOpen, setIsLoginOpen] = useState(() => Boolean(authCallbackMessage() || hasNotificationSettingsDeepLink()))
   const [isAccountDeleteConfirmOpen, setIsAccountDeleteConfirmOpen] = useState(false)
@@ -7071,6 +7159,7 @@ function App() {
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
+  const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [loginPasswordConfirm, setLoginPasswordConfirm] = useState('')
   const [loginError, setLoginError] = useState('')
   const [signupConfirmationEmail, setSignupConfirmationEmail] = useState('')
@@ -8435,7 +8524,7 @@ function App() {
   const visibleProfileTrades = scopedTrades
   const tradeSignalOrder = new Map(visibleProfileTrades.map((trade, index) => [tradeKey(trade), index]))
   const filteredTrades = visibleProfileTrades
-    .filter((trade) => selectedStrategy === '전체' || strategyCode(trade.strategy) === selectedStrategy)
+    .filter((trade) => selectedStrategy === '전체' || tradeStrategyCode(trade.strategy, displayedInvestmentType) === selectedStrategy)
     .slice()
     .sort((a, b) => compareTradeSignals(a, b, sortDirection, tradeSignalOrder.get(tradeKey(a)), tradeSignalOrder.get(tradeKey(b))))
   const displayedTradeRows = filteredTrades.map((trade, index) => ({
@@ -8446,19 +8535,33 @@ function App() {
   const visibleWinRates = [
     formatWinRate('통합', scopedTrades),
     ...activeStrategyFilters
-      .map((code) => formatWinRate(code, scopedTrades.filter((trade) => strategyCode(trade.strategy) === code))),
+      .map((code) => formatWinRate(code, scopedTrades.filter((trade) => tradeStrategyCode(trade.strategy, displayedInvestmentType) === code))),
   ].join(', ')
-  const longTermCriteriaLine = '가치투자형은 청산된 거래가 슬롯을 비우고, 현재 보유 중인 거래만 투자금 슬롯을 차지합니다.'
+  const longTermCriteriaLine = '계좌별로 지정한 종목을 정기적으로 모으고, 매수 내역을 전략별로 기록합니다.'
   const investingDays = daysFromFirstTrade(visibleProfileTrades)
-  const contributionDayValidationMessage = contributionDraft?.frequency === 'monthly'
-    ? contributionDayMessage(contributionDraft.dayOfMonth)
-    : ''
-  const isContributionDayInvalid = Boolean(
-    contributionDayValidationMessage
-    && !contributionDayValidationMessage.includes('없는 달')
-    && !contributionDayValidationMessage.includes('윤년'),
-  )
-  const isContributionSaveDisabled = contributionSettingsMode === 'cash' && isContributionDayInvalid
+  const [, cashFxQuote, cashFxDate] = apiMarketSnapshot.find(([label]) => label === '원·달러 환율') ?? []
+  const cashFxRate = Number(cashFxQuote?.replaceAll(',', ''))
+  const cashAccount = contributionDraft?.accounts.find(({ id }) => id === cashAccountId)
+  const cashDraft = cashAccount && cashAccount.id !== 'default' ? {
+    initialCapital: String(cashAccount.initialCapital ?? 0),
+    frequency: cashAccount.frequency ?? 'monthly',
+    amount: String(cashAccount.monthlyDeposit),
+    dayOfWeek: String(cashAccount.dayOfWeek ?? 1),
+    dayOfMonth: String(cashAccount.dayOfMonth ?? 1),
+  } : contributionDraft
+  const contributionDayValidationMessage = cashDraft?.frequency === 'monthly' ? contributionDayMessage(cashDraft.dayOfMonth) : ''
+  const isContributionDayInvalid = Boolean(contributionDayValidationMessage
+    && !contributionDayValidationMessage.includes('없는 달') && !contributionDayValidationMessage.includes('윤년'))
+  const legacyDayMessage = contributionDraft?.frequency === 'monthly' ? contributionDayMessage(contributionDraft.dayOfMonth) : ''
+  const collectingSettings = contributionSettingsMode === 'investment' && isLongTermInvestor
+  const invalidCollecting = contributionDraft?.accounts.some(({ collecting = [] }) => collecting.length > 0 && (
+    collecting.some(({ ticker, percent }) => !/^[A-Z0-9.^=-]+$/.test(ticker) || !Number.isInteger(percent) || percent < 1 || percent > 100)
+    || new Set(collecting.map(({ ticker }) => ticker)).size !== collecting.length
+    || collecting.reduce((sum, { percent }) => sum + percent, 0) !== 100))
+  const isContributionSaveDisabled = (collectingSettings && Boolean(invalidCollecting)) || (contributionSettingsMode === 'cash' && (isContributionDayInvalid
+    || Boolean(legacyDayMessage && !legacyDayMessage.includes('없는 달') && !legacyDayMessage.includes('윤년'))
+    || Boolean(contributionDraft?.accounts.some((account) => !account.nickname.trim()
+      || (account.id !== 'default' && account.frequency !== 'weekly' && !/^(?:[1-9]|[12][0-9]|3[01])$/.test(String(account.dayOfMonth ?? 1)))))))
   const canEditContributionSettings = Boolean(userSession && (!isOperatorDataMode || isAdminUser))
   const canManageHoldingTrades = effectiveViewMode === 'personal' || isAdminUser
   const activeAllocation = contributionDraft?.allocationByInvestmentType[displayedInvestmentType]
@@ -8483,7 +8586,7 @@ function App() {
       label: '보유 현금',
       value: formatKrwAmount(portfolioSummary.cash),
       action: openContributionSettings,
-      clickable: canEditContributionSettings,
+      clickable: canEditContributionSettings || (import.meta.env.DEV && !isOperatorDataMode),
     },
     {
       label: '평가액',
@@ -8813,24 +8916,73 @@ function App() {
     commitPersonalTradeLogs(updater)
   }
 
+  function updateCashAccount(id: string, change: Partial<InvestmentAccount>) {
+    setContributionDraft((current) => current && ({
+      ...current,
+      accounts: current.accounts.map((account) => account.id === id ? { ...account, ...change } : account),
+    }))
+  }
+
+  function updateCashDraft(field: 'initialCapital' | 'frequency' | 'amount' | 'dayOfWeek' | 'dayOfMonth', value: string) {
+    if (!cashAccount || cashAccount.id === 'default') {
+      setContributionDraft((current) => current && ({ ...current, [field]: value }))
+    } else if (field === 'frequency') {
+      updateCashAccount(cashAccount.id, { frequency: value === 'weekly' ? 'weekly' : 'monthly' })
+    } else {
+      const amount = Number(value)
+      if (Number.isSafeInteger(amount)) {
+        updateCashAccount(cashAccount.id, { [field === 'amount' ? 'monthlyDeposit' : field]: amount })
+      }
+    }
+  }
+
+  const cashAccountLimit = (contributionDraft?.accounts.length ?? 0) >= 5
+
+  function addCashAccount() {
+    if (cashAccountLimit) return
+    const id = crypto.randomUUID()
+    setContributionDraft((current) => current && current.accounts.length < 5 ? {
+      ...current,
+      accounts: [...current.accounts, {
+        id, nickname: '', accountNumber: '', type: '일반증권', monthlyDeposit: 0, buyTiming: '월초',
+      }],
+    } : current)
+    setCashAccountId(id)
+  }
+
+  function cancelCollectingAccountAdd() {
+    if (collectingAccountReturnId === null) return
+    setContributionDraft((current) => current && {
+      ...current, accounts: current.accounts.filter(({ id }) => id !== cashAccountId),
+    })
+    setCashAccountId(collectingAccountReturnId)
+    setCollectingAccountReturnId(null)
+  }
+
   function openContributionSettings() {
+    setCollectingAccountReturnId(null)
+    setCashAccountId('default')
     setContributionSettingsMode('cash')
     setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
   }
 
   function openInvestmentAllocationSettings() {
+    setCollectingAccountReturnId(null)
+    setCashAccountId('default')
     setContributionSettingsMode('investment')
     setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
   }
 
   const saveContributionSettings = () => {
-    if (!contributionDraft) return
+    if (!contributionDraft || isContributionSaveDisabled) return
     const dayMessage = contributionDayMessage(contributionDraft.dayOfMonth)
     if (contributionSettingsMode === 'cash' && contributionDraft.frequency === 'monthly' && dayMessage && !dayMessage.includes('없는 달') && !dayMessage.includes('윤년')) {
       return
     }
     const dayOfMonth = Number(contributionDraft.dayOfMonth)
     const nextSettings = {
+      accounts: normalizeInvestmentAccounts(contributionDraft.accounts),
+      collectingSince: contributionSettings.collectingSince ?? (collectingSettings ? new Date().toISOString() : undefined),
       initialCapital: parseAmountValue(contributionDraft.initialCapital) ?? DEFAULT_CONTRIBUTION_SETTINGS.initialCapital,
       frequency: contributionDraft.frequency,
       amount: parseAmountValue(contributionDraft.amount) ?? 0,
@@ -8881,6 +9033,11 @@ function App() {
     setManualHoldingDraft((current) => (current ? { ...current, [field]: value } : current))
   }
 
+  const manualInvestmentAccounts = contributionSettings.accounts?.length
+    ? contributionSettings.accounts
+    : [{ id: 'default', nickname: '기본 계좌' }]
+  const manualInvestmentAccount = manualInvestmentAccounts.find(({ id }) => id === manualHoldingDraft?.investmentAccountId)
+    ?? manualInvestmentAccounts[0]
   const manualHoldingResolved = manualHoldingDraft
     ? resolveStockForTicker(manualHoldingDraft.ticker, apiStocks, apiSearchStocks)
     : null
@@ -8897,6 +9054,7 @@ function App() {
     && (parsePriceValue(manualHoldingDraft.buyPrice) ?? 0) > 0
     && !Number.isNaN(parseTradeDate(manualHoldingDraft.buyDate))
     && (manualHoldingDraft.strategy !== '6' || ((parsePriceValue(manualHoldingDraft.supportStopPrice ?? '') ?? 0) >= (parsePriceValue(manualHoldingDraft.buyPrice) ?? 0) * 0.92 && (parsePriceValue(manualHoldingDraft.supportStopPrice ?? '') ?? 0) < (parsePriceValue(manualHoldingDraft.buyPrice) ?? 0)))
+    && (!isLongTermInvestor || (parseAmountValue(manualHoldingDraft.collectingAmount ?? '') ?? 0) > 0)
     && !manualHoldingRiskBlockReason
 
   const confirmManualHoldingAdd = async () => {
@@ -8914,7 +9072,11 @@ function App() {
       currentPrice: resolved.currentPrice && resolved.currentPrice !== '-' ? resolved.currentPrice : undefined,
       strategy: manualHoldingDraft.strategy === STRATEGY_FREE_SELECT_VALUE
         ? STRATEGY_FREE_LOG_LABEL
-        : strategyDisplayName(manualHoldingDraft.strategy),
+        : isLongTermInvestor
+          ? manualHoldingDraft.strategy === '3' ? strategyDisplayName('1')
+            : manualHoldingDraft.strategy === '4' ? strategyDisplayName('2')
+              : longTermStrategyNames[manualHoldingDraft.strategy]
+          : strategyDisplayName(manualHoldingDraft.strategy),
       buyDate: normalizeTradeDateInput(manualHoldingDraft.buyDate),
       buyPrice: '',
       sellDate: '-',
@@ -8922,6 +9084,13 @@ function App() {
       returnPct: 0,
       holdingDays: '-',
       status: '보유 중',
+      ...(isLongTermInvestor ? {
+        collectingEntry: true,
+        collectingRecordedAt: new Date().toISOString(),
+        investmentAccountId: manualInvestmentAccount.id,
+        investmentAccountName: manualInvestmentAccount.nickname,
+        investmentAmount: parseAmountValue(manualHoldingDraft.collectingAmount ?? '') ?? 0,
+      } : {}),
       manualEntry: true,
     }
     newTrade.buyPrice = formatTradePrice(newTrade, buyPriceValue, manualHoldingDraft.buyPrice)
@@ -9138,6 +9307,7 @@ function App() {
   }
 
   const clearAuthForm = () => {
+    setShowLoginPassword(false)
     setLoginEmail('')
     setLoginPassword('')
     setLoginPasswordConfirm('')
@@ -9382,10 +9552,7 @@ function App() {
   }
 
   const switchTestSession = (mode: 'admin' | 'user') => {
-    // The controls are only rendered after a test switch has been explicitly enabled.
-    // Use that same runtime guard here: preview builds have DEV=false but can still
-    // expose an already-enabled test session.
-    if (!canUseAccountSwitch) return
+    if (!canUseLocalAuthBypass && !canUseAccountSwitch) return
     closeLoginModalAfterAccountSwitch()
     setRefreshDataMessage('')
     const adminEmail = configuredAdminEmails()[0] ?? DEFAULT_ADMIN_EMAILS[0]
@@ -9809,6 +9976,10 @@ function App() {
   }
 
   function closeTopModal() {
+    if (collectingImportTickers !== null) {
+      setCollectingImportTickers(null)
+      return
+    }
     if (pendingMarketTrendDeleteKeys.length > 0 && !isSavingMarketTrends) {
       setPendingMarketTrendDeleteKeys([])
       return
@@ -9819,6 +9990,14 @@ function App() {
     }
     if (isHoldingLiquidationOpen) {
       closeHoldingLiquidationModal()
+      return
+    }
+    if (cashAccountDeleteOpen) {
+      setCashAccountDeleteOpen(false)
+      return
+    }
+    if (collectingAccountReturnId !== null) {
+      cancelCollectingAccountAdd()
       return
     }
     if (contributionDraft) {
@@ -9873,10 +10052,18 @@ function App() {
   }
 
   const currentWatchlistTickers = isOperatorDataMode ? effectiveOperatorWatchlist : watchlist
+  const collectingImportCandidates = collectingImportTickers !== null && cashAccount
+    ? [...new Set(currentWatchlistTickers)]
+      .filter((ticker) => !cashAccount.collecting?.some((target) => target.ticker === ticker))
+      .map((ticker) => resolveStockForTicker(ticker, apiStocks, apiSearchStocks))
+    : []
+  const collectingImportSelection = collectingImportCandidates.filter(({ ticker }) => collectingImportTickers?.includes(ticker))
+  const allCollectingImportSelected = collectingImportCandidates.length > 0
+    && collectingImportSelection.length === collectingImportCandidates.length
 
   useEffect(() => {
     const handleModalEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
+      if (event.key !== 'Escape' || event.defaultPrevented) return
       closeTopModal()
     }
 
@@ -11669,19 +11856,35 @@ function App() {
                 {authMode !== 'reset' && shouldShowEmailValidation && <span className="login-error">이메일 형식이 올바르지 않습니다.</span>}
                 {authMode !== 'recover' && (
                   <>
-                    <label className="login-field">
-                      <span>비밀번호</span>
-                      <input
-                        aria-invalid={shouldShowPasswordValidation}
-                        value={loginPassword}
-                        onChange={(event) => {
-                          setLoginPassword(event.target.value)
-                          setLoginError('')
-                        }}
-                        placeholder="8자 이상"
-                        type="password"
-                      />
-                    </label>
+                    <div className="login-field">
+                      <label htmlFor="login-password"><span>비밀번호</span></label>
+                      <div className="login-password-control">
+                        <input
+                          id="login-password"
+                          aria-invalid={shouldShowPasswordValidation}
+                          autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                          value={loginPassword}
+                          onChange={(event) => {
+                            setLoginPassword(event.target.value)
+                            setLoginError('')
+                          }}
+                          placeholder="8자 이상"
+                          type={authMode === 'login' && showLoginPassword ? 'text' : 'password'}
+                        />
+                        {authMode === 'login' && (
+                          <button aria-label={showLoginPassword ? '비밀번호 숨기기' : '비밀번호 표시'}
+                            className="login-password-toggle" type="button"
+                            onClick={() => setShowLoginPassword((visible) => !visible)}>
+                            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
+                              <circle cx="12" cy="12" r="2.5" />
+                              {showLoginPassword && <path d="m3 3 18 18" />}
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </div>
                     {shouldShowPasswordValidation && <span className="login-error">비밀번호는 8자 이상이어야 합니다.</span>}
                     {authMode === 'login' && (
                       <button className="forgot-password-button" type="button" onClick={() => switchAuthMode('recover')}>
@@ -11798,70 +12001,167 @@ function App() {
         </div>
       )}
       {contributionDraft && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => setContributionDraft(null))}>
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, collectingAccountReturnId !== null ? cancelCollectingAccountAdd : () => setContributionDraft(null))}>
           <div aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
-            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setContributionDraft(null)}>×</button>
-            {contributionSettingsMode === 'cash' ? (
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={collectingAccountReturnId !== null ? cancelCollectingAccountAdd : () => setContributionDraft(null)}>×</button>
+            {contributionSettingsMode === 'cash' || collectingAccountReturnId !== null ? (
               <>
-                <h3>현금 투입 설정</h3>
-                <p>초기 자금과 정기 입금액을 기준으로 보유 현금액이 늘어납니다. 매수 신호가 새로 잡힐 때만 현재 투자성향의 슬롯 비중으로 투자금을 배정합니다.</p>
-                <label className="login-field">
-                  <span>초기 자금</span>
-                  <input
-                    autoFocus
-                    inputMode="numeric"
-                    value={amountInputValue(contributionDraft.initialCapital)}
-                    onChange={(event) => setContributionDraft((current) => current ? { ...current, initialCapital: amountDraftValue(event.target.value) } : current)}
-                  />
-                </label>
-                <label className="login-field">
-                  <span>입금 주기</span>
-                  <CustomSelect
-                    ariaLabel="입금 주기"
-                    value={contributionDraft.frequency}
-                    options={[
-                      { value: 'weekly', label: '매주' },
-                      { value: 'monthly', label: '매월' },
-                    ]}
-                    onChange={(nextFrequency) => setContributionDraft((current) => current ? { ...current, frequency: nextFrequency } : current)}
-                  />
-                </label>
-                {contributionDraft.frequency === 'weekly' ? (
-                  <label className="login-field">
-                    <span>입금 요일</span>
-                    <CustomSelect
-                      ariaLabel="입금 요일"
-                      value={Number(contributionDraft.dayOfWeek)}
-                      options={weekdayOptions}
-                      onChange={(nextDay) => setContributionDraft((current) => current ? { ...current, dayOfWeek: String(nextDay) } : current)}
-                    />
-                  </label>
+                <h3>{cashAccount ? '계좌 설정' : '현금 투입 설정'}</h3>
+                {!cashAccount ? (
+                  <div className="cash-account-picker">
+                    <div className="cash-account-list" aria-label="계좌 목록">
+                      {contributionDraft.accounts.map((account) => (
+                        <button className="custom-select-trigger cash-account-row" key={account.id} type="button"
+                          onClick={() => setCashAccountId(account.id)}>
+                          <strong>{account.nickname.trim() || '새 계좌'}</strong>
+                          <small>{account.type}</small>
+                        </button>
+                      ))}
+                    </div>
+                    <button className="add-stock-button" disabled={cashAccountLimit} type="button" onClick={addCashAccount}>+ 계좌 추가</button>
+                  </div>
                 ) : (
+                <>
+                <div className="cash-account-fields">
+                  {cashAccount && <>
+                    <label className="login-field">
+                      <span>닉네임 (필수)</span>
+                      <input maxLength={40} required value={cashAccount.nickname}
+                        onChange={(event) => updateCashAccount(cashAccount.id, { nickname: event.target.value })} />
+                    </label>
+                    <label className="login-field">
+                      <span>계좌번호 (선택)</span>
+                      <input inputMode="numeric" maxLength={32} value={cashAccount.accountNumber}
+                        onChange={(event) => updateCashAccount(cashAccount.id, { accountNumber: event.target.value.replace(/[^0-9-]/g, '') })} />
+                    </label>
+                    <label className="login-field">
+                      <span>계좌 유형 (필수)</span>
+                      <CustomSelect ariaLabel="계좌 유형" value={cashAccount.type} options={accountTypes.map((type) => ({ value: type, label: type }))}
+                        onChange={(type) => updateCashAccount(cashAccount.id, { type })} />
+                    </label>
+                  </>}
                   <label className="login-field">
-                    <span>입금일</span>
+                    <span>초기 자금</span>
                     <input
                       inputMode="numeric"
-                      max="31"
-                      min="1"
-                      step="1"
-                      value={contributionDraft.dayOfMonth}
-                      onChange={(event) => setContributionDraft((current) => current ? { ...current, dayOfMonth: event.target.value } : current)}
+                      value={amountInputValue(cashDraft!.initialCapital)}
+                      onChange={(event) => updateCashDraft('initialCapital', amountDraftValue(event.target.value))}
                     />
-                    {contributionDayValidationMessage && (
-                      <span className={isContributionDayInvalid ? 'field-message field-message-error' : 'field-message field-message-note'}>
-                        {contributionDayValidationMessage}
+                  </label>
+                  <label className="login-field">
+                    <span>입금 주기 (필수)</span>
+                    <CustomSelect
+                      ariaLabel="입금 주기"
+                      value={cashDraft!.frequency}
+                      options={[
+                        { value: 'weekly', label: '매주' },
+                        { value: 'monthly', label: '매월' },
+                      ]}
+                      onChange={(nextFrequency) => updateCashDraft('frequency', nextFrequency)}
+                    />
+                  </label>
+                  {cashDraft!.frequency === 'weekly' ? (
+                    <label className="login-field">
+                      <span>입금 요일 (필수)</span>
+                      <CustomSelect
+                        ariaLabel="입금 요일"
+                        value={Number(cashDraft!.dayOfWeek)}
+                        options={weekdayOptions}
+                        onChange={(nextDay) => updateCashDraft('dayOfWeek', String(nextDay))}
+                      />
+                    </label>
+                  ) : (
+                    <label className="login-field">
+                      <span>입금일 (필수)</span>
+                      <input
+                        inputMode="numeric"
+                        max="31"
+                        min="1"
+                        step="1"
+                        value={cashDraft!.dayOfMonth}
+                        onChange={(event) => updateCashDraft('dayOfMonth', event.target.value)}
+                      />
+                      {contributionDayValidationMessage && (
+                        <span className={isContributionDayInvalid ? 'field-message field-message-error' : 'field-message field-message-note'}>
+                          {contributionDayValidationMessage}
+                        </span>
+                      )}
+                    </label>
+                  )}
+                  <label className="login-field">
+                    <span>{cashDraft!.frequency === 'monthly' ? '월 입금액' : '주 입금액'}</span>
+                    <input
+                      inputMode="numeric"
+                      value={amountInputValue(cashDraft!.amount)}
+                      onChange={(event) => updateCashDraft('amount', amountDraftValue(event.target.value))}
+                    />
+                    {cashFxRate > 0 && Number(cashDraft!.amount) > 0 && (
+                      <span className="field-message field-message-note">
+                        약 {(Number(cashDraft!.amount) / cashFxRate).toLocaleString('ko-KR', { style: 'currency', currency: 'USD' })}
+                        {cashFxDate && ` · ${cashFxDate} 기준`}
                       </span>
                     )}
                   </label>
+                  {cashAccount && (
+                    <label className="login-field">
+                      <span>매수 시점 (필수)</span>
+                      <CustomSelect ariaLabel="매수 시점" value={cashAccount.buyTiming}
+                        options={(Object.keys(buyTimings) as InvestmentAccount['buyTiming'][]).map((value) => ({ value, label: value }))}
+                        onChange={(buyTiming) => updateCashAccount(cashAccount.id, { buyTiming })} />
+                      <span className="field-message field-message-note">{buyTimings[cashAccount.buyTiming]}</span>
+                    </label>
+                  )}
+                </div>
+
+                </>
                 )}
-                <label className="login-field">
-                  <span>입금액</span>
-                  <input
-                    inputMode="numeric"
-                    value={amountInputValue(contributionDraft.amount)}
-                    onChange={(event) => setContributionDraft((current) => current ? { ...current, amount: amountDraftValue(event.target.value) } : current)}
-                  />
-                </label>
+              </>
+            ) : collectingSettings && cashAccount ? (
+              <>
+                <h3>가치투자 모으기</h3>
+                <p>계좌별로 꾸준히 매수할 종목과 비중을 정하세요.</p>
+                <div className="collecting-account-section">
+                <div className="cash-account-picker">
+                  <div className="cash-account-list login-field">
+                    <span>계좌</span>
+                    <CustomSelect ariaLabel="모으기 계좌" value={cashAccount.id}
+                      options={contributionDraft.accounts.map(({ id, nickname }) => ({ value: id, label: nickname }))}
+                      onChange={setCashAccountId} />
+                  </div>
+                  <button className="add-stock-button" disabled={cashAccountLimit} type="button" onClick={() => {
+                    setCollectingAccountReturnId(cashAccount.id)
+                    addCashAccount()
+                  }}>+ 계좌 추가</button>
+                </div>
+                <div className="allocation-rule-note">
+                  <span>{cashAccount.buyTiming} 매수 · {cashDraft?.frequency === 'monthly' ? `월 입금액 ${formatKrwAmount(Number(cashDraft.amount))}` : '주 단위 입금'}</span>
+                </div>
+                </div>
+                <div className="collecting-target-section">
+                  {(cashAccount.collecting ?? []).map(({ ticker, percent }, index) => (
+                    <div className="collecting-target-row" key={index}>
+                      <label className="login-field">
+                        <span>종목 티커</span>
+                        <input value={ticker} readOnly />
+                      </label>
+                      <label className="login-field">
+                        <span>비중 (%)</span>
+                        <input type="number" min="1" max="100" value={percent || ''} onChange={(event) => updateCashAccount(cashAccount.id, {
+                          collecting: cashAccount.collecting?.map((item, i) => i === index ? { ...item, percent: Number(event.target.value) } : item),
+                        })} />
+                      </label>
+                      <div className="modal-actions collecting-row-actions">
+                        <button className="modal-cancel" type="button" aria-label={`${index + 1}번째 종목 삭제`} onClick={() => updateCashAccount(cashAccount.id, {
+                          collecting: cashAccount.collecting?.filter((_, i) => i !== index),
+                        })}>삭제</button>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="collecting-target-actions">
+                    <button className="add-stock-button" type="button" onClick={() => setCollectingImportTickers([])}>관심종목에서 불러오기</button>
+                  </div>
+                  {invalidCollecting && <p className="field-message field-message-error">계좌별 종목 비중을 입력하고 합계를 100%로 맞춰 주세요.</p>}
+                </div>
               </>
             ) : (
               <>
@@ -11965,9 +12265,96 @@ function App() {
                 )}
               </>
             )}
+            {(contributionSettingsMode === 'cash' || collectingSettings) && cashAccountLimit && <p className="field-message field-message-note">계좌는 최대 5개까지 등록할 수 있습니다.</p>}
+            {collectingAccountReturnId !== null ? (
+              <div className="modal-actions">
+                <button className="modal-cancel" type="button" onClick={cancelCollectingAccountAdd}>취소</button>
+                <button className="modal-confirm" disabled={!cashAccount?.nickname.trim() || isContributionDayInvalid} type="button"
+                  onClick={() => setCollectingAccountReturnId(null)}>완료</button>
+              </div>
+            ) : (
             <div className="modal-actions">
-              <button className="modal-cancel" type="button" onClick={() => setContributionDraft(null)}>취소</button>
+              {contributionSettingsMode === 'cash' && cashAccount ? (
+                <>
+                  <button className="modal-cancel" type="button" onClick={() => {
+                    if (!cashAccount.nickname.trim() && cashAccount.id !== 'default') {
+                      setContributionDraft((current) => current && { ...current, accounts: current.accounts.filter(({ id }) => id !== cashAccount.id) })
+                    }
+                    setCashAccountId('')
+                  }}>목록</button>
+                  <button className="modal-cancel" disabled={cashAccountLimit || !cashAccount.nickname.trim()} type="button" onClick={addCashAccount}>계좌 추가</button>
+                  {cashAccount.id !== 'default' && (
+                    <button className="modal-cancel" type="button" onClick={() => setCashAccountDeleteOpen(true)}>계좌 삭제</button>
+                  )}
+                </>
+              ) : (
+                <button className="modal-cancel" type="button" onClick={() => setContributionDraft(null)}>취소</button>
+              )}
               <button className="modal-confirm" disabled={isContributionSaveDisabled} type="button" onClick={saveContributionSettings}>저장</button>
+            </div>
+            )}
+          </div>
+        </div>
+      )}
+      {collectingImportTickers !== null && cashAccount && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => setCollectingImportTickers(null))}>
+          <div aria-labelledby="collecting-import-title" aria-modal="true" className="confirm-modal operator-import-modal" role="dialog">
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setCollectingImportTickers(null)}>×</button>
+            <h3 id="collecting-import-title">관심종목 불러오기</h3>
+            <div className="operator-import-status">
+              <div className="operator-import-status-head">
+                <strong>{collectingImportSelection.length}개 선택</strong>
+                <button className="operator-import-select-all" type="button" disabled={!collectingImportCandidates.length}
+                  onClick={() => setCollectingImportTickers(allCollectingImportSelected ? [] : collectingImportCandidates.map(({ ticker }) => ticker))}>
+                  {allCollectingImportSelected ? '선택 해제' : '전체 선택'}
+                </button>
+              </div>
+            </div>
+            <div className="operator-import-list">
+              {collectingImportCandidates.length ? collectingImportCandidates.map((stock) => (
+                <label className="operator-import-option" key={stock.ticker}>
+                  <input type="checkbox" checked={collectingImportTickers.includes(stock.ticker)}
+                    onChange={(event) => {
+                      const checked = event.target.checked
+                      setCollectingImportTickers((current) => current && (checked ? [...current, stock.ticker] : current.filter((ticker) => ticker !== stock.ticker)))
+                    }} />
+                  <span className="market-flag" aria-hidden="true">{marketFlag(stock.market)}</span>
+                  <span><strong>{stock.name}</strong><small>{stock.ticker}</small></span>
+                </label>
+              )) : <div className="operator-import-empty">불러올 관심종목이 없습니다.</div>}
+            </div>
+            <div className="modal-actions">
+              <button className="modal-cancel" type="button" onClick={() => setCollectingImportTickers(null)}>취소</button>
+              <button className="modal-confirm" type="button" disabled={!collectingImportSelection.length} onClick={() => {
+                const existing = cashAccount.collecting ?? []
+                const count = collectingImportSelection.length
+                const share = Math.floor(100 / count)
+                updateCashAccount(cashAccount.id, {
+                  collecting: [...existing, ...collectingImportSelection.map(({ ticker }, index) => ({
+                    ticker, percent: existing.length ? 0 : share + Number(index < 100 % count),
+                  }))],
+                })
+                setCollectingImportTickers(null)
+              }}>불러오기</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {cashAccountDeleteOpen && cashAccount && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => setCashAccountDeleteOpen(false))}>
+          <div aria-labelledby="cash-account-delete-title" aria-modal="true" className="confirm-modal" role="dialog">
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setCashAccountDeleteOpen(false)}>×</button>
+            <h3 id="cash-account-delete-title">계좌를 삭제할까요?</h3>
+            <p>{cashAccount.nickname.trim() || '새 계좌'}의 설정이 삭제됩니다.</p>
+            <div className="modal-actions">
+              <button className="modal-cancel" type="button" onClick={() => setCashAccountDeleteOpen(false)}>취소</button>
+              <button className="modal-confirm" type="button" onClick={() => {
+                setContributionDraft((current) => current && {
+                  ...current, accounts: current.accounts.filter(({ id }) => id !== cashAccount.id),
+                })
+                setCashAccountDeleteOpen(false)
+                setCashAccountId('')
+              }}>삭제</button>
             </div>
           </div>
         </div>
@@ -12013,6 +12400,21 @@ function App() {
                     onChange={(event) => updateManualHoldingDraft('buyPrice', event.target.value)}
                   />
                 </label>
+                {isLongTermInvestor && (
+                  <label>
+                    <span>매수 계좌</span>
+                    <CustomSelect ariaLabel="매수 계좌" value={manualInvestmentAccount.id}
+                      options={manualInvestmentAccounts.map(({ id, nickname }) => ({ value: id, label: nickname }))}
+                      onChange={(id) => updateManualHoldingDraft('investmentAccountId', id)} />
+                  </label>
+                )}
+                {isLongTermInvestor && (
+                  <label>
+                    <span>실제 매수금 (원)</span>
+                    <input inputMode="numeric" disabled={isSavingTradeLogs} value={amountInputValue(manualHoldingDraft.collectingAmount ?? '')}
+                      onChange={(event) => updateManualHoldingDraft('collectingAmount', amountDraftValue(event.target.value))} />
+                  </label>
+                )}
                 {manualHoldingDraft.strategy === '6' && (
                   <label>
                     <span>고정 손절가 (매수 신호 당시 20거래일 최저가의 97%)</span>
@@ -12024,7 +12426,7 @@ function App() {
                   <CustomSelect
                     ariaLabel="적용할 전략 선택"
                     options={[
-                      ...activeStrategyFilters.map((code) => ({ value: code, label: strategyDisplayName(code) })),
+                      ...activeStrategyFilters.map((code) => ({ value: code, label: profileStrategyName(code, displayedInvestmentType) })),
                       { value: STRATEGY_FREE_SELECT_VALUE, label: '전략과 무관' },
                     ]}
                     value={manualHoldingDraft.strategy}
