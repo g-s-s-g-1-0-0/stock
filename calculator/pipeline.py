@@ -625,6 +625,13 @@ def build_market_snapshot() -> tuple[list[list[str]], dict[str, Any], float | No
         rows.append(["CNN 공포·탐욕지수 당일·전날", f"수집 실패: {exc}"])
 
     try:
+        usd_krw = fetch_us_ohlcv("KRW=X", range_value="5d")[-1]
+        quote_date = datetime.fromtimestamp(int(usd_krw["date"]), tz=timezone.utc).date().isoformat()
+        rows.append(["원·달러 환율", fmt_number(usd_krw["close"], 2), quote_date])
+    except Exception:  # The account settings can be used while the quote is unavailable.
+        pass
+
+    try:
         tnx_rows = fetch_ohlcv("^TNX")
         rows.append(["미국 10년물 금리", fmt_number(tnx_rows[-1]["close"], 3)])
     except Exception as exc:  # noqa: BLE001

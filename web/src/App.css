@@ -1435,7 +1435,7 @@
   display: grid;
   grid-template-columns: 84px minmax(0, 1fr);
   column-gap: 12px;
-  align-items: start;
+  align-items: first baseline;
 }
 
 .strategy-criteria-label {
@@ -7338,3 +7338,111 @@ html.modal-scroll-lock body {
 /* The maintenance card stays visible as a status, without an active affordance. */
 .investment-option-card:disabled { opacity: .5; cursor: not-allowed; }
 .investment-option-card:disabled:hover { transform: none; box-shadow: none; }
+.cash-account-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.cash-account-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.cash-account-list {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+}
+
+.cash-account-picker .add-stock-button,
+.cash-account-row,
+.cash-account-picker .custom-select-trigger,
+.cash-account-fields > .login-field > input,
+.cash-account-fields .custom-select-trigger {
+  box-sizing: border-box;
+  height: 42px;
+  min-height: 42px;
+}
+
+.cash-account-row {
+  gap: 8px;
+}
+
+.cash-account-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cash-account-row small {
+  flex-shrink: 0;
+}
+
+.cash-account-fields {
+  align-items: start;
+}
+
+.cash-account-fields > .login-field {
+  min-width: 0;
+  align-content: start;
+  margin-top: 0;
+}
+
+.custom-select-menu-floating {
+  position: fixed;
+  z-index: 40;
+  right: auto;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.collecting-account-section,
+.collecting-target-section {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.collecting-account-section .cash-account-picker {
+  align-items: flex-end;
+  margin: 0;
+}
+
+.collecting-account-section .login-field,
+.collecting-account-section .allocation-rule-note,
+.collecting-row-actions {
+  margin: 0;
+}
+
+.collecting-target-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.collecting-target-row .login-field {
+  min-width: 0;
+  margin: 0;
+}
+
+.collecting-target-row input,
+.collecting-target-row .collecting-row-actions button {
+  height: 42px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.collecting-target-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
