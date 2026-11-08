@@ -10837,11 +10837,17 @@ function App() {
 
           <div className="asset-summary-box" aria-label="현재 자산 요약">
             {assetSummaryItems.map((item, index) => index === 0 ? (
-              <div className="account-cash-summary" key={item.label}>
-                <AssetSummaryItem item={item} />
-                <CustomSelect ariaLabel="표시할 계좌" value={selectedPortfolioAccount.id}
-                  options={portfolioAccounts.map(({ id, nickname }) => ({ value: id, label: nickname }))}
-                  onChange={setSelectedPortfolioAccountId} />
+              <div className="asset-summary-item account-cash-summary" key={item.label}>
+                <div className="account-cash-heading">
+                  <span>{item.label}</span>
+                  <CustomSelect ariaLabel="표시할 계좌" value={selectedPortfolioAccount.id}
+                    options={portfolioAccounts.map(({ id, nickname }) => ({ value: id, label: nickname }))}
+                    onChange={setSelectedPortfolioAccountId} />
+                </div>
+                {item.clickable ? (
+                  <button className="asset-summary-value asset-summary-button account-cash-value" type="button"
+                    onClick={item.action} aria-label="보유 현금 설정">{item.value}</button>
+                ) : <strong className="asset-summary-value">{item.value}</strong>}
               </div>
             ) : <AssetSummaryItem item={item} key={item.label} />)}
           </div>
