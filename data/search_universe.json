@@ -8,7 +8,9 @@
     ],
     "count": 17046,
     "industryReviewedAt": "2026-11-08T14:51:42+00:00",
-    "industryReviewedTickers": 14
+    "industryReviewedTickers": 14,
+    "industryEnrichedAt": "2026-11-08T15:02:02+00:00",
+    "industryEnrichedTickers": 6
   },
   "rows": [
     {
@@ -30801,14 +30803,13 @@
       "valuation": "보통",
       "opinion": "관망",
       "strategies": [],
-      "category": "혼합주",
+      "category": "스윙주",
       "industry": "TIGER 미국나스닥100 ETF",
       "rawIndustry": "국내상장 ETF",
       "products": "TIGER 미국나스닥100",
       "updatedAt": "2026-11-08T14:51:15+00:00",
       "etfFlag": true,
-      "instrumentType": "ETF",
-      "industryReviewedAt": "2026-11-08T14:51:42+00:00"
+      "instrumentType": "ETF"
     },
     {
       "ticker": "133750",
@@ -47477,14 +47478,13 @@
       "valuation": "보통",
       "opinion": "관망",
       "strategies": [],
-      "category": "혼합주",
+      "category": "스윙주",
       "industry": "S&P500 지수 ETF",
       "rawIndustry": "국내상장 ETF",
       "products": "TIGER 미국S&P500",
       "updatedAt": "2026-11-08T14:51:15+00:00",
       "etfFlag": true,
-      "instrumentType": "ETF",
-      "industryReviewedAt": "2026-11-08T14:51:42+00:00"
+      "instrumentType": "ETF"
     },
     {
       "ticker": "361390",
@@ -51619,14 +51619,13 @@
       "valuation": "보통",
       "opinion": "관망",
       "strategies": [],
-      "category": "혼합주",
+      "category": "스윙주",
       "industry": "TIGER 미국나스닥100레버리지(합성) ETF",
       "rawIndustry": "국내상장 ETF",
       "products": "TIGER 미국나스닥100레버리지(합성)",
       "updatedAt": "2026-11-08T14:51:15+00:00",
       "etfFlag": true,
-      "instrumentType": "ETF",
-      "industryReviewedAt": "2026-11-08T14:51:42+00:00"
+      "instrumentType": "ETF"
     },
     {
       "ticker": "418670",
@@ -52592,14 +52591,13 @@
       "valuation": "보통",
       "opinion": "관망",
       "strategies": [],
-      "category": "혼합주",
+      "category": "스윙주",
       "industry": "채권·국채 ETF",
       "rawIndustry": "국내상장 ETF",
       "products": "TIGER 미국나스닥100채권혼합50",
       "updatedAt": "2026-11-08T14:51:15+00:00",
       "etfFlag": true,
-      "instrumentType": "ETF",
-      "industryReviewedAt": "2026-11-08T14:51:42+00:00"
+      "instrumentType": "ETF"
     },
     {
       "ticker": "435530",
@@ -228818,8 +228816,7 @@
       "rawIndustry": "-",
       "products": "-",
       "updatedAt": "2026-11-08T14:51:15+00:00",
-      "etfFlag": true,
-      "industryReviewedAt": "2026-11-08T14:51:42+00:00"
+      "etfFlag": true
     },
     {
       "ticker": "SOXX",
@@ -252138,13 +252135,12 @@
       "valuation": "보통",
       "opinion": "관망",
       "strategies": [],
-      "category": "혼합주",
+      "category": "스윙주",
       "industry": "S&P500 지수 ETF",
       "rawIndustry": "-",
       "products": "-",
       "updatedAt": "2026-11-08T14:51:15+00:00",
-      "etfFlag": true,
-      "industryReviewedAt": "2026-11-08T14:51:42+00:00"
+      "etfFlag": true
     },
     {
       "ticker": "VOOB",
