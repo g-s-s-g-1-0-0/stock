@@ -7565,3 +7565,17 @@ html.modal-scroll-lock body {
   padding: 8px 12px;
   cursor: default;
 }
+
+.account-settings-fields {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  margin-inline: 0;
+}
+
+.account-settings-fields:disabled input,
+.account-settings-fields:disabled .custom-select-trigger {
+  opacity: 1;
+  -webkit-text-fill-color: var(--text-h);
+  cursor: default;
+}

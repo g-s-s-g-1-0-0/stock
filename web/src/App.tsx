@@ -8522,13 +8522,15 @@ function App() {
   useEffect(() => {
     if (!isPublicPortfolioView) return
     const controller = new AbortController()
-    setPublicOperatorSettings(null)
     setPublicOperatorError('')
     void fetch('/api/operator-portfolio', { signal: controller.signal, cache: 'no-store' })
       .then(async (response) => {
         if (!response.ok) throw new Error('공수성가 계좌 설정을 불러오지 못했습니다.')
         const settings = normalizeContributionSettings(await response.json())
-        if (!controller.signal.aborted) setPublicOperatorSettings(settings)
+        if (!controller.signal.aborted) {
+          setPublicOperatorSettings(settings)
+          setContributionDraft((current) => current ? contributionSettingsDraftFrom(settings) : current)
+        }
       })
       .catch(() => {
         if (!controller.signal.aborted) setPublicOperatorError('공수성가 계좌 설정을 불러오지 못했습니다. 잠시 후 다시 열어 주세요.')
@@ -8957,6 +8959,7 @@ function App() {
   }
 
   function updateCashAccount(id: string, change: Partial<InvestmentAccount>) {
+    if (isPublicPortfolioView) return
     setContributionDraft((current) => current && ({
       ...current,
       accounts: current.accounts.map((account) => account.id === id ? { ...account, ...change } : account),
@@ -8979,7 +8982,7 @@ function App() {
   const cashAccountLimit = (contributionDraft?.accounts.length ?? 0) >= 5
 
   function addCashAccount() {
-    if (cashAccountLimit) return
+    if (isPublicPortfolioView || cashAccountLimit) return
     const id = crypto.randomUUID()
     setContributionDraft((current) => current && current.accounts.length < 5 ? {
       ...current,
@@ -12057,41 +12060,7 @@ function App() {
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, collectingAccountReturnId !== null ? cancelCollectingAccountAdd : () => setContributionDraft(null))}>
           <div aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={collectingAccountReturnId !== null ? cancelCollectingAccountAdd : () => setContributionDraft(null)}>×</button>
-            {isPublicPortfolioView ? (
-              <>
-                <h3>{contributionSettingsMode === 'cash' ? '계좌 설정' : '주식 모으기'}</h3>
-                {!publicOperatorSettings ? <p role="status">{publicOperatorError || '공수성가 계좌 설정을 불러오는 중입니다.'}</p> : (
-                  <>
-                    <p>공수성가의 계좌별 투자 설정입니다.</p>
-                    <label className="login-field">
-                      <span>계좌</span>
-                      <CustomSelect ariaLabel="공수성가 계좌" value={selectedPortfolioAccount.id}
-                        options={portfolioAccounts.map(({ id, nickname }) => ({ value: id, label: nickname }))}
-                        onChange={setSelectedPortfolioAccountId} />
-                    </label>
-                    <div className="allocation-rule-note">
-                      <span>{selectedPortfolioAccount.brokerage || '증권사 미지정'} · {selectedPortfolioAccount.type}</span>
-                      <span>초기 자금 {formatKrwAmount(accountContributionSettings.initialCapital)}</span>
-                      <span>{accountContributionSettings.frequency === 'yearly' ? '매년' : accountContributionSettings.frequency === 'weekly' ? '매주' : '매월'} 입금 · {formatKrwAmount(accountContributionSettings.amount)}</span>
-                      <span>{accountContributionSettings.frequency === 'yearly' ? `${accountContributionSettings.monthOfYear}월 ` : ''}{accountContributionSettings.frequency === 'weekly' ? weekdayOptions.find(({ value }) => value === accountContributionSettings.dayOfWeek)?.label : `${accountContributionSettings.dayOfMonth}일`} 입금</span>
-                      <span>{selectedPortfolioAccount.buyTiming} 매수</span>
-                    </div>
-                    <div className="operator-import-list">
-                      {(selectedPortfolioAccount.collecting ?? []).map(({ ticker, percent }) => (
-                        <div className="operator-import-option" key={ticker}>
-                          <strong>{ticker}</strong><span>{percent}%</span>
-                        </div>
-                      ))}
-                      {!selectedPortfolioAccount.collecting?.length && <div className="operator-import-empty">등록된 모으기 종목이 없습니다.</div>}
-                    </div>
-                  </>
-                )}
-                <div className="modal-actions">
-                  <button className="modal-cancel" type="button" onClick={() => setContributionDraft(null)}>닫기</button>
-                </div>
-              </>
-            ) : (
-              <>
+            {isPublicPortfolioView && !publicOperatorSettings && <p role="status">{publicOperatorError || '공수성가 계좌 설정을 불러오는 중입니다.'}</p>}
             {contributionSettingsMode === 'cash' || collectingAccountReturnId !== null ? (
               <>
                 <h3>계좌 설정</h3>
@@ -12119,7 +12088,7 @@ function App() {
                               </svg>
                             </button>
                             <button className="cash-account-icon-button" type="button"
-                              aria-label={`${account.nickname} 계좌 수정`} title="계좌 수정"
+                              aria-label={`${account.nickname} 계좌 ${isPublicPortfolioView ? '보기' : '수정'}`} title={isPublicPortfolioView ? '계좌 보기' : '계좌 수정'}
                               onClick={() => setCashAccountId(account.id)}>
                               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -12131,11 +12100,11 @@ function App() {
                         </div>
                       ))}
                     </div>
-                    <button className="add-stock-button" disabled={cashAccountLimit} type="button" onClick={addCashAccount}>+ 계좌 추가</button>
+                    <button className="add-stock-button" disabled={isPublicPortfolioView || cashAccountLimit} type="button" onClick={addCashAccount}>+ 계좌 추가</button>
                   </div>
                 ) : (
                 <>
-                <div className="cash-account-layout">
+                <fieldset className="cash-account-layout account-settings-fields" disabled={isPublicPortfolioView}>
                   <div className="cash-account-fields cash-account-identity">
                   {cashAccount && <>
                     <label className="login-field">
@@ -12145,7 +12114,7 @@ function App() {
                     </label>
                     <label className="login-field">
                       <span>계좌번호 (선택)</span>
-                      <input inputMode="numeric" maxLength={32} value={cashAccount.accountNumber}
+                      <input inputMode="numeric" maxLength={32} value={isPublicPortfolioView ? '비공개' : cashAccount.accountNumber}
                         onChange={(event) => updateCashAccount(cashAccount.id, { accountNumber: event.target.value.replace(/[^0-9-]/g, '') })} />
                     </label>
                     <label className="login-field">
@@ -12244,7 +12213,7 @@ function App() {
                       <span className="field-message field-message-note">{buyTimings[cashAccount.buyTiming]}</span>
                     </label>
                   )}                  </div>
-                </div>
+                </fieldset>
 
                 </>
                 )}
@@ -12261,7 +12230,7 @@ function App() {
                       options={contributionDraft.accounts.map(({ id, nickname }) => ({ value: id, label: nickname }))}
                       onChange={setCashAccountId} />
                   </div>
-                  <button className="add-stock-button" disabled={cashAccountLimit} type="button" onClick={() => {
+                  <button className="add-stock-button" disabled={isPublicPortfolioView || cashAccountLimit} type="button" onClick={() => {
                     setCollectingAccountReturnId(cashAccount.id)
                     addCashAccount()
                   }}>+ 계좌 추가</button>
@@ -12270,7 +12239,7 @@ function App() {
                   <span>{cashDraft?.frequency === 'yearly' ? `매년 ${cashDraft.monthOfYear}월 ` : ''}{cashAccount.buyTiming} 매수 · {cashDraft?.frequency === 'yearly' ? `연 입금액 ${formatKrwAmount(Number(cashDraft.amount))}` : cashDraft?.frequency === 'monthly' ? `월 입금액 ${formatKrwAmount(Number(cashDraft.amount))}` : '주 단위 입금'}</span>
                 </div>
                 </div>
-                <div className="collecting-target-section">
+                <fieldset className="collecting-target-section account-settings-fields" disabled={isPublicPortfolioView}>
                   {(cashAccount.collecting ?? []).map(({ ticker, percent }, index) => (
                     <div className="collecting-target-row" key={index}>
                       <label className="login-field">
@@ -12294,7 +12263,7 @@ function App() {
                     <button className="add-stock-button" type="button" onClick={() => setCollectingImportTickers([])}>관심종목에서 불러오기</button>
                   </div>
                   {invalidCollecting && <p className="field-message field-message-error">계좌별 종목 비중을 입력하고 합계를 100%로 맞춰 주세요.</p>}
-                </div>
+                </fieldset>
               </>
             ) : (
               <>
@@ -12415,18 +12384,16 @@ function App() {
                     }
                     setCashAccountId('')
                   }}>목록</button>
-                  <button className="modal-cancel" disabled={cashAccountLimit || !cashAccount.nickname.trim()} type="button" onClick={addCashAccount}>계좌 추가</button>
+                  <button className="modal-cancel" disabled={isPublicPortfolioView || cashAccountLimit || !cashAccount.nickname.trim()} type="button" onClick={addCashAccount}>계좌 추가</button>
                   {cashAccount.id !== 'default' && (
-                    <button className="modal-cancel" type="button" onClick={() => setCashAccountDeleteOpen(true)}>계좌 삭제</button>
+                    <button className="modal-cancel" type="button" disabled={isPublicPortfolioView} onClick={() => setCashAccountDeleteOpen(true)}>계좌 삭제</button>
                   )}
                 </>
               ) : (
                 <button className="modal-cancel" type="button" onClick={() => setContributionDraft(null)}>취소</button>
               )}
-              <button className="modal-confirm" disabled={isContributionSaveDisabled} type="button" onClick={saveContributionSettings}>저장</button>
+              <button className="modal-confirm" disabled={isPublicPortfolioView || isContributionSaveDisabled} type="button" onClick={saveContributionSettings}>저장</button>
             </div>
-            )}
-              </>
             )}
           </div>
         </div>
