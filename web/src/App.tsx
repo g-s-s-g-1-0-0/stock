@@ -7152,6 +7152,7 @@ function App() {
   const [contributionSettings, setContributionSettings] = useState<ContributionSettings>(() => readStoredContributionSettings(initialLocalTestSession))
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
   const [cashAccountId, setCashAccountId] = useState('')
+  const [selectedPortfolioAccountId, setSelectedPortfolioAccountId] = useState('default')
   const [collectingAccountReturnId, setCollectingAccountReturnId] = useState<string | null>(null)
   const [collectingImportTickers, setCollectingImportTickers] = useState<string[] | null>(null)
   const [cashAccountDeleteOpen, setCashAccountDeleteOpen] = useState(false)
@@ -8514,14 +8515,26 @@ function App() {
   // Admins are forced into operator data, but the operator preview still needs profile-specific views.
   const shouldApplyInvestmentTypeView = serviceAvailability.swingMaintenance || isOperatorDataMode || !isAdminUser
   const isLongTermInvestor = shouldApplyInvestmentTypeView && displayedInvestmentType === 'long_term'
+  const portfolioAccounts = contributionSettingsDraftFrom(contributionSettings).accounts
+  const selectedPortfolioAccount = portfolioAccounts.find(({ id }) => id === selectedPortfolioAccountId) ?? portfolioAccounts[0]
+  const accountContributionSettings = selectedPortfolioAccount.id === 'default' ? contributionSettings : {
+    ...contributionSettings,
+    initialCapital: selectedPortfolioAccount.initialCapital ?? 0,
+    amount: selectedPortfolioAccount.monthlyDeposit,
+    frequency: selectedPortfolioAccount.frequency ?? 'monthly',
+    monthOfYear: selectedPortfolioAccount.monthOfYear ?? 1,
+    dayOfWeek: selectedPortfolioAccount.dayOfWeek ?? 1,
+    dayOfMonth: selectedPortfolioAccount.dayOfMonth ?? 1,
+  }
   const rawScopedTrades = isOperatorDataMode
     ? shouldApplyInvestmentTypeView
       ? systemTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
       : systemTradeLogs
     : personalTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
   const portfolioSummary = calculateAccountPortfolio(
-    rawScopedTrades, apiStocks, apiMarketTrendRows, contributionSettings, displayedInvestmentType,
-    userSession || isOperatorDataMode ? contributionSettings.initialCapital : 0,
+    rawScopedTrades.filter((trade) => (trade.investmentAccountId ?? 'default') === selectedPortfolioAccount.id),
+    apiStocks, apiMarketTrendRows, accountContributionSettings, displayedInvestmentType,
+    userSession || isOperatorDataMode ? accountContributionSettings.initialCapital : 0,
   )
   const scopedTrades: TradeLog[] = portfolioSummary.trades
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
@@ -8605,7 +8618,6 @@ function App() {
       action: openInvestmentAllocationSettings,
       clickable: canEditContributionSettings,
     },
-    { label: '누적 매수금', value: formatKrwAmount(portfolioSummary.cumulativeInvestmentAmount) },
     {
       label: '예상 손익',
       value: `${formatKrwAmount(portfolioSummary.profitAmount)} (${portfolioSummary.profitRate >= 0 ? '+' : ''}${portfolioSummary.profitRate.toFixed(1)}%)`,
@@ -8966,14 +8978,14 @@ function App() {
 
   function openContributionSettings() {
     setCollectingAccountReturnId(null)
-    setCashAccountId('default')
+    setCashAccountId(selectedPortfolioAccount.id)
     setContributionSettingsMode('cash')
     setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
   }
 
   function openInvestmentAllocationSettings() {
     setCollectingAccountReturnId(null)
-    setCashAccountId('default')
+    setCashAccountId(selectedPortfolioAccount.id)
     setContributionSettingsMode('investment')
     setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
   }
@@ -9042,7 +9054,7 @@ function App() {
     ? contributionSettings.accounts
     : [{ id: 'default', nickname: '기본 계좌' }]
   const manualInvestmentAccount = manualInvestmentAccounts.find(({ id }) => id === manualHoldingDraft?.investmentAccountId)
-    ?? manualInvestmentAccounts[0]
+    ?? manualInvestmentAccounts.find(({ id }) => id === selectedPortfolioAccount.id) ?? manualInvestmentAccounts[0]
   const manualHoldingResolved = manualHoldingDraft
     ? resolveStockForTicker(manualHoldingDraft.ticker, apiStocks, apiSearchStocks)
     : null
@@ -10824,9 +10836,14 @@ function App() {
           </div>
 
           <div className="asset-summary-box" aria-label="현재 자산 요약">
-            {assetSummaryItems.map((item) => (
-              <AssetSummaryItem item={item} key={item.label} />
-            ))}
+            {assetSummaryItems.map((item, index) => index === 0 ? (
+              <div className="account-cash-summary" key={item.label}>
+                <AssetSummaryItem item={item} />
+                <CustomSelect ariaLabel="표시할 계좌" value={selectedPortfolioAccount.id}
+                  options={portfolioAccounts.map(({ id, nickname }) => ({ value: id, label: nickname }))}
+                  onChange={setSelectedPortfolioAccountId} />
+              </div>
+            ) : <AssetSummaryItem item={item} key={item.label} />)}
           </div>
 
           <SheetScrollSurface className="trading-log-scroll" wheelRef={tradingLogWheelRef} key={`trades-${homeSheetResetKey}`}>

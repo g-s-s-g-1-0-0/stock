@@ -686,7 +686,7 @@
   display: grid;
   position: relative;
   z-index: 20;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin: -4px 0 12px;
   overflow: visible;
@@ -7489,3 +7489,14 @@ html.modal-scroll-lock body {
 .account-connection-notice p {
   margin: 0;
 }
+
+.account-cash-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.account-cash-summary > .asset-summary-item { flex: 1; min-width: 0; }
+.account-cash-summary > .custom-select { flex: 1; min-width: 0; }
+.account-cash-summary .custom-select-trigger { padding: 8px; font-size: 12px; }
+.account-cash-summary .custom-select-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
