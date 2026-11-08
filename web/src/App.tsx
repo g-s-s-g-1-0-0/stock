@@ -7153,7 +7153,6 @@ function App() {
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
   const [cashAccountId, setCashAccountId] = useState('')
   const [selectedPortfolioAccountId, setSelectedPortfolioAccountId] = useState('default')
-  const [portfolioAccountPickerOpen, setPortfolioAccountPickerOpen] = useState(false)
   const [collectingAccountReturnId, setCollectingAccountReturnId] = useState<string | null>(null)
   const [collectingImportTickers, setCollectingImportTickers] = useState<string[] | null>(null)
   const [cashAccountDeleteOpen, setCashAccountDeleteOpen] = useState(false)
@@ -9997,10 +9996,6 @@ function App() {
   }
 
   function closeTopModal() {
-    if (portfolioAccountPickerOpen) {
-      setPortfolioAccountPickerOpen(false)
-      return
-    }
     if (collectingImportTickers !== null) {
       setCollectingImportTickers(null)
       return
@@ -10846,7 +10841,7 @@ function App() {
           <div className="asset-summary-box" aria-label="현재 자산 요약">
             <AssetSummaryItem item={{
               label: '계좌', value: selectedPortfolioAccount.nickname, clickable: true,
-              action: () => setPortfolioAccountPickerOpen(true),
+              action: openContributionSettings,
             }} />
             {assetSummaryItems.map((item) => <AssetSummaryItem item={item} key={item.label} />)}
           </div>
@@ -12035,43 +12030,13 @@ function App() {
           </div>
         </div>
       )}
-      {portfolioAccountPickerOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => setPortfolioAccountPickerOpen(false))}>
-          <div aria-labelledby="portfolio-account-title" aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
-            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setPortfolioAccountPickerOpen(false)}>×</button>
-            <h3 id="portfolio-account-title">계좌 설정</h3>
-            <div className="cash-account-picker">
-              <div className="cash-account-list">
-                <CustomSelect ariaLabel="표시할 계좌" value={selectedPortfolioAccount.id}
-                  options={portfolioAccounts.map(({ id, nickname }) => ({ value: id, label: nickname }))}
-                  onChange={(id) => {
-                    setSelectedPortfolioAccountId(id)
-                    setPortfolioAccountPickerOpen(false)
-                  }} />
-              </div>
-              <button className="add-stock-button" disabled={portfolioAccounts.length >= 5} type="button" onClick={() => {
-                const id = crypto.randomUUID()
-                const draft = contributionSettingsDraftFrom(contributionSettings)
-                setCollectingAccountReturnId(null)
-                setContributionSettingsMode('cash')
-                setContributionDraft({
-                  ...draft,
-                  accounts: [...draft.accounts, { id, nickname: '', accountNumber: '', type: '일반증권', monthlyDeposit: 0, buyTiming: '월초' }],
-                })
-                setCashAccountId(id)
-                setPortfolioAccountPickerOpen(false)
-              }}>+ 계좌 추가</button>
-            </div>
-          </div>
-        </div>
-      )}
       {contributionDraft && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, collectingAccountReturnId !== null ? cancelCollectingAccountAdd : () => setContributionDraft(null))}>
           <div aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={collectingAccountReturnId !== null ? cancelCollectingAccountAdd : () => setContributionDraft(null)}>×</button>
             {contributionSettingsMode === 'cash' || collectingAccountReturnId !== null ? (
               <>
-                <h3>{cashAccount ? '계좌 설정' : '현금 투입 설정'}</h3>
+                <h3>계좌 설정</h3>
                 {!cashAccount ? (
                   <div className="cash-account-picker">
                     <div className="cash-account-list" aria-label="계좌 목록">
