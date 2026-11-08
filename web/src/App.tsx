@@ -212,7 +212,7 @@ type ManualHoldingDraft = {
   strategy: string
 }
 
-type ContributionFrequency = 'weekly' | 'monthly'
+type ContributionFrequency = 'weekly' | 'monthly' | 'yearly'
 type ContributionSettingsMode = 'cash' | 'investment'
 
 type AllocationSettings = {
@@ -228,6 +228,7 @@ type ContributionSettings = {
   frequency: ContributionFrequency
   amount: number
   dayOfWeek: number
+  monthOfYear?: number
   dayOfMonth: number
   allocationByInvestmentType: Record<InvestmentType, AllocationSettings>
 }
@@ -238,6 +239,7 @@ type ContributionSettingsDraft = {
   frequency: ContributionFrequency
   amount: string
   dayOfWeek: string
+  monthOfYear: string
   dayOfMonth: string
   allocationByInvestmentType: Record<InvestmentType, {
     slotCount: string
@@ -1243,7 +1245,7 @@ function normalizeAllocationSettings(value: unknown, investmentType: InvestmentT
 function normalizeContributionSettings(value: unknown): ContributionSettings {
   const candidate = value as Partial<ContributionSettings> | null
   if (!candidate) return DEFAULT_CONTRIBUTION_SETTINGS
-  const frequency = candidate.frequency === 'weekly' || candidate.frequency === 'monthly' ? candidate.frequency : DEFAULT_CONTRIBUTION_SETTINGS.frequency
+  const frequency = candidate.frequency === 'weekly' || candidate.frequency === 'monthly' || candidate.frequency === 'yearly' ? candidate.frequency : DEFAULT_CONTRIBUTION_SETTINGS.frequency
   const initialCapital = typeof candidate.initialCapital === 'number' && Number.isFinite(candidate.initialCapital)
     ? Math.max(0, Math.round(candidate.initialCapital))
     : DEFAULT_CONTRIBUTION_SETTINGS.initialCapital
@@ -1258,6 +1260,7 @@ function normalizeContributionSettings(value: unknown): ContributionSettings {
     frequency,
     amount,
     dayOfWeek: Math.min(6, Math.max(0, Number(candidate.dayOfWeek) || DEFAULT_CONTRIBUTION_SETTINGS.dayOfWeek)),
+    monthOfYear: Math.min(12, Math.max(1, Number(candidate.monthOfYear) || 1)),
     dayOfMonth: Math.min(31, Math.max(1, Number(candidate.dayOfMonth) || DEFAULT_CONTRIBUTION_SETTINGS.dayOfMonth)),
     allocationByInvestmentType: {
       swing: normalizeAllocationSettings(candidate.allocationByInvestmentType?.swing, 'swing'),
@@ -3960,6 +3963,7 @@ function contributionSettingsDraftFrom(settings: ContributionSettings): Contribu
     frequency: settings.frequency,
     amount: String(settings.amount),
     dayOfWeek: String(settings.dayOfWeek),
+    monthOfYear: String(settings.monthOfYear ?? 1),
     dayOfMonth: String(settings.dayOfMonth),
     allocationByInvestmentType: {
       swing: {
@@ -8547,12 +8551,13 @@ function App() {
     frequency: cashAccount.frequency ?? 'monthly',
     amount: String(cashAccount.monthlyDeposit),
     dayOfWeek: String(cashAccount.dayOfWeek ?? 1),
+    monthOfYear: String(cashAccount.monthOfYear ?? 1),
     dayOfMonth: String(cashAccount.dayOfMonth ?? 1),
   } : contributionDraft
-  const contributionDayValidationMessage = cashDraft?.frequency === 'monthly' ? contributionDayMessage(cashDraft.dayOfMonth) : ''
+  const contributionDayValidationMessage = cashDraft && cashDraft.frequency !== 'weekly' ? contributionDayMessage(cashDraft.dayOfMonth) : ''
   const isContributionDayInvalid = Boolean(contributionDayValidationMessage
     && !contributionDayValidationMessage.includes('없는 달') && !contributionDayValidationMessage.includes('윤년'))
-  const legacyDayMessage = contributionDraft?.frequency === 'monthly' ? contributionDayMessage(contributionDraft.dayOfMonth) : ''
+  const legacyDayMessage = contributionDraft?.frequency !== 'weekly' && contributionDraft ? contributionDayMessage(contributionDraft.dayOfMonth) : ''
   const collectingSettings = contributionSettingsMode === 'investment' && isLongTermInvestor
   const invalidCollecting = contributionDraft?.accounts.some(({ collecting = [] }) => collecting.length > 0 && (
     collecting.some(({ ticker, percent }) => !/^[A-Z0-9.^=-]+$/.test(ticker) || !Number.isInteger(percent) || percent < 1 || percent > 100)
@@ -8923,11 +8928,11 @@ function App() {
     }))
   }
 
-  function updateCashDraft(field: 'initialCapital' | 'frequency' | 'amount' | 'dayOfWeek' | 'dayOfMonth', value: string) {
+  function updateCashDraft(field: 'initialCapital' | 'frequency' | 'amount' | 'dayOfWeek' | 'dayOfMonth' | 'monthOfYear', value: string) {
     if (!cashAccount || cashAccount.id === 'default') {
       setContributionDraft((current) => current && ({ ...current, [field]: value }))
     } else if (field === 'frequency') {
-      updateCashAccount(cashAccount.id, { frequency: value === 'weekly' ? 'weekly' : 'monthly' })
+      updateCashAccount(cashAccount.id, { frequency: value === 'weekly' ? 'weekly' : value === 'yearly' ? 'yearly' : 'monthly' })
     } else {
       const amount = Number(value)
       if (Number.isSafeInteger(amount)) {
@@ -8976,7 +8981,7 @@ function App() {
   const saveContributionSettings = () => {
     if (!contributionDraft || isContributionSaveDisabled) return
     const dayMessage = contributionDayMessage(contributionDraft.dayOfMonth)
-    if (contributionSettingsMode === 'cash' && contributionDraft.frequency === 'monthly' && dayMessage && !dayMessage.includes('없는 달') && !dayMessage.includes('윤년')) {
+    if (contributionSettingsMode === 'cash' && contributionDraft.frequency !== 'weekly' && dayMessage && !dayMessage.includes('없는 달') && !dayMessage.includes('윤년')) {
       return
     }
     const dayOfMonth = Number(contributionDraft.dayOfMonth)
@@ -8988,7 +8993,7 @@ function App() {
       amount: parseAmountValue(contributionDraft.amount) ?? 0,
       dayOfWeek: Number(contributionDraft.dayOfWeek),
       dayOfMonth,
-      allocationByInvestmentType: {
+      monthOfYear: Number(contributionDraft.monthOfYear),      allocationByInvestmentType: {
         swing: normalizeAllocationSettings({
           slotCount: Number(contributionDraft.allocationByInvestmentType.swing.slotCount),
           slotPercents: contributionDraft.allocationByInvestmentType.swing.slotPercents.map((value) => Number(value)),
@@ -12064,10 +12069,19 @@ function App() {
                       options={[
                         { value: 'weekly', label: '매주' },
                         { value: 'monthly', label: '매월' },
+                        { value: 'yearly', label: '매년' },
                       ]}
                       onChange={(nextFrequency) => updateCashDraft('frequency', nextFrequency)}
                     />
                   </label>
+                  {cashDraft!.frequency === 'yearly' && (
+                    <label className="login-field">
+                      <span>입금 월 (필수)</span>
+                      <CustomSelect ariaLabel="입금 월" value={Number(cashDraft!.monthOfYear)}
+                        options={Array.from({ length: 12 }, (_, index) => ({ value: index + 1, label: `${index + 1}월` }))}
+                        onChange={(month) => updateCashDraft('monthOfYear', String(month))} />
+                    </label>
+                  )}
                   {cashDraft!.frequency === 'weekly' ? (
                     <label className="login-field">
                       <span>입금 요일 (필수)</span>
@@ -12097,7 +12111,7 @@ function App() {
                     </label>
                   )}
                   <label className="login-field">
-                    <span>{cashDraft!.frequency === 'monthly' ? '월 입금액' : '주 입금액'}</span>
+                    <span>{cashDraft!.frequency === 'yearly' ? '연 입금액' : cashDraft!.frequency === 'monthly' ? '월 입금액' : '주 입금액'}</span>
                     <input
                       inputMode="numeric"
                       value={amountInputValue(cashDraft!.amount)}
@@ -12142,7 +12156,7 @@ function App() {
                   }}>+ 계좌 추가</button>
                 </div>
                 <div className="allocation-rule-note">
-                  <span>{cashAccount.buyTiming} 매수 · {cashDraft?.frequency === 'monthly' ? `월 입금액 ${formatKrwAmount(Number(cashDraft.amount))}` : '주 단위 입금'}</span>
+                  <span>{cashDraft?.frequency === 'yearly' ? `매년 ${cashDraft.monthOfYear}월 ` : ''}{cashAccount.buyTiming} 매수 · {cashDraft?.frequency === 'yearly' ? `연 입금액 ${formatKrwAmount(Number(cashDraft.amount))}` : cashDraft?.frequency === 'monthly' ? `월 입금액 ${formatKrwAmount(Number(cashDraft.amount))}` : '주 단위 입금'}</span>
                 </div>
                 </div>
                 <div className="collecting-target-section">

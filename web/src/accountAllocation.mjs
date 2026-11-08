@@ -113,7 +113,7 @@ function scheduledContributionBetween(start, end, settings) {
   let total = 0
   for (let time = start.getTime() + 86400000; time <= end.getTime(); time += 86400000) {
     const day = new Date(time)
-    if (settings.frequency === 'weekly' ? day.getUTCDay() === settings.dayOfWeek : day.getUTCDate() === settings.dayOfMonth) total += settings.amount
+    if (settings.frequency === 'weekly' ? day.getUTCDay() === settings.dayOfWeek : day.getUTCDate() === settings.dayOfMonth && (settings.frequency !== 'yearly' || day.getUTCMonth() + 1 === settings.monthOfYear)) total += settings.amount
   }
   return total
 }
@@ -135,7 +135,8 @@ export function normalizeAccountSettings(candidate = {}) {
       slotPercents: Array.from({length: count}, (_, i) => legacy ? 10 : Math.min(100, number(raw.slotPercents?.[i], i < 10 ? 10 : 0))) }
   }
   return { initialCapital: number(candidate.initialCapital, 10000000), amount: number(candidate.amount, 1000000),
-    frequency: candidate.frequency === 'weekly' ? 'weekly' : 'monthly', dayOfWeek: number(candidate.dayOfWeek, 1),
+    frequency: candidate.frequency === 'weekly' ? 'weekly' : candidate.frequency === 'yearly' ? 'yearly' : 'monthly', dayOfWeek: number(candidate.dayOfWeek, 1),
+    monthOfYear: Math.min(12, Math.max(1, number(candidate.monthOfYear, 1))),
     dayOfMonth: number(candidate.dayOfMonth, 1), allocationByInvestmentType }
 }
 export function calculateAccountPortfolio(inputTrades, stocks = [], trends = [], rawSettings = {}, investmentType = 'swing', initialCashOverride, asOf = new Date().toISOString()) {

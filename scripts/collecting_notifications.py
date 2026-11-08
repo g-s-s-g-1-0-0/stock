@@ -61,7 +61,8 @@ def buy_signals(settings, stocks, technical, snapshot, now):
         if not account_id or timing not in {"월초", "중순", "월말"}:
             continue
         nickname = account.get("nickname") or "계좌"
-        monthly = settings.get("frequency") == "monthly" if account_id == "default" else account.get("frequency") != "weekly"
+        frequency = settings.get("frequency", "monthly") if account_id == "default" else account.get("frequency", "monthly")
+        deposit_month = settings.get("monthOfYear", 1) if account_id == "default" else account.get("monthOfYear", 1)
         amount = settings.get("amount", 0) if account_id == "default" else account.get("monthlyDeposit", 0)
         for target in account.get("collecting") or []:
             ticker = target.get("ticker")
@@ -77,7 +78,7 @@ def buy_signals(settings, stocks, technical, snapshot, now):
                 continue
             scheduled = {"월초": sessions[0], "중순": next(day for day in sessions if day.day >= 15), "월말": sessions[-1]}[timing]
             codes = []
-            if today == scheduled:
+            if today == scheduled and (frequency != "yearly" or today.month == deposit_month):
                 codes.append("1")
             if fear:
                 codes.append("2")
@@ -86,7 +87,7 @@ def buy_signals(settings, stocks, technical, snapshot, now):
                 codes.extend(code for source, code in (("1", "3"), ("2", "4")) if source in entry)
             for code in codes:
                 budget = f" · 계획 금액 {round(amount * percent / 100):,}원" if (
-                    code == "1" and monthly and isinstance(amount, int) and amount > 0
+                    code == "1" and frequency in {"monthly", "yearly"} and isinstance(amount, int) and amount > 0
                 ) else ""
                 key = f"{today}:{account_id}:{ticker}:{code}"
                 yield key, f"{nickname} · {ticker} · 전략 {code} {STRATEGIES[code]}{budget}"

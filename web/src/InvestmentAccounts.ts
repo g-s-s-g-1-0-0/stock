@@ -11,8 +11,9 @@ export type InvestmentAccount = {
   accountNumber: string
   type: typeof accountTypes[number]
   initialCapital?: number
-  frequency?: 'weekly' | 'monthly'
+  frequency?: 'weekly' | 'monthly' | 'yearly'
   dayOfWeek?: number
+  monthOfYear?: number
   dayOfMonth?: number
   collecting?: { ticker: string; percent: number }[]
   monthlyDeposit: number
@@ -36,8 +37,9 @@ export function normalizeInvestmentAccounts(value: unknown): InvestmentAccount[]
       accountNumber: typeof row.accountNumber === 'string' && /^[0-9-]{0,32}$/.test(row.accountNumber) ? row.accountNumber : '',
       type: row.type,
       initialCapital: Number.isSafeInteger(row.initialCapital) && row.initialCapital! >= 0 ? row.initialCapital : 0,
-      frequency: row.frequency === 'weekly' ? 'weekly' : 'monthly',
+      frequency: row.frequency === 'weekly' ? 'weekly' : row.frequency === 'yearly' ? 'yearly' : 'monthly',
       dayOfWeek: Number.isInteger(row.dayOfWeek) && row.dayOfWeek! >= 0 && row.dayOfWeek! <= 6 ? row.dayOfWeek : 1,
+      monthOfYear: Number.isInteger(row.monthOfYear) && row.monthOfYear! >= 1 && row.monthOfYear! <= 12 ? row.monthOfYear : 1,
       dayOfMonth: Number.isInteger(row.dayOfMonth) && row.dayOfMonth! >= 1 && row.dayOfMonth! <= 31 ? row.dayOfMonth : 1,
       collecting: Array.isArray(row.collecting) ? row.collecting.filter((item) =>
         item && typeof item.ticker === 'string' && /^[A-Z0-9.^=-]+$/.test(item.ticker)
