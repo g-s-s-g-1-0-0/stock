@@ -8978,7 +8978,7 @@ function App() {
 
   function openContributionSettings() {
     setCollectingAccountReturnId(null)
-    setCashAccountId(selectedPortfolioAccount.id)
+    setCashAccountId('')
     setContributionSettingsMode('cash')
     setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
   }
