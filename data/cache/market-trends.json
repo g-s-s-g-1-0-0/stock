@@ -2,28 +2,12 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-11-01T19:17:48+00:00",
-    "lastSuccessfulRun": "2026-11-01T19:17:48+00:00",
+    "updatedAt": "2026-11-08T14:51:46+00:00",
+    "lastSuccessfulRun": "2026-11-08T14:51:46+00:00",
     "analysisStatus": "news-verified",
     "failedReason": null
   },
   "rows": [
-    {
-      "date": "2026.05.04",
-      "ranks": [
-        "AI 인프라 | 데이터센터, 클라우드 컴퓨팅, AI 칩",
-        "기술 주 | 애플, 마이크로소프트, 인텔",
-        "에너지 | 원유, 가스, 전력인프라",
-        "자동차 | 전기자동차, 자율주행, 고급 자동차",
-        "헬스케어 | 의료 기술, 제약, 의료 서비스",
-        "금융 | 은행, 증권, 자산 관리",
-        "소비재 | 소매, 전자상거래, 소비자 기술",
-        "통신 | 5G, 네트워크, 통신 장비",
-        "산업 | 제조, 로봇, 산업 자동화",
-        "부동산 | 부동산 투자, 부동산 기술, 부동산 개발"
-      ],
-      "summary": "이번 주 전체 시장 분위기는 기술 주와 에너지 섹터의 상승세가 두드러졌으며, 금융과 헬스케어 섹터도 안정적인 모습을 보였습니다."
-    },
     {
       "date": "2026.05.11",
       "ranks": [
@@ -1176,6 +1160,225 @@
         "model": "openai/gpt-oss-20b",
         "attempts": 1,
         "newsCount": 60,
+        "sources": [
+          "https://feeds.marketwatch.com/marketwatch/topstories/",
+          "https://trends.google.com/trending/rss?geo=US",
+          "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+          "https://www.cnbc.com/id/19854910/device/rss/rss.html"
+        ],
+        "recoveryErrors": []
+      }
+    },
+    {
+      "date": "2026.11.09",
+      "ranks": [
+        "AI 반도체 | AI칩, GPU, HBM, ASIC, 첨단패키징",
+        "AI 인프라 | 데이터센터, 전력·냉각, GPU 클러스터, HPC, AI 클라우드",
+        "암호화폐·핀테크 | 스테이블코인, 비트코인, 블록체인, 이더리움, 디지털 자산",
+        "전력 인프라 | 전력망, 원전, SMR, 데이터센터 전력, 에너지 저장",
+        "양자컴퓨팅 | 양자컴퓨팅, 이온트랩, 양자 네트워크, 양자칩, 양자보안",
+        "반도체 | SK하이닉스, 삼성, TSMC, 소프트뱅크",
+        "전기차 | 테슬라, 사이버트럭, 사이버카",
+        "바이오헬스 | 의료주, 정책, 수익성",
+        "금융 | 버크셔, 주식분배, 배당주",
+        "소비재 | 펩시코, 가터에이드, 신제품"
+      ],
+      "summary": "인공지능과 반도체, 전기차 등 기술주가 주목받으며, 배당주와 소비재, 우주항공 등 다양한 섹터가 투자 관심을 끌고 있습니다.",
+      "newsEvidence": [
+        {
+          "sector": "AI 인프라",
+          "articles": [
+            {
+              "title": "Anthropic IPO meets AI backlash after midterms show stinging rebuke of data centers",
+              "url": "https://www.cnbc.com/2026/11/07/anthropic-ipo-ai-data-center-backlash.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-07T13:00:01+00:00"
+            },
+            {
+              "title": "Cramer’s week ahead: AI data center stocks face another hurdle and so does the Fed",
+              "url": "https://www.cnbc.com/2026/11/06/cramer-coreweave-nebius-earnings.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T23:13:10+00:00"
+            },
+            {
+              "title": "Investors brace for lower Anthropic valuation, calling $1.5 trillion a 'stretch'",
+              "url": "https://www.cnbc.com/2026/11/06/investors-brace-for-anthropic-valuation-1point5-trillion-a-stretch.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T21:07:07+00:00"
+            },
+            {
+              "title": "OpenAI will keep investing in AI data centers despite election results, CFO tells CNBC",
+              "url": "https://www.cnbc.com/2026/11/06/open-ai-data-centers-election.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T22:25:58+00:00"
+            },
+            {
+              "title": "AI stocks hammered by midterm shock as data center buildout becomes a 'war of attrition'",
+              "url": "https://www.cnbc.com/2026/11/06/ai-data-center-midterms-selloff.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T20:44:13+00:00"
+            },
+            {
+              "title": "Nasdaq sell-off batters Asian chip stocks as SK Hynix, Samsung, Softbank, TSMC tumble",
+              "url": "https://www.cnbc.com/2026/11/06/tech-stocks-sk-hynix-samsung-softbank.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T11:06:58+00:00"
+            },
+            {
+              "title": "Jim Cramer explains why no AI stock seems safe from the market carnage",
+              "url": "https://www.cnbc.com/2026/11/05/jim-cramer-ai-stocks-data-center-uncertainty.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-05T23:25:04+00:00"
+            },
+            {
+              "title": "Jim Cramer says the AI sell-off isn't over, but it isn't another dot-com crash",
+              "url": "https://www.cnbc.com/2026/11/05/jim-cramer-ai-stocks-sell-off.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-05T23:17:51+00:00"
+            },
+            {
+              "title": "Magnificent 7 loses $1 trillion. The most eye-popping stats from Thursday's tech stock plunge",
+              "url": "https://www.cnbc.com/2026/11/05/stock-market-selloff-ai-fears.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-05T23:39:32+00:00"
+            },
+            {
+              "title": "Elon Musk's Tesla and SpaceX lose over $420 billion in combined market cap after midterms",
+              "url": "https://www.cnbc.com/2026/11/05/tesla-spacex-stocks-fall-after-2026-midterms.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T03:20:43+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "반도체",
+          "articles": [
+            {
+              "title": "Nasdaq sell-off batters Asian chip stocks as SK Hynix, Samsung, Softbank, TSMC tumble",
+              "url": "https://www.cnbc.com/2026/11/06/tech-stocks-sk-hynix-samsung-softbank.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T11:06:58+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "전기차",
+          "articles": [
+            {
+              "title": "Tesla to wind down Cybertruck production in Texas next year to ramp Cybercab, Musk says",
+              "url": "https://www.cnbc.com/2026/11/06/tesla-cybertruck-texas-musk.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T15:06:11+00:00"
+            },
+            {
+              "title": "Elon Musk's Tesla and SpaceX lose over $420 billion in combined market cap after midterms",
+              "url": "https://www.cnbc.com/2026/11/05/tesla-spacex-stocks-fall-after-2026-midterms.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T03:20:43+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "바이오헬스",
+          "articles": [
+            {
+              "title": "Why the prognosis for healthcare stocks is uncertain ahead of Congress’ new makeup",
+              "url": "https://www.cnbc.com/2026/11/07/healthcare-stocks-may-face-trouble-due-to-midterm-results.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-07T16:02:33+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "금융",
+          "articles": [
+            {
+              "title": "Berkshire Hathaway more than doubles buybacks in third quarter as earnings decline",
+              "url": "https://www.cnbc.com/2026/11/07/berkshire-hathaway-q3-2026-earnings-buybacks.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-07T15:23:46+00:00"
+            },
+            {
+              "title": "Berkshire shares surge as Wall Street swoons amid AI fears",
+              "url": "https://www.cnbc.com/2026/11/07/berkshire-shares-surge-as-wall-street-swoons-amid-ai-fears.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-07T14:06:20+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "소비재",
+          "articles": [
+            {
+              "title": "Poppi founders are going after PepsiCo's Gatorade with new beverage startup Jetty",
+              "url": "https://www.cnbc.com/2026/11/08/poppi-founders-jetty-hydration-gatorade.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-08T14:00:01+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "소프트웨어",
+          "articles": [
+            {
+              "title": "Meta chief strategy officer Dave Wehner leaves to join AI infrastructure startup Fireworks as CFO",
+              "url": "https://www.cnbc.com/2026/11/07/dave-wehner-meta-fireworks-cfo.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-07T22:01:17+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "우주항공",
+          "articles": [
+            {
+              "title": "SpaceX says Google exec Don Harrison has resigned from its board",
+              "url": "https://www.cnbc.com/2026/11/06/tesdonald-harrison.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T22:30:22+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "에너지",
+          "articles": [
+            {
+              "title": "What midterm election blue wave rebuke of Trump means for renewable energy",
+              "url": "https://www.cnbc.com/2026/11/07/midterm-election-blue-wave-trump-renewable-energy.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-07T14:33:32+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "인재채용",
+          "articles": [
+            {
+              "title": "AI is speeding up recruitment — and putting agency fees under pressure",
+              "url": "https://www.cnbc.com/2026/11/08/ai-recruitment-agency-fees.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-08T06:00:01+00:00"
+            }
+          ]
+        }
+      ],
+      "newsRanks": [
+        "AI 인프라 | AI 데이터센터, 채굴, 투자",
+        "반도체 | SK하이닉스, 삼성, TSMC, 소프트뱅크",
+        "전기차 | 테슬라, 사이버트럭, 사이버카",
+        "바이오헬스 | 의료주, 정책, 수익성",
+        "금융 | 버크셔, 주식분배, 배당주",
+        "소비재 | 펩시코, 가터에이드, 신제품",
+        "소프트웨어 | 메타, AI 인프라 스타트업, Fireworks",
+        "우주항공 | 스페이스X, 보드, Google",
+        "에너지 | 미국 중간선거, 재생에너지, 정책",
+        "인재채용 | AI 리크루팅, 에이전시, 수수료"
+      ],
+      "analysis": {
+        "status": "news-verified",
+        "model": "openai/gpt-oss-20b",
+        "attempts": 1,
+        "newsCount": 63,
         "sources": [
           "https://feeds.marketwatch.com/marketwatch/topstories/",
           "https://trends.google.com/trending/rss?geo=US",
