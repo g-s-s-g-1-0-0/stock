@@ -7579,3 +7579,21 @@ html.modal-scroll-lock body {
   -webkit-text-fill-color: var(--text-h);
   cursor: default;
 }
+
+.account-settings-fields:disabled .custom-select-trigger em {
+  display: none;
+}
+
+.portfolio-read-only .collecting-target-row {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.account-settings-fields:disabled input[type='number'] {
+  appearance: textfield;
+}
+
+.account-settings-fields:disabled input::-webkit-inner-spin-button,
+.account-settings-fields:disabled input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
