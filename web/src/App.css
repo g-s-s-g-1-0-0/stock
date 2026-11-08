@@ -7489,3 +7489,34 @@ html.modal-scroll-lock body {
 .account-connection-notice p {
   margin: 0;
 }
+
+.cash-account-layout {
+  display: grid;
+  gap: 20px;
+}
+
+.cash-account-layout .cash-account-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 12px;
+  margin: 0;
+}
+
+.cash-account-layout .cash-account-schedule {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cash-account-layout .cash-account-schedule.yearly {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 600px) {
+  .cash-account-layout .cash-account-schedule.yearly {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 380px) {
+  .cash-account-layout .cash-account-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

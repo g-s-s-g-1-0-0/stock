@@ -12057,7 +12057,8 @@ function App() {
                   </div>
                 ) : (
                 <>
-                <div className="cash-account-fields">
+                <div className="cash-account-layout">
+                  <div className="cash-account-fields cash-account-identity">
                   {cashAccount && <>
                     <label className="login-field">
                       <span>닉네임 (필수)</span>
@@ -12081,6 +12082,8 @@ function App() {
                         onChange={(type) => updateCashAccount(cashAccount.id, { type })} />
                     </label>
                   </>}
+                  </div>
+                  <div className="cash-account-fields cash-account-money">
                   <label className="login-field">
                     <span>초기 자금</span>
                     <input
@@ -12089,6 +12092,22 @@ function App() {
                       onChange={(event) => updateCashDraft('initialCapital', amountDraftValue(event.target.value))}
                     />
                   </label>
+                  <label className="login-field">
+                    <span>{cashDraft!.frequency === 'yearly' ? '연 입금액' : cashDraft!.frequency === 'monthly' ? '월 입금액' : '주 입금액'}</span>
+                    <input
+                      inputMode="numeric"
+                      value={amountInputValue(cashDraft!.amount)}
+                      onChange={(event) => updateCashDraft('amount', amountDraftValue(event.target.value))}
+                    />
+                    {cashFxRate > 0 && Number(cashDraft!.amount) > 0 && (
+                      <span className="field-message field-message-note">
+                        약 {(Number(cashDraft!.amount) / cashFxRate).toLocaleString('ko-KR', { style: 'currency', currency: 'USD' })}
+                        {cashFxDate && ` · ${cashFxDate} 기준`}
+                      </span>
+                    )}
+                  </label>
+                  </div>
+                  <div className={`cash-account-fields cash-account-schedule ${cashDraft!.frequency === 'yearly' ? 'yearly' : ''}`}>
                   <label className="login-field">
                     <span>입금 주기 (필수)</span>
                     <CustomSelect
@@ -12138,20 +12157,6 @@ function App() {
                       )}
                     </label>
                   )}
-                  <label className="login-field">
-                    <span>{cashDraft!.frequency === 'yearly' ? '연 입금액' : cashDraft!.frequency === 'monthly' ? '월 입금액' : '주 입금액'}</span>
-                    <input
-                      inputMode="numeric"
-                      value={amountInputValue(cashDraft!.amount)}
-                      onChange={(event) => updateCashDraft('amount', amountDraftValue(event.target.value))}
-                    />
-                    {cashFxRate > 0 && Number(cashDraft!.amount) > 0 && (
-                      <span className="field-message field-message-note">
-                        약 {(Number(cashDraft!.amount) / cashFxRate).toLocaleString('ko-KR', { style: 'currency', currency: 'USD' })}
-                        {cashFxDate && ` · ${cashFxDate} 기준`}
-                      </span>
-                    )}
-                  </label>
                   {cashAccount && (
                     <label className="login-field">
                       <span>매수 시점 (필수)</span>
@@ -12160,7 +12165,7 @@ function App() {
                         onChange={(buyTiming) => updateCashAccount(cashAccount.id, { buyTiming })} />
                       <span className="field-message field-message-note">{buyTimings[cashAccount.buyTiming]}</span>
                     </label>
-                  )}
+                  )}                  </div>
                 </div>
 
                 </>
