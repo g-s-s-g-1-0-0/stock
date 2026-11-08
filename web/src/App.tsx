@@ -9019,6 +9019,9 @@ function App() {
       },
     }
     setContributionSettings(nextSettings)
+    if (collectingSettings && cashAccount) {
+      setSelectedPortfolioAccountId(cashAccount.id)
+    }
     void persistPortfolioState(personalTradeLogs, nextSettings)
     setContributionDraft(null)
   }
@@ -12190,7 +12193,7 @@ function App() {
               </>
             ) : collectingSettings && cashAccount ? (
               <>
-                <h3>가치투자 모으기</h3>
+                <h3>주식 모으기</h3>
                 <p>계좌별로 꾸준히 매수할 종목과 비중을 정하세요.</p>
                 <div className="collecting-account-section">
                 <div className="cash-account-picker">
