@@ -7153,7 +7153,6 @@ function App() {
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
   const [cashAccountId, setCashAccountId] = useState('')
   const [selectedPortfolioAccountId, setSelectedPortfolioAccountId] = useState('default')
-  const [portfolioAccountPickerOpen, setPortfolioAccountPickerOpen] = useState(false)
   const [collectingAccountReturnId, setCollectingAccountReturnId] = useState<string | null>(null)
   const [collectingImportTickers, setCollectingImportTickers] = useState<string[] | null>(null)
   const [cashAccountDeleteOpen, setCashAccountDeleteOpen] = useState(false)
@@ -9020,6 +9019,9 @@ function App() {
       },
     }
     setContributionSettings(nextSettings)
+    if (contributionSettingsMode === 'cash' && cashAccount) {
+      setSelectedPortfolioAccountId(cashAccount.id)
+    }
     void persistPortfolioState(personalTradeLogs, nextSettings)
     setContributionDraft(null)
   }
@@ -9994,10 +9996,6 @@ function App() {
   }
 
   function closeTopModal() {
-    if (portfolioAccountPickerOpen) {
-      setPortfolioAccountPickerOpen(false)
-      return
-    }
     if (collectingImportTickers !== null) {
       setCollectingImportTickers(null)
       return
@@ -10843,7 +10841,7 @@ function App() {
           <div className="asset-summary-box" aria-label="현재 자산 요약">
             <AssetSummaryItem item={{
               label: '계좌', value: selectedPortfolioAccount.nickname, clickable: true,
-              action: () => setPortfolioAccountPickerOpen(true),
+              action: openContributionSettings,
             }} />
             {assetSummaryItems.map((item) => <AssetSummaryItem item={item} key={item.label} />)}
           </div>
@@ -12032,26 +12030,6 @@ function App() {
           </div>
         </div>
       )}
-      {portfolioAccountPickerOpen && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => setPortfolioAccountPickerOpen(false))}>
-          <div aria-labelledby="portfolio-account-picker-title" aria-modal="true" className="confirm-modal" role="dialog">
-            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setPortfolioAccountPickerOpen(false)}>×</button>
-            <h3 id="portfolio-account-picker-title">계좌 선택</h3>
-            <div className="cash-account-list">
-              {portfolioAccounts.map((account) => (
-                <button className="custom-select-trigger" type="button" key={account.id}
-                  aria-pressed={selectedPortfolioAccount.id === account.id} onClick={() => {
-                    setSelectedPortfolioAccountId(account.id)
-                    setPortfolioAccountPickerOpen(false)
-                  }}>
-                  <span>{account.nickname}</span>
-                  {selectedPortfolioAccount.id === account.id && <strong aria-hidden="true">✓</strong>}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
       {contributionDraft && (
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, collectingAccountReturnId !== null ? cancelCollectingAccountAdd : () => setContributionDraft(null))}>
           <div aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
@@ -12064,7 +12042,12 @@ function App() {
                     <div className="cash-account-list" aria-label="계좌 목록">
                       {contributionDraft.accounts.map((account) => (
                         <button className="custom-select-trigger cash-account-row" key={account.id} type="button"
-                          onClick={() => setCashAccountId(account.id)}>
+                          onClick={() => {
+                            setCashAccountId(account.id)
+                            if (portfolioAccounts.some(({ id }) => id === account.id)) {
+                              setSelectedPortfolioAccountId(account.id)
+                            }
+                          }}>
                           <strong>{account.nickname.trim() || '새 계좌'}</strong>
                           <small>{account.type}</small>
                         </button>
