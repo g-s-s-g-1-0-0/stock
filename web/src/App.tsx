@@ -3957,8 +3957,8 @@ function manualSwingEntryBlockReason(
 function contributionSettingsDraftFrom(settings: ContributionSettings): ContributionSettingsDraft {
   return {
     accounts: settings.accounts?.some(({ id }) => id === 'default')
-      ? settings.accounts
-      : [{ id: 'default', nickname: '기본 계좌', accountNumber: '', type: '일반증권', monthlyDeposit: 0, buyTiming: '월초' }, ...(settings.accounts ?? [])],
+      ? settings.accounts.map((account) => ({ ...account, collecting: account.collecting?.map((target) => ({ ...target })) }))
+      : [{ id: 'default', nickname: '기본 계좌', accountNumber: '', type: '일반증권', monthlyDeposit: 0, buyTiming: '월초' }, ...(settings.accounts ?? []).map((account) => ({ ...account, collecting: account.collecting?.map((target) => ({ ...target })) }))],
     initialCapital: String(settings.initialCapital),
     frequency: settings.frequency,
     amount: String(settings.amount),
@@ -9019,9 +9019,6 @@ function App() {
       },
     }
     setContributionSettings(nextSettings)
-    if (contributionSettingsMode === 'cash' && cashAccount) {
-      setSelectedPortfolioAccountId(cashAccount.id)
-    }
     void persistPortfolioState(personalTradeLogs, nextSettings)
     setContributionDraft(null)
   }
