@@ -7520,3 +7520,48 @@ html.modal-scroll-lock body {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.cash-account-row-name {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  min-width: 0;
+}
+
+.cash-account-row-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.cash-account-row .cash-account-icon-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.cash-account-icon-button:hover,
+.cash-account-icon-button[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.cash-account-icon-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cash-account-row.custom-select-trigger {
+  height: auto;
+  min-height: 50px;
+  padding: 8px 12px;
+  cursor: default;
+}

@@ -12041,16 +12041,36 @@ function App() {
                   <div className="cash-account-picker">
                     <div className="cash-account-list" aria-label="계좌 목록">
                       {contributionDraft.accounts.map((account) => (
-                        <button className="custom-select-trigger cash-account-row" key={account.id} type="button"
-                          onClick={() => {
-                            setCashAccountId(account.id)
-                            if (portfolioAccounts.some(({ id }) => id === account.id)) {
-                              setSelectedPortfolioAccountId(account.id)
-                            }
-                          }}>
-                          <strong>{account.nickname.trim() || '새 계좌'}</strong>
-                          <small>{account.type}</small>
-                        </button>
+                        <div className="custom-select-trigger cash-account-row" key={account.id}>
+                          <div className="cash-account-row-name">
+                            <strong>{account.nickname.trim() || '새 계좌'}</strong>
+                            <small>{account.type}</small>
+                          </div>
+                          <div className="cash-account-row-actions">
+                            <button className="cash-account-icon-button" type="button"
+                              aria-label={`${account.nickname} 계좌 선택`} title="계좌 선택"
+                              disabled={!portfolioAccounts.some(({ id }) => id === account.id)}
+                              aria-pressed={selectedPortfolioAccount.id === account.id}
+                              onClick={() => {
+                                setSelectedPortfolioAccountId(account.id)
+                                setContributionDraft(null)
+                              }}>
+                              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="m5 12 4 4L19 6" />
+                              </svg>
+                            </button>
+                            <button className="cash-account-icon-button" type="button"
+                              aria-label={`${account.nickname} 계좌 수정`} title="계좌 수정"
+                              onClick={() => setCashAccountId(account.id)}>
+                              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="m16 3 5 5-12 12-6 1 1-6L16 3Z" />
+                                <path d="m14 5 5 5" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
                       ))}
                     </div>
                     <button className="add-stock-button" disabled={cashAccountLimit} type="button" onClick={addCashAccount}>+ 계좌 추가</button>
