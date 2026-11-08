@@ -2992,6 +2992,17 @@ def send_opinion_notifications(
             clear_runtime_reset()
         return 0
 
+    collecting_owners = {
+        row.get("owner_id")
+        for row in supabase_request("/rest/v1/user_settings?select=owner_id,contribution_settings")
+        if isinstance(row.get("contribution_settings"), dict)
+        and row["contribution_settings"].get("collectingSince")
+        and any(account.get("collecting") for account in row["contribution_settings"].get("accounts", []))
+    }
+    recipients = [
+        recipient for recipient in recipients
+        if recipient.investment_type != "long_term" or recipient.owner_id not in collecting_owners
+    ]
     watchlists = load_watchlists()
     personal_open_trades = load_personal_open_trades_by_owner()
     system_open_trades = [

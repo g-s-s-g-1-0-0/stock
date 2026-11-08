@@ -45,7 +45,37 @@ class CollectingNotificationsTest(TestCase):
             "record_sent_keys": lambda _, keys, **__: sent.update(keys),
             "append_notification_footer": lambda body, *_: body,
         }), patch.object(collecting, "buy_signals", return_value=[("2026-11-02:default:VOO:1", "계좌 · VOO")]),                 patch.object(notifications, "send_notification") as send:
-            self.assertEqual(collecting.send_collecting_notifications(self.now), 2)
+            self.assertEqual(collecting.send_collecting_notifications(self.now), 1)
             self.assertEqual(collecting.send_collecting_notifications(self.now), 0)
-            self.assertEqual([call.args[1] for call in send.call_args_list], ["가치투자 매수 신호", "가치투자 매수 기록"])
+            self.assertEqual([call.args[1] for call in send.call_args_list], ["가치투자 계좌별 투자 알림"])
             self.assertTrue(all("owner" not in key and "VOO" not in key for key in sent))
+
+    def test_conditions_send_once_then_release_with_account_labels(self):
+        recipient = notifications.Recipient("owner", "example@example.invalid", False, {})
+        state = {}
+        stock = {"VOO": {"market": "US", "opinion": "관망"}}
+        snapshot = {"VIX (변동성지수)": "20", "CNN 공포·탐욕지수": "50"}
+        def write(_, value):
+            state.clear()
+            state.update(value)
+        with patch.multiple(notifications, **{
+            "load_recipients": lambda: [recipient],
+            "supabase_request": lambda _: [{"contribution_settings": self.settings}],
+            "search_universe_rows_by_ticker": lambda _: {},
+            "stock_rows_by_ticker": lambda _: stock,
+            "technical_rows_by_ticker": lambda: {},
+            "market_snapshot_map": lambda: snapshot,
+            "read_sent_keys": lambda _: set(),
+            "record_sent_keys": lambda *_, **__: None,
+            "read_json": lambda _: dict(state),
+            "write_json": write,
+            "append_notification_footer": lambda body, *_: body,
+        }), patch.object(collecting, "monthly_sessions", return_value=(date(2026, 11, 2), date(2026, 11, 16))),                 patch.object(notifications, "send_notification") as send:
+            # Mid-month date avoids the monthly scheduled signal.
+            self.settings["accounts"][0]["buyTiming"] = "중순"
+            self.assertEqual(collecting.send_collecting_notifications(self.now), 1)
+            self.assertEqual(collecting.send_collecting_notifications(self.now), 0)
+            snapshot["VIX (변동성지수)"] = "19"
+            self.assertEqual(collecting.send_collecting_notifications(self.now), 1)
+            self.assertIn("매수 조건 해제", send.call_args.args[2])
+            self.assertIn("모으기 · VOO", send.call_args.args[2])

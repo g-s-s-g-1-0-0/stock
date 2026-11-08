@@ -7153,6 +7153,7 @@ function App() {
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
   const [cashAccountId, setCashAccountId] = useState('')
   const [selectedPortfolioAccountId, setSelectedPortfolioAccountId] = useState('default')
+  const [portfolioAccountPickerOpen, setPortfolioAccountPickerOpen] = useState(false)
   const [collectingAccountReturnId, setCollectingAccountReturnId] = useState<string | null>(null)
   const [collectingImportTickers, setCollectingImportTickers] = useState<string[] | null>(null)
   const [cashAccountDeleteOpen, setCashAccountDeleteOpen] = useState(false)
@@ -9993,6 +9994,10 @@ function App() {
   }
 
   function closeTopModal() {
+    if (portfolioAccountPickerOpen) {
+      setPortfolioAccountPickerOpen(false)
+      return
+    }
     if (collectingImportTickers !== null) {
       setCollectingImportTickers(null)
       return
@@ -10836,20 +10841,11 @@ function App() {
           </div>
 
           <div className="asset-summary-box" aria-label="현재 자산 요약">
-            {assetSummaryItems.map((item, index) => index === 0 ? (
-              <div className="asset-summary-item account-cash-summary" key={item.label}>
-                <div className="account-cash-heading">
-                  <span>{item.label}</span>
-                  <CustomSelect ariaLabel="표시할 계좌" value={selectedPortfolioAccount.id}
-                    options={portfolioAccounts.map(({ id, nickname }) => ({ value: id, label: nickname }))}
-                    onChange={setSelectedPortfolioAccountId} />
-                </div>
-                {item.clickable ? (
-                  <button className="asset-summary-value asset-summary-button account-cash-value" type="button"
-                    onClick={item.action} aria-label="보유 현금 설정">{item.value}</button>
-                ) : <strong className="asset-summary-value">{item.value}</strong>}
-              </div>
-            ) : <AssetSummaryItem item={item} key={item.label} />)}
+            <AssetSummaryItem item={{
+              label: '계좌', value: selectedPortfolioAccount.nickname, clickable: true,
+              action: () => setPortfolioAccountPickerOpen(true),
+            }} />
+            {assetSummaryItems.map((item) => <AssetSummaryItem item={item} key={item.label} />)}
           </div>
 
           <SheetScrollSurface className="trading-log-scroll" wheelRef={tradingLogWheelRef} key={`trades-${homeSheetResetKey}`}>
@@ -12032,6 +12028,26 @@ function App() {
               <button className="modal-confirm danger-confirm" disabled={isDeletingAccount} type="button" onClick={() => void deleteAccount()}>
                 {isDeletingAccount ? '탈퇴 처리 중' : '회원탈퇴'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {portfolioAccountPickerOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => setPortfolioAccountPickerOpen(false))}>
+          <div aria-labelledby="portfolio-account-picker-title" aria-modal="true" className="confirm-modal" role="dialog">
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setPortfolioAccountPickerOpen(false)}>×</button>
+            <h3 id="portfolio-account-picker-title">계좌 선택</h3>
+            <div className="cash-account-list">
+              {portfolioAccounts.map((account) => (
+                <button className="custom-select-trigger" type="button" key={account.id}
+                  aria-pressed={selectedPortfolioAccount.id === account.id} onClick={() => {
+                    setSelectedPortfolioAccountId(account.id)
+                    setPortfolioAccountPickerOpen(false)
+                  }}>
+                  <span>{account.nickname}</span>
+                  {selectedPortfolioAccount.id === account.id && <strong aria-hidden="true">✓</strong>}
+                </button>
+              ))}
             </div>
           </div>
         </div>

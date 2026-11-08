@@ -119,10 +119,42 @@ def send_collecting_notifications(now: datetime | None = None) -> int:
         if not rows:
             continue
         settings = rows[0].get("contribution_settings") or {}
-        signals = [
-            (private_key(key[:10], "signal", owner_id, key), label)
-            for key, label in buy_signals(settings, stocks, technical, snapshot, now)
-        ]
+        state = notifications.read_json(notifications.NOTIFICATION_STATE)
+        active = set(state.get("collectingActive", [])) if isinstance(state, dict) else set()
+        next_active = set(active)
+        signals = []
+        current = list(buy_signals(settings, stocks, technical, snapshot, now))
+        for key, label in current:
+            day, account_id, ticker, code = key.split(":")
+            if code == "1":
+                signals.append((private_key(day, "signal", owner_id, key), label))
+                continue
+            identity = private_key("active", owner_id, account_id, ticker, code)
+            if identity not in active:
+                signals.append((private_key(now.isoformat(), "signal", owner_id, key), label + " · 매수 조건 충족"))
+            next_active.add(identity)
+        current_conditions = {tuple(key.split(":")[1:]) for key, _ in current}
+        for account in settings.get("accounts") or []:
+            for target in account.get("collecting") or []:
+                ticker = target.get("ticker")
+                stock = stocks.get(ticker, {})
+                market = stock.get("market")
+                if market not in {"KR", "US"}:
+                    continue
+                local = now.astimezone(notifications.KST if market == "KR" else notifications.ET)
+                if local.date() not in monthly_sessions(market, local.year, local.month) or local.hour < (9 if market == "KR" else 4):
+                    continue
+                for code in ("2", "3", "4"):
+                    if code == "2" and (metric(snapshot, "VIX (변동성지수)") is None or metric(snapshot, "CNN 공포·탐욕지수") is None):
+                        continue
+                    if code in {"3", "4"} and stock.get("opinion") not in {"매수", "관망", "매도"}:
+                        continue
+                    account_id = account.get("id", "")
+                    identity = private_key("active", owner_id, account_id, ticker, code)
+                    if identity in active and (account_id, ticker, code) not in current_conditions:
+                        label = f"{account.get('nickname') or '계좌'} · {ticker} · 전략 {code} {STRATEGIES[code]} · 매수 조건 해제"
+                        signals.append((private_key(now.isoformat(), "release", identity), label))
+                        next_active.discard(identity)
         fills = []
         for trade in rows[0].get("personal_trade_logs") or []:
             recorded = date_time(trade.get("collectingRecordedAt"))
@@ -136,18 +168,25 @@ def send_collecting_notifications(now: datetime | None = None) -> int:
             strategy = {"1. 시장 공포 저점 진입": "3. 시장 공포 저점 진입",
                         "2. 상승 추세 이평선 눌림목": "4. 상승 추세 이평선 눌림목"}.get(strategy, strategy)
             fills.append((key, f"{trade.get('investmentAccountName') or '계좌'} · {trade.get('ticker')} · {strategy} · {amount:,.0f}원"))
-        for title, entries, description in (
-            ("가치투자 매수 신호", signals, "매수 검토 알림입니다. 실제 매수 후 트레이딩 로그에 기록해 주세요."),
-            ("가치투자 매수 기록", fills, "트레이딩 로그에 저장한 매수 내역입니다."),
-        ):
-            pending = {key: label for key, label in entries if key not in sent}
-            if not pending:
-                continue
-            body = f"<p>{escape(description)}</p><ul>" + "".join(f"<li>{escape(label)}</li>" for label in pending.values()) + "</ul>"
-            notifications.send_notification(recipient, title, notifications.append_notification_footer(body, recipient, "opinionChangeEmail"))
+        pending_signals = {key: label for key, label in signals if key not in sent}
+        pending_fills = {key: label for key, label in fills if key not in sent}
+        pending = pending_signals | pending_fills
+        if pending:
+            sections = []
+            for title, entries in (("매수 신호 변경", pending_signals), ("저장한 매수 기록", pending_fills)):
+                if entries:
+                    sections.append(f"<h3>{title}</h3><ul>" + "".join(f"<li>{escape(label)}</li>" for label in entries.values()) + "</ul>")
+            body = "<p>계좌별 투자 알림입니다. 매수 신호를 확인한 뒤 실제 매수 내역을 기록해 주세요.</p>" + "".join(sections)
+            notifications.send_notification(recipient, "가치투자 계좌별 투자 알림", notifications.append_notification_footer(body, recipient, "opinionChangeEmail"))
             notifications.record_sent_keys("collecting", set(pending), limit=20000)
             sent.update(pending)
             count += 1
+        if next_active != active:
+            state = notifications.read_json(notifications.NOTIFICATION_STATE)
+            if not isinstance(state, dict):
+                state = {}
+            state["collectingActive"] = sorted(next_active)
+            notifications.write_json(notifications.NOTIFICATION_STATE, state)
     return count
 
 

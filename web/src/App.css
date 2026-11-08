@@ -686,7 +686,7 @@
   display: grid;
   position: relative;
   z-index: 20;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin: -4px 0 12px;
   overflow: visible;
@@ -7488,56 +7488,4 @@ html.modal-scroll-lock body {
 
 .account-connection-notice p {
   margin: 0;
-}
-
-.account-cash-summary {
-  align-content: start;
-}
-
-.account-cash-heading {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  min-width: 0;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 800;
-}
-
-.account-cash-heading > span {
-  flex-shrink: 0;
-}
-
-.account-cash-heading > .custom-select {
-  flex: 1;
-  min-width: 0;
-}
-
-.account-cash-heading .custom-select-trigger {
-  min-height: 0;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  gap: 4px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-}
-
-.account-cash-heading .custom-select-trigger span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.account-cash-heading .custom-select-trigger em {
-  width: 5px;
-  height: 5px;
-}
-
-.account-cash-value {
-  width: 100%;
-  padding: 0;
-  text-align: left;
-  cursor: pointer;
 }
