@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom'
 import type { User } from '@supabase/supabase-js'
 import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, saveTradeLogs, type AppData, type RuntimeMeta } from './api'
 import { UsageDashboard } from './UsageDashboard'
-import { accountTypes, buyTimings, normalizeInvestmentAccounts, type InvestmentAccount } from './InvestmentAccounts'
+import { accountTypes, brokerages, buyTimings, normalizeInvestmentAccounts, type InvestmentAccount } from './InvestmentAccounts'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 import { isUsagePage, seoulDate } from './usageMetrics'
 import { compareTradeSignals } from './tradeOrder'
@@ -212,7 +212,7 @@ type ManualHoldingDraft = {
   strategy: string
 }
 
-type ContributionFrequency = 'weekly' | 'monthly'
+type ContributionFrequency = 'weekly' | 'monthly' | 'yearly'
 type ContributionSettingsMode = 'cash' | 'investment'
 
 type AllocationSettings = {
@@ -228,6 +228,7 @@ type ContributionSettings = {
   frequency: ContributionFrequency
   amount: number
   dayOfWeek: number
+  monthOfYear?: number
   dayOfMonth: number
   allocationByInvestmentType: Record<InvestmentType, AllocationSettings>
 }
@@ -238,6 +239,7 @@ type ContributionSettingsDraft = {
   frequency: ContributionFrequency
   amount: string
   dayOfWeek: string
+  monthOfYear: string
   dayOfMonth: string
   allocationByInvestmentType: Record<InvestmentType, {
     slotCount: string
@@ -1243,7 +1245,7 @@ function normalizeAllocationSettings(value: unknown, investmentType: InvestmentT
 function normalizeContributionSettings(value: unknown): ContributionSettings {
   const candidate = value as Partial<ContributionSettings> | null
   if (!candidate) return DEFAULT_CONTRIBUTION_SETTINGS
-  const frequency = candidate.frequency === 'weekly' || candidate.frequency === 'monthly' ? candidate.frequency : DEFAULT_CONTRIBUTION_SETTINGS.frequency
+  const frequency = candidate.frequency === 'weekly' || candidate.frequency === 'monthly' || candidate.frequency === 'yearly' ? candidate.frequency : DEFAULT_CONTRIBUTION_SETTINGS.frequency
   const initialCapital = typeof candidate.initialCapital === 'number' && Number.isFinite(candidate.initialCapital)
     ? Math.max(0, Math.round(candidate.initialCapital))
     : DEFAULT_CONTRIBUTION_SETTINGS.initialCapital
@@ -1258,6 +1260,7 @@ function normalizeContributionSettings(value: unknown): ContributionSettings {
     frequency,
     amount,
     dayOfWeek: Math.min(6, Math.max(0, Number(candidate.dayOfWeek) || DEFAULT_CONTRIBUTION_SETTINGS.dayOfWeek)),
+    monthOfYear: Math.min(12, Math.max(1, Number(candidate.monthOfYear) || 1)),
     dayOfMonth: Math.min(31, Math.max(1, Number(candidate.dayOfMonth) || DEFAULT_CONTRIBUTION_SETTINGS.dayOfMonth)),
     allocationByInvestmentType: {
       swing: normalizeAllocationSettings(candidate.allocationByInvestmentType?.swing, 'swing'),
@@ -3954,12 +3957,13 @@ function manualSwingEntryBlockReason(
 function contributionSettingsDraftFrom(settings: ContributionSettings): ContributionSettingsDraft {
   return {
     accounts: settings.accounts?.some(({ id }) => id === 'default')
-      ? settings.accounts
-      : [{ id: 'default', nickname: '기본 계좌', accountNumber: '', type: '일반증권', monthlyDeposit: 0, buyTiming: '월초' }, ...(settings.accounts ?? [])],
+      ? settings.accounts.map((account) => ({ ...account, collecting: account.collecting?.map((target) => ({ ...target })) }))
+      : [{ id: 'default', nickname: '기본 계좌', accountNumber: '', type: '일반증권', monthlyDeposit: 0, buyTiming: '월초' }, ...(settings.accounts ?? []).map((account) => ({ ...account, collecting: account.collecting?.map((target) => ({ ...target })) }))],
     initialCapital: String(settings.initialCapital),
     frequency: settings.frequency,
     amount: String(settings.amount),
     dayOfWeek: String(settings.dayOfWeek),
+    monthOfYear: String(settings.monthOfYear ?? 1),
     dayOfMonth: String(settings.dayOfMonth),
     allocationByInvestmentType: {
       swing: {
@@ -7148,6 +7152,7 @@ function App() {
   const [contributionSettings, setContributionSettings] = useState<ContributionSettings>(() => readStoredContributionSettings(initialLocalTestSession))
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
   const [cashAccountId, setCashAccountId] = useState('')
+  const [selectedPortfolioAccountId, setSelectedPortfolioAccountId] = useState('default')
   const [collectingAccountReturnId, setCollectingAccountReturnId] = useState<string | null>(null)
   const [collectingImportTickers, setCollectingImportTickers] = useState<string[] | null>(null)
   const [cashAccountDeleteOpen, setCashAccountDeleteOpen] = useState(false)
@@ -7179,7 +7184,7 @@ function App() {
   const [authInfoMessage, setAuthInfoMessage] = useState(() => authCallbackMessage() || notificationSettingsDeepLinkMessage())
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
   const [isInitialAppDataLoaded, setIsInitialAppDataLoaded] = useState(false)
-  const [initialDataError, setInitialDataError] = useState('')
+  const [isAccountConnectionDelayed, setIsAccountConnectionDelayed] = useState(false)
   const serviceReadRecoveryRef = useRef<ReturnType<typeof createReadRecovery<void>> | null>(null)
   const [appDataError, setAppDataError] = useState('')
   const [apiStocks, setApiStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
@@ -8030,10 +8035,10 @@ function App() {
     const recovery: ReturnType<typeof createReadRecovery<void>> = createReadRecovery<void>({
       load: () => readServiceData(session, () => serviceReadRecoveryRef.current === recovery),
       isVisible: () => document.visibilityState === 'visible',
-      onSuccess: () => { setIsRemoteDataReady(true); setInitialDataError('') },
+      onSuccess: () => { setIsRemoteDataReady(true); setIsAccountConnectionDelayed(false) },
       onError: () => {
         setIsRemoteDataReady(false)
-        setInitialDataError('최신 계정 데이터 연결을 복구하고 있습니다. 잠시 기다려 주세요.')
+        setIsAccountConnectionDelayed(true)
       },
     })
     serviceReadRecoveryRef.current = recovery
@@ -8286,7 +8291,7 @@ function App() {
       },
       isVisible: () => document.visibilityState === 'visible',
       onSuccess: ({ data }) => { void syncAuthUser(data.session?.user ?? null) },
-      onError: () => { if (isMounted) setInitialDataError('계정 연결을 복구하고 있습니다. 잠시 기다려 주세요.') },
+      onError: () => { if (isMounted) setIsAccountConnectionDelayed(true) },
     })
     let syncingUserId: string | null | undefined
 
@@ -8510,14 +8515,26 @@ function App() {
   // Admins are forced into operator data, but the operator preview still needs profile-specific views.
   const shouldApplyInvestmentTypeView = serviceAvailability.swingMaintenance || isOperatorDataMode || !isAdminUser
   const isLongTermInvestor = shouldApplyInvestmentTypeView && displayedInvestmentType === 'long_term'
+  const portfolioAccounts = contributionSettingsDraftFrom(contributionSettings).accounts
+  const selectedPortfolioAccount = portfolioAccounts.find(({ id }) => id === selectedPortfolioAccountId) ?? portfolioAccounts[0]
+  const accountContributionSettings = selectedPortfolioAccount.id === 'default' ? contributionSettings : {
+    ...contributionSettings,
+    initialCapital: selectedPortfolioAccount.initialCapital ?? 0,
+    amount: selectedPortfolioAccount.monthlyDeposit,
+    frequency: selectedPortfolioAccount.frequency ?? 'monthly',
+    monthOfYear: selectedPortfolioAccount.monthOfYear ?? 1,
+    dayOfWeek: selectedPortfolioAccount.dayOfWeek ?? 1,
+    dayOfMonth: selectedPortfolioAccount.dayOfMonth ?? 1,
+  }
   const rawScopedTrades = isOperatorDataMode
     ? shouldApplyInvestmentTypeView
       ? systemTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
       : systemTradeLogs
     : personalTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
   const portfolioSummary = calculateAccountPortfolio(
-    rawScopedTrades, apiStocks, apiMarketTrendRows, contributionSettings, displayedInvestmentType,
-    userSession || isOperatorDataMode ? contributionSettings.initialCapital : 0,
+    rawScopedTrades.filter((trade) => (trade.investmentAccountId ?? 'default') === selectedPortfolioAccount.id),
+    apiStocks, apiMarketTrendRows, accountContributionSettings, displayedInvestmentType,
+    userSession || isOperatorDataMode ? accountContributionSettings.initialCapital : 0,
   )
   const scopedTrades: TradeLog[] = portfolioSummary.trades
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
@@ -8547,12 +8564,13 @@ function App() {
     frequency: cashAccount.frequency ?? 'monthly',
     amount: String(cashAccount.monthlyDeposit),
     dayOfWeek: String(cashAccount.dayOfWeek ?? 1),
+    monthOfYear: String(cashAccount.monthOfYear ?? 1),
     dayOfMonth: String(cashAccount.dayOfMonth ?? 1),
   } : contributionDraft
-  const contributionDayValidationMessage = cashDraft?.frequency === 'monthly' ? contributionDayMessage(cashDraft.dayOfMonth) : ''
+  const contributionDayValidationMessage = cashDraft && cashDraft.frequency !== 'weekly' ? contributionDayMessage(cashDraft.dayOfMonth) : ''
   const isContributionDayInvalid = Boolean(contributionDayValidationMessage
     && !contributionDayValidationMessage.includes('없는 달') && !contributionDayValidationMessage.includes('윤년'))
-  const legacyDayMessage = contributionDraft?.frequency === 'monthly' ? contributionDayMessage(contributionDraft.dayOfMonth) : ''
+  const legacyDayMessage = contributionDraft?.frequency !== 'weekly' && contributionDraft ? contributionDayMessage(contributionDraft.dayOfMonth) : ''
   const collectingSettings = contributionSettingsMode === 'investment' && isLongTermInvestor
   const invalidCollecting = contributionDraft?.accounts.some(({ collecting = [] }) => collecting.length > 0 && (
     collecting.some(({ ticker, percent }) => !/^[A-Z0-9.^=-]+$/.test(ticker) || !Number.isInteger(percent) || percent < 1 || percent > 100)
@@ -8562,8 +8580,8 @@ function App() {
     || Boolean(legacyDayMessage && !legacyDayMessage.includes('없는 달') && !legacyDayMessage.includes('윤년'))
     || Boolean(contributionDraft?.accounts.some((account) => !account.nickname.trim()
       || (account.id !== 'default' && account.frequency !== 'weekly' && !/^(?:[1-9]|[12][0-9]|3[01])$/.test(String(account.dayOfMonth ?? 1)))))))
-  const canEditContributionSettings = Boolean(userSession && (!isOperatorDataMode || isAdminUser))
-  const canManageHoldingTrades = effectiveViewMode === 'personal' || isAdminUser
+  const canEditContributionSettings = Boolean(isRemoteDataReady && userSession && (!isOperatorDataMode || isAdminUser))
+  const canManageHoldingTrades = isRemoteDataReady && (effectiveViewMode === 'personal' || isAdminUser)
   const activeAllocation = contributionDraft?.allocationByInvestmentType[displayedInvestmentType]
   const displayedAllocationSettings = contributionSettings.allocationByInvestmentType[displayedInvestmentType]
   const displayedAllocationLabel = displayedInvestmentType === 'swing' ? '스윙 투자' : '가치 투자'
@@ -8600,7 +8618,6 @@ function App() {
       action: openInvestmentAllocationSettings,
       clickable: canEditContributionSettings,
     },
-    { label: '누적 매수금', value: formatKrwAmount(portfolioSummary.cumulativeInvestmentAmount) },
     {
       label: '예상 손익',
       value: `${formatKrwAmount(portfolioSummary.profitAmount)} (${portfolioSummary.profitRate >= 0 ? '+' : ''}${portfolioSummary.profitRate.toFixed(1)}%)`,
@@ -8626,7 +8643,7 @@ function App() {
   ]
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = (() => {
-    if (!isAdminUser && (activePage === 'board' || activePage === 'admin-logs' || activePage === 'dashboard')) return 'home'
+    if ((!isAdminUser || !isRemoteDataReady) && (activePage === 'board' || activePage === 'admin-logs' || activePage === 'dashboard')) return 'home'
     if (!ADMIN_BOARD_FEATURE_ENABLED && activePage === 'board') return 'home'
     return activePage
   })()
@@ -8716,7 +8733,7 @@ function App() {
       ? '계정 데이터를 불러오는 중입니다.'
       : ''
   const canUseLocalAuthBypass = import.meta.env.DEV
-  const shouldShowInvestmentProfileOnboarding = Boolean(userSession && !isAdminUser && !investmentType && !isLoginOpen)
+  const shouldShowInvestmentProfileOnboarding = Boolean(isRemoteDataReady && userSession && !isAdminUser && !investmentType && !isLoginOpen)
 
   const markViewModeHintSeen = () => {
     localStorage.setItem(VIEW_MODE_HINT_STORAGE_KEY, 'true')
@@ -8923,11 +8940,11 @@ function App() {
     }))
   }
 
-  function updateCashDraft(field: 'initialCapital' | 'frequency' | 'amount' | 'dayOfWeek' | 'dayOfMonth', value: string) {
+  function updateCashDraft(field: 'initialCapital' | 'frequency' | 'amount' | 'dayOfWeek' | 'dayOfMonth' | 'monthOfYear', value: string) {
     if (!cashAccount || cashAccount.id === 'default') {
       setContributionDraft((current) => current && ({ ...current, [field]: value }))
     } else if (field === 'frequency') {
-      updateCashAccount(cashAccount.id, { frequency: value === 'weekly' ? 'weekly' : 'monthly' })
+      updateCashAccount(cashAccount.id, { frequency: value === 'weekly' ? 'weekly' : value === 'yearly' ? 'yearly' : 'monthly' })
     } else {
       const amount = Number(value)
       if (Number.isSafeInteger(amount)) {
@@ -8961,14 +8978,14 @@ function App() {
 
   function openContributionSettings() {
     setCollectingAccountReturnId(null)
-    setCashAccountId('default')
+    setCashAccountId('')
     setContributionSettingsMode('cash')
     setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
   }
 
   function openInvestmentAllocationSettings() {
     setCollectingAccountReturnId(null)
-    setCashAccountId('default')
+    setCashAccountId(selectedPortfolioAccount.id)
     setContributionSettingsMode('investment')
     setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
   }
@@ -8976,7 +8993,7 @@ function App() {
   const saveContributionSettings = () => {
     if (!contributionDraft || isContributionSaveDisabled) return
     const dayMessage = contributionDayMessage(contributionDraft.dayOfMonth)
-    if (contributionSettingsMode === 'cash' && contributionDraft.frequency === 'monthly' && dayMessage && !dayMessage.includes('없는 달') && !dayMessage.includes('윤년')) {
+    if (contributionSettingsMode === 'cash' && contributionDraft.frequency !== 'weekly' && dayMessage && !dayMessage.includes('없는 달') && !dayMessage.includes('윤년')) {
       return
     }
     const dayOfMonth = Number(contributionDraft.dayOfMonth)
@@ -8988,7 +9005,7 @@ function App() {
       amount: parseAmountValue(contributionDraft.amount) ?? 0,
       dayOfWeek: Number(contributionDraft.dayOfWeek),
       dayOfMonth,
-      allocationByInvestmentType: {
+      monthOfYear: Number(contributionDraft.monthOfYear),      allocationByInvestmentType: {
         swing: normalizeAllocationSettings({
           slotCount: Number(contributionDraft.allocationByInvestmentType.swing.slotCount),
           slotPercents: contributionDraft.allocationByInvestmentType.swing.slotPercents.map((value) => Number(value)),
@@ -9002,6 +9019,9 @@ function App() {
       },
     }
     setContributionSettings(nextSettings)
+    if (collectingSettings && cashAccount) {
+      setSelectedPortfolioAccountId(cashAccount.id)
+    }
     void persistPortfolioState(personalTradeLogs, nextSettings)
     setContributionDraft(null)
   }
@@ -9037,7 +9057,7 @@ function App() {
     ? contributionSettings.accounts
     : [{ id: 'default', nickname: '기본 계좌' }]
   const manualInvestmentAccount = manualInvestmentAccounts.find(({ id }) => id === manualHoldingDraft?.investmentAccountId)
-    ?? manualInvestmentAccounts[0]
+    ?? manualInvestmentAccounts.find(({ id }) => id === selectedPortfolioAccount.id) ?? manualInvestmentAccounts[0]
   const manualHoldingResolved = manualHoldingDraft
     ? resolveStockForTicker(manualHoldingDraft.ticker, apiStocks, apiSearchStocks)
     : null
@@ -10182,7 +10202,7 @@ function App() {
 
   const rawTableStocks = isOperatorDataMode ? operatorStocks : watchlistStocks
   const tableStocks = sortWatchlistStocks(rawTableStocks, watchlistSortSettings, currentWatchlistTickers, scopedTrades)
-  const canEditCurrentWatchlist = effectiveViewMode === 'personal' || isAdminUser
+  const canEditCurrentWatchlist = isRemoteDataReady && (effectiveViewMode === 'personal' || isAdminUser)
   const isCurrentWatchlistEmpty = tableStocks.length === 0
   const shouldDimPanelsForFirstVisitGuide = isCurrentWatchlistEmpty && scopedTrades.length === 0
   const isCurrentWatchlistFull = canEditCurrentWatchlist && currentWatchlistTickers.length >= MAX_WATCHLIST_ITEMS
@@ -10760,11 +10780,19 @@ function App() {
         </button>
       </header>
 
-      {!isInitialAppDataLoaded || !isRemoteDataReady ? (
-        initialDataError || appDataError ? (
+      {isInitialAppDataLoaded && !isRemoteDataReady && isAccountConnectionDelayed && (
+        <section className="panel account-connection-notice" role="status">
+          <div>
+            <p>계정 연결이 지연되고 있습니다. 공개 분석은 계속 이용할 수 있습니다.</p>
+            <button className="add-stock-button" type="button" onClick={() => window.location.reload()}>다시 시도</button>
+          </div>
+        </section>
+      )}
+      {!isInitialAppDataLoaded ? (
+        appDataError ? (
         <section className="panel app-data-loading" role="status" aria-live="polite">
             <div>
-              <p>{initialDataError || appDataError}</p>
+              <p>{appDataError}</p>
               <button type="button" onClick={() => window.location.reload()}>다시 시도</button>
             </div>
         </section>
@@ -10811,9 +10839,11 @@ function App() {
           </div>
 
           <div className="asset-summary-box" aria-label="현재 자산 요약">
-            {assetSummaryItems.map((item) => (
-              <AssetSummaryItem item={item} key={item.label} />
-            ))}
+            <AssetSummaryItem item={{
+              label: '계좌', value: selectedPortfolioAccount.nickname, clickable: true,
+              action: openContributionSettings,
+            }} />
+            {assetSummaryItems.map((item) => <AssetSummaryItem item={item} key={item.label} />)}
           </div>
 
           <SheetScrollSurface className="trading-log-scroll" wheelRef={tradingLogWheelRef} key={`trades-${homeSheetResetKey}`}>
@@ -12006,23 +12036,49 @@ function App() {
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={collectingAccountReturnId !== null ? cancelCollectingAccountAdd : () => setContributionDraft(null)}>×</button>
             {contributionSettingsMode === 'cash' || collectingAccountReturnId !== null ? (
               <>
-                <h3>{cashAccount ? '계좌 설정' : '현금 투입 설정'}</h3>
+                <h3>계좌 설정</h3>
                 {!cashAccount ? (
                   <div className="cash-account-picker">
                     <div className="cash-account-list" aria-label="계좌 목록">
                       {contributionDraft.accounts.map((account) => (
-                        <button className="custom-select-trigger cash-account-row" key={account.id} type="button"
-                          onClick={() => setCashAccountId(account.id)}>
-                          <strong>{account.nickname.trim() || '새 계좌'}</strong>
-                          <small>{account.type}</small>
-                        </button>
+                        <div className="custom-select-trigger cash-account-row" key={account.id}>
+                          <div className="cash-account-row-name">
+                            <strong>{account.nickname.trim() || '새 계좌'}</strong>
+                            <small>{account.type}</small>
+                          </div>
+                          <div className="cash-account-row-actions">
+                            <button className="cash-account-icon-button" type="button"
+                              aria-label={`${account.nickname} 계좌 선택`} title="계좌 선택"
+                              disabled={!portfolioAccounts.some(({ id }) => id === account.id)}
+                              aria-pressed={selectedPortfolioAccount.id === account.id}
+                              onClick={() => {
+                                setSelectedPortfolioAccountId(account.id)
+                                setContributionDraft(null)
+                              }}>
+                              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="m5 12 4 4L19 6" />
+                              </svg>
+                            </button>
+                            <button className="cash-account-icon-button" type="button"
+                              aria-label={`${account.nickname} 계좌 수정`} title="계좌 수정"
+                              onClick={() => setCashAccountId(account.id)}>
+                              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="m16 3 5 5-12 12-6 1 1-6L16 3Z" />
+                                <path d="m14 5 5 5" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
                       ))}
                     </div>
                     <button className="add-stock-button" disabled={cashAccountLimit} type="button" onClick={addCashAccount}>+ 계좌 추가</button>
                   </div>
                 ) : (
                 <>
-                <div className="cash-account-fields">
+                <div className="cash-account-layout">
+                  <div className="cash-account-fields cash-account-identity">
                   {cashAccount && <>
                     <label className="login-field">
                       <span>닉네임 (필수)</span>
@@ -12035,11 +12091,19 @@ function App() {
                         onChange={(event) => updateCashAccount(cashAccount.id, { accountNumber: event.target.value.replace(/[^0-9-]/g, '') })} />
                     </label>
                     <label className="login-field">
+                      <span>증권사</span>
+                      <CustomSelect ariaLabel="증권사" value={cashAccount.brokerage ?? ''}
+                        options={[{ value: '', label: '증권사 선택' }, ...brokerages.map((name) => ({ value: name, label: name }))]}
+                        onChange={(brokerage) => updateCashAccount(cashAccount.id, { brokerage })} />
+                    </label>
+                    <label className="login-field">
                       <span>계좌 유형 (필수)</span>
                       <CustomSelect ariaLabel="계좌 유형" value={cashAccount.type} options={accountTypes.map((type) => ({ value: type, label: type }))}
                         onChange={(type) => updateCashAccount(cashAccount.id, { type })} />
                     </label>
                   </>}
+                  </div>
+                  <div className="cash-account-fields cash-account-money">
                   <label className="login-field">
                     <span>초기 자금</span>
                     <input
@@ -12049,6 +12113,22 @@ function App() {
                     />
                   </label>
                   <label className="login-field">
+                    <span>{cashDraft!.frequency === 'yearly' ? '연 입금액' : cashDraft!.frequency === 'monthly' ? '월 입금액' : '주 입금액'}</span>
+                    <input
+                      inputMode="numeric"
+                      value={amountInputValue(cashDraft!.amount)}
+                      onChange={(event) => updateCashDraft('amount', amountDraftValue(event.target.value))}
+                    />
+                    {cashFxRate > 0 && Number(cashDraft!.amount) > 0 && (
+                      <span className="field-message field-message-note">
+                        약 {(Number(cashDraft!.amount) / cashFxRate).toLocaleString('ko-KR', { style: 'currency', currency: 'USD' })}
+                        {cashFxDate && ` · ${cashFxDate} 기준`}
+                      </span>
+                    )}
+                  </label>
+                  </div>
+                  <div className={`cash-account-fields cash-account-schedule ${cashDraft!.frequency === 'yearly' ? 'yearly' : ''}`}>
+                  <label className="login-field">
                     <span>입금 주기 (필수)</span>
                     <CustomSelect
                       ariaLabel="입금 주기"
@@ -12056,10 +12136,19 @@ function App() {
                       options={[
                         { value: 'weekly', label: '매주' },
                         { value: 'monthly', label: '매월' },
+                        { value: 'yearly', label: '매년' },
                       ]}
                       onChange={(nextFrequency) => updateCashDraft('frequency', nextFrequency)}
                     />
                   </label>
+                  {cashDraft!.frequency === 'yearly' && (
+                    <label className="login-field">
+                      <span>입금 월 (필수)</span>
+                      <CustomSelect ariaLabel="입금 월" value={Number(cashDraft!.monthOfYear)}
+                        options={Array.from({ length: 12 }, (_, index) => ({ value: index + 1, label: `${index + 1}월` }))}
+                        onChange={(month) => updateCashDraft('monthOfYear', String(month))} />
+                    </label>
+                  )}
                   {cashDraft!.frequency === 'weekly' ? (
                     <label className="login-field">
                       <span>입금 요일 (필수)</span>
@@ -12088,20 +12177,6 @@ function App() {
                       )}
                     </label>
                   )}
-                  <label className="login-field">
-                    <span>{cashDraft!.frequency === 'monthly' ? '월 입금액' : '주 입금액'}</span>
-                    <input
-                      inputMode="numeric"
-                      value={amountInputValue(cashDraft!.amount)}
-                      onChange={(event) => updateCashDraft('amount', amountDraftValue(event.target.value))}
-                    />
-                    {cashFxRate > 0 && Number(cashDraft!.amount) > 0 && (
-                      <span className="field-message field-message-note">
-                        약 {(Number(cashDraft!.amount) / cashFxRate).toLocaleString('ko-KR', { style: 'currency', currency: 'USD' })}
-                        {cashFxDate && ` · ${cashFxDate} 기준`}
-                      </span>
-                    )}
-                  </label>
                   {cashAccount && (
                     <label className="login-field">
                       <span>매수 시점 (필수)</span>
@@ -12110,7 +12185,7 @@ function App() {
                         onChange={(buyTiming) => updateCashAccount(cashAccount.id, { buyTiming })} />
                       <span className="field-message field-message-note">{buyTimings[cashAccount.buyTiming]}</span>
                     </label>
-                  )}
+                  )}                  </div>
                 </div>
 
                 </>
@@ -12118,7 +12193,7 @@ function App() {
               </>
             ) : collectingSettings && cashAccount ? (
               <>
-                <h3>가치투자 모으기</h3>
+                <h3>주식 모으기</h3>
                 <p>계좌별로 꾸준히 매수할 종목과 비중을 정하세요.</p>
                 <div className="collecting-account-section">
                 <div className="cash-account-picker">
@@ -12134,7 +12209,7 @@ function App() {
                   }}>+ 계좌 추가</button>
                 </div>
                 <div className="allocation-rule-note">
-                  <span>{cashAccount.buyTiming} 매수 · {cashDraft?.frequency === 'monthly' ? `월 입금액 ${formatKrwAmount(Number(cashDraft.amount))}` : '주 단위 입금'}</span>
+                  <span>{cashDraft?.frequency === 'yearly' ? `매년 ${cashDraft.monthOfYear}월 ` : ''}{cashAccount.buyTiming} 매수 · {cashDraft?.frequency === 'yearly' ? `연 입금액 ${formatKrwAmount(Number(cashDraft.amount))}` : cashDraft?.frequency === 'monthly' ? `월 입금액 ${formatKrwAmount(Number(cashDraft.amount))}` : '주 단위 입금'}</span>
                 </div>
                 </div>
                 <div className="collecting-target-section">
