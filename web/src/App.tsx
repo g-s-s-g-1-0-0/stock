@@ -7153,6 +7153,7 @@ function App() {
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
   const [cashAccountId, setCashAccountId] = useState('')
   const [selectedPortfolioAccountId, setSelectedPortfolioAccountId] = useState('default')
+  const [portfolioAccountPickerOpen, setPortfolioAccountPickerOpen] = useState(false)
   const [collectingAccountReturnId, setCollectingAccountReturnId] = useState<string | null>(null)
   const [collectingImportTickers, setCollectingImportTickers] = useState<string[] | null>(null)
   const [cashAccountDeleteOpen, setCashAccountDeleteOpen] = useState(false)
@@ -9996,6 +9997,10 @@ function App() {
   }
 
   function closeTopModal() {
+    if (portfolioAccountPickerOpen) {
+      setPortfolioAccountPickerOpen(false)
+      return
+    }
     if (collectingImportTickers !== null) {
       setCollectingImportTickers(null)
       return
@@ -10841,7 +10846,7 @@ function App() {
           <div className="asset-summary-box" aria-label="현재 자산 요약">
             <AssetSummaryItem item={{
               label: '계좌', value: selectedPortfolioAccount.nickname, clickable: true,
-              action: openContributionSettings,
+              action: () => setPortfolioAccountPickerOpen(true),
             }} />
             {assetSummaryItems.map((item) => <AssetSummaryItem item={item} key={item.label} />)}
           </div>
@@ -12026,6 +12031,36 @@ function App() {
               <button className="modal-confirm danger-confirm" disabled={isDeletingAccount} type="button" onClick={() => void deleteAccount()}>
                 {isDeletingAccount ? '탈퇴 처리 중' : '회원탈퇴'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {portfolioAccountPickerOpen && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, () => setPortfolioAccountPickerOpen(false))}>
+          <div aria-labelledby="portfolio-account-title" aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
+            <button className="modal-close-button" type="button" aria-label="닫기" onClick={() => setPortfolioAccountPickerOpen(false)}>×</button>
+            <h3 id="portfolio-account-title">계좌 설정</h3>
+            <div className="cash-account-picker">
+              <div className="cash-account-list">
+                <CustomSelect ariaLabel="표시할 계좌" value={selectedPortfolioAccount.id}
+                  options={portfolioAccounts.map(({ id, nickname }) => ({ value: id, label: nickname }))}
+                  onChange={(id) => {
+                    setSelectedPortfolioAccountId(id)
+                    setPortfolioAccountPickerOpen(false)
+                  }} />
+              </div>
+              <button className="add-stock-button" disabled={portfolioAccounts.length >= 5} type="button" onClick={() => {
+                const id = crypto.randomUUID()
+                const draft = contributionSettingsDraftFrom(contributionSettings)
+                setCollectingAccountReturnId(null)
+                setContributionSettingsMode('cash')
+                setContributionDraft({
+                  ...draft,
+                  accounts: [...draft.accounts, { id, nickname: '', accountNumber: '', type: '일반증권', monthlyDeposit: 0, buyTiming: '월초' }],
+                })
+                setCashAccountId(id)
+                setPortfolioAccountPickerOpen(false)
+              }}>+ 계좌 추가</button>
             </div>
           </div>
         </div>
