@@ -2,8 +2,8 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-11-08T14:51:46+00:00",
-    "lastSuccessfulRun": "2026-11-08T14:51:46+00:00",
+    "updatedAt": "2026-11-08T19:15:08+00:00",
+    "lastSuccessfulRun": "2026-11-08T19:15:08+00:00",
     "analysisStatus": "news-verified",
     "failedReason": null
   },
@@ -1177,35 +1177,17 @@
         "암호화폐·핀테크 | 스테이블코인, 비트코인, 블록체인, 이더리움, 디지털 자산",
         "전력 인프라 | 전력망, 원전, SMR, 데이터센터 전력, 에너지 저장",
         "양자컴퓨팅 | 양자컴퓨팅, 이온트랩, 양자 네트워크, 양자칩, 양자보안",
-        "반도체 | SK하이닉스, 삼성, TSMC, 소프트뱅크",
-        "전기차 | 테슬라, 사이버트럭, 사이버카",
-        "바이오헬스 | 의료주, 정책, 수익성",
-        "금융 | 버크셔, 주식분배, 배당주",
-        "소비재 | 펩시코, 가터에이드, 신제품"
+        "인공지능 데이터센터 | AI 데이터센터, 투자 지속, 채택 확대",
+        "AI 주식 전반 | AI 주식, 매도 물결, 시장 충격",
+        "칩·반도체 | 칩 주식, AI 수요, 중국 규제",
+        "배당주 | 배당주, 안정적 수익, 월스트리트 추천",
+        "헬스케어 | 헬스케어 주식, 정책 불확실성, 의회 영향"
       ],
-      "summary": "인공지능과 반도체, 전기차 등 기술주가 주목받으며, 배당주와 소비재, 우주항공 등 다양한 섹터가 투자 관심을 끌고 있습니다.",
+      "summary": "인공지능과 반도체 중심의 변동성 속에 배당·헬스케어 등 방어형 섹터가 주목받는 시장입니다.",
       "newsEvidence": [
         {
-          "sector": "AI 인프라",
+          "sector": "인공지능 데이터센터",
           "articles": [
-            {
-              "title": "Anthropic IPO meets AI backlash after midterms show stinging rebuke of data centers",
-              "url": "https://www.cnbc.com/2026/11/07/anthropic-ipo-ai-data-center-backlash.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-07T13:00:01+00:00"
-            },
-            {
-              "title": "Cramer’s week ahead: AI data center stocks face another hurdle and so does the Fed",
-              "url": "https://www.cnbc.com/2026/11/06/cramer-coreweave-nebius-earnings.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-06T23:13:10+00:00"
-            },
-            {
-              "title": "Investors brace for lower Anthropic valuation, calling $1.5 trillion a 'stretch'",
-              "url": "https://www.cnbc.com/2026/11/06/investors-brace-for-anthropic-valuation-1point5-trillion-a-stretch.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-06T21:07:07+00:00"
-            },
             {
               "title": "OpenAI will keep investing in AI data centers despite election results, CFO tells CNBC",
               "url": "https://www.cnbc.com/2026/11/06/open-ai-data-centers-election.html",
@@ -1213,16 +1195,27 @@
               "publishedAt": "2026-11-06T22:25:58+00:00"
             },
             {
-              "title": "AI stocks hammered by midterm shock as data center buildout becomes a 'war of attrition'",
-              "url": "https://www.cnbc.com/2026/11/06/ai-data-center-midterms-selloff.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-06T20:44:13+00:00"
-            },
-            {
               "title": "Nasdaq sell-off batters Asian chip stocks as SK Hynix, Samsung, Softbank, TSMC tumble",
               "url": "https://www.cnbc.com/2026/11/06/tech-stocks-sk-hynix-samsung-softbank.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
               "publishedAt": "2026-11-06T11:06:58+00:00"
+            },
+            {
+              "title": "Magnificent 7 loses $1 trillion. The most eye-popping stats from Thursday's tech stock plunge",
+              "url": "https://www.cnbc.com/2026/11/05/stock-market-selloff-ai-fears.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-05T23:39:32+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "AI 주식 전반",
+          "articles": [
+            {
+              "title": "AI stocks hammered by midterm shock as data center buildout becomes a 'war of attrition'",
+              "url": "https://www.cnbc.com/2026/11/06/ai-data-center-midterms-selloff.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T20:44:13+00:00"
             },
             {
               "title": "Jim Cramer explains why no AI stock seems safe from the market carnage",
@@ -1235,51 +1228,45 @@
               "url": "https://www.cnbc.com/2026/11/05/jim-cramer-ai-stocks-sell-off.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
               "publishedAt": "2026-11-05T23:17:51+00:00"
-            },
-            {
-              "title": "Magnificent 7 loses $1 trillion. The most eye-popping stats from Thursday's tech stock plunge",
-              "url": "https://www.cnbc.com/2026/11/05/stock-market-selloff-ai-fears.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-05T23:39:32+00:00"
-            },
-            {
-              "title": "Elon Musk's Tesla and SpaceX lose over $420 billion in combined market cap after midterms",
-              "url": "https://www.cnbc.com/2026/11/05/tesla-spacex-stocks-fall-after-2026-midterms.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-06T03:20:43+00:00"
             }
           ]
         },
         {
-          "sector": "반도체",
+          "sector": "칩·반도체",
           "articles": [
+            {
+              "title": "Democrat shaping AI policy bought chip stocks despite backing congressional trading ban",
+              "url": "https://www.cnbc.com/2026/11/07/josh-gottheimer-ai-stocks-congress-trading-ban.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-07T13:30:01+00:00"
+            },
             {
               "title": "Nasdaq sell-off batters Asian chip stocks as SK Hynix, Samsung, Softbank, TSMC tumble",
               "url": "https://www.cnbc.com/2026/11/06/tech-stocks-sk-hynix-samsung-softbank.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
               "publishedAt": "2026-11-06T11:06:58+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "전기차",
-          "articles": [
-            {
-              "title": "Tesla to wind down Cybertruck production in Texas next year to ramp Cybercab, Musk says",
-              "url": "https://www.cnbc.com/2026/11/06/tesla-cybertruck-texas-musk.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-06T15:06:11+00:00"
             },
             {
-              "title": "Elon Musk's Tesla and SpaceX lose over $420 billion in combined market cap after midterms",
-              "url": "https://www.cnbc.com/2026/11/05/tesla-spacex-stocks-fall-after-2026-midterms.html",
+              "title": "Neocloud IREN says $4 billion in annualized revenue being delayed due to customer request",
+              "url": "https://www.cnbc.com/2026/11/05/iren-earnings-report-q1-2027-.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-06T03:20:43+00:00"
+              "publishedAt": "2026-11-05T23:25:02+00:00"
             }
           ]
         },
         {
-          "sector": "바이오헬스",
+          "sector": "배당주",
+          "articles": [
+            {
+              "title": "Top Wall Street analysts like these 3 dividend stocks for consistent income",
+              "url": "https://www.cnbc.com/2026/11/08/top-analysts-like-these-3-dividend-stocks-for-consistent-income.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-08T11:47:24+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "헬스케어",
           "articles": [
             {
               "title": "Why the prognosis for healthcare stocks is uncertain ahead of Congress’ new makeup",
@@ -1290,7 +1277,7 @@
           ]
         },
         {
-          "sector": "금융",
+          "sector": "버크셔 해소",
           "articles": [
             {
               "title": "Berkshire Hathaway more than doubles buybacks in third quarter as earnings decline",
@@ -1307,85 +1294,83 @@
           ]
         },
         {
-          "sector": "소비재",
+          "sector": "AI 정책·칩 매입",
           "articles": [
             {
-              "title": "Poppi founders are going after PepsiCo's Gatorade with new beverage startup Jetty",
-              "url": "https://www.cnbc.com/2026/11/08/poppi-founders-jetty-hydration-gatorade.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-08T14:00:01+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "소프트웨어",
-          "articles": [
-            {
-              "title": "Meta chief strategy officer Dave Wehner leaves to join AI infrastructure startup Fireworks as CFO",
-              "url": "https://www.cnbc.com/2026/11/07/dave-wehner-meta-fireworks-cfo.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-07T22:01:17+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "우주항공",
-          "articles": [
-            {
-              "title": "SpaceX says Google exec Don Harrison has resigned from its board",
-              "url": "https://www.cnbc.com/2026/11/06/tesdonald-harrison.html",
+              "title": "Democrat shaping AI policy bought chip stocks despite backing congressional trading ban",
+              "url": "https://www.cnbc.com/2026/11/07/josh-gottheimer-ai-stocks-congress-trading-ban.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-06T22:30:22+00:00"
+              "publishedAt": "2026-11-07T13:30:01+00:00"
             }
           ]
         },
         {
-          "sector": "에너지",
-          "articles": [
-            {
-              "title": "What midterm election blue wave rebuke of Trump means for renewable energy",
-              "url": "https://www.cnbc.com/2026/11/07/midterm-election-blue-wave-trump-renewable-energy.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-07T14:33:32+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "인재채용",
+          "sector": "AI 채용·인재",
           "articles": [
             {
               "title": "AI is speeding up recruitment — and putting agency fees under pressure",
               "url": "https://www.cnbc.com/2026/11/08/ai-recruitment-agency-fees.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
               "publishedAt": "2026-11-08T06:00:01+00:00"
+            },
+            {
+              "title": "America's newest small business owners with no employees are off to a hot start in AI era",
+              "url": "https://www.cnbc.com/2026/11/07/americas-new-no-employee-small-business-owners-start-hot-in-ai-era.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-07T14:45:01+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "AI 안전·소송",
+          "articles": [
+            {
+              "title": "Tech companies face mounting child safety lawsuits while pushing AI into schools",
+              "url": "https://www.cnbc.com/2026/11/07/snap-social-media-teen-safety-lawsuits.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-07T12:00:01+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "전기차·신모델 전환",
+          "articles": [
+            {
+              "title": "Tesla to wind down Cybertruck production in Texas next year to ramp Cybercab, Musk says",
+              "url": "https://www.cnbc.com/2026/11/06/tesla-cybertruck-texas-musk.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-06T15:06:11+00:00"
             }
           ]
         }
       ],
       "newsRanks": [
-        "AI 인프라 | AI 데이터센터, 채굴, 투자",
-        "반도체 | SK하이닉스, 삼성, TSMC, 소프트뱅크",
-        "전기차 | 테슬라, 사이버트럭, 사이버카",
-        "바이오헬스 | 의료주, 정책, 수익성",
-        "금융 | 버크셔, 주식분배, 배당주",
-        "소비재 | 펩시코, 가터에이드, 신제품",
-        "소프트웨어 | 메타, AI 인프라 스타트업, Fireworks",
-        "우주항공 | 스페이스X, 보드, Google",
-        "에너지 | 미국 중간선거, 재생에너지, 정책",
-        "인재채용 | AI 리크루팅, 에이전시, 수수료"
+        "인공지능 데이터센터 | AI 데이터센터, 투자 지속, 채택 확대",
+        "AI 주식 전반 | AI 주식, 매도 물결, 시장 충격",
+        "칩·반도체 | 칩 주식, AI 수요, 중국 규제",
+        "배당주 | 배당주, 안정적 수익, 월스트리트 추천",
+        "헬스케어 | 헬스케어 주식, 정책 불확실성, 의회 영향",
+        "버크셔 해소 | 버크셔, 자사주 매입 확대, 수익 감소",
+        "AI 정책·칩 매입 | AI 정책 입안자, 칩 매입, 규제 우려",
+        "AI 채용·인재 | AI 채용, 에이전시 비용, 신규 사업주",
+        "AI 안전·소송 | 아동 안전 소송, AI 학교 도입, 법적 리스크",
+        "전기차·신모델 전환 | 테슬라, 사이버트럭 축소, 사이버캡 전환"
       ],
       "analysis": {
         "status": "news-verified",
-        "model": "openai/gpt-oss-20b",
-        "attempts": 1,
-        "newsCount": 63,
+        "model": "openai/gpt-oss-120b",
+        "attempts": 3,
+        "newsCount": 62,
         "sources": [
           "https://feeds.marketwatch.com/marketwatch/topstories/",
           "https://trends.google.com/trending/rss?geo=US",
           "https://www.cnbc.com/id/100003114/device/rss/rss.html",
           "https://www.cnbc.com/id/19854910/device/rss/rss.html"
         ],
-        "recoveryErrors": []
+        "recoveryErrors": [
+          "HTTP 400: {\"error\":{\"message\":\"Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.\",\"type\":\"invalid_request_error\",\"code\":\"json_validate_failed\",\"failed_generation\":\"max completion tokens reached before generating a valid document\"}}",
+          "HTTP 400: {\"error\":{\"message\":\"Failed to generate JSON. Please adjust your prompt. See 'failed_generation' for more details.\",\"type\":\"invalid_request_error\",\"code\":\"json_validate_failed\",\"failed_generation\":\"max completion tokens reached before generating a valid document\"}}"
+        ]
       }
     }
   ]

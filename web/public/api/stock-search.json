@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-11-08T18:56:57+00:00",
-    "lastSuccessfulRun": "2026-11-08T18:56:57+00:00",
+    "updatedAt": "2026-11-08T19:15:08+00:00",
+    "lastSuccessfulRun": "2026-11-08T19:15:08+00:00",
     "failedReason": null
   },
   "rows": [
@@ -16,7 +16,7 @@
     },
     {
       "ticker": "000040",
-      "name": "KR모터스",
+      "name": "다이나맥",
       "market": "KR",
       "category": "가치주",
       "industry": "자동차, 전기차, 모빌리티"
@@ -14653,7 +14653,7 @@
     },
     {
       "ticker": "148250",
-      "name": "알엔투테크놀로지",
+      "name": "스퀘어텍",
       "market": "KR",
       "category": "성장주",
       "industry": "바이오, 제약·헬스케어"
@@ -47079,7 +47079,7 @@
       "ticker": "COIN",
       "name": "Coinbase Global Class A",
       "market": "US",
-      "category": "성장주",
+      "category": "스윙주",
       "industry": "가상화폐, 핀테크, 블록체인"
     },
     {
@@ -64026,7 +64026,7 @@
       "ticker": "GNRC",
       "name": "Generac Holdlings",
       "market": "US",
-      "category": "가치주",
+      "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화"
     },
     {
@@ -79938,7 +79938,7 @@
       "name": "Meta Platforms Class A",
       "market": "US",
       "category": "성장주",
-      "industry": "Communication Services | Internet Content & Information"
+      "industry": "Communication Services, Internet Content & Information"
     },
     {
       "ticker": "METAM",
