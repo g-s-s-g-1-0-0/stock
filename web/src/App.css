@@ -7446,3 +7446,28 @@ html.modal-scroll-lock body {
   flex-wrap: wrap;
   gap: 12px;
 }
+
+.login-password-control {
+  position: relative;
+}
+
+.login-password-control:has(.login-password-toggle) input {
+  padding-right: 44px;
+}
+
+.login-password-toggle {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: grid;
+  width: 42px;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.login-password-toggle:hover {
+  color: var(--text-h);
+}

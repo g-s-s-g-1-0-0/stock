@@ -7159,6 +7159,7 @@ function App() {
   const [authMode, setAuthMode] = useState<AuthMode>('login')
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
+  const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [loginPasswordConfirm, setLoginPasswordConfirm] = useState('')
   const [loginError, setLoginError] = useState('')
   const [signupConfirmationEmail, setSignupConfirmationEmail] = useState('')
@@ -9306,6 +9307,7 @@ function App() {
   }
 
   const clearAuthForm = () => {
+    setShowLoginPassword(false)
     setLoginEmail('')
     setLoginPassword('')
     setLoginPasswordConfirm('')
@@ -11854,19 +11856,35 @@ function App() {
                 {authMode !== 'reset' && shouldShowEmailValidation && <span className="login-error">이메일 형식이 올바르지 않습니다.</span>}
                 {authMode !== 'recover' && (
                   <>
-                    <label className="login-field">
-                      <span>비밀번호</span>
-                      <input
-                        aria-invalid={shouldShowPasswordValidation}
-                        value={loginPassword}
-                        onChange={(event) => {
-                          setLoginPassword(event.target.value)
-                          setLoginError('')
-                        }}
-                        placeholder="8자 이상"
-                        type="password"
-                      />
-                    </label>
+                    <div className="login-field">
+                      <label htmlFor="login-password"><span>비밀번호</span></label>
+                      <div className="login-password-control">
+                        <input
+                          id="login-password"
+                          aria-invalid={shouldShowPasswordValidation}
+                          autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                          value={loginPassword}
+                          onChange={(event) => {
+                            setLoginPassword(event.target.value)
+                            setLoginError('')
+                          }}
+                          placeholder="8자 이상"
+                          type={authMode === 'login' && showLoginPassword ? 'text' : 'password'}
+                        />
+                        {authMode === 'login' && (
+                          <button aria-label={showLoginPassword ? '비밀번호 숨기기' : '비밀번호 표시'}
+                            className="login-password-toggle" type="button"
+                            onClick={() => setShowLoginPassword((visible) => !visible)}>
+                            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                              strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
+                              <circle cx="12" cy="12" r="2.5" />
+                              {showLoginPassword && <path d="m3 3 18 18" />}
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+                    </div>
                     {shouldShowPasswordValidation && <span className="login-error">비밀번호는 8자 이상이어야 합니다.</span>}
                     {authMode === 'login' && (
                       <button className="forgot-password-button" type="button" onClick={() => switchAuthMode('recover')}>
