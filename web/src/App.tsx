@@ -7151,6 +7151,9 @@ function App() {
   const [manualHoldingDraft, setManualHoldingDraft] = useState<ManualHoldingDraft | null>(null)
   const [contributionSettings, setContributionSettings] = useState<ContributionSettings>(() => readStoredContributionSettings(initialLocalTestSession))
   const [contributionDraft, setContributionDraft] = useState<ContributionSettingsDraft | null>(null)
+  const [publicOperatorSettings, setPublicOperatorSettings] = useState<ContributionSettings | null>(null)
+  const [publicOperatorError, setPublicOperatorError] = useState('')
+
   const [cashAccountId, setCashAccountId] = useState('')
   const [selectedPortfolioAccountId, setSelectedPortfolioAccountId] = useState('default')
   const [collectingAccountReturnId, setCollectingAccountReturnId] = useState<string | null>(null)
@@ -8515,10 +8518,30 @@ function App() {
   // Admins are forced into operator data, but the operator preview still needs profile-specific views.
   const shouldApplyInvestmentTypeView = serviceAvailability.swingMaintenance || isOperatorDataMode || !isAdminUser
   const isLongTermInvestor = shouldApplyInvestmentTypeView && displayedInvestmentType === 'long_term'
-  const portfolioAccounts = contributionSettingsDraftFrom(contributionSettings).accounts
+  const isPublicPortfolioView = isOperatorDataMode && !isAdminUser
+  useEffect(() => {
+    if (!isPublicPortfolioView) return
+    const controller = new AbortController()
+    setPublicOperatorSettings(null)
+    setPublicOperatorError('')
+    void fetch('/api/operator-portfolio', { signal: controller.signal, cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('공수성가 계좌 설정을 불러오지 못했습니다.')
+        const settings = normalizeContributionSettings(await response.json())
+        if (!controller.signal.aborted) setPublicOperatorSettings(settings)
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setPublicOperatorError('공수성가 계좌 설정을 불러오지 못했습니다. 잠시 후 다시 열어 주세요.')
+      })
+    return () => controller.abort()
+  }, [isPublicPortfolioView, contributionDraft !== null])
+  const visibleContributionSettings = isPublicPortfolioView
+    ? publicOperatorSettings ?? { ...DEFAULT_CONTRIBUTION_SETTINGS, initialCapital: 0, amount: 0 }
+    : contributionSettings
+  const portfolioAccounts = contributionSettingsDraftFrom(visibleContributionSettings).accounts
   const selectedPortfolioAccount = portfolioAccounts.find(({ id }) => id === selectedPortfolioAccountId) ?? portfolioAccounts[0]
-  const accountContributionSettings = selectedPortfolioAccount.id === 'default' ? contributionSettings : {
-    ...contributionSettings,
+  const accountContributionSettings = selectedPortfolioAccount.id === 'default' ? visibleContributionSettings : {
+    ...visibleContributionSettings,
     initialCapital: selectedPortfolioAccount.initialCapital ?? 0,
     amount: selectedPortfolioAccount.monthlyDeposit,
     frequency: selectedPortfolioAccount.frequency ?? 'monthly',
@@ -8604,7 +8627,7 @@ function App() {
       label: '보유 현금',
       value: formatKrwAmount(portfolioSummary.cash),
       action: openContributionSettings,
-      clickable: canEditContributionSettings || (import.meta.env.DEV && !isOperatorDataMode),
+      clickable: isPublicPortfolioView || canEditContributionSettings || (import.meta.env.DEV && !isOperatorDataMode),
     },
     {
       label: '평가액',
@@ -8616,7 +8639,7 @@ function App() {
         { label: '평가액', value: formatKrwAmount(portfolioSummary.positionValue) },
       ],
       action: openInvestmentAllocationSettings,
-      clickable: canEditContributionSettings,
+      clickable: isPublicPortfolioView || canEditContributionSettings,
     },
     {
       label: '예상 손익',
@@ -8980,18 +9003,18 @@ function App() {
     setCollectingAccountReturnId(null)
     setCashAccountId('')
     setContributionSettingsMode('cash')
-    setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
+    setContributionDraft(contributionSettingsDraftFrom(visibleContributionSettings))
   }
 
   function openInvestmentAllocationSettings() {
     setCollectingAccountReturnId(null)
     setCashAccountId(selectedPortfolioAccount.id)
     setContributionSettingsMode('investment')
-    setContributionDraft(contributionSettingsDraftFrom(contributionSettings))
+    setContributionDraft(contributionSettingsDraftFrom(visibleContributionSettings))
   }
 
   const saveContributionSettings = () => {
-    if (!contributionDraft || isContributionSaveDisabled) return
+    if (isPublicPortfolioView || !contributionDraft || isContributionSaveDisabled) return
     const dayMessage = contributionDayMessage(contributionDraft.dayOfMonth)
     if (contributionSettingsMode === 'cash' && contributionDraft.frequency !== 'weekly' && dayMessage && !dayMessage.includes('없는 달') && !dayMessage.includes('윤년')) {
       return
@@ -12034,6 +12057,41 @@ function App() {
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => closeModalOnBackdropMouseDown(event, collectingAccountReturnId !== null ? cancelCollectingAccountAdd : () => setContributionDraft(null))}>
           <div aria-modal="true" className="confirm-modal amount-edit-modal" role="dialog">
             <button className="modal-close-button" type="button" aria-label="닫기" onClick={collectingAccountReturnId !== null ? cancelCollectingAccountAdd : () => setContributionDraft(null)}>×</button>
+            {isPublicPortfolioView ? (
+              <>
+                <h3>{contributionSettingsMode === 'cash' ? '계좌 설정' : '주식 모으기'}</h3>
+                {!publicOperatorSettings ? <p role="status">{publicOperatorError || '공수성가 계좌 설정을 불러오는 중입니다.'}</p> : (
+                  <>
+                    <p>공수성가의 계좌별 투자 설정입니다.</p>
+                    <label className="login-field">
+                      <span>계좌</span>
+                      <CustomSelect ariaLabel="공수성가 계좌" value={selectedPortfolioAccount.id}
+                        options={portfolioAccounts.map(({ id, nickname }) => ({ value: id, label: nickname }))}
+                        onChange={setSelectedPortfolioAccountId} />
+                    </label>
+                    <div className="allocation-rule-note">
+                      <span>{selectedPortfolioAccount.brokerage || '증권사 미지정'} · {selectedPortfolioAccount.type}</span>
+                      <span>초기 자금 {formatKrwAmount(accountContributionSettings.initialCapital)}</span>
+                      <span>{accountContributionSettings.frequency === 'yearly' ? '매년' : accountContributionSettings.frequency === 'weekly' ? '매주' : '매월'} 입금 · {formatKrwAmount(accountContributionSettings.amount)}</span>
+                      <span>{accountContributionSettings.frequency === 'yearly' ? `${accountContributionSettings.monthOfYear}월 ` : ''}{accountContributionSettings.frequency === 'weekly' ? weekdayOptions.find(({ value }) => value === accountContributionSettings.dayOfWeek)?.label : `${accountContributionSettings.dayOfMonth}일`} 입금</span>
+                      <span>{selectedPortfolioAccount.buyTiming} 매수</span>
+                    </div>
+                    <div className="operator-import-list">
+                      {(selectedPortfolioAccount.collecting ?? []).map(({ ticker, percent }) => (
+                        <div className="operator-import-option" key={ticker}>
+                          <strong>{ticker}</strong><span>{percent}%</span>
+                        </div>
+                      ))}
+                      {!selectedPortfolioAccount.collecting?.length && <div className="operator-import-empty">등록된 모으기 종목이 없습니다.</div>}
+                    </div>
+                  </>
+                )}
+                <div className="modal-actions">
+                  <button className="modal-cancel" type="button" onClick={() => setContributionDraft(null)}>닫기</button>
+                </div>
+              </>
+            ) : (
+              <>
             {contributionSettingsMode === 'cash' || collectingAccountReturnId !== null ? (
               <>
                 <h3>계좌 설정</h3>
@@ -12367,6 +12425,8 @@ function App() {
               )}
               <button className="modal-confirm" disabled={isContributionSaveDisabled} type="button" onClick={saveContributionSettings}>저장</button>
             </div>
+            )}
+              </>
             )}
           </div>
         </div>
