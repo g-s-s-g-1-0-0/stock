@@ -7471,3 +7471,21 @@ html.modal-scroll-lock body {
 .login-password-toggle:hover {
   color: var(--text-h);
 }
+
+.account-connection-notice {
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.account-connection-notice > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.account-connection-notice p {
+  margin: 0;
+}

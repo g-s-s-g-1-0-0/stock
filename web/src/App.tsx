@@ -7179,7 +7179,7 @@ function App() {
   const [authInfoMessage, setAuthInfoMessage] = useState(() => authCallbackMessage() || notificationSettingsDeepLinkMessage())
   const [isRemoteDataReady, setIsRemoteDataReady] = useState(!isSupabaseConfigured)
   const [isInitialAppDataLoaded, setIsInitialAppDataLoaded] = useState(false)
-  const [initialDataError, setInitialDataError] = useState('')
+  const [isAccountConnectionDelayed, setIsAccountConnectionDelayed] = useState(false)
   const serviceReadRecoveryRef = useRef<ReturnType<typeof createReadRecovery<void>> | null>(null)
   const [appDataError, setAppDataError] = useState('')
   const [apiStocks, setApiStocks] = useState<Stock[]>(() => searchUniverse.map(stockSearchShell))
@@ -8030,10 +8030,10 @@ function App() {
     const recovery: ReturnType<typeof createReadRecovery<void>> = createReadRecovery<void>({
       load: () => readServiceData(session, () => serviceReadRecoveryRef.current === recovery),
       isVisible: () => document.visibilityState === 'visible',
-      onSuccess: () => { setIsRemoteDataReady(true); setInitialDataError('') },
+      onSuccess: () => { setIsRemoteDataReady(true); setIsAccountConnectionDelayed(false) },
       onError: () => {
         setIsRemoteDataReady(false)
-        setInitialDataError('최신 계정 데이터 연결을 복구하고 있습니다. 잠시 기다려 주세요.')
+        setIsAccountConnectionDelayed(true)
       },
     })
     serviceReadRecoveryRef.current = recovery
@@ -8286,7 +8286,7 @@ function App() {
       },
       isVisible: () => document.visibilityState === 'visible',
       onSuccess: ({ data }) => { void syncAuthUser(data.session?.user ?? null) },
-      onError: () => { if (isMounted) setInitialDataError('계정 연결을 복구하고 있습니다. 잠시 기다려 주세요.') },
+      onError: () => { if (isMounted) setIsAccountConnectionDelayed(true) },
     })
     let syncingUserId: string | null | undefined
 
@@ -8562,8 +8562,8 @@ function App() {
     || Boolean(legacyDayMessage && !legacyDayMessage.includes('없는 달') && !legacyDayMessage.includes('윤년'))
     || Boolean(contributionDraft?.accounts.some((account) => !account.nickname.trim()
       || (account.id !== 'default' && account.frequency !== 'weekly' && !/^(?:[1-9]|[12][0-9]|3[01])$/.test(String(account.dayOfMonth ?? 1)))))))
-  const canEditContributionSettings = Boolean(userSession && (!isOperatorDataMode || isAdminUser))
-  const canManageHoldingTrades = effectiveViewMode === 'personal' || isAdminUser
+  const canEditContributionSettings = Boolean(isRemoteDataReady && userSession && (!isOperatorDataMode || isAdminUser))
+  const canManageHoldingTrades = isRemoteDataReady && (effectiveViewMode === 'personal' || isAdminUser)
   const activeAllocation = contributionDraft?.allocationByInvestmentType[displayedInvestmentType]
   const displayedAllocationSettings = contributionSettings.allocationByInvestmentType[displayedInvestmentType]
   const displayedAllocationLabel = displayedInvestmentType === 'swing' ? '스윙 투자' : '가치 투자'
@@ -8626,7 +8626,7 @@ function App() {
   ]
   const visibleGnbMenus = isAdminUser ? adminGnbMenus : gnbMenus
   const currentActivePage = (() => {
-    if (!isAdminUser && (activePage === 'board' || activePage === 'admin-logs' || activePage === 'dashboard')) return 'home'
+    if ((!isAdminUser || !isRemoteDataReady) && (activePage === 'board' || activePage === 'admin-logs' || activePage === 'dashboard')) return 'home'
     if (!ADMIN_BOARD_FEATURE_ENABLED && activePage === 'board') return 'home'
     return activePage
   })()
@@ -8716,7 +8716,7 @@ function App() {
       ? '계정 데이터를 불러오는 중입니다.'
       : ''
   const canUseLocalAuthBypass = import.meta.env.DEV
-  const shouldShowInvestmentProfileOnboarding = Boolean(userSession && !isAdminUser && !investmentType && !isLoginOpen)
+  const shouldShowInvestmentProfileOnboarding = Boolean(isRemoteDataReady && userSession && !isAdminUser && !investmentType && !isLoginOpen)
 
   const markViewModeHintSeen = () => {
     localStorage.setItem(VIEW_MODE_HINT_STORAGE_KEY, 'true')
@@ -10182,7 +10182,7 @@ function App() {
 
   const rawTableStocks = isOperatorDataMode ? operatorStocks : watchlistStocks
   const tableStocks = sortWatchlistStocks(rawTableStocks, watchlistSortSettings, currentWatchlistTickers, scopedTrades)
-  const canEditCurrentWatchlist = effectiveViewMode === 'personal' || isAdminUser
+  const canEditCurrentWatchlist = isRemoteDataReady && (effectiveViewMode === 'personal' || isAdminUser)
   const isCurrentWatchlistEmpty = tableStocks.length === 0
   const shouldDimPanelsForFirstVisitGuide = isCurrentWatchlistEmpty && scopedTrades.length === 0
   const isCurrentWatchlistFull = canEditCurrentWatchlist && currentWatchlistTickers.length >= MAX_WATCHLIST_ITEMS
@@ -10760,11 +10760,19 @@ function App() {
         </button>
       </header>
 
-      {!isInitialAppDataLoaded || !isRemoteDataReady ? (
-        initialDataError || appDataError ? (
+      {isInitialAppDataLoaded && !isRemoteDataReady && isAccountConnectionDelayed && (
+        <section className="panel account-connection-notice" role="status">
+          <div>
+            <p>계정 연결이 지연되고 있습니다. 공개 분석은 계속 이용할 수 있습니다.</p>
+            <button className="add-stock-button" type="button" onClick={() => window.location.reload()}>다시 시도</button>
+          </div>
+        </section>
+      )}
+      {!isInitialAppDataLoaded ? (
+        appDataError ? (
         <section className="panel app-data-loading" role="status" aria-live="polite">
             <div>
-              <p>{initialDataError || appDataError}</p>
+              <p>{appDataError}</p>
               <button type="button" onClick={() => window.location.reload()}>다시 시도</button>
             </div>
         </section>
