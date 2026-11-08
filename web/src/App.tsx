@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom'
 import type { User } from '@supabase/supabase-js'
 import { fetchAppData, fetchStockSearchData, refreshAppData, saveMarketEvents, saveMarketTrends, saveTradeLogs, type AppData, type RuntimeMeta } from './api'
 import { UsageDashboard } from './UsageDashboard'
-import { accountTypes, buyTimings, normalizeInvestmentAccounts, type InvestmentAccount } from './InvestmentAccounts'
+import { accountTypes, brokerages, buyTimings, normalizeInvestmentAccounts, type InvestmentAccount } from './InvestmentAccounts'
 import { isSupabaseConfigured, supabase, userDisplayName } from './supabase'
 import { isUsagePage, seoulDate } from './usageMetrics'
 import { compareTradeSignals } from './tradeOrder'
@@ -12103,6 +12103,12 @@ function App() {
                       <span>계좌번호 (선택)</span>
                       <input inputMode="numeric" maxLength={32} value={cashAccount.accountNumber}
                         onChange={(event) => updateCashAccount(cashAccount.id, { accountNumber: event.target.value.replace(/[^0-9-]/g, '') })} />
+                    </label>
+                    <label className="login-field">
+                      <span>증권사</span>
+                      <CustomSelect ariaLabel="증권사" value={cashAccount.brokerage ?? ''}
+                        options={[{ value: '', label: '증권사 선택' }, ...brokerages.map((name) => ({ value: name, label: name }))]}
+                        onChange={(brokerage) => updateCashAccount(cashAccount.id, { brokerage })} />
                     </label>
                     <label className="login-field">
                       <span>계좌 유형 (필수)</span>
