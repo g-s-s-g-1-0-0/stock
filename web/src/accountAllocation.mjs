@@ -232,7 +232,7 @@ export function calculateAccountPortfolio(inputTrades, stocks = [], trends = [],
       const requestedAmount = trade.allocationRequestedAmount ?? (trade.allocationSource !== 'account' ? trade.investmentAmount : null)
       const fixedAmount = typeof requestedAmount === 'number' && Number.isFinite(requestedAmount)
         ? Math.max(0, Math.round(requestedAmount)) : null
-      if (investmentType === 'long_term' && trade.collectingEntry) {
+      if (investmentType === 'long_term' && (trade.collectingEntry || trade.collectingSystemEntry)) {
         const amount = fixedAmount ?? 0
         amountByTradeKey.set(key, amount)
         cumulativeInvestmentAmount += amount

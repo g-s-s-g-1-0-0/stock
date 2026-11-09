@@ -1366,8 +1366,14 @@ def update_trade_logs(
     previous_technical = previous_technical or {}
     existing = load_json(TRADE_LOG_PUBLIC_PATH, load_json(TRADE_LOG_CACHE_PATH, {"rows": []}))
     rows = existing.get("rows", []) if isinstance(existing, dict) else []
-    trades = [row for row in rows if isinstance(row, dict)]
+    collecting_trades = [row for row in rows if isinstance(row, dict) and row.get("collectingSystemEntry")]
+    trades = [row for row in rows if isinstance(row, dict) and not row.get("collectingSystemEntry")]
     stocks_by_symbol = stocks_by_ticker(stocks)
+    for trade in collecting_trades:
+        if is_tracked_trade(trade):
+            stock = stocks_by_symbol.get(str(trade.get("ticker") or "").upper(), {})
+            if stock.get("currentPrice") not in (None, "", "-"):
+                trade["currentPrice"] = stock["currentPrice"]
     entry_tickers_by_type = load_watchlist_tickers_by_type(stocks)
     today = kst_trade_date()
     today_date = parse_trade_date(today) or datetime.now(timezone.utc).astimezone(KST).date()
@@ -1476,7 +1482,7 @@ def update_trade_logs(
             "recoveryEndedLiquidation": recovery_ended,
             "strategySeasonOpen": bool(result["season"].get("open")),
         },
-        "rows": result["trades"],
+        "rows": result["trades"] + collecting_trades,
     }
     write_trade_logs(payload)
     return signal_state_changed

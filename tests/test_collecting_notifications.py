@@ -101,3 +101,20 @@ class CollectingNotificationsTest(TestCase):
         self.assertFalse(self.state_path.exists())
         self.send.side_effect = None
         self.assertEqual(collecting.send_collecting_notifications(self.now), 1)
+
+    def test_operator_email_and_system_holding_use_same_amount_and_signal_time(self):
+        self.settings["accounts"][0]["buyTiming"] = "중순"
+        recipient = notifications.Recipient("owner", "example@example.invalid", True, {})
+        trade_path = self.state_path.with_name("trade-logs.json")
+        with patch.dict("os.environ", {"ADMIN_EMAILS": recipient.email}), \
+             patch.object(notifications, "load_recipients", return_value=[recipient]), \
+             patch.object(notifications, "DEFAULT_CURRENT_TRADE_LOGS", trade_path), \
+             patch.object(collecting, "write_trade_logs", side_effect=lambda payload: notifications.write_json(trade_path, payload)):
+            self.assertEqual(collecting.send_collecting_notifications(self.now), 1)
+            self.assertEqual(collecting.send_collecting_notifications(self.now), 0)
+        trade, = notifications.read_json(trade_path)["rows"]
+        self.assertEqual(trade["buyTimestamp"], self.now.isoformat())
+        self.assertEqual(trade["buyPrice"], "$100")
+        self.assertEqual(trade["status"], "보유 중")
+        self.assertEqual(trade["investmentAmount"], 350000)
+        self.assertIn("계획 금액 350,000원", self.send.call_args.args[2])

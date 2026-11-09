@@ -108,6 +108,7 @@ type Stock = {
 
 type TradeLog = {
   collectingEntry?: boolean
+  collectingSystemEntry?: boolean
   collectingRecordedAt?: string
   investmentAccountId?: string
   investmentAccountName?: string
@@ -1060,6 +1061,7 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
 
   return {
     collectingEntry: candidate.collectingEntry === true || undefined,
+    collectingSystemEntry: candidate.collectingSystemEntry === true || undefined,
     collectingRecordedAt: typeof candidate.collectingRecordedAt === 'string' ? candidate.collectingRecordedAt : undefined,
     investmentAccountId: typeof candidate.investmentAccountId === 'string' ? candidate.investmentAccountId : undefined,
     investmentAccountName: typeof candidate.investmentAccountName === 'string' ? candidate.investmentAccountName : undefined,
@@ -2641,6 +2643,7 @@ function tradeResultLabel(trade: TradeLog) {
   if (trade.status === '손절') return '실패(손절)'
   if (trade.status === '실패 익절') return '실패(익절)'
   if (trade.status === '매수 보류') return '매수 보류'
+  if (trade.collectingSystemEntry) return '보유중(시스템)'
   if (trade.manualEntry) return '보유중(직접)'
   return '보유중'
 }
@@ -2674,6 +2677,9 @@ function tradeResultInfo(trade: TradeLog) {
   }
   if (trade.status === '매수 보류') {
     return `${trade.allocationReason || '계정 배분 조건 미충족'} — 실제 매수는 보류하고 전략 신호만 추적합니다. 현금·슬롯·평가액에는 넣지 않습니다.`
+  }
+  if (trade.collectingSystemEntry && trade.status === '보유 중') {
+    return '매수 신호 당시 가격과 계좌 계획 금액으로 기록한 시스템 보유 내역입니다.'
   }
   if (trade.status !== '보유 중') return tradeCriteriaInfo(trade.strategy)
   return '계정의 투자금이 배정된 보유 거래입니다. 청산 전까지 투자금과 슬롯에 반영합니다.'
@@ -3473,6 +3479,16 @@ function tradeDateInputValue(value: string) {
 
 function normalizeTradeDateInput(value: string) {
   return value.trim().replaceAll('-', '.')
+}
+
+function tradeBuySignalDate(trade: TradeLog) {
+  if (!trade.collectingSystemEntry || !trade.buyTimestamp) return trade.buyDate
+  const timestamp = Date.parse(trade.buyTimestamp)
+  if (!Number.isFinite(timestamp)) return trade.buyDate
+  const time = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).format(timestamp)
+  return `${trade.buyDate} ${time}`
 }
 
 function holdingPeriodDays(trade: TradeLog) {
@@ -10963,7 +10979,7 @@ function App() {
                         />
                       </td>
                       <td className="ticker-cell">{trade.ticker}</td>
-                      <td>{trade.buyDate}</td>
+                      <td>{tradeBuySignalDate(trade)}</td>
                       <td className="number-cell">{trade.buyPrice}</td>
                       {!isLongTermInvestor && (
                         <td
@@ -11418,7 +11434,7 @@ function App() {
                           />
                         </td>
                         <td className="ticker-cell">{trade.ticker}</td>
-                        <td>{trade.buyDate}</td>
+                        <td>{tradeBuySignalDate(trade)}</td>
                         <td className="number-cell">{trade.buyPrice}</td>
                         {!isLongTermInvestor && (
                           <td

@@ -9,13 +9,14 @@ from functools import lru_cache
 from hashlib import sha256
 from html import escape
 from math import isfinite
+import os
 from urllib.parse import quote
 
 from calculator.leveraged_reference import is_inverse_product
 from calculator.market_regime import QQQ_RECOVERY_BUY_BLOCK_MAX
 from calculator.rules import STRATEGY_RULES
 from scripts import web_refresh_notifications as notifications
-from scripts.record_web_api_logs import REENTRY_DAYS, REENTRY_DROP, SELL_HOLD_DAYS
+from scripts.record_web_api_logs import REENTRY_DAYS, REENTRY_DROP, SELL_HOLD_DAYS, write_trade_logs
 
 FEAR_VIX = 20
 FEAR_CNN_MAX = 44
@@ -67,7 +68,6 @@ def target_conditions(settings, stocks, technical, fear, now):
             continue
         frequency = settings.get("frequency", "monthly") if account_id == "default" else account.get("frequency", "monthly")
         deposit_month = settings.get("monthOfYear", 1) if account_id == "default" else account.get("monthOfYear", 1)
-        amount = settings.get("amount", 0) if account_id == "default" else account.get("monthlyDeposit", 0)
         for target in account.get("collecting") or []:
             ticker = target.get("ticker")
             percent = target.get("percent")
@@ -89,10 +89,54 @@ def target_conditions(settings, stocks, technical, fear, now):
             if stock.get("opinion") == "매수":
                 entry = notifications.buy_strategy_codes(stock, technical.get(ticker, {}))
                 codes.extend(code for source, code in (("1", "3"), ("2", "4")) if source in entry)
-            budget = round(amount * percent / 100) if (
-                "1" in codes and frequency in {"monthly", "yearly"} and isinstance(amount, int) and amount > 0
-            ) else None
+            budget = planned_amount(settings, account, percent)
             yield account_id, ticker, local_now, codes, budget
+
+
+def planned_amount(settings, account, percent):
+    default = account.get("id") == "default"
+    frequency = settings.get("frequency", "monthly") if default else account.get("frequency", "monthly")
+    amount = settings.get("amount") if default else account.get("monthlyDeposit")
+    if frequency in {"monthly", "yearly"} and isinstance(amount, int) and amount > 0:
+        return round(amount * percent / 100)
+    return None
+
+
+def operator_signal_row(account, ticker, stock, code, budget, now):
+    day = now.astimezone(notifications.KST).date().isoformat()
+    account_id = account["id"]
+    ready = budget is not None and budget > 0 and positive_price(stock.get("currentPrice")) is not None
+    return {
+        "slotId": private_key(day, "operator-collecting", account_id, ticker),
+        "investmentType": "long_term",
+        "investmentAccountId": account_id,
+        "investmentAccountName": account.get("nickname") or "계좌",
+        "collectingSystemEntry": True,
+        "ticker": ticker,
+        "name": stock.get("name") or ticker,
+        "market": stock.get("market"),
+        "strategy": f"{int(code) - 2}. {STRATEGIES[code]}" if code in {"3", "4"} else STRATEGIES[code],
+        "buyDate": day.replace("-", "."),
+        "buyTimestamp": now.isoformat(),
+        "buyPrice": stock.get("currentPrice") or "-",
+        "currentPrice": stock.get("currentPrice") or "-",
+        "investmentAmount": budget if ready else 0,
+        "allocationRequestedAmount": budget,
+        "status": "보유 중" if ready else "매수 보류",
+        "sellDate": "보유 중" if ready else "-",
+        "sellPrice": "-",
+        "returnPct": 0,
+        "holdingDays": "-",
+        **({"allocationReason": "계획 금액 또는 신호 가격 확인 필요"} if not ready else {}),
+    }
+
+
+def append_operator_signals(payload, signals):
+    rows = payload.setdefault("rows", [])
+    known = {row.get("slotId") for row in rows}
+    additions = {row["slotId"]: row for row in signals if row["slotId"] not in known}
+    rows.extend(additions.values())
+    return len(additions)
 
 
 def private_key(day: str, *parts: str) -> str:
@@ -183,6 +227,7 @@ def collecting_email_body(cards, accounts, settings, stocks, technical, snapshot
             is_buy = any(kind == "buy" for kind, _, _ in events)
             has_buy |= is_buy
             accent = "#2ecc71" if is_buy else "#a8a29e"
+            budget_shown = False
             for kind, code, value in events:
                 if kind == "record":
                     buy_price = escape(str(value.get("buyPrice") or "-"))
@@ -194,8 +239,9 @@ def collecting_email_body(cards, accounts, settings, stocks, technical, snapshot
                 label = "매수 신호" if kind == "buy" else "매수 조건 해제"
                 color = "#15803d" if kind == "buy" else "#78716c"
                 line = f'<strong style="color:{color};">{label}</strong> · 전략 {code} {STRATEGIES[code]}'
-                if value is not None:
+                if value is not None and not budget_shown:
                     line += f" · 계획 금액 {value:,}원"
+                    budget_shown = True
                 line += f"<br>{escape(strategy_criterion(code, account, settings, stock))}"
                 observed = strategy_values(code, stock, technical.get(ticker, {}), snapshot)
                 if observed:
@@ -257,6 +303,7 @@ def send_collecting_notifications(now: datetime | None = None) -> int:
         if (stamp := date_time(key.rsplit(":", 1)[0])) is not None
         and now - timedelta(days=32) <= stamp <= now
     }, reverse=True)
+    primary_admin = next((email.strip().lower() for email in os.environ.get("ADMIN_EMAILS", "").split(",") if email.strip()), "")
     count = 0
     for owner_id, recipient in recipients.items():
         rows = notifications.supabase_request(
@@ -271,6 +318,8 @@ def send_collecting_notifications(now: datetime | None = None) -> int:
         cards = defaultdict(lambda: defaultdict(list))
         pending = set()
         actual_buys = {}
+        operator = recipient.is_admin and recipient.email.lower() == primary_admin
+        operator_log = notifications.read_json(notifications.DEFAULT_CURRENT_TRADE_LOGS) if operator else {}
         for trade in rows[0].get("personal_trade_logs") or []:
             recorded = date_time(trade.get("collectingRecordedAt"))
             if not trade.get("collectingEntry") or not trade.get("slotId") or recorded is None or recorded > now:
@@ -330,7 +379,7 @@ def send_collecting_notifications(now: datetime | None = None) -> int:
                     if identity not in active and can_repeat:
                         key = private_key(now.isoformat(), "signal", identity)
                         if key not in sent and key not in pending:
-                            cards[account_id][ticker].append(("buy", code, None))
+                            cards[account_id][ticker].append(("buy", code, budget))
                             pending.add(key)
                             next_active.add(identity)
                             bought = True
@@ -348,6 +397,15 @@ def send_collecting_notifications(now: datetime | None = None) -> int:
                 next_last_buy[target_key] = {"at": now.isoformat(), "price": price}
 
         if pending:
+            if operator:
+                signals = [
+                    operator_signal_row(accounts[account_id], ticker, stocks[ticker], entry[1], entry[2], now)
+                    for account_id, tickers in cards.items()
+                    for ticker, events in tickers.items()
+                    if (entry := next((event for event in events if event[0] == "buy"), None))
+                ]
+                if signals and append_operator_signals(operator_log, signals):
+                    write_trade_logs(operator_log)
             body = collecting_email_body(cards, accounts, settings, stocks, technical, snapshot)
             notifications.send_notification(
                 recipient, "가치투자 계좌별 투자 알림",
