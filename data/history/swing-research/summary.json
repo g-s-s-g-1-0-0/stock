@@ -1,8 +1,8 @@
 {
   "version": "swing-paired-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-11-06",
-  "observations": 1074,
+  "lastSession": "2026-11-09",
+  "observations": 1118,
   "signalCounts": {
     "s7_base": 40,
     "s7_rs_positive": 20,
