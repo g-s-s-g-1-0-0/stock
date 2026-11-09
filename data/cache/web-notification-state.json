@@ -18,6 +18,16 @@
     "active:cf4a7e30243980d88bd9640bfaa973c585465cdebdbef2bef9c5cb70c612d037",
     "active:db87952fa730fa3e36284aac34922b5957ced7f6cdf5f89bfb1083db316a7312"
   ],
+  "collectingLastBuy": {
+    "buy:540181dd8be4069279b176f2cd6bc30872b8db9d96dd3251a0b774a745d975ff": {
+      "at": "2026-11-09T18:00:10.346602+09:00",
+      "price": null
+    },
+    "buy:af7421d3e39fb629c3463efa8e9438e4a007dd80a4592ac774b859632e52a574": {
+      "at": "2026-11-09T18:00:10.346602+09:00",
+      "price": null
+    }
+  },
   "earnings": {
     "sentKeys": [
       "86752d75-255f-4704-83f1-72b62227e624:AAPL:2026-11-03",
@@ -384,7 +394,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-11-09T15:00:00+00:00"
+    "updatedAt": "2026-11-09T17:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
