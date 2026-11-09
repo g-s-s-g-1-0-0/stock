@@ -1780,7 +1780,6 @@ def opinion_email_body(
             """
         )
 
-    kst_label, et_label = now_labels()
     macro_context_html = build_macro_context_html() if has_buy_transition else ""
     trend_top3_html = build_trend_top3_html() if has_buy_transition else ""
     sell_summary_html = (
@@ -1797,6 +1796,25 @@ def opinion_email_body(
     else:
         accent, pill, pill_bg, pill_color = "#1d4ed8", "의견 변경", "#eff6ff", "#1d4ed8"
     count_label = f"{len(changes)}개 종목"
+    content = f"""
+            {''.join(changed_html)}
+            {macro_context_html}
+            {trend_top3_html}
+            <div style="margin-top:14px;padding:10px 0;border-top:1px solid #f0eeeb;font-size:13px;line-height:1.5;color:#44403c;"><span style="color:#78716c;">현재 매수 의견 종목:</span> <strong>{html.escape(list_text(buy_opinions or []))}</strong></div>
+            <div style="padding:10px 0;border-top:1px solid #f0eeeb;font-size:13px;line-height:1.5;color:#44403c;"><span style="color:#78716c;">보유 중 관망 종목:</span> <strong>{html.escape(list_text(watch_holding_opinions or []))}</strong></div>
+            {sell_summary_html}
+    """
+    return signal_email_layout(
+        "투자의견이 변경된 종목이 있습니다.", f"{count_label}의 의견이 바뀌었습니다.",
+        content, accent, pill, pill_bg, pill_color,
+    )
+
+
+def signal_email_layout(
+    title: str, description: str, content: str,
+    accent: str, pill: str, pill_bg: str, pill_color: str,
+) -> str:
+    kst_label, et_label = now_labels()
     return f"""
     <div style="font-family:{ALERT_FONT};color:#1c1917;max-width:640px;line-height:1.5;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;border-spacing:0;border:1px solid #e7e5e4;border-radius:16px;background:#ffffff;">
@@ -1813,14 +1831,9 @@ def opinion_email_body(
                 </td>
               </tr>
             </table>
-            <div style="margin:16px 0 0;font-size:20px;font-weight:700;letter-spacing:-0.02em;line-height:1.35;">투자의견이 변경된 종목이 있습니다.</div>
-            <div style="margin:8px 0 16px;font-size:14px;line-height:1.55;color:#57534e;">{count_label}의 의견이 바뀌었습니다.</div>
-            {''.join(changed_html)}
-            {macro_context_html}
-            {trend_top3_html}
-            <div style="margin-top:14px;padding:10px 0;border-top:1px solid #f0eeeb;font-size:13px;line-height:1.5;color:#44403c;"><span style="color:#78716c;">현재 매수 의견 종목:</span> <strong>{html.escape(list_text(buy_opinions or []))}</strong></div>
-            <div style="padding:10px 0;border-top:1px solid #f0eeeb;font-size:13px;line-height:1.5;color:#44403c;"><span style="color:#78716c;">보유 중 관망 종목:</span> <strong>{html.escape(list_text(watch_holding_opinions or []))}</strong></div>
-            {sell_summary_html}
+            <div style="margin:16px 0 0;font-size:20px;font-weight:700;letter-spacing:-0.02em;line-height:1.35;">{html.escape(title)}</div>
+            <div style="margin:8px 0 16px;font-size:14px;line-height:1.55;color:#57534e;">{html.escape(description)}</div>
+            {content}
             <div style="margin:12px 0 0;font-size:12px;line-height:1.5;color:#a8a29e;">한국 {html.escape(kst_label)}<br>미 동부 {html.escape(et_label)}</div>
           </td>
         </tr>
