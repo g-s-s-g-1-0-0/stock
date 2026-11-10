@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-11-10T14:57:20+00:00",
-    "lastSuccessfulRun": "2026-11-10T14:57:20+00:00",
+    "updatedAt": "2026-11-10T15:03:40+00:00",
+    "lastSuccessfulRun": "2026-11-10T15:03:40+00:00",
     "failedReason": null
   },
   "rows": [
@@ -150,18 +150,12 @@
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (소비자물가지수 발표 (CPI))",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "6. 하락 추세 이탈 시도"
+      ],
       "category": "가치주",
       "industry": "자동차, 피지컬 AI, 자율주행·SDV, 로보틱스, 전기차",
-      "updatedAt": "2026-11-10T14:56:38+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "자동차·배터리",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 0,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:56:38+00:00"
     },
     {
       "ticker": "005930",
@@ -270,18 +264,12 @@
       "opinion": "관망",
       "opinionReason": "관망 — 재매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "7. 이평선 눌림 반등"
+      ],
       "category": "성장주",
       "industry": "반도체, 반도체 테스트 장비, 후공정 검사",
-      "updatedAt": "2026-11-10T14:56:48+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 10.0,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:56:48+00:00"
     },
     {
       "ticker": "AMD",
@@ -294,7 +282,9 @@
       "opinion": "매도",
       "opinionReason": "3. 정상장 볼린저 워시아웃 · 익절 기준 도달 +14.19% [정상장 볼린저 워시아웃 기준 +12%]",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "7. 이평선 눌림 반등"
+      ],
       "category": "성장주",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
       "updatedAt": "2026-11-10T14:56:49+00:00"
@@ -319,7 +309,7 @@
       "ticker": "ASX",
       "name": "ASE Technology Holding",
       "market": "US",
-      "fairPrice": "$32.71 ~ $44.25",
+      "fairPrice": "$32.40 ~ $43.83",
       "fairPriceReason": null,
       "currentPrice": "$36.63",
       "valuation": "보통",
@@ -329,15 +319,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
-      "updatedAt": "2026-11-10T14:56:50+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:56:50+00:00"
     },
     {
       "ticker": "BE",
@@ -401,15 +383,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "Robinhood(HOOD) 단일종목 2배 레버리지 ETF(일일 2배)",
-      "updatedAt": "2026-11-10T14:56:53+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "Robinhood(HOOD) 단일종목 2배 레버리지 ETF(일일 2배)",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:56:53+00:00"
     },
     {
       "ticker": "INTC",
@@ -438,18 +412,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 4. 장기선 아래 반등 초입 · 추가매수 대기 (익절 +15% 또는 회복장 종료 청산 · 손절 -8%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "양자컴퓨팅, 이온트랩, 양자 네트워크",
-      "updatedAt": "2026-11-10T14:56:54+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "양자컴퓨팅",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:56:54+00:00"
     },
     {
       "ticker": "IREN",
@@ -481,15 +449,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
-      "updatedAt": "2026-11-10T14:56:56+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:56:56+00:00"
     },
     {
       "ticker": "MU",
@@ -553,15 +513,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "우주 산업, 소형 발사체, 위성 배포",
-      "updatedAt": "2026-11-10T14:56:58+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "방산·우주",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:56:58+00:00"
     },
     {
       "ticker": "SNDK",
@@ -622,18 +574,12 @@
       "opinion": "관망",
       "opinionReason": "보유 유지 — 7. 이평선 눌림 반등 · 추가매수 대기",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "광학·레이저, 광인터커넥트, AI 데이터센터 부품",
-      "updatedAt": "2026-11-10T14:57:01+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:57:01+00:00"
     },
     {
       "ticker": "GLW",
@@ -687,10 +633,10 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "fairPrice": "₩262,855 ~ ₩355,627",
+      "fairPrice": "₩142,910 ~ ₩193,348",
       "fairPriceReason": null,
       "currentPrice": "₩338,500",
-      "valuation": "보통",
+      "valuation": "고평가",
       "opinion": "관망",
       "opinionReason": "이벤트 기간 관망 (소비자물가지수 발표 (CPI))",
       "marketEvent": "당분간 없음",
@@ -710,18 +656,12 @@
       "opinion": "관망",
       "opinionReason": "관망 — 재매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "7. 이평선 눌림 반등"
+      ],
       "category": "성장주",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
-      "updatedAt": "2026-11-10T14:57:06+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 10.0,
-      "riskGroup": "금융·가상자산",
-      "currentRiskGroupPercent": 0.0,
-      "postRiskGroupPercent": 10.0,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:57:06+00:00"
     },
     {
       "ticker": "CRWV",
@@ -833,15 +773,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
-      "updatedAt": "2026-11-10T14:57:10+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "나스닥100 지수 ETF(1배)",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:57:10+00:00"
     },
     {
       "ticker": "USD",
@@ -905,15 +837,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화",
-      "updatedAt": "2026-11-10T14:57:13+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:57:13+00:00"
     },
     {
       "ticker": "SPCX",
@@ -926,18 +850,12 @@
       "opinion": "관망",
       "opinionReason": "관망 — 재매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "7. 이평선 눌림 반등"
+      ],
       "category": "성장주",
       "industry": "우주 산업, 발사체, 위성통신, Starlink",
-      "updatedAt": "2026-11-10T14:57:14+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 10.0,
-      "riskGroup": "방산·우주",
-      "currentRiskGroupPercent": 0.0,
-      "postRiskGroupPercent": 10.0,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:57:14+00:00"
     },
     {
       "ticker": "UBER",
@@ -953,15 +871,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
-      "updatedAt": "2026-11-10T14:57:14+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "소프트웨어·클라우드",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:57:14+00:00"
     },
     {
       "ticker": "AAPL",
@@ -974,18 +884,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 종가 지지선 이탈 $325.64 · 비상 손절 -25% · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "혼합주",
       "industry": "스마트폰, 소비자 전자, 서비스, 자체 반도체",
-      "updatedAt": "2026-11-10T14:57:15+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-10T14:57:15+00:00"
     },
     {
       "ticker": "GOOGL",
