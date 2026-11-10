@@ -1,7 +1,7 @@
 {
   "version": "data-first-paper-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-11-09",
+  "lastSession": "2026-11-10",
   "observations": 1118,
   "signalCounts": {
     "data_S3_ma200_distance25_base": 64,
@@ -106,11 +106,11 @@
       "knownObservations": 1113,
       "unknownObservations": 5,
       "data_N_expanded_below200_base": {
-        "closed": 83,
+        "closed": 85,
         "entryDates": 8
       },
       "data_N_expanded_below200_filtered": {
-        "closed": 49,
+        "closed": 51,
         "entryDates": 14
       }
     },
@@ -118,7 +118,7 @@
       "knownObservations": 1113,
       "unknownObservations": 5,
       "data_N_rsi_ahead_macd_base": {
-        "closed": 83,
+        "closed": 85,
         "entryDates": 8
       },
       "data_N_rsi_ahead_macd_filtered": {
@@ -130,14 +130,14 @@
       "knownObservations": 978,
       "unknownObservations": 140,
       "data_N_value_laggard_base": {
-        "closed": 83,
+        "closed": 85,
         "entryDates": 8
       },
       "data_N_value_laggard_filtered": {
-        "closed": 20,
+        "closed": 21,
         "entryDates": 8
       }
     }
   },
-  "waitingForSource": 1
+  "waitingForSource": 45
 }
