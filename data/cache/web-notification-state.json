@@ -19,8 +19,24 @@
     "active:db87952fa730fa3e36284aac34922b5957ced7f6cdf5f89bfb1083db316a7312"
   ],
   "collectingLastBuy": {
+    "buy:18de8addc3b17cf094977dc56b4f4bb15c8cf42ac793213be9164d4147b2b9d4": {
+      "at": "2026-11-09T10:00:11.118374+09:00",
+      "price": null
+    },
+    "buy:5054b4ccfd7b02c6864064d6d5fc73a19c3daacab0532b934eaaffe95d1aaa3d": {
+      "at": "2026-11-09T10:00:11.118374+09:00",
+      "price": null
+    },
     "buy:540181dd8be4069279b176f2cd6bc30872b8db9d96dd3251a0b774a745d975ff": {
       "at": "2026-11-09T18:00:10.346602+09:00",
+      "price": null
+    },
+    "buy:96d7d1f23313dd661f6c8de343a4e9c5a057bec9ddde7e5902cd2207f0cabf4e": {
+      "at": "2026-11-09T10:00:11.118374+09:00",
+      "price": null
+    },
+    "buy:a7366668bf4ef42561fd008c3b3bd939e09916208586f358e1be8a17ba39eefe": {
+      "at": "2026-11-09T10:00:11.118374+09:00",
       "price": null
     },
     "buy:af7421d3e39fb629c3463efa8e9438e4a007dd80a4592ac774b859632e52a574": {
@@ -394,7 +410,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-11-09T21:00:00+00:00"
+    "updatedAt": "2026-11-10T01:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
