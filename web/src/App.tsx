@@ -356,6 +356,7 @@ const USER_SETTINGS_STORAGE_KEY = 'gongsu-user-settings'
 const USER_SETTINGS_REMOTE_CACHE_STORAGE_KEY = 'gongsu-user-settings-remote-cache-v1'
 const OPERATOR_WATCHLIST_SORT_STORAGE_KEY = 'gongsu-operator-watchlist-sort'
 const CONTRIBUTION_SETTINGS_STORAGE_KEY = 'gongsu-contribution-settings'
+const PORTFOLIO_ACCOUNT_STORAGE_KEY = 'gongsu-selected-portfolio-account'
 const API_LOGS_STORAGE_KEY = 'gongsu-api-logs'
 const ACTIVE_PAGE_STORAGE_KEY = 'gongsu-active-page'
 const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
@@ -933,6 +934,14 @@ function userSettingsStorageKey(session: UserSession | null = null) {
 
 function contributionSettingsStorageKey(session: UserSession | null = null) {
   return `${CONTRIBUTION_SETTINGS_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
+}
+
+function readSelectedPortfolioAccount(storageKey: string) {
+  try {
+    return localStorage.getItem(storageKey)
+  } catch {
+    return null
+  }
 }
 
 function personalTradeLogsStorageKey(session: UserSession | null = null) {
@@ -7171,7 +7180,7 @@ function App() {
   const [publicOperatorError, setPublicOperatorError] = useState('')
 
   const [cashAccountId, setCashAccountId] = useState('')
-  const [selectedPortfolioAccountId, setSelectedPortfolioAccountId] = useState('default')
+  const [portfolioAccountSelections, setPortfolioAccountSelections] = useState<Record<string, string>>({})
   const [collectingAccountReturnId, setCollectingAccountReturnId] = useState<string | null>(null)
   const [collectingImportTickers, setCollectingImportTickers] = useState<string[] | null>(null)
   const [cashAccountDeleteOpen, setCashAccountDeleteOpen] = useState(false)
@@ -8557,7 +8566,18 @@ function App() {
     ? publicOperatorSettings ?? { ...DEFAULT_CONTRIBUTION_SETTINGS, initialCapital: 0, amount: 0 }
     : contributionSettings
   const portfolioAccounts = contributionSettingsDraftFrom(visibleContributionSettings).accounts
+  const portfolioAccountStorageKey = `${PORTFOLIO_ACCOUNT_STORAGE_KEY}:${effectiveViewMode}:${userSession?.id ?? 'guest'}`
+  const storedPortfolioAccountId = useMemo(() => readSelectedPortfolioAccount(portfolioAccountStorageKey), [portfolioAccountStorageKey])
+  const selectedPortfolioAccountId = portfolioAccountSelections[portfolioAccountStorageKey] ?? storedPortfolioAccountId
   const selectedPortfolioAccount = portfolioAccounts.find(({ id }) => id === selectedPortfolioAccountId) ?? portfolioAccounts[0]
+  const selectPortfolioAccount = (id: string) => {
+    setPortfolioAccountSelections((current) => ({ ...current, [portfolioAccountStorageKey]: id }))
+    try {
+      localStorage.setItem(portfolioAccountStorageKey, id)
+    } catch {
+      // The current selection still works when the browser blocks storage.
+    }
+  }
   const rawScopedTrades = isOperatorDataMode
     ? shouldApplyInvestmentTypeView
       ? systemTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
@@ -9087,7 +9107,7 @@ function App() {
     }
     setContributionSettings(nextSettings)
     if (collectingSettings && cashAccount) {
-      setSelectedPortfolioAccountId(cashAccount.id)
+      selectPortfolioAccount(cashAccount.id)
     }
     void persistPortfolioState(personalTradeLogs, nextSettings)
     setContributionDraft(null)
@@ -12122,7 +12142,7 @@ function App() {
                               disabled={!portfolioAccounts.some(({ id }) => id === account.id)}
                               aria-pressed={selectedPortfolioAccount.id === account.id}
                               onClick={() => {
-                                setSelectedPortfolioAccountId(account.id)
+                                selectPortfolioAccount(account.id)
                                 setContributionDraft(null)
                               }}>
                               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"
