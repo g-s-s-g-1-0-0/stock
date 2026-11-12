@@ -356,6 +356,7 @@ const USER_SETTINGS_STORAGE_KEY = 'gongsu-user-settings'
 const USER_SETTINGS_REMOTE_CACHE_STORAGE_KEY = 'gongsu-user-settings-remote-cache-v1'
 const OPERATOR_WATCHLIST_SORT_STORAGE_KEY = 'gongsu-operator-watchlist-sort'
 const CONTRIBUTION_SETTINGS_STORAGE_KEY = 'gongsu-contribution-settings'
+const PORTFOLIO_ACCOUNT_STORAGE_KEY = 'gongsu-selected-portfolio-account'
 const API_LOGS_STORAGE_KEY = 'gongsu-api-logs'
 const ACTIVE_PAGE_STORAGE_KEY = 'gongsu-active-page'
 const DEFAULT_ADMIN_EMAILS = ['admin@gongsu.local']
@@ -933,6 +934,14 @@ function userSettingsStorageKey(session: UserSession | null = null) {
 
 function contributionSettingsStorageKey(session: UserSession | null = null) {
   return `${CONTRIBUTION_SETTINGS_STORAGE_KEY}:${session?.email.toLowerCase() ?? 'guest'}`
+}
+
+function readSelectedPortfolioAccount(storageKey: string) {
+  try {
+    return localStorage.getItem(storageKey)
+  } catch {
+    return null
+  }
 }
 
 function personalTradeLogsStorageKey(session: UserSession | null = null) {
@@ -6956,7 +6965,7 @@ function AppDataSkeleton({ page, isLongTermInvestor }: { page: ActivePage; isLon
             <div className="strategy-filter loading-filters">{Array.from({ length: 8 }, (_, index) => <span className="skeleton-block" key={index} />)}</div>
           </div>
           <div className="log-sub-row">
-            <div className="log-meta"><span className="skeleton-block loading-days" />{!isLongTermInvestor && <span className="skeleton-block loading-win-rate" />}</div>
+            <div className="log-meta"><span className="skeleton-block loading-days" /><span className="skeleton-block loading-win-rate" /></div>
             <div className="log-criteria-sort-row"><span className="skeleton-block loading-criteria-text" /><span className="skeleton-block loading-sort" /></div>
           </div>
         </div>
@@ -7171,7 +7180,7 @@ function App() {
   const [publicOperatorError, setPublicOperatorError] = useState('')
 
   const [cashAccountId, setCashAccountId] = useState('')
-  const [selectedPortfolioAccountId, setSelectedPortfolioAccountId] = useState('default')
+  const [portfolioAccountSelections, setPortfolioAccountSelections] = useState<Record<string, string>>({})
   const [collectingAccountReturnId, setCollectingAccountReturnId] = useState<string | null>(null)
   const [collectingImportTickers, setCollectingImportTickers] = useState<string[] | null>(null)
   const [cashAccountDeleteOpen, setCashAccountDeleteOpen] = useState(false)
@@ -8557,26 +8566,62 @@ function App() {
     ? publicOperatorSettings ?? { ...DEFAULT_CONTRIBUTION_SETTINGS, initialCapital: 0, amount: 0 }
     : contributionSettings
   const portfolioAccounts = contributionSettingsDraftFrom(visibleContributionSettings).accounts
+  const portfolioAccountStorageKey = `${PORTFOLIO_ACCOUNT_STORAGE_KEY}:${effectiveViewMode}:${userSession?.id ?? 'guest'}`
+  const storedPortfolioAccountId = useMemo(() => readSelectedPortfolioAccount(portfolioAccountStorageKey), [portfolioAccountStorageKey])
+  const selectedPortfolioAccountId = portfolioAccountSelections[portfolioAccountStorageKey] ?? storedPortfolioAccountId
   const selectedPortfolioAccount = portfolioAccounts.find(({ id }) => id === selectedPortfolioAccountId) ?? portfolioAccounts[0]
-  const accountContributionSettings = selectedPortfolioAccount.id === 'default' ? visibleContributionSettings : {
-    ...visibleContributionSettings,
-    initialCapital: selectedPortfolioAccount.initialCapital ?? 0,
-    amount: selectedPortfolioAccount.monthlyDeposit,
-    frequency: selectedPortfolioAccount.frequency ?? 'monthly',
-    monthOfYear: selectedPortfolioAccount.monthOfYear ?? 1,
-    dayOfWeek: selectedPortfolioAccount.dayOfWeek ?? 1,
-    dayOfMonth: selectedPortfolioAccount.dayOfMonth ?? 1,
+  const selectPortfolioAccount = (id: string) => {
+    setPortfolioAccountSelections((current) => ({ ...current, [portfolioAccountStorageKey]: id }))
+    try {
+      localStorage.setItem(portfolioAccountStorageKey, id)
+    } catch {
+      // The current selection still works when the browser blocks storage.
+    }
   }
   const rawScopedTrades = isOperatorDataMode
     ? shouldApplyInvestmentTypeView
       ? systemTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
       : systemTradeLogs
     : personalTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
-  const portfolioSummary = calculateAccountPortfolio(
-    rawScopedTrades.filter((trade) => (trade.investmentAccountId ?? 'default') === selectedPortfolioAccount.id),
-    apiStocks, apiMarketTrendRows, accountContributionSettings, displayedInvestmentType,
-    userSession || isOperatorDataMode ? accountContributionSettings.initialCapital : 0,
-  )
+  const portfolioAsOf = new Date().toISOString()
+  const calculatePortfolioForAccount = (account: typeof selectedPortfolioAccount) => {
+    const settings = account.id === 'default' ? visibleContributionSettings : {
+      ...visibleContributionSettings,
+      initialCapital: account.initialCapital ?? 0,
+      amount: account.monthlyDeposit,
+      frequency: account.frequency ?? 'monthly',
+      monthOfYear: account.monthOfYear ?? 1,
+      dayOfWeek: account.dayOfWeek ?? 1,
+      dayOfMonth: account.dayOfMonth ?? 1,
+    }
+    return calculateAccountPortfolio(
+      rawScopedTrades.filter((trade) => (trade.investmentAccountId ?? 'default') === account.id),
+      apiStocks, apiMarketTrendRows, settings, displayedInvestmentType,
+      userSession || isOperatorDataMode ? settings.initialCapital : 0, portfolioAsOf,
+    )
+  }
+  const portfolioSummary = calculatePortfolioForAccount(selectedPortfolioAccount)
+  const visibleAccountReturns = isLongTermInvestor ? (() => {
+    const accountSummaries = portfolioAccounts.map((account) => ({
+      nickname: account.nickname,
+      summary: account.id === selectedPortfolioAccount.id ? portfolioSummary : calculatePortfolioForAccount(account),
+    }))
+    const totals = accountSummaries.reduce((total, { summary }) => ({
+      principal: total.principal + summary.cumulativeInvestmentAmount,
+      profit: total.profit + summary.profitAmount,
+    }), { principal: 0, profit: 0 })
+    const formatRate = (profit: number, principal: number) => {
+      if (principal <= 0) return '—'
+      const rate = profit / principal * 100
+      return `${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%`
+    }
+    return [
+      `전체 ${formatRate(totals.profit, totals.principal)}`,
+      ...accountSummaries.map(({ nickname, summary }) => (
+        `${nickname} ${formatRate(summary.profitAmount, summary.cumulativeInvestmentAmount)}`
+      )),
+    ].join(' · ')
+  })() : ''
   const scopedTrades: TradeLog[] = portfolioSummary.trades
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const visibleProfileTrades = scopedTrades
@@ -9062,7 +9107,7 @@ function App() {
     }
     setContributionSettings(nextSettings)
     if (collectingSettings && cashAccount) {
-      setSelectedPortfolioAccountId(cashAccount.id)
+      selectPortfolioAccount(cashAccount.id)
     }
     void persistPortfolioState(personalTradeLogs, nextSettings)
     setContributionDraft(null)
@@ -10862,7 +10907,9 @@ function App() {
             <div className="log-sub-row">
               <div className="log-meta">
                 <p>총 투자 기간 {investingDays}일</p>
-                {!isLongTermInvestor && <p className="log-win-rate">승률: {visibleWinRates}</p>}
+                {isLongTermInvestor
+                  ? <p className="log-account-returns" tabIndex={0}>수익률: {visibleAccountReturns}</p>
+                  : <p className="log-win-rate">승률: {visibleWinRates}</p>}
               </div>
               <div className="log-criteria-sort-row">
                 {isLongTermInvestor
@@ -12095,7 +12142,7 @@ function App() {
                               disabled={!portfolioAccounts.some(({ id }) => id === account.id)}
                               aria-pressed={selectedPortfolioAccount.id === account.id}
                               onClick={() => {
-                                setSelectedPortfolioAccountId(account.id)
+                                selectPortfolioAccount(account.id)
                                 setContributionDraft(null)
                               }}>
                               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"
