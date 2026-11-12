@@ -657,6 +657,13 @@
   gap: 6px;
 }
 
+.log-meta .log-account-returns {
+  white-space: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
 .log-sub-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -6658,7 +6665,8 @@ html.modal-scroll-lock body {
     line-height: 1.4;
   }
 
-  .log-meta .log-win-rate {
+  .log-meta .log-win-rate,
+  .log-meta .log-account-returns {
     white-space: nowrap;
     min-width: 0;
     max-width: 100%;
@@ -6668,7 +6676,8 @@ html.modal-scroll-lock body {
     scrollbar-width: none;
   }
 
-  .log-meta .log-win-rate::-webkit-scrollbar {
+  .log-meta .log-win-rate::-webkit-scrollbar,
+  .log-meta .log-account-returns::-webkit-scrollbar {
     display: none;
   }
 

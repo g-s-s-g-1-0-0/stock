@@ -6956,7 +6956,7 @@ function AppDataSkeleton({ page, isLongTermInvestor }: { page: ActivePage; isLon
             <div className="strategy-filter loading-filters">{Array.from({ length: 8 }, (_, index) => <span className="skeleton-block" key={index} />)}</div>
           </div>
           <div className="log-sub-row">
-            <div className="log-meta"><span className="skeleton-block loading-days" />{!isLongTermInvestor && <span className="skeleton-block loading-win-rate" />}</div>
+            <div className="log-meta"><span className="skeleton-block loading-days" /><span className="skeleton-block loading-win-rate" /></div>
             <div className="log-criteria-sort-row"><span className="skeleton-block loading-criteria-text" /><span className="skeleton-block loading-sort" /></div>
           </div>
         </div>
@@ -8558,25 +8558,50 @@ function App() {
     : contributionSettings
   const portfolioAccounts = contributionSettingsDraftFrom(visibleContributionSettings).accounts
   const selectedPortfolioAccount = portfolioAccounts.find(({ id }) => id === selectedPortfolioAccountId) ?? portfolioAccounts[0]
-  const accountContributionSettings = selectedPortfolioAccount.id === 'default' ? visibleContributionSettings : {
-    ...visibleContributionSettings,
-    initialCapital: selectedPortfolioAccount.initialCapital ?? 0,
-    amount: selectedPortfolioAccount.monthlyDeposit,
-    frequency: selectedPortfolioAccount.frequency ?? 'monthly',
-    monthOfYear: selectedPortfolioAccount.monthOfYear ?? 1,
-    dayOfWeek: selectedPortfolioAccount.dayOfWeek ?? 1,
-    dayOfMonth: selectedPortfolioAccount.dayOfMonth ?? 1,
-  }
   const rawScopedTrades = isOperatorDataMode
     ? shouldApplyInvestmentTypeView
       ? systemTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
       : systemTradeLogs
     : personalTradeLogs.filter((trade) => tradeMatchesInvestmentType(trade, displayedInvestmentType))
-  const portfolioSummary = calculateAccountPortfolio(
-    rawScopedTrades.filter((trade) => (trade.investmentAccountId ?? 'default') === selectedPortfolioAccount.id),
-    apiStocks, apiMarketTrendRows, accountContributionSettings, displayedInvestmentType,
-    userSession || isOperatorDataMode ? accountContributionSettings.initialCapital : 0,
-  )
+  const portfolioAsOf = new Date().toISOString()
+  const calculatePortfolioForAccount = (account: typeof selectedPortfolioAccount) => {
+    const settings = account.id === 'default' ? visibleContributionSettings : {
+      ...visibleContributionSettings,
+      initialCapital: account.initialCapital ?? 0,
+      amount: account.monthlyDeposit,
+      frequency: account.frequency ?? 'monthly',
+      monthOfYear: account.monthOfYear ?? 1,
+      dayOfWeek: account.dayOfWeek ?? 1,
+      dayOfMonth: account.dayOfMonth ?? 1,
+    }
+    return calculateAccountPortfolio(
+      rawScopedTrades.filter((trade) => (trade.investmentAccountId ?? 'default') === account.id),
+      apiStocks, apiMarketTrendRows, settings, displayedInvestmentType,
+      userSession || isOperatorDataMode ? settings.initialCapital : 0, portfolioAsOf,
+    )
+  }
+  const portfolioSummary = calculatePortfolioForAccount(selectedPortfolioAccount)
+  const visibleAccountReturns = isLongTermInvestor ? (() => {
+    const accountSummaries = portfolioAccounts.map((account) => ({
+      nickname: account.nickname,
+      summary: account.id === selectedPortfolioAccount.id ? portfolioSummary : calculatePortfolioForAccount(account),
+    }))
+    const totals = accountSummaries.reduce((total, { summary }) => ({
+      principal: total.principal + summary.cumulativeInvestmentAmount,
+      profit: total.profit + summary.profitAmount,
+    }), { principal: 0, profit: 0 })
+    const formatRate = (profit: number, principal: number) => {
+      if (principal <= 0) return '—'
+      const rate = profit / principal * 100
+      return `${rate >= 0 ? '+' : ''}${rate.toFixed(1)}%`
+    }
+    return [
+      `전체 ${formatRate(totals.profit, totals.principal)}`,
+      ...accountSummaries.map(({ nickname, summary }) => (
+        `${nickname} ${formatRate(summary.profitAmount, summary.cumulativeInvestmentAmount)}`
+      )),
+    ].join(' · ')
+  })() : ''
   const scopedTrades: TradeLog[] = portfolioSummary.trades
   const scopedOpenTrades = scopedTrades.filter((trade) => trade.status === '보유 중')
   const visibleProfileTrades = scopedTrades
@@ -10862,7 +10887,9 @@ function App() {
             <div className="log-sub-row">
               <div className="log-meta">
                 <p>총 투자 기간 {investingDays}일</p>
-                {!isLongTermInvestor && <p className="log-win-rate">승률: {visibleWinRates}</p>}
+                {isLongTermInvestor
+                  ? <p className="log-account-returns" tabIndex={0}>수익률: {visibleAccountReturns}</p>
+                  : <p className="log-win-rate">승률: {visibleWinRates}</p>}
               </div>
               <div className="log-criteria-sort-row">
                 {isLongTermInvestor
