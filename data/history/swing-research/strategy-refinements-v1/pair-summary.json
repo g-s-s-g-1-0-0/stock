@@ -2,13 +2,13 @@
   "pairs": {
     "s1_ma200_rising": {
       "refine_s1_base": {
-        "closed": 0,
-        "entryDates": 0,
+        "closed": 3,
+        "entryDates": 1,
         "signals": 5
       },
       "refine_s1_ma200_rising": {
-        "closed": 0,
-        "entryDates": 0,
+        "closed": 3,
+        "entryDates": 1,
         "signals": 4
       }
     },
