@@ -11084,7 +11084,7 @@ function App() {
                   )}
                   <th>{isLongTermInvestor ? '현재/청산가(수익률)' : '가격(수익률)'}</th>
                   <th>투자금</th>
-                  <th title={BUY_QUANTITY_DESCRIPTION}>예상 매수 수량</th>
+                  <th title={BUY_QUANTITY_DESCRIPTION}>매수 수량</th>
                   <th>예상 손익</th>
                   <th>보유 기간</th>
                   <th>결과</th>
@@ -11544,7 +11544,7 @@ function App() {
                     <th>티커</th>
                     <th>매수 신호일</th>
                     <th>매수 신호 가격</th>
-                    <th title={BUY_QUANTITY_DESCRIPTION}>예상 매수 수량</th>
+                    <th title={BUY_QUANTITY_DESCRIPTION}>매수 수량</th>
                     {!isLongTermInvestor && <th>권장 매도가</th>}
                     <th>매수 전략</th>
                     <th>현재가(수익률)</th>
@@ -12778,7 +12778,7 @@ function App() {
                         }} />
                     </label>
                     <label>
-                      <span>예상 매수 수량</span>
+                      <span>매수 수량</span>
                       <output className="holding-liquidation-return">{quantity}</output>
                     </label>
                   </div>
