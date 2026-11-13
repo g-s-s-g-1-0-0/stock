@@ -80,7 +80,7 @@ class CollectingNotificationsTest(TestCase):
         self.assertEqual(collecting.send_collecting_notifications(self.now), 1)
         body = self.send.call_args.args[2]
         self.assertIn("매수 기록 저장", body)
-        self.assertEqual(body.count("전략 2 간편 공포 매수"), 1)
+        self.assertEqual(body.count("전략 2 공포 구간 매수 (선택)"), 1)
         self.assertIn(">ISA</h2>", body)
         self.assertEqual(collecting.send_collecting_notifications(self.now), 0)
         sent = notifications.read_sent_keys("collecting")
