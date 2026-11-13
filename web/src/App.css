@@ -1703,7 +1703,7 @@ body.guest-personal-view .sheet-header-freeze {
 }
 
 .trading-log-table {
-  min-width: 1420px;
+  min-width: 1500px;
 }
 
 .long-term-trading-log-table {
@@ -1715,11 +1715,11 @@ body.guest-personal-view .sheet-header-freeze {
 }
 
 .holding-table {
-  min-width: 1080px;
+  min-width: 1160px;
 }
 
 .long-term-holding-table {
-  min-width: 720px;
+  min-width: 800px;
 }
 
 .trading-log-table,
@@ -6369,20 +6369,23 @@ html.modal-scroll-lock body {
   }
 
   .trading-log-table {
-    min-width: 1010px;
+    min-width: 1090px;
   }
 
   .long-term-trading-log-table {
     min-width: 880px;
   }
 
-  .watchlist-table,
-  .holding-table {
+  .watchlist-table {
     min-width: 870px;
   }
 
+  .holding-table {
+    min-width: 950px;
+  }
+
   .long-term-holding-table {
-    min-width: 780px;
+    min-width: 860px;
   }
 
   .value-analysis-panel,

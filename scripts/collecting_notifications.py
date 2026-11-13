@@ -23,7 +23,7 @@ FEAR_CNN_MAX = 44
 
 STRATEGIES = {
     "1": "월 정기매수",
-    "2": "간편 공포 매수",
+    "2": "공포 구간 매수 (선택)",
     "3": "시장 공포 저점 진입",
     "4": "상승 추세 이평선 눌림목",
 }
@@ -338,6 +338,7 @@ def send_collecting_notifications(now: datetime | None = None) -> int:
                 continue
             strategy = trade.get("strategy") or "-"
             strategy = {"1. 시장 공포 저점 진입": "3. 시장 공포 저점 진입",
+                        "간편 공포 매수": STRATEGIES["2"],
                         "2. 상승 추세 이평선 눌림목": "4. 상승 추세 이평선 눌림목"}.get(strategy, strategy)
             cards[account_id][ticker].append(("record", strategy, {**trade, "amount": amount}))
             pending.add(key)
