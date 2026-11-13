@@ -1,7 +1,43 @@
 {
   "meta": {
     "kind": "personal-trade-exits",
-    "updatedAt": "2026-11-13T13:52:29Z"
+    "updatedAt": "2026-11-13T15:03:44Z"
   },
-  "events": []
+  "events": [
+    {
+      "ownerId": "8d43baaf-3e29-40d0-b516-6ea8ccd1615e",
+      "trades": [
+        {
+          "name": "IonQ",
+          "market": "US",
+          "slotId": "IONQ_swing_4_20261107_1",
+          "status": "손절",
+          "ticker": "IONQ",
+          "buyDate": "2026.11.07",
+          "buyPrice": "$31.23",
+          "sellDate": "2026.11.14",
+          "strategy": "4. 장기선 아래 반등 초입",
+          "returnPct": -9.29,
+          "riskGroup": "양자컴퓨팅",
+          "sellPrice": "$28.33",
+          "holdingDays": "-",
+          "buyTimestamp": "2026-11-06T18:57:08.425863+00:00",
+          "currentPrice": "$28.33",
+          "investmentType": "swing",
+          "allocationReason": "",
+          "allocationSource": "account",
+          "allocationStatus": "진입 가능",
+          "investmentAmount": 295298,
+          "maxPositionCount": 10,
+          "openPositionCount": 2,
+          "postRiskGroupPercent": 10,
+          "currentRiskGroupPercent": 0,
+          "recommendedAllocationPercent": 10,
+          "sellTimestamp": "2026-11-13T15:00:00Z",
+          "exitReason": "손절 기준 도달 -9.29% [장기선 아래 반등 초입 기준 -8%]",
+          "allocationSignalStatus": "보유 중"
+        }
+      ]
+    }
+  ]
 }
