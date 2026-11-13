@@ -115,6 +115,7 @@ type TradeLog = {
   slotId?: string
   investmentType?: InvestmentType
   investmentAmount?: number
+  buyQuantity?: number
   allocationRequestedAmount?: number
   allocationSource?: string
   allocationSignalStatus?: TradeStatus
@@ -206,7 +207,7 @@ type HoldingLiquidationDraft = {
 type HoldingEditDraft = {
   trade: TradeLog
   buyPrice: string
-  investmentAmount: string
+  buyQuantity: string | null
 }
 
 type ManualHoldingDraft = {
@@ -1083,6 +1084,7 @@ function normalizeTradeLog(value: unknown): TradeLog | null {
     slotId: typeof candidate.slotId === 'string' ? candidate.slotId : undefined,
     investmentType: normalizeInvestmentType(candidate.investmentType) ?? undefined,
     investmentAmount: typeof candidate.investmentAmount === 'number' && Number.isFinite(candidate.investmentAmount) ? candidate.investmentAmount : undefined,
+    buyQuantity: typeof candidate.buyQuantity === 'number' && Number.isSafeInteger(candidate.buyQuantity) && candidate.buyQuantity > 0 ? candidate.buyQuantity : undefined,
     ticker: candidate.ticker,
     name: typeof candidate.name === 'string' ? candidate.name : undefined,
     market: candidate.market === 'KR' || candidate.market === 'US' ? candidate.market : undefined,
@@ -2462,7 +2464,7 @@ const longTermStrategyNames: Record<string, string> = {
   '4': STRATEGY_LABELS['2'],
 }
 
-const BUY_QUANTITY_DESCRIPTION = '투자금으로 매수 가능한 정수 주 수입니다. 미국 종목은 화면의 원·달러 환율을 적용합니다.'
+const BUY_QUANTITY_DESCRIPTION = '저장된 매수 수량을 표시합니다. 수량 기록이 없으면 투자금과 매수가로 계산하며, 미국 종목은 화면의 원·달러 환율을 적용합니다.'
 
 function tradeStrategyCode(strategy: string, investmentType: InvestmentType) {
   if (investmentType !== 'long_term') return strategyCode(strategy)
@@ -3859,13 +3861,48 @@ function holdingEditPrice(draft: HoldingEditDraft) {
   return (parsePriceValue(formatted) ?? 0) > 0 ? formatted : null
 }
 
-function tradeBuyQuantityText(trade: TradeLog, investmentAmount: number, usdKrwRate: number) {
-  if (investmentAmount <= 0) return '0주'
+function tradeUnitPriceKrw(trade: TradeLog, usdKrwRate: number) {
   const buyPrice = parsePriceValue(trade.buyPrice)
   const exchangeRate = tradeMarket(trade) === 'KR' ? 1 : usdKrwRate
-  if (!buyPrice || buyPrice <= 0 || !Number.isFinite(exchangeRate) || exchangeRate <= 0) return '-'
-  const quantity = Math.floor(investmentAmount / (buyPrice * exchangeRate))
-  return `${quantity.toLocaleString('ko-KR')}주`
+  if (!buyPrice || buyPrice <= 0 || !Number.isFinite(exchangeRate) || exchangeRate <= 0) return null
+  const unitPrice = buyPrice * exchangeRate
+  return Number.isFinite(unitPrice) ? unitPrice : null
+}
+
+function tradeBuyQuantity(trade: TradeLog, investmentAmount: number, usdKrwRate: number) {
+  if (investmentAmount <= 0) return 0
+  if (trade.buyQuantity !== undefined && investmentAmount === trade.allocationRequestedAmount) return trade.buyQuantity
+  const unitPrice = tradeUnitPriceKrw(trade, usdKrwRate)
+  return unitPrice === null ? null : Math.floor(investmentAmount / unitPrice)
+}
+
+function tradeBuyQuantityText(trade: TradeLog, investmentAmount: number, usdKrwRate: number) {
+  const quantity = tradeBuyQuantity(trade, investmentAmount, usdKrwRate)
+  return quantity === null ? '-' : `${quantity.toLocaleString('ko-KR')}주`
+}
+
+function holdingEditValues(draft: HoldingEditDraft, usdKrwRate: number) {
+  const originalAmount = draft.trade.investmentAmount ?? 0
+  const originalQuantity = tradeBuyQuantity(draft.trade, originalAmount, usdKrwRate)
+  const quantityInput = draft.buyQuantity ?? (originalQuantity === null ? '' : String(originalQuantity))
+  const buyPrice = holdingEditPrice(draft)
+  const originalPriceInput = draft.trade.buyPrice === '-' ? '' : draft.trade.buyPrice
+  const isEdited = draft.buyQuantity !== null || draft.buyPrice !== originalPriceInput
+  if (!isEdited) return { quantityInput, investmentAmount: originalAmount, isEdited, edit: null }
+
+  const buyQuantity = Number(quantityInput)
+  const unitPrice = buyPrice === null ? null : tradeUnitPriceKrw({ ...draft.trade, buyPrice }, usdKrwRate)
+  const amount = unitPrice === null ? 0 : Math.round(unitPrice * buyQuantity)
+  const investmentAmount = /^\d+$/.test(quantityInput) && Number.isSafeInteger(buyQuantity) && buyQuantity > 0 && Number.isSafeInteger(amount) && amount > 0
+    ? amount : null
+  return {
+    quantityInput,
+    investmentAmount,
+    isEdited,
+    edit: buyPrice !== null && investmentAmount !== null
+      ? { buyPrice, buyQuantity, investmentAmount, allocationRequestedAmount: investmentAmount }
+      : null,
+  }
 }
 
 function tradeProfitAmount(trade: TradeLog, stocks: Stock[] = searchUniverse, amountByTradeKey?: Map<string, number>) {
@@ -9286,37 +9323,28 @@ function App() {
     setHoldingEditDrafts(scopedOpenTrades.filter((trade) => selectedHoldingTradeKeys.includes(tradeKey(trade))).map((trade) => ({
       trade,
       buyPrice: trade.buyPrice === '-' ? '' : trade.buyPrice,
-      investmentAmount: String(tradeInvestmentAmount(trade, portfolioSummary.amountByTradeKey)),
+      buyQuantity: null,
     })))
   }
 
-  const isHoldingEditReady = holdingEditDrafts.length > 0 && holdingEditDrafts.every((draft) => (
-    holdingEditPrice(draft) !== null
-    && (parseAmountValue(draft.investmentAmount) ?? 0) > 0
-  ))
+  const holdingEditRows = holdingEditDrafts.map((draft) => ({ draft, ...holdingEditValues(draft, cashFxRate) }))
+  const isHoldingEditReady = holdingEditRows.some(({ edit }) => edit !== null)
+    && holdingEditRows.every(({ isEdited, edit }) => !isEdited || edit !== null)
 
   const confirmHoldingEdit = async () => {
     if (!canManageHoldingTrades || !isHoldingEditReady || isSavingTradeLogs) return
 
-    const drafts = new Map(holdingEditDrafts.map((draft) => [tradeKey(draft.trade), draft]))
+    const edits = new Map(holdingEditRows.flatMap(({ draft, edit }) => edit ? [[tradeKey(draft.trade), edit] as const] : []))
     setHoldingEditError('')
     try {
       await commitManagedHoldingTradeLogs((current) => {
         const openKeys = new Set(current.filter((trade) => isOpenTradeStatus(trade.status)).map(tradeKey))
-        if (holdingEditDrafts.some(({ trade }) => !openKeys.has(tradeKey(trade)))) {
+        if ([...edits.keys()].some((key) => !openKeys.has(key))) {
           throw new Error('보유 상태가 바뀐 종목이 있습니다. 새로고침 후 다시 선택해 주세요.')
         }
         return current.map((trade) => {
-          const draft = drafts.get(tradeKey(trade))
-          if (!draft) return trade
-          const investmentAmount = parseAmountValue(draft.investmentAmount) ?? 0
-          const buyPrice = draft.buyPrice === draft.trade.buyPrice ? trade.buyPrice : holdingEditPrice(draft) ?? trade.buyPrice
-          return {
-            ...trade,
-            buyPrice,
-            ...(investmentAmount !== tradeInvestmentAmount(draft.trade, portfolioSummary.amountByTradeKey)
-              ? { investmentAmount, allocationRequestedAmount: investmentAmount } : {}),
-          }
+          const edit = edits.get(tradeKey(trade))
+          return edit ? { ...trade, ...edit } : trade
         })
       }, true)
       setHoldingEditDrafts([])
@@ -12749,12 +12777,9 @@ function App() {
             <button className="modal-close-button" disabled={isSavingTradeLogs} type="button" aria-label="닫기" onClick={() => setHoldingEditDrafts([])}>×</button>
             <h3 id="holding-edit-title">보유 종목 수정</h3>
             <div className="holding-liquidation-list">
-              {holdingEditDrafts.map((draft, index) => {
+              {holdingEditRows.map(({ draft, quantityInput, investmentAmount }, index) => {
                 const { trade } = draft
                 const currency = tradeMarket(trade) === 'KR' ? '원' : '달러'
-                const buyPrice = holdingEditPrice(draft)
-                const amount = parseAmountValue(draft.investmentAmount) ?? 0
-                const quantity = buyPrice === null ? '-' : tradeBuyQuantityText({ ...trade, buyPrice }, amount, cashFxRate)
                 return (
                   <div className="holding-liquidation-row manual-holding-row" key={tradeKey(trade)}>
                     <div className="holding-liquidation-title">
@@ -12770,16 +12795,16 @@ function App() {
                         }} />
                     </label>
                     <label>
-                      <span>투자금 (원)</span>
-                      <input inputMode="numeric" disabled={isSavingTradeLogs} value={amountInputValue(draft.investmentAmount)}
+                      <span>매수 수량 (주)</span>
+                      <input inputMode="numeric" disabled={isSavingTradeLogs} value={quantityInput}
                         onChange={(event) => {
-                          const investmentAmount = amountDraftValue(event.target.value)
-                          setHoldingEditDrafts((current) => current.map((row, i) => i === index ? { ...row, investmentAmount } : row))
+                          const buyQuantity = event.target.value
+                          setHoldingEditDrafts((current) => current.map((row, i) => i === index ? { ...row, buyQuantity } : row))
                         }} />
                     </label>
                     <label>
-                      <span>매수 수량</span>
-                      <output className="holding-liquidation-return">{quantity}</output>
+                      <span>투자금 (원)</span>
+                      <output className="holding-liquidation-return">{investmentAmount === null ? '-' : formatKrwAmount(investmentAmount)}</output>
                     </label>
                   </div>
                 )
