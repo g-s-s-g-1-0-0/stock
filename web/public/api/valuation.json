@@ -2,10 +2,10 @@
   "meta": {
     "kind": "valuation",
     "schedule": "0 15 * * *",
-    "updatedAt": "2026-11-13T15:00:00+00:00",
-    "lastSuccessfulRun": "2026-11-13T15:00:00+00:00",
-    "failedReason": "418660: 네이버 재무 API 데이터 없음; 360750: 네이버 재무 API 데이터 없음; 435420: 네이버 재무 API 데이터 없음; 133690: 네이버 재무 API 데이터 없음",
-    "successfulRows": 56
+    "updatedAt": "2026-11-14T15:00:00+00:00",
+    "lastSuccessfulRun": "2026-11-14T15:00:00+00:00",
+    "failedReason": "QLD: HTTP Error 429: Too Many Requests; VOO: HTTP Error 429: Too Many Requests; 418660: 네이버 재무 API 데이터 없음; 360750: 네이버 재무 API 데이터 없음; 435420: 네이버 재무 API 데이터 없음; 133690: 네이버 재무 API 데이터 없음",
+    "successfulRows": 54
   },
   "rows": {
     "QLD": {
@@ -80,10 +80,10 @@
       "epsTtm": "₩17,412",
       "epsNextYear": "₩33,129",
       "epsQoq": "808.09%",
-      "earningsDate": "2026-04-29 (D+199)",
+      "earningsDate": "2026-04-29 (D+200)",
       "industry": "AI 인프라, 전자소재 CCL, 데이터센터 전력, 피지컬 AI·로보틱스, 연료전지",
       "ruleOf40": "11.21%",
-      "checkedAt": "2026-11-13T21:07:14+00:00",
+      "checkedAt": "2026-11-14T15:02:03+00:00",
       "dataStatus": "available"
     },
     "000660": {
@@ -106,10 +106,10 @@
       "epsTtm": "₩225,913",
       "epsNextYear": "₩355,258",
       "epsQoq": "134.79%",
-      "earningsDate": "2026-04-23 (D+205)",
+      "earningsDate": "2026-04-23 (D+206)",
       "industry": "반도체, 메모리, HBM, AI 메모리, DRAM",
       "ruleOf40": "324.82%",
-      "checkedAt": "2026-11-13T21:07:18+00:00",
+      "checkedAt": "2026-11-14T15:02:08+00:00",
       "dataStatus": "available"
     },
     "005380": {
@@ -132,10 +132,10 @@
       "epsTtm": "₩30,697",
       "epsNextYear": "₩33,448",
       "epsQoq": "7.94%",
-      "earningsDate": "2026-04-23 (D+205)",
+      "earningsDate": "2026-04-23 (D+206)",
       "industry": "자동차, 피지컬 AI, 자율주행·SDV, 로보틱스, 전기차",
       "ruleOf40": "7.01%",
-      "checkedAt": "2026-11-13T21:07:22+00:00",
+      "checkedAt": "2026-11-14T15:02:12+00:00",
       "dataStatus": "available"
     },
     "005930": {
@@ -158,10 +158,10 @@
       "epsTtm": "₩22,358",
       "epsNextYear": "₩45,655",
       "epsQoq": "53.27%",
-      "earningsDate": "2026-04-07 (D+221)",
+      "earningsDate": "2026-04-07 (D+222)",
       "industry": "반도체, 메모리·파운드리, 스마트폰, 소비자 가전",
       "ruleOf40": "166.88%",
-      "checkedAt": "2026-11-13T21:07:25+00:00",
+      "checkedAt": "2026-11-14T15:02:37+00:00",
       "dataStatus": "available"
     },
     "011070": {
@@ -187,7 +187,7 @@
       "earningsDate": "-",
       "industry": "AI 반도체 기판, FC-BGA, 카메라 모듈, 자동차 전장, RF-SiP",
       "ruleOf40": "44.93%",
-      "checkedAt": "2026-11-13T21:07:29+00:00",
+      "checkedAt": "2026-11-14T15:02:41+00:00",
       "dataStatus": "available"
     },
     "039030": {
@@ -213,7 +213,7 @@
       "earningsDate": "-",
       "industry": "반도체 레이저 장비, HBM·AI 반도체, 레이저 어닐링, 그루빙·다이싱",
       "ruleOf40": "60.10%",
-      "checkedAt": "2026-11-13T21:07:33+00:00",
+      "checkedAt": "2026-11-14T15:03:04+00:00",
       "dataStatus": "available"
     },
     "042700": {
@@ -236,10 +236,10 @@
       "epsTtm": "₩2,330",
       "epsNextYear": "₩3,148",
       "epsQoq": "469.00%",
-      "earningsDate": "2026-05-15 (D+183)",
+      "earningsDate": "2026-05-15 (D+184)",
       "industry": "반도체 장비, HBM 패키징, TC본더, 열압착 본딩",
       "ruleOf40": "82.04%",
-      "checkedAt": "2026-11-13T21:07:37+00:00",
+      "checkedAt": "2026-11-14T15:03:09+00:00",
       "dataStatus": "available"
     },
     "277810": {
@@ -265,7 +265,7 @@
       "earningsDate": "-",
       "industry": "협동로봇, 자동화, AI 로보틱스",
       "ruleOf40": "92.63%",
-      "checkedAt": "2026-11-13T21:07:40+00:00",
+      "checkedAt": "2026-11-14T15:03:32+00:00",
       "dataStatus": "available"
     },
     "278470": {
@@ -288,10 +288,10 @@
       "epsTtm": "₩11,532",
       "epsNextYear": "₩14,540",
       "epsQoq": "20.69%",
-      "earningsDate": "2026-05-07 (D+191)",
+      "earningsDate": "2026-05-07 (D+192)",
       "industry": "글로벌 K-뷰티, 뷰티테크, 홈 뷰티 디바이스, D2C·소셜커머스",
       "ruleOf40": "159.02%",
-      "checkedAt": "2026-11-13T21:07:44+00:00",
+      "checkedAt": "2026-11-14T15:03:57+00:00",
       "dataStatus": "available"
     },
     "AEHR": {
@@ -314,10 +314,10 @@
       "epsTtm": "$ -0.24",
       "epsNextYear": "1.40",
       "epsQoq": "407.76%",
-      "earningsDate": "2026-11-03 (D+11)",
+      "earningsDate": "2026-11-03 (D+12)",
       "industry": "반도체, 반도체 테스트 장비, 후공정 검사",
       "ruleOf40": "-43.50%",
-      "checkedAt": "2026-11-13T21:07:44+00:00",
+      "checkedAt": "2026-11-14T15:03:58+00:00",
       "dataStatus": "available"
     },
     "AMD": {
@@ -340,10 +340,10 @@
       "epsTtm": "$ 4.60",
       "epsNextYear": "$ 17.82",
       "epsQoq": "92.98%",
-      "earningsDate": "2026-11-04 (D+10)",
+      "earningsDate": "2026-11-04 (D+11)",
       "industry": "반도체, CPU·GPU, AI 가속기, 데이터센터 GPU",
       "ruleOf40": "59.59%",
-      "checkedAt": "2026-11-13T21:07:45+00:00",
+      "checkedAt": "2026-11-14T15:03:58+00:00",
       "dataStatus": "available"
     },
     "ASTS": {
@@ -366,10 +366,10 @@
       "epsTtm": "$ -2.13",
       "epsNextYear": "$ -1.42",
       "epsQoq": "2.06%",
-      "earningsDate": "2026-11-10 (D+4)",
+      "earningsDate": "2026-11-10 (D+5)",
       "industry": "우주 산업, 위성통신, LEO 위성, D2D 통신",
       "ruleOf40": "277.70%",
-      "checkedAt": "2026-11-13T21:07:45+00:00",
+      "checkedAt": "2026-11-14T15:03:58+00:00",
       "dataStatus": "available"
     },
     "ASX": {
@@ -392,24 +392,24 @@
       "epsTtm": "$ 1.05",
       "epsNextYear": "$ 2.06",
       "epsQoq": "121.84%",
-      "earningsDate": "2026-10-29 (D+16)",
+      "earningsDate": "2026-10-29 (D+17)",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
       "ruleOf40": "35.70%",
-      "checkedAt": "2026-11-13T21:07:45+00:00",
+      "checkedAt": "2026-11-14T15:03:58+00:00",
       "dataStatus": "available"
     },
     "BE": {
-      "marketCap": "$ 56.75B",
+      "marketCap": "$ 56.76B",
       "sales": "$ 3.83B",
       "salesQoq": "138.10%",
       "salesYoyTtm": "110.59%",
       "salesPastYears": "19.06% 20.57%",
       "currentRatio": "3.67",
       "debtToEquity": "1.44",
-      "priceToFreeCashFlow": "129.19",
+      "priceToFreeCashFlow": "129.22",
       "priceToSales": "14.82",
-      "per": "118.86",
-      "pbr": "29.35",
+      "per": "118.89",
+      "pbr": "29.36",
       "roe": "40.09%",
       "peg": "0.29",
       "sharesOutstanding": "295.54M",
@@ -418,10 +418,10 @@
       "epsTtm": "$ 1.61",
       "epsNextYear": "$ 5.34",
       "epsQoq": "896.13%",
-      "earningsDate": "2026-10-23 (D+22)",
+      "earningsDate": "2026-10-23 (D+23)",
       "industry": "AI 인프라, 에너지, 연료전지·수소, 데이터센터 전력",
       "ruleOf40": "125.39%",
-      "checkedAt": "2026-11-13T21:07:46+00:00",
+      "checkedAt": "2026-11-14T15:03:58+00:00",
       "dataStatus": "available"
     },
     "CIFR": {
@@ -444,10 +444,10 @@
       "epsTtm": "$ -2.97",
       "epsNextYear": "$ -0.41",
       "epsQoq": "-2488.10%",
-      "earningsDate": "2026-11-02 (D+12)",
+      "earningsDate": "2026-11-02 (D+13)",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, HPC",
       "ruleOf40": "-200.89%",
-      "checkedAt": "2026-11-13T21:07:46+00:00",
+      "checkedAt": "2026-11-14T15:03:58+00:00",
       "dataStatus": "available"
     },
     "CRDO": {
@@ -470,10 +470,10 @@
       "epsTtm": "$ 2.80",
       "epsNextYear": "$ 9.67",
       "epsQoq": "93.83%",
-      "earningsDate": "2026-09-02 (D+73)",
+      "earningsDate": "2026-09-02 (D+74)",
       "industry": "데이터센터, AI 인프라, 고속 인터커넥트",
       "ruleOf40": "197.43%",
-      "checkedAt": "2026-11-13T21:07:46+00:00",
+      "checkedAt": "2026-11-14T15:03:59+00:00",
       "dataStatus": "available"
     },
     "HOOG": {
@@ -499,7 +499,7 @@
       "earningsDate": "-",
       "industry": "Robinhood(HOOD) 단일종목 2배 레버리지 ETF(일일 2배)",
       "ruleOf40": "-",
-      "checkedAt": "2026-11-13T21:07:47+00:00",
+      "checkedAt": "2026-11-14T15:03:59+00:00",
       "dataStatus": "not_applicable"
     },
     "INTC": {
@@ -522,14 +522,14 @@
       "epsTtm": "$ -2.39",
       "epsNextYear": "$ 1.81",
       "epsQoq": "-30.23%",
-      "earningsDate": "2026-10-30 (D+15)",
+      "earningsDate": "2026-10-30 (D+16)",
       "industry": "반도체, 데이터센터·AI 서버 칩, 파운드리, 네트워크·5G",
       "ruleOf40": "22.59%",
-      "checkedAt": "2026-11-13T21:07:47+00:00",
+      "checkedAt": "2026-11-14T15:03:59+00:00",
       "dataStatus": "available"
     },
     "IONQ": {
-      "marketCap": "$ 12.48B",
+      "marketCap": "$ 12.49B",
       "sales": "$ 380.44M",
       "salesQoq": "336.04%",
       "salesYoyTtm": "376.53%",
@@ -537,9 +537,9 @@
       "currentRatio": "4.24",
       "debtToEquity": "0.03",
       "priceToFreeCashFlow": "-",
-      "priceToSales": "32.81",
-      "per": "75.55",
-      "pbr": "2.36",
+      "priceToSales": "32.83",
+      "per": "75.60",
+      "pbr": "2.37",
       "roe": "6.16%",
       "peg": "-",
       "sharesOutstanding": "432.46M",
@@ -548,10 +548,10 @@
       "epsTtm": "$ 0.38",
       "epsNextYear": "$ -1.52",
       "epsQoq": "137.60%",
-      "earningsDate": "2026-11-06 (D+8)",
+      "earningsDate": "2026-11-06 (D+9)",
       "industry": "양자컴퓨팅, 이온트랩, 양자 네트워크",
       "ruleOf40": "62.12%",
-      "checkedAt": "2026-11-13T21:07:47+00:00",
+      "checkedAt": "2026-11-14T15:03:59+00:00",
       "dataStatus": "available"
     },
     "IREN": {
@@ -574,10 +574,10 @@
       "epsTtm": "$ -3.72",
       "epsNextYear": "$ -0.23",
       "epsQoq": "-160.97%",
-      "earningsDate": "2026-11-06 (D+8)",
+      "earningsDate": "2026-11-06 (D+9)",
       "industry": "AI 컴퓨팅·비트코인 채굴, 데이터센터, GPU 클라우드, HPC",
       "ruleOf40": "-72.41%",
-      "checkedAt": "2026-11-13T21:07:48+00:00",
+      "checkedAt": "2026-11-14T15:03:59+00:00",
       "dataStatus": "available"
     },
     "LITE": {
@@ -600,10 +600,10 @@
       "epsTtm": "$ -78.74",
       "epsNextYear": "$ 39.44",
       "epsQoq": "6509.70%",
-      "earningsDate": "2026-11-02 (D+12)",
+      "earningsDate": "2026-11-02 (D+13)",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
       "ruleOf40": "126.65%",
-      "checkedAt": "2026-11-13T21:07:48+00:00",
+      "checkedAt": "2026-11-14T15:04:00+00:00",
       "dataStatus": "available"
     },
     "MU": {
@@ -626,14 +626,14 @@
       "epsTtm": "$ 74.21",
       "epsNextYear": "$ 211.13",
       "epsQoq": "1061.37%",
-      "earningsDate": "2026-10-01 (D+44)",
+      "earningsDate": "2026-10-01 (D+45)",
       "industry": "반도체, 메모리, DRAM, NAND, HBM",
       "ruleOf40": "331.34%",
-      "checkedAt": "2026-11-13T21:07:48+00:00",
+      "checkedAt": "2026-11-14T15:04:00+00:00",
       "dataStatus": "available"
     },
     "NBIS": {
-      "marketCap": "$ 31.50B",
+      "marketCap": "$ 31.49B",
       "sales": "$ 2.19B",
       "salesQoq": "571.32%",
       "salesYoyTtm": "535.83%",
@@ -641,7 +641,7 @@
       "currentRatio": "5.31",
       "debtToEquity": "1.30",
       "priceToFreeCashFlow": "-",
-      "priceToSales": "14.39",
+      "priceToSales": "14.38",
       "per": "528.89",
       "pbr": "2.76",
       "roe": "1.68%",
@@ -650,26 +650,26 @@
       "grossMargin": "30.01%",
       "operatingMargin": "-22.29%",
       "epsTtm": "$ 0.22",
-      "epsNextYear": "$ -3.00",
+      "epsNextYear": "$ -3.03",
       "epsQoq": "73.52%",
-      "earningsDate": "2026-11-12 (D+2)",
+      "earningsDate": "2026-11-12 (D+3)",
       "industry": "AI 인프라, AI 클라우드, GPU 클러스터, 데이터센터",
       "ruleOf40": "513.54%",
-      "checkedAt": "2026-11-13T21:07:48+00:00",
+      "checkedAt": "2026-11-14T15:04:00+00:00",
       "dataStatus": "available"
     },
     "PL": {
-      "marketCap": "$ 5.03B",
+      "marketCap": "$ 5.02B",
       "sales": "$ 378.28M",
       "salesQoq": "58.14%",
       "salesYoyTtm": "44.12%",
       "salesPastYears": "17.18% 22.15%",
       "currentRatio": "2.84",
       "debtToEquity": "0.88",
-      "priceToFreeCashFlow": "203.90",
-      "priceToSales": "13.30",
+      "priceToFreeCashFlow": "203.68",
+      "priceToSales": "13.28",
       "per": "-",
-      "pbr": "8.91",
+      "pbr": "8.90",
       "roe": "-71.97%",
       "peg": "-",
       "sharesOutstanding": "340.16M",
@@ -678,10 +678,10 @@
       "epsTtm": "$ -1.10",
       "epsNextYear": "$ 0.01",
       "epsQoq": "65.01%",
-      "earningsDate": "2026-09-04 (D+71)",
+      "earningsDate": "2026-09-04 (D+72)",
       "industry": "우주 산업, 위성 지구관측 데이터, 위성 이미지",
       "ruleOf40": "18.44%",
-      "checkedAt": "2026-11-13T21:07:49+00:00",
+      "checkedAt": "2026-11-14T15:04:00+00:00",
       "dataStatus": "available"
     },
     "RKLB": {
@@ -704,10 +704,10 @@
       "epsTtm": "$ -0.37",
       "epsNextYear": "$ -0.01",
       "epsQoq": "-254.20%",
-      "earningsDate": "2026-11-10 (D+4)",
+      "earningsDate": "2026-11-10 (D+5)",
       "industry": "우주 산업, 소형 발사체, 위성 배포",
       "ruleOf40": "31.39%",
-      "checkedAt": "2026-11-13T21:07:49+00:00",
+      "checkedAt": "2026-11-14T15:04:00+00:00",
       "dataStatus": "available"
     },
     "SNDK": {
@@ -730,10 +730,10 @@
       "epsTtm": "$ 124.75",
       "epsNextYear": "$ 291.39",
       "epsQoq": "6897.99%",
-      "earningsDate": "2026-10-30 (D+15)",
+      "earningsDate": "2026-10-30 (D+16)",
       "industry": "반도체, 플래시 스토리지, NAND, SSD",
       "ruleOf40": "345.06%",
-      "checkedAt": "2026-11-13T21:07:49+00:00",
+      "checkedAt": "2026-11-14T15:04:00+00:00",
       "dataStatus": "available"
     },
     "SOXL": {
@@ -759,7 +759,7 @@
       "earningsDate": "-",
       "industry": "NYSE 반도체 지수 3배 레버리지 ETF(일일 3배)",
       "ruleOf40": "-",
-      "checkedAt": "2026-11-13T21:07:50+00:00",
+      "checkedAt": "2026-11-14T15:04:01+00:00",
       "dataStatus": "not_applicable"
     },
     "STX": {
@@ -782,14 +782,14 @@
       "epsTtm": "$ 19.04",
       "epsNextYear": "$ 66.58",
       "epsQoq": "212.47%",
-      "earningsDate": "2026-10-28 (D+17)",
+      "earningsDate": "2026-10-28 (D+18)",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
       "ruleOf40": "84.86%",
-      "checkedAt": "2026-11-13T21:07:50+00:00",
+      "checkedAt": "2026-11-14T15:04:01+00:00",
       "dataStatus": "available"
     },
     "COHR": {
-      "marketCap": "$ 42.96B",
+      "marketCap": "$ 42.97B",
       "sales": "$ 7.91B",
       "salesQoq": "49.89%",
       "salesYoyTtm": "30.84%",
@@ -808,23 +808,23 @@
       "epsTtm": "$ 4.83",
       "epsNextYear": "$ 16.12",
       "epsQoq": "60.41%",
-      "earningsDate": "2026-11-05 (D+9)",
+      "earningsDate": "2026-11-05 (D+10)",
       "industry": "광학·레이저, 광인터커넥트, AI 데이터센터 부품",
       "ruleOf40": "45.95%",
-      "checkedAt": "2026-11-13T21:07:51+00:00",
+      "checkedAt": "2026-11-14T15:04:01+00:00",
       "dataStatus": "available"
     },
     "GLW": {
-      "marketCap": "$ 98.25B",
+      "marketCap": "$ 98.27B",
       "sales": "$ 17.72B",
       "salesQoq": "18.41%",
       "salesYoyTtm": "18.80%",
       "salesPastYears": "3.40% 6.68%",
       "currentRatio": "1.72",
       "debtToEquity": "0.67",
-      "priceToFreeCashFlow": "39.92",
-      "priceToSales": "5.54",
-      "per": "46.26",
+      "priceToFreeCashFlow": "39.93",
+      "priceToSales": "5.55",
+      "per": "46.27",
       "pbr": "7.56",
       "roe": "17.06%",
       "peg": "0.72",
@@ -834,10 +834,10 @@
       "epsTtm": "$ 2.47",
       "epsNextYear": "$ 4.55",
       "epsQoq": "57.59%",
-      "earningsDate": "2026-10-27 (D+18)",
+      "earningsDate": "2026-10-27 (D+19)",
       "industry": "광통신 인프라, 특수유리, 광케이블, AI 데이터센터 광섬유",
       "ruleOf40": "36.17%",
-      "checkedAt": "2026-11-13T21:07:51+00:00",
+      "checkedAt": "2026-11-14T15:04:01+00:00",
       "dataStatus": "available"
     },
     "ALAB": {
@@ -853,21 +853,21 @@
       "per": "88.01",
       "pbr": "19.39",
       "roe": "28.21%",
-      "peg": "0.45",
+      "peg": "0.44",
       "sharesOutstanding": "174.75M",
       "grossMargin": "73.89%",
       "operatingMargin": "25.52%",
       "epsTtm": "$ 2.52",
-      "epsNextYear": "$ 7.06",
+      "epsNextYear": "$ 7.16",
       "epsQoq": "97.03%",
-      "earningsDate": "2026-11-04 (D+10)",
+      "earningsDate": "2026-11-04 (D+11)",
       "industry": "반도체, AI 데이터센터 연결, PCIe·CXL 인터커넥트, 리타이머",
       "ruleOf40": "140.76%",
-      "checkedAt": "2026-11-13T21:07:51+00:00",
+      "checkedAt": "2026-11-14T15:04:01+00:00",
       "dataStatus": "available"
     },
     "VRT": {
-      "marketCap": "$ 77.80B",
+      "marketCap": "$ 77.81B",
       "sales": "$ 13.12B",
       "salesQoq": "61.18%",
       "salesYoyTtm": "35.27%",
@@ -886,10 +886,10 @@
       "epsTtm": "$ 5.35",
       "epsNextYear": "$ 9.90",
       "epsQoq": "90.98%",
-      "earningsDate": "2026-10-28 (D+17)",
+      "earningsDate": "2026-10-28 (D+18)",
       "industry": "AI 인프라, 데이터센터 전력·냉각, 액침냉각, UPS",
       "ruleOf40": "56.18%",
-      "checkedAt": "2026-11-13T21:07:52+00:00",
+      "checkedAt": "2026-11-14T15:04:02+00:00",
       "dataStatus": "available"
     },
     "079550": {
@@ -915,7 +915,7 @@
       "earningsDate": "-",
       "industry": "AI 방산, 유도무기, 레이더, 무인체계·드론, 우주·위성",
       "ruleOf40": "25.98%",
-      "checkedAt": "2026-11-13T21:07:54+00:00",
+      "checkedAt": "2026-11-14T15:04:26+00:00",
       "dataStatus": "available"
     },
     "WULF": {
@@ -938,10 +938,10 @@
       "epsTtm": "$ -3.30",
       "epsNextYear": "$ -0.45",
       "epsQoq": "97.15%",
-      "earningsDate": "2026-11-06 (D+8)",
+      "earningsDate": "2026-11-06 (D+9)",
       "industry": "AI 컴퓨팅·비트코인 채굴, 저탄소 데이터센터, HPC",
       "ruleOf40": "-214.85%",
-      "checkedAt": "2026-11-13T21:07:54+00:00",
+      "checkedAt": "2026-11-14T15:04:26+00:00",
       "dataStatus": "available"
     },
     "CRWV": {
@@ -964,10 +964,10 @@
       "epsTtm": "$ -4.71",
       "epsNextYear": "$ -1.77",
       "epsQoq": "-473.11%",
-      "earningsDate": "2026-11-11 (D+3)",
+      "earningsDate": "2026-11-11 (D+4)",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
       "ruleOf40": "128.80%",
-      "checkedAt": "2026-11-13T21:07:55+00:00",
+      "checkedAt": "2026-11-14T15:04:26+00:00",
       "dataStatus": "available"
     },
     "LRCX": {
@@ -990,10 +990,10 @@
       "epsTtm": "$ 6.72",
       "epsNextYear": "$ 12.12",
       "epsQoq": "77.41%",
-      "earningsDate": "2026-10-22 (D+23)",
+      "earningsDate": "2026-10-22 (D+24)",
       "industry": "반도체 장비, 식각·증착",
       "ruleOf40": "70.31%",
-      "checkedAt": "2026-11-13T21:07:55+00:00",
+      "checkedAt": "2026-11-14T15:04:26+00:00",
       "dataStatus": "available"
     },
     "AMAT": {
@@ -1014,12 +1014,12 @@
       "grossMargin": "49.99%",
       "operatingMargin": "32.94%",
       "epsTtm": "$ 12.62",
-      "epsNextYear": "$ 25.06",
+      "epsNextYear": "$ 25.08",
       "epsQoq": "43.03%",
-      "earningsDate": "2026-11-13 (D+1)",
+      "earningsDate": "2026-11-13 (D+2)",
       "industry": "산업재, 장비·제조, 자동화",
       "ruleOf40": "54.37%",
-      "checkedAt": "2026-11-13T21:07:55+00:00",
+      "checkedAt": "2026-11-14T15:04:26+00:00",
       "dataStatus": "available"
     },
     "TER": {
@@ -1042,24 +1042,24 @@
       "epsTtm": "$ 8.71",
       "epsNextYear": "$ 12.37",
       "epsQoq": "189.29%",
-      "earningsDate": "2026-10-28 (D+17)",
+      "earningsDate": "2026-10-28 (D+18)",
       "industry": "반도체 테스트 장비, 자동화 테스트, 협동로봇",
       "ruleOf40": "107.54%",
-      "checkedAt": "2026-11-13T21:07:55+00:00",
+      "checkedAt": "2026-11-14T15:04:26+00:00",
       "dataStatus": "available"
     },
     "VST": {
-      "marketCap": "$ 45.13B",
+      "marketCap": "$ 45.14B",
       "sales": "$ 20.55B",
       "salesQoq": "24.89%",
       "salesYoyTtm": "17.48%",
       "salesPastYears": "0.16% 10.13%",
       "currentRatio": "1.16",
       "debtToEquity": "3.35",
-      "priceToFreeCashFlow": "17.31",
+      "priceToFreeCashFlow": "17.32",
       "priceToSales": "2.20",
       "per": "17.96",
-      "pbr": "11.62",
+      "pbr": "11.63",
       "roe": "47.01%",
       "peg": "0.18",
       "sharesOutstanding": "339.39M",
@@ -1068,10 +1068,10 @@
       "epsTtm": "$ 7.41",
       "epsNextYear": "$ 10.07",
       "epsQoq": "84.63%",
-      "earningsDate": "2026-11-06 (D+8)",
+      "earningsDate": "2026-11-06 (D+9)",
       "industry": "전력 발전, 원전·가스, AI 데이터센터 전력수요, AI 인프라",
       "ruleOf40": "38.64%",
-      "checkedAt": "2026-11-13T21:07:56+00:00",
+      "checkedAt": "2026-11-14T15:04:27+00:00",
       "dataStatus": "available"
     },
     "GNRC": {
@@ -1084,7 +1084,7 @@
       "debtToEquity": "0.45",
       "priceToFreeCashFlow": "27.15",
       "priceToSales": "2.44",
-      "per": "37.75",
+      "per": "37.76",
       "pbr": "3.74",
       "roe": "10.65%",
       "peg": "0.35",
@@ -1094,10 +1094,10 @@
       "epsTtm": "$ 5.05",
       "epsNextYear": "$ 13.97",
       "epsQoq": "63.88%",
-      "earningsDate": "2026-10-28 (D+17)",
+      "earningsDate": "2026-10-28 (D+18)",
       "industry": "산업재, 장비·제조, 자동화",
       "ruleOf40": "19.43%",
-      "checkedAt": "2026-11-13T21:07:56+00:00",
+      "checkedAt": "2026-11-14T15:04:27+00:00",
       "dataStatus": "available"
     },
     "QQQ": {
@@ -1123,7 +1123,7 @@
       "earningsDate": "-",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
       "ruleOf40": "-",
-      "checkedAt": "2026-11-13T21:07:57+00:00",
+      "checkedAt": "2026-11-14T15:04:27+00:00",
       "dataStatus": "not_applicable"
     },
     "USD": {
@@ -1149,7 +1149,7 @@
       "earningsDate": "-",
       "industry": "다우존스 미국 반도체 지수 2배 레버리지 ETF(일일 2배)",
       "ruleOf40": "-",
-      "checkedAt": "2026-11-13T21:07:57+00:00",
+      "checkedAt": "2026-11-14T15:04:27+00:00",
       "dataStatus": "not_applicable"
     },
     "ARM": {
@@ -1172,10 +1172,10 @@
       "epsTtm": "$ 0.87",
       "epsNextYear": "$ 3.04",
       "epsQoq": "-45.87%",
-      "earningsDate": "2026-11-05 (D+9)",
+      "earningsDate": "2026-11-05 (D+10)",
       "industry": "반도체, 광전자·포토닉스, 데이터센터",
       "ruleOf40": "40.82%",
-      "checkedAt": "2026-11-13T21:07:57+00:00",
+      "checkedAt": "2026-11-14T15:04:27+00:00",
       "dataStatus": "available"
     },
     "SOXS": {
@@ -1201,7 +1201,7 @@
       "earningsDate": "-",
       "industry": "반도체 지수 3배 인버스 레버리지 ETF(일일 3배)",
       "ruleOf40": "-",
-      "checkedAt": "2026-11-13T21:07:58+00:00",
+      "checkedAt": "2026-11-14T15:04:28+00:00",
       "dataStatus": "not_applicable"
     },
     "COHU": {
@@ -1224,10 +1224,10 @@
       "epsTtm": "$ -0.52",
       "epsNextYear": "$ 2.40",
       "epsQoq": "354.39%",
-      "earningsDate": "2026-10-29 (D+16)",
+      "earningsDate": "2026-10-29 (D+17)",
       "industry": "산업재, 장비·제조, 자동화",
       "ruleOf40": "32.01%",
-      "checkedAt": "2026-11-13T21:07:58+00:00",
+      "checkedAt": "2026-11-14T15:04:28+00:00",
       "dataStatus": "available"
     },
     "SPCX": {
@@ -1250,36 +1250,36 @@
       "epsTtm": "$ -0.55",
       "epsNextYear": "-",
       "epsQoq": "523.92%",
-      "earningsDate": "2026-10-21 (D+24)",
+      "earningsDate": "2026-10-21 (D+25)",
       "industry": "우주 산업, 발사체, 위성통신, Starlink",
       "ruleOf40": "130.42%",
-      "checkedAt": "2026-11-13T21:07:58+00:00",
+      "checkedAt": "2026-11-14T15:04:28+00:00",
       "dataStatus": "available"
     },
     "UBER": {
-      "marketCap": "$ 142.25B",
+      "marketCap": "$ 142.30B",
       "sales": "$ 56.53B",
       "salesQoq": "9.65%",
       "salesYoyTtm": "13.94%",
       "salesPastYears": "17.73% 36.10%",
       "currentRatio": "1.23",
       "debtToEquity": "0.64",
-      "priceToFreeCashFlow": "13.65",
+      "priceToFreeCashFlow": "13.66",
       "priceToSales": "2.52",
-      "per": "41.31",
+      "per": "41.33",
       "pbr": "5.14",
       "roe": "12.42%",
-      "peg": "2.87",
+      "peg": "3.03",
       "sharesOutstanding": "2.04B",
       "grossMargin": "36.19%",
       "operatingMargin": "14.03%",
       "epsTtm": "$ 1.69",
-      "epsNextYear": "$ 4.38",
+      "epsNextYear": "$ 4.35",
       "epsQoq": "-91.98%",
-      "earningsDate": "2026-11-04 (D+10)",
+      "earningsDate": "2026-11-04 (D+11)",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
       "ruleOf40": "27.97%",
-      "checkedAt": "2026-11-13T21:07:59+00:00",
+      "checkedAt": "2026-11-14T15:04:28+00:00",
       "dataStatus": "available"
     },
     "AAPL": {
@@ -1302,22 +1302,22 @@
       "epsTtm": "$ 8.97",
       "epsNextYear": "$ 10.51",
       "epsQoq": "13.59%",
-      "earningsDate": "2026-11-03 (D+11)",
+      "earningsDate": "2026-11-03 (D+12)",
       "industry": "스마트폰, 소비자 전자, 서비스, 자체 반도체",
       "ruleOf40": "48.07%",
-      "checkedAt": "2026-11-13T21:07:59+00:00",
+      "checkedAt": "2026-11-14T15:04:28+00:00",
       "dataStatus": "available"
     },
     "GOOGL": {
-      "marketCap": "$ 3596.86B",
+      "marketCap": "$ 3597.23B",
       "sales": "$ 471.14B",
       "salesQoq": "24.21%",
       "salesYoyTtm": "22.21%",
       "salesPastYears": "12.78% 17.18%",
       "currentRatio": "2.79",
       "debtToEquity": "0.22",
-      "priceToFreeCashFlow": "182.15",
-      "priceToSales": "7.63",
+      "priceToFreeCashFlow": "182.17",
+      "priceToSales": "7.64",
       "per": "15.44",
       "pbr": "5.51",
       "roe": "44.29%",
@@ -1328,10 +1328,10 @@
       "epsTtm": "$ 19.15",
       "epsNextYear": "$ 15.03",
       "epsQoq": "-26.18%",
-      "earningsDate": "2026-10-29 (D+16)",
+      "earningsDate": "2026-10-29 (D+17)",
       "industry": "AI, 광고, 클라우드, Waymo, TPU",
       "ruleOf40": "55.54%",
-      "checkedAt": "2026-11-13T21:07:59+00:00",
+      "checkedAt": "2026-11-14T15:04:29+00:00",
       "dataStatus": "available"
     },
     "NVDA": {
@@ -1354,10 +1354,10 @@
       "epsTtm": "$ 7.91",
       "epsNextYear": "$ 15.75",
       "epsQoq": "128.21%",
-      "earningsDate": "2026-11-18 (D-4)",
+      "earningsDate": "2026-11-18 (D-3)",
       "industry": "반도체, AI GPU, 데이터센터, CUDA",
       "ruleOf40": "148.59%",
-      "checkedAt": "2026-11-13T21:07:59+00:00",
+      "checkedAt": "2026-11-14T15:04:29+00:00",
       "dataStatus": "available"
     },
     "META": {
@@ -1380,10 +1380,10 @@
       "epsTtm": "$ 29.33",
       "epsNextYear": "$ 34.19",
       "epsQoq": "263.82%",
-      "earningsDate": "2026-10-22 (D+23)",
+      "earningsDate": "2026-10-22 (D+24)",
       "industry": "Communication Services, Internet Content & Information",
       "ruleOf40": "60.39%",
-      "checkedAt": "2026-11-13T21:08:00+00:00",
+      "checkedAt": "2026-11-14T15:04:29+00:00",
       "dataStatus": "available"
     },
     "TSLA": {
@@ -1406,10 +1406,10 @@
       "epsTtm": "$ 0.91",
       "epsNextYear": "$ 2.02",
       "epsQoq": "-42.94%",
-      "earningsDate": "2026-10-22 (D+23)",
+      "earningsDate": "2026-10-22 (D+24)",
       "industry": "전기차, 에너지, AI, FSD, 로보택시",
       "ruleOf40": "11.80%",
-      "checkedAt": "2026-11-13T21:08:00+00:00",
+      "checkedAt": "2026-11-14T15:04:29+00:00",
       "dataStatus": "available"
     },
     "PLTR": {
@@ -1432,10 +1432,10 @@
       "epsTtm": "$ 1.43",
       "epsNextYear": "$ 2.51",
       "epsQoq": "136.86%",
-      "earningsDate": "2026-11-03 (D+11)",
+      "earningsDate": "2026-11-03 (D+12)",
       "industry": "AI·빅데이터·방산, AIP, 정부계약, AI 플랫폼",
       "ruleOf40": "132.70%",
-      "checkedAt": "2026-11-13T21:08:00+00:00",
+      "checkedAt": "2026-11-14T15:04:29+00:00",
       "dataStatus": "available"
     },
     "COIN": {
@@ -1458,14 +1458,22 @@
       "epsTtm": "$ -2.83",
       "epsNextYear": "$ 2.58",
       "epsQoq": "67.36%",
-      "earningsDate": "2026-10-30 (D+15)",
+      "earningsDate": "2026-10-30 (D+16)",
       "industry": "가상화폐, 핀테크, 블록체인",
       "ruleOf40": "-80.24%",
-      "checkedAt": "2026-11-13T21:08:01+00:00",
+      "checkedAt": "2026-11-14T15:04:30+00:00",
       "dataStatus": "available"
     }
   },
   "errors": [
+    {
+      "ticker": "QLD",
+      "error": "HTTP Error 429: Too Many Requests"
+    },
+    {
+      "ticker": "VOO",
+      "error": "HTTP Error 429: Too Many Requests"
+    },
     {
       "ticker": "418660",
       "error": "네이버 재무 API 데이터 없음"
