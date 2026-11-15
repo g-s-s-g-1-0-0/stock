@@ -2,8 +2,8 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-11-15T14:51:50+00:00",
-    "lastSuccessfulRun": "2026-11-15T14:51:50+00:00",
+    "updatedAt": "2026-11-15T20:02:51+00:00",
+    "lastSuccessfulRun": "2026-11-15T20:02:51+00:00",
     "analysisStatus": "news-verified",
     "failedReason": null
   },
@@ -1365,17 +1365,23 @@
         "로봇·자동화 | 로봇, 자동화, 휴머노이드, 협동로봇, 로보틱스",
         "전력 인프라 | 전력망, 원전, SMR, 데이터센터 전력, 에너지 저장",
         "Communication | Communication, Services, Internet, Content, Information",
-        "인공지능 | Nvidia, Anthropic, AI 거래",
-        "전기차 | Rivian, Lucid, EV 연방 지원",
-        "우주산업 | SpaceX, Starship, 우주 산업",
-        "부동산·저장소 | 산업용 저장소, 임대료 상승, 투자",
-        "소매·엔터테인먼트 | 소매업, 엔터테인먼트, 소비자 관심"
+        "인공지능 | Nvidia, Anthropic, ETF",
+        "전기차 | Rivian, Lucid, EV 지원",
+        "우주산업 | SpaceX, Starship, 우주발사",
+        "암호화폐 | Binance, CFTC, 규제",
+        "소비재·소매 | Retailers, Entertainment, 쇼핑"
       ],
-      "summary": "인공지능과 우주산업이 주도하는 성장세와 동시에 연금·에너지·암호화폐 등 변동성이 시장 분위기를 복합적으로 형성하고 있습니다.",
+      "summary": "인공지능과 우주, 암호화폐 등 기술 중심의 투자 관심이 높아지면서 전기차·소매·에너지 등 다양한 산업이 동시에 주목받고 있습니다.",
       "newsEvidence": [
         {
           "sector": "인공지능",
           "articles": [
+            {
+              "title": "Bessent calls for ‘dramatic shakeup’ at Nvidia, urges outside CEO",
+              "url": "https://www.cnbc.com/2026/11/15/bessent-nvidia-ceo-lutnick-megaspeed.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-15T18:10:18+00:00"
+            },
             {
               "title": "Anthropic’s IPO lands as the embattled AI trade looks for a much-needed bright spot",
               "url": "https://www.cnbc.com/2026/11/15/anthropic-ipo-is-make-or-break-for-the-technology-industry.html",
@@ -1391,20 +1397,8 @@
             {
               "title": "Nvidia's leadership crisis rattles the AI trade. Here's how we're adjusting our portfolio",
               "url": "https://www.cnbc.com/investingclub/2026/11/14/nvidias-leadership-crisis-rattles-wall-street-how-were-adjusting.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
               "publishedAt": "2026-11-14T18:48:39+00:00"
-            },
-            {
-              "title": "Nvidia board urged to consider 'potential return of Jensen Huang' by two major investors",
-              "url": "https://www.cnbc.com/2026/11/14/nvidia-investors-jensen-huang-return-board-letter.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-14T17:46:06+00:00"
-            },
-            {
-              "title": "Jensen Huang scandal casts doubt on Nvidia’s AI dominance — how we got here",
-              "url": "https://www.cnbc.com/2026/11/13/jensen-huang-scandal-casts-doubt-on-nvidias-ai-dominance-how-we-got-here.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-13T14:01:24+00:00"
             },
             {
               "title": "Nvidia closes below $4T market cap for first time since July 2025 in Huang fallout",
@@ -1417,18 +1411,6 @@
               "url": "https://www.cnbc.com/2026/11/13/nvidia-without-jensen-huang-what-lies-ahead-for-asian-chipmakers-.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
               "publishedAt": "2026-11-13T07:29:15+00:00"
-            },
-            {
-              "title": "Why Singapore keeps turning up in the fight over Nvidia chips and China",
-              "url": "https://www.cnbc.com/2026/11/13/nvidia-jensen-huang-alice-spy-megaspeed-.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-13T07:15:01+00:00"
-            },
-            {
-              "title": "Will the Anthropic IPO create a disturbance in the broader U.S. equity market, like SpaceX did?",
-              "url": "https://www.marketwatch.com/story/will-the-anthropic-ipo-create-a-disturbance-in-the-broader-u-s-equity-market-like-spacex-did-05ba4351?mod=mw_rss_topstories",
-              "source": "https://feeds.marketwatch.com/marketwatch/topstories/",
-              "publishedAt": "2026-11-15T14:00:00+00:00"
             }
           ]
         },
@@ -1440,6 +1422,12 @@
               "url": "https://www.cnbc.com/2026/11/15/rivian-lucid-scout-arent-counting-on-dems-to-restore-ev-incentives.html",
               "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
               "publishedAt": "2026-11-15T13:00:02+00:00"
+            },
+            {
+              "title": "Nvidia's leadership crisis rattles the AI trade. Here's how we're adjusting our portfolio",
+              "url": "https://www.cnbc.com/investingclub/2026/11/14/nvidias-leadership-crisis-rattles-wall-street-how-were-adjusting.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-14T18:48:39+00:00"
             }
           ]
         },
@@ -1459,32 +1447,10 @@
               "publishedAt": "2026-11-14T01:18:51+00:00"
             },
             {
-              "title": "SpaceX successfully catches Starship rocket in huge milestone for the space industry",
-              "url": "https://www.marketwatch.com/story/spacex-successfully-catches-starship-rocket-in-huge-milestone-for-the-space-industry-f42c136c?mod=mw_rss_topstories",
-              "source": "https://feeds.marketwatch.com/marketwatch/topstories/",
-              "publishedAt": "2026-11-15T00:33:00+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "부동산·저장소",
-          "articles": [
-            {
-              "title": "Rising rents draw Wall Street money to industrial outdoor storage lot investments across the U.S.",
-              "url": "https://www.cnbc.com/2026/11/14/real-estate-rental-income-industrial-storage-market.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-14T15:14:57+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "소매·엔터테인먼트",
-          "articles": [
-            {
-              "title": "Retailers are turning to entertainment to win shoppers’ attention",
-              "url": "https://www.cnbc.com/2026/11/14/retailers-invest-entertainment.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-14T13:00:01+00:00"
+              "title": "Nvidia hasn’t selected search firm for permanent Huang replacement, board tells CNBC",
+              "url": "https://www.cnbc.com/2026/11/13/nvidia-huang-ceo-replacement-search.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-13T20:21:46+00:00"
             }
           ]
         },
@@ -1506,7 +1472,35 @@
           ]
         },
         {
-          "sector": "연금·사회보장",
+          "sector": "소비재·소매",
+          "articles": [
+            {
+              "title": "Retailers are turning to entertainment to win shoppers’ attention",
+              "url": "https://www.cnbc.com/2026/11/14/retailers-invest-entertainment.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-14T13:00:01+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "재무·투자",
+          "articles": [
+            {
+              "title": "Berkshire breaks out to record high with fourth-quarter rally reaching 19%",
+              "url": "https://www.cnbc.com/2026/11/14/berkshire-breaks-out-to-record-high-with-fourth-quarter-rally-reaching-19percent.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-14T14:02:39+00:00"
+            },
+            {
+              "title": "Top Wall Street analysts are bullish on these 3 stocks for the long term",
+              "url": "https://www.cnbc.com/2026/11/15/top-wall-street-analysts-are-bullish-on-these-3-stocks-for-the-long-term.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-15T12:49:07+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "사회보장",
           "articles": [
             {
               "title": "Social Security and the blue wave: What could happen to payroll taxes and senior tax breaks",
@@ -1523,7 +1517,7 @@
           ]
         },
         {
-          "sector": "에너지·가스",
+          "sector": "에너지·연료",
           "articles": [
             {
               "title": "Heating oil prices are up 59% from last winter. The spike is 'crushing folks,' Maine nonprofit says",
@@ -1534,42 +1528,42 @@
           ]
         },
         {
-          "sector": "주식시장·투자",
+          "sector": "자동차·운송",
           "articles": [
             {
-              "title": "Berkshire breaks out to record high with fourth-quarter rally reaching 19%",
-              "url": "https://www.cnbc.com/2026/11/14/berkshire-breaks-out-to-record-high-with-fourth-quarter-rally-reaching-19percent.html",
+              "title": "'We slept here': Flight delays linger but schedule is back on track for Monday",
+              "url": "https://www.cnbc.com/2026/11/15/flight-delays-ground-faa-stop.html",
               "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-14T14:02:39+00:00"
+              "publishedAt": "2026-11-15T18:22:23+00:00"
+            },
+            {
+              "title": "Trump breaks silence about FAA nationwide ground stop, blames Biden administration",
+              "url": "https://www.cnbc.com/2026/11/15/trump-breaks-silence-on-faa-nationwide-ground-stop-blames-biden-.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-15T16:56:40+00:00"
+            },
+            {
+              "title": "DOT Sec. Duffy ties router in southern Arkansas to issues that led to nationwide ground stop",
+              "url": "https://www.cnbc.com/2026/11/14/faa-ground-stop-flights-resume-delays.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-15T18:15:14+00:00"
+            },
+            {
+              "title": "'Root cause’ of nationwide ground stop is unknown, FAA says",
+              "url": "https://www.cnbc.com/2026/11/14/root-cause-of-nationwide-ground-stop-is-unknown-faa-says.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-14T22:54:47+00:00"
             }
           ]
         },
         {
-          "sector": "기업가치·CEO",
+          "sector": "기술경영",
           "articles": [
             {
-              "title": "Megaspeed says Alice Huang left in 2025 as it launches internal probe into reports about its business",
-              "url": "https://www.cnbc.com/2026/11/15/megaspeed-alice-huang-probe-nvidia-scandal.html",
+              "title": "Nvidia board urged to consider 'potential return of Jensen Huang' by two major investors",
+              "url": "https://www.cnbc.com/2026/11/14/nvidia-investors-jensen-huang-return-board-letter.html",
               "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-15T08:34:46+00:00"
-            },
-            {
-              "title": "Eric Trump-backed robot soldier startup can't pay staff after founder borrowed $4.6 million from company to buy home",
-              "url": "https://www.cnbc.com/2026/11/14/foundation-payroll-ceo-loan.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-14T12:00:01+00:00"
-            },
-            {
-              "title": "After Jensen Huang’s exit, what top financial advisors are doing with Nvidia: Exclusive CNBC poll",
-              "url": "https://www.cnbc.com/2026/11/13/nvidia-stock-advisors-jensen-huang-exit-exclusive-poll.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-13T19:53:38+00:00"
-            },
-            {
-              "title": "Analysis: Companies love a ‘rockstar’ CEO. Until they depend on one",
-              "url": "https://www.cnbc.com/2026/11/14/nvidia-jensen-huang-ceo-succession-risk.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-14T07:08:45+00:00"
+              "publishedAt": "2026-11-14T17:46:06+00:00"
             },
             {
               "title": "Nvidia is done with Jensen Huang. The fallout in Washington is just beginning",
@@ -1578,67 +1572,25 @@
               "publishedAt": "2026-11-13T23:54:36+00:00"
             },
             {
-              "title": "Lutnick faces questions over Nvidia spy scandal. His sons' firm has deep ties to the chipmaker",
-              "url": "https://www.cnbc.com/2026/11/13/howard-lutnick-nvidia-jensen-huang-china-cantor-fitzgerald.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-13T23:42:18+00:00"
-            },
-            {
-              "title": "OpenAI launches ChatGPT Wallet, allowing its 'dots' AI agents to make purchases for users",
-              "url": "https://www.cnbc.com/2026/11/13/openai-chatgpt-wallet-dot-purchases.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-13T18:56:26+00:00"
-            },
-            {
               "title": "Apple, Alphabet and Uber survived major founder transitions. Nvidia will be a harder test",
               "url": "https://www.cnbc.com/2026/11/13/nvidia-jensen-huang-founder-ceo-transition.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
               "publishedAt": "2026-11-13T15:03:10+00:00"
-            },
-            {
-              "title": "I interviewed Huang at peak ‘Jensenmania.’ Three weeks later, Nvidia is grappling with a world without him",
-              "url": "https://www.cnbc.com/2026/11/13/tech-download-jensen-huang-nvidia-departure-jensenmania.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-13T12:46:12+00:00"
-            },
-            {
-              "title": "Nvidia scandal draws in Commerce Secretary Lutnick, who reportedly agrees to testify about China chip sales",
-              "url": "https://www.cnbc.com/2026/11/13/nvidia-scandal-lutnick-chip-sales.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-13T15:49:11+00:00"
-            },
-            {
-              "title": "Nvidia closes below $4T market cap for first time since July 2025 in Huang fallout",
-              "url": "https://www.cnbc.com/2026/11/13/nvidia-nvda-stock-jensen-huang-transition.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-13T21:18:11+00:00"
-            },
-            {
-              "title": "Nvidia without Jensen Huang. What lies ahead for Asian chipmakers?",
-              "url": "https://www.cnbc.com/2026/11/13/nvidia-without-jensen-huang-what-lies-ahead-for-asian-chipmakers-.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-13T07:29:15+00:00"
-            },
-            {
-              "title": "Why Singapore keeps turning up in the fight over Nvidia chips and China",
-              "url": "https://www.cnbc.com/2026/11/13/nvidia-jensen-huang-alice-spy-megaspeed-.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-13T07:15:01+00:00"
             }
           ]
         }
       ],
       "newsRanks": [
-        "인공지능 | Nvidia, Anthropic, AI 거래",
-        "전기차 | Rivian, Lucid, EV 연방 지원",
-        "우주산업 | SpaceX, Starship, 우주 산업",
-        "부동산·저장소 | 산업용 저장소, 임대료 상승, 투자",
-        "소매·엔터테인먼트 | 소매업, 엔터테인먼트, 소비자 관심",
+        "인공지능 | Nvidia, Anthropic, ETF",
+        "전기차 | Rivian, Lucid, EV 지원",
+        "우주산업 | SpaceX, Starship, 우주발사",
         "암호화폐 | Binance, CFTC, 규제",
-        "연금·사회보장 | 사회보장, 연금세금, 정책",
-        "에너지·가스 | 난방유, 가격 상승, 에너지 비용",
-        "주식시장·투자 | Berkshire, 주가 상승, 투자자 심리",
-        "기업가치·CEO | CEO 이탈, 기업가치, 투자자 반응"
+        "소비재·소매 | Retailers, Entertainment, 쇼핑",
+        "재무·투자 | Berkshire, 주식시장, 투자자",
+        "사회보장 | Social Security, 연금, 세금",
+        "에너지·연료 | Heating oil, 가격, 에너지",
+        "자동차·운송 | FAA, 항공, 운항",
+        "기술경영 | CEO, 리더십, 기업가"
       ],
       "analysis": {
         "status": "news-verified",

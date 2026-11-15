@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-11-15T18:57:12+00:00",
-    "lastSuccessfulRun": "2026-11-15T18:57:12+00:00",
+    "updatedAt": "2026-11-15T20:02:51+00:00",
+    "lastSuccessfulRun": "2026-11-15T20:02:51+00:00",
     "failedReason": null
   },
   "rows": [
@@ -21097,6 +21097,13 @@
       "market": "KR",
       "category": "성장주",
       "industry": "화학, 소재, 합성수지·정밀화학"
+    },
+    {
+      "ticker": "345290",
+      "name": "영광와이케이엠씨",
+      "market": "KR",
+      "category": "성장주",
+      "industry": "반도체, 반도체 장비·소재, 첨단 패키징"
     },
     {
       "ticker": "346010",
