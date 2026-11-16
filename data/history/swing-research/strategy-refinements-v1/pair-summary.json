@@ -4,12 +4,12 @@
       "refine_s1_base": {
         "closed": 3,
         "entryDates": 1,
-        "signals": 5
+        "signals": 7
       },
       "refine_s1_ma200_rising": {
         "closed": 3,
         "entryDates": 1,
-        "signals": 4
+        "signals": 5
       }
     },
     "s2_volume": {
@@ -26,9 +26,9 @@
     },
     "s4_ma200_rising": {
       "refine_s4_base": {
-        "closed": 3,
-        "entryDates": 3,
-        "signals": 13
+        "closed": 4,
+        "entryDates": 4,
+        "signals": 14
       },
       "refine_s4_ma200_rising": {
         "closed": 2,
