@@ -1,7 +1,7 @@
 {
   "version": "data-first-paper-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-11-13",
+  "lastSession": "2026-11-16",
   "observations": 1294,
   "signalCounts": {
     "data_S3_ma200_distance25_base": 64,
@@ -70,24 +70,24 @@
       "knownObservations": 1130,
       "unknownObservations": 164,
       "data_S4_debt1_base": {
-        "closed": 3,
-        "entryDates": 3
+        "closed": 4,
+        "entryDates": 4
       },
       "data_S4_debt1_filtered": {
-        "closed": 3,
-        "entryDates": 3
+        "closed": 4,
+        "entryDates": 4
       }
     },
     "S4_eps_growth": {
       "knownObservations": 1130,
       "unknownObservations": 164,
       "data_S4_eps_growth_base": {
-        "closed": 3,
-        "entryDates": 3
+        "closed": 4,
+        "entryDates": 4
       },
       "data_S4_eps_growth_filtered": {
-        "closed": 2,
-        "entryDates": 2
+        "closed": 3,
+        "entryDates": 3
       }
     },
     "S7_high52_drawdown30": {
@@ -106,19 +106,19 @@
       "knownObservations": 1289,
       "unknownObservations": 5,
       "data_N_expanded_below200_base": {
-        "closed": 90,
+        "closed": 94,
         "entryDates": 9
       },
       "data_N_expanded_below200_filtered": {
-        "closed": 51,
-        "entryDates": 14
+        "closed": 52,
+        "entryDates": 15
       }
     },
     "N_rsi_ahead_macd": {
       "knownObservations": 1289,
       "unknownObservations": 5,
       "data_N_rsi_ahead_macd_base": {
-        "closed": 90,
+        "closed": 94,
         "entryDates": 9
       },
       "data_N_rsi_ahead_macd_filtered": {
@@ -130,14 +130,14 @@
       "knownObservations": 1130,
       "unknownObservations": 164,
       "data_N_value_laggard_base": {
-        "closed": 90,
+        "closed": 94,
         "entryDates": 9
       },
       "data_N_value_laggard_filtered": {
-        "closed": 22,
+        "closed": 24,
         "entryDates": 9
       }
     }
   },
-  "waitingForSource": 1
+  "waitingForSource": 45
 }
