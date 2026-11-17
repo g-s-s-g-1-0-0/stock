@@ -1,7 +1,7 @@
 {
   "version": "data-first-paper-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-11-16",
+  "lastSession": "2026-11-17",
   "observations": 1338,
   "signalCounts": {
     "data_S3_ma200_distance25_base": 64,
@@ -70,47 +70,47 @@
       "knownObservations": 1168,
       "unknownObservations": 170,
       "data_S4_debt1_base": {
-        "closed": 4,
-        "entryDates": 4
+        "closed": 6,
+        "entryDates": 5
       },
       "data_S4_debt1_filtered": {
-        "closed": 4,
-        "entryDates": 4
+        "closed": 6,
+        "entryDates": 5
       }
     },
     "S4_eps_growth": {
       "knownObservations": 1168,
       "unknownObservations": 170,
       "data_S4_eps_growth_base": {
-        "closed": 4,
-        "entryDates": 4
+        "closed": 6,
+        "entryDates": 5
       },
       "data_S4_eps_growth_filtered": {
-        "closed": 3,
-        "entryDates": 3
+        "closed": 4,
+        "entryDates": 4
       }
     },
     "S7_high52_drawdown30": {
       "knownObservations": 1333,
       "unknownObservations": 5,
       "data_S7_high52_drawdown30_base": {
-        "closed": 21,
-        "entryDates": 8
+        "closed": 26,
+        "entryDates": 10
       },
       "data_S7_high52_drawdown30_filtered": {
-        "closed": 11,
-        "entryDates": 6
+        "closed": 14,
+        "entryDates": 8
       }
     },
     "N_expanded_below200": {
       "knownObservations": 1333,
       "unknownObservations": 5,
       "data_N_expanded_below200_base": {
-        "closed": 94,
+        "closed": 113,
         "entryDates": 9
       },
       "data_N_expanded_below200_filtered": {
-        "closed": 52,
+        "closed": 61,
         "entryDates": 15
       }
     },
@@ -118,11 +118,11 @@
       "knownObservations": 1333,
       "unknownObservations": 5,
       "data_N_rsi_ahead_macd_base": {
-        "closed": 94,
+        "closed": 113,
         "entryDates": 9
       },
       "data_N_rsi_ahead_macd_filtered": {
-        "closed": 3,
+        "closed": 4,
         "entryDates": 1
       }
     },
@@ -130,14 +130,14 @@
       "knownObservations": 1168,
       "unknownObservations": 170,
       "data_N_value_laggard_base": {
-        "closed": 94,
+        "closed": 113,
         "entryDates": 9
       },
       "data_N_value_laggard_filtered": {
-        "closed": 24,
+        "closed": 27,
         "entryDates": 9
       }
     }
   },
-  "waitingForSource": 1
+  "waitingForSource": 45
 }
