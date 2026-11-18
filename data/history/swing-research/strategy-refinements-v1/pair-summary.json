@@ -28,12 +28,12 @@
       "refine_s4_base": {
         "closed": 6,
         "entryDates": 5,
-        "signals": 15
+        "signals": 17
       },
       "refine_s4_ma200_rising": {
         "closed": 4,
         "entryDates": 3,
-        "signals": 11
+        "signals": 13
       }
     },
     "s6_ma50_above200": {
