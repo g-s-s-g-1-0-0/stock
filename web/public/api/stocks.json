@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-11-19T14:57:20+00:00",
-    "lastSuccessfulRun": "2026-11-19T14:57:20+00:00",
+    "updatedAt": "2026-11-19T15:03:28+00:00",
+    "lastSuccessfulRun": "2026-11-19T15:03:28+00:00",
     "failedReason": null
   },
   "rows": [
@@ -173,15 +173,7 @@
       ],
       "category": "혼합주",
       "industry": "반도체, 메모리·파운드리, 스마트폰, 소비자 가전",
-      "updatedAt": "2026-11-19T14:56:39+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 0,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-19T14:56:39+00:00"
     },
     {
       "ticker": "011070",
@@ -203,7 +195,7 @@
       "ticker": "039030",
       "name": "이오테크닉스",
       "market": "KR",
-      "fairPrice": "₩181,823 ~ ₩245,996",
+      "fairPrice": "₩176,866 ~ ₩239,289",
       "fairPriceReason": null,
       "currentPrice": "₩330,500",
       "valuation": "고평가",
@@ -215,15 +207,7 @@
       ],
       "category": "성장주",
       "industry": "반도체 레이저 장비, HBM·AI 반도체, 레이저 어닐링, 그루빙·다이싱",
-      "updatedAt": "2026-11-19T14:56:42+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 10,
-      "postRiskGroupPercent": 20,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-19T14:56:42+00:00"
     },
     {
       "ticker": "042700",
@@ -252,7 +236,9 @@
       "opinion": "관망",
       "opinionReason": "관망 — 현재 신규 매수 조건 미충족",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "7. 이평선 눌림 반등"
+      ],
       "category": "성장주",
       "industry": "협동로봇, 자동화, AI 로보틱스",
       "updatedAt": "2026-11-19T14:56:45+00:00"
@@ -335,15 +321,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
-      "updatedAt": "2026-11-19T14:56:50+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-19T14:56:50+00:00"
     },
     {
       "ticker": "BE",
@@ -471,15 +449,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
-      "updatedAt": "2026-11-19T14:56:55+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-19T14:56:55+00:00"
     },
     {
       "ticker": "MU",
@@ -588,18 +558,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 4. 장기선 아래 반등 초입 · 추가매수 대기 (익절 +15% 또는 회복장 종료 청산 · 손절 -8%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
-      "updatedAt": "2026-11-19T14:56:59+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-19T14:56:59+00:00"
     },
     {
       "ticker": "COHR",
@@ -669,7 +633,7 @@
       "ticker": "079550",
       "name": "LIG디펜스앤에어로스페이스",
       "market": "KR",
-      "fairPrice": "₩144,132 ~ ₩195,003",
+      "fairPrice": "₩140,505 ~ ₩190,095",
       "fairPriceReason": null,
       "currentPrice": "₩367,500",
       "valuation": "고평가",
@@ -772,18 +736,12 @@
       "opinion": "매수",
       "opinionReason": "신호 추적 유지 — 4. 장기선 아래 반등 초입 · 추가매수 대기 (익절 +15% 또는 회복장 종료 청산 · 손절 -8%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "전력 발전, 원전·가스, AI 데이터센터 전력수요, AI 인프라",
-      "updatedAt": "2026-11-19T14:57:08+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-19T14:57:08+00:00"
     },
     {
       "ticker": "GNRC",
@@ -815,15 +773,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
-      "updatedAt": "2026-11-19T14:57:09+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "나스닥100 지수 ETF(1배)",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-19T14:57:09+00:00"
     },
     {
       "ticker": "USD",
@@ -887,15 +837,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화",
-      "updatedAt": "2026-11-19T14:57:12+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-19T14:57:12+00:00"
     },
     {
       "ticker": "SPCX",
@@ -927,15 +869,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
-      "updatedAt": "2026-11-19T14:57:13+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "소프트웨어·클라우드",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-19T14:57:13+00:00"
     },
     {
       "ticker": "AAPL",
@@ -948,18 +882,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 3. 정상장 볼린저 워시아웃 · 추가매수 대기 (고정 익절 +12% · 종가 지지선 이탈 $325.64 · 비상 손절 -25% · 횡보장 고점·시장 청산)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "3. 정상장 볼린저 워시아웃"
+      ],
       "category": "혼합주",
       "industry": "스마트폰, 소비자 전자, 서비스, 자체 반도체",
-      "updatedAt": "2026-11-19T14:57:14+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-19T14:57:14+00:00"
     },
     {
       "ticker": "GOOGL",
