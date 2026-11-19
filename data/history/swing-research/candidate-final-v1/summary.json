@@ -1,8 +1,8 @@
 {
   "version": "candidate-final-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-11-18",
-  "observations": 1426,
+  "lastSession": "2026-11-19",
+  "observations": 1469,
   "signalCounts": {
     "final_p_breakout_first_retest": 2,
     "final_p_failed_breakout_reclaim": 0,
@@ -10,7 +10,7 @@
     "final_p_gap_first_retest": 0,
     "final_p_shock_high_rebreak": 0,
     "final_p_confirmed_rsi_divergence": 0,
-    "final_s1_few_distribution_days": 0,
+    "final_s1_few_distribution_days": 1,
     "final_s2_fresh_ma_support": 0,
     "final_s2_intraday_supported_trend": 0,
     "final_s2_weekly_uptrend": 0,

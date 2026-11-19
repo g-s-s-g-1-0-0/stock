@@ -1,8 +1,8 @@
 {
   "version": "candidate-lab-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-11-18",
-  "observations": 1426,
+  "lastSession": "2026-11-19",
+  "observations": 1469,
   "signalCounts": {
     "lab_p_rsi2_pullback": 37,
     "lab_p_pocket_pivot": 3,
@@ -18,7 +18,7 @@
     "lab_s3_base": 59,
     "lab_s5_base": 0,
     "lab_s7_base": 52,
-    "lab_s1_ma50_above200": 5,
+    "lab_s1_ma50_above200": 6,
     "lab_s1_volume_confirm": 4,
     "lab_s2_rs20_positive": 0,
     "lab_s2_efficient_trend": 0,
