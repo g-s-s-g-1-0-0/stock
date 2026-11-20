@@ -1,49 +1,7 @@
 {
   "meta": {
     "kind": "personal-trade-exits",
-    "updatedAt": "2026-11-19T22:57:22Z"
+    "updatedAt": "2026-11-20T00:57:07Z"
   },
-  "events": [
-    {
-      "ownerId": "8d43baaf-3e29-40d0-b516-6ea8ccd1615e",
-      "trades": [
-        {
-          "name": "Palantir Technologies Class A",
-          "market": "US",
-          "slotId": "PLTR_swing_3_20261107_1",
-          "status": "손절",
-          "ticker": "PLTR",
-          "buyDate": "2026.11.07",
-          "buyPrice": "$161.51",
-          "sellDate": "2026.11.20",
-          "strategy": "3. 정상장 볼린저 워시아웃",
-          "returnPct": -5.42,
-          "riskGroup": "방산·우주",
-          "sellPrice": "$152.76",
-          "holdingDays": "-",
-          "buyTimestamp": "2026-11-06T15:04:45.998362+00:00",
-          "currentPrice": "$152.76",
-          "supportLevel": "BB하단",
-          "investmentType": "swing",
-          "allocationReason": "",
-          "allocationSource": "account",
-          "allocationStatus": "진입 가능",
-          "investmentAmount": 295298,
-          "maxPositionCount": 10,
-          "supportStopPrice": 155.75,
-          "openPositionCount": 1,
-          "postRiskGroupPercent": 10,
-          "currentRiskGroupPercent": 0,
-          "recommendedAllocationPercent": 10,
-          "supportExitConfirmation": {
-            "session": "2026-11-19",
-            "close": 153.67999267578125
-          },
-          "sellTimestamp": "2026-11-19T23:00:00Z",
-          "exitReason": "진입 지지선 이탈 청산 (BB하단 155.75; 2026-11-19 종가 확인)",
-          "allocationSignalStatus": "보유 중"
-        }
-      ]
-    }
-  ]
+  "events": []
 }
