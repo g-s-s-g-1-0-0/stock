@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stocks",
     "schedule": "derived",
-    "updatedAt": "2026-11-20T14:57:11+00:00",
-    "lastSuccessfulRun": "2026-11-20T14:57:11+00:00",
+    "updatedAt": "2026-11-20T15:04:04+00:00",
+    "lastSuccessfulRun": "2026-11-20T15:04:04+00:00",
     "failedReason": null
   },
   "rows": [
@@ -34,7 +34,9 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 1. 시장 공포 저점 진입 · 추가매수 대기 (익절 회복장 종료 청산 · 손절 -30%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "스윙주",
       "industry": "S&P500 지수 ETF",
       "updatedAt": "2026-11-20T14:56:27+00:00"
@@ -111,7 +113,7 @@
       "ticker": "000150",
       "name": "두산",
       "market": "KR",
-      "fairPrice": "₩475,086 ~ ₩642,764",
+      "fairPrice": "₩422,263 ~ ₩571,297",
       "fairPriceReason": null,
       "currentPrice": "₩518,000",
       "valuation": "보통",
@@ -127,7 +129,7 @@
       "ticker": "000660",
       "name": "SK하이닉스",
       "market": "KR",
-      "fairPrice": "₩7,546,624 ~ ₩10,210,138",
+      "fairPrice": "₩8,614,175 ~ ₩11,654,472",
       "fairPriceReason": null,
       "currentPrice": "₩1,100,000",
       "valuation": "저평가",
@@ -143,7 +145,7 @@
       "ticker": "005380",
       "name": "현대자동차",
       "market": "KR",
-      "fairPrice": "₩288,487 ~ ₩390,306",
+      "fairPrice": "₩287,027 ~ ₩388,330",
       "fairPriceReason": null,
       "currentPrice": "₩253,000",
       "valuation": "저평가",
@@ -159,25 +161,19 @@
       "ticker": "005930",
       "name": "삼성전자",
       "market": "KR",
-      "fairPrice": "₩746,869 ~ ₩1,010,470",
+      "fairPrice": "₩1,065,185 ~ ₩1,441,133",
       "fairPriceReason": null,
       "currentPrice": "₩180,900",
       "valuation": "저평가",
       "opinion": "매수",
       "opinionReason": "보유 유지 — 4. 장기선 아래 반등 초입 · 추가매수 대기 (익절 +15% 또는 회복장 종료 청산 · 손절 -8%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "혼합주",
       "industry": "반도체, 메모리·파운드리, 스마트폰, 소비자 가전",
-      "updatedAt": "2026-11-20T14:56:39+00:00",
-      "allocationStatus": "진입 가능",
-      "allocationReason": "",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 0,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-20T14:56:39+00:00"
     },
     {
       "ticker": "011070",
@@ -215,7 +211,7 @@
       "ticker": "042700",
       "name": "한미반도체",
       "market": "KR",
-      "fairPrice": "₩76,247 ~ ₩103,158",
+      "fairPrice": "₩67,077 ~ ₩90,752",
       "fairPriceReason": null,
       "currentPrice": "₩151,600",
       "valuation": "고평가",
@@ -318,18 +314,12 @@
       "opinion": "관망",
       "opinionReason": "신호 추적 유지 — 1. 시장 공포 저점 진입 · 추가매수 대기 (익절 회복장 종료 청산 · 손절 -30%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "1. 시장 공포 저점 진입"
+      ],
       "category": "성장주",
       "industry": "반도체 후공정, 패키징·테스트·EMS, 첨단패키징",
-      "updatedAt": "2026-11-20T14:56:49+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-20T14:56:49+00:00"
     },
     {
       "ticker": "BE",
@@ -457,15 +447,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "광통신·데이터센터용 광부품, 트랜시버, 광송수신기",
-      "updatedAt": "2026-11-20T14:56:53+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-20T14:56:53+00:00"
     },
     {
       "ticker": "MU",
@@ -535,7 +517,7 @@
       "ticker": "SNDK",
       "name": "Sandisk",
       "market": "US",
-      "fairPrice": "$4,167.27 ~ $5,638.08",
+      "fairPrice": "$520.78 ~ $704.59",
       "fairPriceReason": null,
       "currentPrice": "$88.89",
       "valuation": "저평가",
@@ -577,15 +559,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "AI 인프라, 대용량 HDD, 스토리지, 데이터센터 저장장치",
-      "updatedAt": "2026-11-20T14:56:57+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-20T14:56:57+00:00"
     },
     {
       "ticker": "COHR",
@@ -751,25 +725,19 @@
       "ticker": "VST",
       "name": "Vistra",
       "market": "US",
-      "fairPrice": "$214.25 ~ $289.87",
+      "fairPrice": "$211.63 ~ $286.33",
       "fairPriceReason": null,
       "currentPrice": "$122.69",
       "valuation": "저평가",
       "opinion": "매수",
       "opinionReason": "신호 추적 유지 — 4. 장기선 아래 반등 초입 · 추가매수 대기 (익절 +15% 또는 회복장 종료 청산 · 손절 -8%)",
       "marketEvent": "당분간 없음",
-      "strategies": [],
+      "strategies": [
+        "4. 장기선 아래 반등 초입"
+      ],
       "category": "성장주",
       "industry": "전력 발전, 원전·가스, AI 데이터센터 전력수요, AI 인프라",
-      "updatedAt": "2026-11-20T14:57:03+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-20T14:57:03+00:00"
     },
     {
       "ticker": "GNRC",
@@ -801,15 +769,7 @@
       "strategies": [],
       "category": "스윙주",
       "industry": "나스닥100 지수 ETF(1배), 대형 기술·성장주 묶음",
-      "updatedAt": "2026-11-20T14:57:04+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "나스닥100 지수 ETF(1배)",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-20T14:57:04+00:00"
     },
     {
       "ticker": "USD",
@@ -873,15 +833,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "산업재, 장비·제조, 자동화",
-      "updatedAt": "2026-11-20T14:57:05+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 2,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-20T14:57:05+00:00"
     },
     {
       "ticker": "SPCX",
@@ -913,15 +865,7 @@
       "strategies": [],
       "category": "성장주",
       "industry": "소프트웨어·클라우드, AI 플랫폼",
-      "updatedAt": "2026-11-20T14:57:06+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "메가트렌드 Top 5 미충족",
-      "recommendedAllocationPercent": 0,
-      "riskGroup": "소프트웨어·클라우드",
-      "currentRiskGroupPercent": 0,
-      "postRiskGroupPercent": 10,
-      "openPositionCount": 7,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-20T14:57:06+00:00"
     },
     {
       "ticker": "AAPL",
@@ -937,15 +881,7 @@
       "strategies": [],
       "category": "혼합주",
       "industry": "스마트폰, 소비자 전자, 서비스, 자체 반도체",
-      "updatedAt": "2026-11-20T14:57:07+00:00",
-      "allocationStatus": "매수 보류",
-      "allocationReason": "반도체·AI 인프라 산업 비중 20% 한도 초과",
-      "recommendedAllocationPercent": 12.5,
-      "riskGroup": "반도체·AI 인프라",
-      "currentRiskGroupPercent": 12.5,
-      "postRiskGroupPercent": 22.5,
-      "openPositionCount": 1,
-      "maxPositionCount": 10
+      "updatedAt": "2026-11-20T14:57:07+00:00"
     },
     {
       "ticker": "GOOGL",
