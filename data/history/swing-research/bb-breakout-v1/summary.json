@@ -1,13 +1,13 @@
 {
   "version": "bb-breakout-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-11-19",
-  "observations": 1470,
+  "lastSession": "2026-11-20",
+  "observations": 1514,
   "signalCounts": {
     "bb_squeeze_breakout": 3
   },
-  "filteredClosed": 1,
-  "filteredEntryDates": 1,
+  "filteredClosed": 2,
+  "filteredEntryDates": 2,
   "earliestReviewKST": "2026-12-08",
   "sampleReady": false,
   "status": "collecting",

@@ -4,12 +4,12 @@
       "refine_s1_base": {
         "closed": 5,
         "entryDates": 1,
-        "signals": 8
+        "signals": 11
       },
       "refine_s1_ma200_rising": {
         "closed": 4,
         "entryDates": 1,
-        "signals": 6
+        "signals": 8
       }
     },
     "s2_volume": {
@@ -26,20 +26,20 @@
     },
     "s4_ma200_rising": {
       "refine_s4_base": {
-        "closed": 6,
+        "closed": 7,
         "entryDates": 5,
         "signals": 17
       },
       "refine_s4_ma200_rising": {
-        "closed": 4,
+        "closed": 5,
         "entryDates": 3,
         "signals": 13
       }
     },
     "s6_ma50_above200": {
       "refine_s6_base": {
-        "closed": 0,
-        "entryDates": 0,
+        "closed": 1,
+        "entryDates": 1,
         "signals": 2
       },
       "refine_s6_ma50_above200": {
