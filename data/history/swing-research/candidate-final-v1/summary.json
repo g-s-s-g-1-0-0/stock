@@ -2,7 +2,7 @@
   "version": "candidate-final-v1",
   "startSession": "2026-10-05",
   "lastSession": "2026-11-19",
-  "observations": 1469,
+  "observations": 1470,
   "signalCounts": {
     "final_p_breakout_first_retest": 2,
     "final_p_failed_breakout_reclaim": 0,
