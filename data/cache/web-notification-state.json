@@ -266,6 +266,7 @@
       "6434915537fa962b7815b721068e5691cad1581486439bcc9620397a20713f77",
       "6503fc1f959a34a49a8422374e9b7236e4146b27bcdf1615d2bb03ae20b00cdc",
       "65398f5a139b0857354079b39e40a8499c1c6dbb809bdb082901947cdd3b9217",
+      "65d04ee2e642ab16c36eedc905af4604b526a8706fa2036a353ff75f0b4d9940",
       "65e245d1ea84b4e96d4c274c2ad3bb36de65defd12319b7467bd57821ad55dac",
       "67476ecc7c999afb52d83f2e7d23424db8490adec6b03adafd06acbd268a278f",
       "6824b96749bbe391c4739beaf7da4aad9dcf4782f6eea2d020b87c8a55ccc99f",
@@ -414,7 +415,7 @@
       "fe0b0eb35a45dd7fe9764e984bd50abd6dc04bbffd61ff05e8cfcdb3dd9b5cb3",
       "ffe759f69cf48289a3580a7beb09fa58ccede03fe835e6d112bd5c1a1536f95c"
     ],
-    "updatedAt": "2026-11-19T21:00:06.091318+00:00"
+    "updatedAt": "2026-11-20T15:00:05.279473+00:00"
   },
   "regimeShift": {
     "isRecoveryMarket": false,
@@ -426,7 +427,7 @@
     "openedAt": "2026-08-16T08:23:12.862536Z",
     "openedByTicker": "MSFT",
     "sawRecovery": false,
-    "updatedAt": "2026-11-20T14:00:00+00:00"
+    "updatedAt": "2026-11-20T15:00:00+00:00"
   },
   "weeklyTrend": {
     "sentKeys": [
