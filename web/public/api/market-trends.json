@@ -2,8 +2,8 @@
   "meta": {
     "kind": "market-trends",
     "schedule": "0 15 * * 0",
-    "updatedAt": "2026-11-22T14:51:51+00:00",
-    "lastSuccessfulRun": "2026-11-22T14:51:51+00:00",
+    "updatedAt": "2026-11-22T20:53:34+00:00",
+    "lastSuccessfulRun": "2026-11-22T20:53:34+00:00",
     "analysisStatus": "news-verified",
     "failedReason": null
   },
@@ -1598,28 +1598,22 @@
         "로봇·자동화 | 로봇, 자동화, 휴머노이드, 협동로봇, 로보틱스",
         "TIGER | TIGER, 미국나스닥100레버리지, 합성, 미국나스닥100",
         "방산·드론 | 방산, 드론, 무인체계, 유도무기, 레이더",
-        "인공지능 | Anthropic, IPO, AI, 주가",
-        "클라우드 보안 | Zscaler, CrowdStrike, 인수, 주가",
-        "에너지 | Quantum computing, 에너지, 실용화, 주가",
-        "반도체 | Nvidia, 주가, AI 칩, 수요",
-        "주식시장 | S&P 500, 수정, 시장세력, 주가"
+        "AI/머신러닝 | Anthropic, IPO, AI주식",
+        "반도체 | Nvidia, 주가, 반도체",
+        "사이버보안 | Zscaler, 인수, 보안",
+        "데이터센터 | Trump, 데이터센터, 세금",
+        "양자컴퓨팅 | 양자, 에너지, 실용화"
       ],
-      "summary": "최근 인공지능과 클라우드 보안, 에너지 분야가 주목받으며 주식시장은 변동성을 보이고 있습니다.",
+      "summary": "인공지능과 반도체 주가 변동이 시장에 큰 영향을 주며, 데이터센터와 보안 분야도 주목받고 있습니다.",
       "newsEvidence": [
         {
-          "sector": "인공지능",
+          "sector": "AI/머신러닝",
           "articles": [
             {
               "title": "Anthropic’s record IPO collides with tech’s worst week on Wall Street since 2020",
               "url": "https://www.cnbc.com/2026/11/21/anthropic-ipo-tech-selloff.html",
               "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
               "publishedAt": "2026-11-21T16:40:05+00:00"
-            },
-            {
-              "title": "Anthropic raises $93.5 billion total as underwriters scoop up ‘greenshoe’ overallotment",
-              "url": "https://www.cnbc.com/2026/11/20/anthropic-ipo-greenshoe.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-20T14:59:38+00:00"
             },
             {
               "title": "Tech wreck drags Anthropic into the red on its second day of trading",
@@ -1638,28 +1632,12 @@
               "url": "https://www.cnbc.com/2026/11/20/anthropic-stock-ai-amd-nvidia.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
               "publishedAt": "2026-11-20T21:27:51+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "클라우드 보안",
-          "articles": [
+            },
             {
-              "title": "Zscaler stock jumps 18% on report that CrowdStrike in talks to buy security vendor",
-              "url": "https://www.cnbc.com/2026/11/20/zscaler-crowdstrike-deal.html",
+              "title": "Anthropic IPO 'exactly what the markets need,' but analysts warn of volatility",
+              "url": "https://www.cnbc.com/2026/11/20/anthropic-ipo-stocks-market.html",
               "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-20T21:35:24+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "에너지",
-          "articles": [
-            {
-              "title": "Quantum computing’s first real-world payoff may come in energy, not drug discovery",
-              "url": "https://www.cnbc.com/2026/11/22/quantum-computing-energy-applications.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-22T06:00:01+00:00"
+              "publishedAt": "2026-11-20T04:51:28+00:00"
             }
           ]
         },
@@ -1671,17 +1649,51 @@
               "url": "https://www.cnbc.com/2026/11/20/nvidias-7-week-losing-streak-is-longest-since-2008-financial-crisis.html",
               "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
               "publishedAt": "2026-11-20T22:59:33+00:00"
+            },
+            {
+              "title": "SoftBank suffers worst day in over two years as AI sell-off hits Asian tech stocks",
+              "url": "https://www.cnbc.com/2026/11/20/softbank-ai-tech-stocks-slide-anthropic-debut.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-20T07:23:06+00:00"
             }
           ]
         },
         {
-          "sector": "주식시장",
+          "sector": "사이버보안",
           "articles": [
             {
-              "title": "S&P 500 correction: Five forces behind the market sell-off",
-              "url": "https://www.cnbc.com/2026/11/20/sp-500-correction-market-sell-off.html",
+              "title": "Zscaler stock jumps 18% on report that CrowdStrike in talks to buy security vendor",
+              "url": "https://www.cnbc.com/2026/11/20/zscaler-crowdstrike-deal.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-20T21:35:24+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "데이터센터",
+          "articles": [
+            {
+              "title": "Trump vows to stop U.S. companies from building data centers abroad, threatens 'tremendous tax'",
+              "url": "https://www.cnbc.com/2026/11/20/trump-data-centers-ai-companies-tax.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-20T20:47:58+00:00"
+            },
+            {
+              "title": "Trump says he discussed Jensen Huang with Xi; Bessent tells CNBC Nvidia chip export policy is unchanged",
+              "url": "https://www.cnbc.com/2026/11/20/treasury-secretary-scott-bessent.html",
+              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+              "publishedAt": "2026-11-20T22:08:41+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "양자컴퓨팅",
+          "articles": [
+            {
+              "title": "Quantum computing’s first real-world payoff may come in energy, not drug discovery",
+              "url": "https://www.cnbc.com/2026/11/22/quantum-computing-energy-applications.html",
               "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-21T11:29:25+00:00"
+              "publishedAt": "2026-11-22T06:00:01+00:00"
             }
           ]
         },
@@ -1697,73 +1709,85 @@
           ]
         },
         {
-          "sector": "AI 규제",
-          "articles": [
-            {
-              "title": "Senate passes BAAJA permitting reform bill backed by AI, energy sectors",
-              "url": "https://www.cnbc.com/2026/11/20/baaja-bill-senate-passes-permitting-reform.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-20T03:56:17+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "데이터센터",
-          "articles": [
-            {
-              "title": "Lagarde says EU funds should take first losses on chip plants, data centers",
-              "url": "https://www.cnbc.com/2026/11/20/lagarde-eu-data-center-funding.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-20T12:52:15+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "주식시장 변동성",
-          "articles": [
-            {
-              "title": "The Nasdaq is in freefall. Here's one stock to look at",
-              "url": "https://www.cnbc.com/2026/11/22/the-nasdaq-is-in-freefall-heres-one-stock-to-look-at.html",
-              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
-              "publishedAt": "2026-11-22T12:10:39+00:00"
-            },
-            {
-              "title": "SoftBank suffers worst day in over two years as AI sell-off hits Asian tech stocks",
-              "url": "https://www.cnbc.com/2026/11/20/softbank-ai-tech-stocks-slide-anthropic-debut.html",
-              "source": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
-              "publishedAt": "2026-11-20T07:23:06+00:00"
-            }
-          ]
-        },
-        {
-          "sector": "금융정책",
+          "sector": "사회보장",
           "articles": [
             {
               "title": "Social Security benefits are rising in 2027, but other changes could affect what you keep",
               "url": "https://www.cnbc.com/2026/11/22/social-security-changes-cola-taxes-medicare.html",
               "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
               "publishedAt": "2026-11-22T14:30:01+00:00"
+            },
+            {
+              "title": "Social Security should be shut down, this Republican senator says",
+              "url": "https://www.marketwatch.com/story/social-security-should-be-shut-down-this-republican-senator-says-8f7fef81?mod=mw_rss_topstories",
+              "source": "https://feeds.marketwatch.com/marketwatch/topstories/",
+              "publishedAt": "2026-11-22T20:26:00+00:00"
+            },
+            {
+              "title": "America is definitely rich enough to fix Social Security and Medicare. Here’s how.",
+              "url": "https://www.marketwatch.com/story/america-is-definitely-rich-enough-to-fix-social-security-and-medicare-heres-how-30678aa5?mod=mw_rss_topstories",
+              "source": "https://feeds.marketwatch.com/marketwatch/topstories/",
+              "publishedAt": "2026-11-22T16:04:00+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "의료보험",
+          "articles": [
+            {
+              "title": "Medicare beneficiaries could skip the nursing home for cheaper care at home under new bill",
+              "url": "https://www.marketwatch.com/story/medicare-beneficiaries-could-skip-the-nursing-home-for-cheaper-care-at-home-under-new-bill-e289c8d0?mod=mw_rss_topstories",
+              "source": "https://feeds.marketwatch.com/marketwatch/topstories/",
+              "publishedAt": "2026-11-22T19:24:00+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "프라이빗이펙트",
+          "articles": [
+            {
+              "title": "Private equity has been buying up hospice centers — with striking consequences",
+              "url": "https://www.marketwatch.com/story/private-equity-has-been-buying-up-hospice-centers-with-striking-consequences-63642545?mod=mw_rss_topstories",
+              "source": "https://feeds.marketwatch.com/marketwatch/topstories/",
+              "publishedAt": "2026-11-22T17:22:00+00:00"
+            }
+          ]
+        },
+        {
+          "sector": "시장심리",
+          "articles": [
+            {
+              "title": "S&P 500 correction: Five forces behind the market sell-off",
+              "url": "https://www.cnbc.com/2026/11/20/sp-500-correction-market-sell-off.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-21T11:29:25+00:00"
+            },
+            {
+              "title": "The bull market has a new problem. The 'smart money' is selling",
+              "url": "https://www.cnbc.com/2026/11/20/equity-issuance-bull-market-problem.html",
+              "source": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+              "publishedAt": "2026-11-20T14:15:29+00:00"
             }
           ]
         }
       ],
       "newsRanks": [
-        "인공지능 | Anthropic, IPO, AI, 주가",
-        "클라우드 보안 | Zscaler, CrowdStrike, 인수, 주가",
-        "에너지 | Quantum computing, 에너지, 실용화, 주가",
-        "반도체 | Nvidia, 주가, AI 칩, 수요",
-        "주식시장 | S&P 500, 수정, 시장세력, 주가",
-        "배당주 | 배당주, 수익률, 주식, 투자",
-        "AI 규제 | BAAJA, AI, 규제, 정책",
-        "데이터센터 | EU, 데이터센터, 투자, 자금",
-        "주식시장 변동성 | 주가 변동성, AI 주가, 시장심리, 투자",
-        "금융정책 | 사회보장, 연금, 정책, 미래"
+        "AI/머신러닝 | Anthropic, IPO, AI주식",
+        "반도체 | Nvidia, 주가, 반도체",
+        "사이버보안 | Zscaler, 인수, 보안",
+        "데이터센터 | Trump, 데이터센터, 세금",
+        "양자컴퓨팅 | 양자, 에너지, 실용화",
+        "배당주 | 배당주, 수익, 고배당",
+        "사회보장 | 사회보장, 2027, 혜택",
+        "의료보험 | Medicare, 주택, 비용",
+        "프라이빗이펙트 | 호스피스, 인수, 부동산",
+        "시장심리 | S&P 500, 매도, 시장감정"
       ],
       "analysis": {
         "status": "news-verified",
         "model": "openai/gpt-oss-20b",
         "attempts": 1,
-        "newsCount": 63,
+        "newsCount": 61,
         "sources": [
           "https://feeds.marketwatch.com/marketwatch/topstories/",
           "https://trends.google.com/trending/rss?geo=US",

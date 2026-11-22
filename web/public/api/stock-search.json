@@ -2,8 +2,8 @@
   "meta": {
     "kind": "stock-search",
     "schedule": "derived",
-    "updatedAt": "2026-11-22T18:57:03+00:00",
-    "lastSuccessfulRun": "2026-11-22T18:57:03+00:00",
+    "updatedAt": "2026-11-22T20:53:34+00:00",
+    "lastSuccessfulRun": "2026-11-22T20:53:34+00:00",
     "failedReason": null
   },
   "rows": [
@@ -47191,7 +47191,7 @@
       "ticker": "COIN",
       "name": "Coinbase Global Class A",
       "market": "US",
-      "category": "스윙주",
+      "category": "성장주",
       "industry": "가상화폐, 핀테크, 블록체인"
     },
     {
