@@ -1,15 +1,15 @@
 {
   "version": "strategy-refinements-v1",
   "startSession": "2026-10-05",
-  "lastSession": "2026-11-20",
-  "observations": 1514,
+  "lastSession": "2026-11-23",
+  "observations": 1558,
   "signalCounts": {
     "refine_s1_base": 11,
     "refine_s1_ma200_rising": 8,
     "refine_s2_base": 0,
     "refine_s2_volume": 0,
-    "refine_s4_base": 17,
-    "refine_s4_ma200_rising": 13,
+    "refine_s4_base": 21,
+    "refine_s4_ma200_rising": 16,
     "refine_s6_base": 2,
     "refine_s6_ma50_above200": 0
   },

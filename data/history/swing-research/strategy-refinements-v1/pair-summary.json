@@ -26,14 +26,14 @@
     },
     "s4_ma200_rising": {
       "refine_s4_base": {
-        "closed": 7,
-        "entryDates": 5,
-        "signals": 17
+        "closed": 12,
+        "entryDates": 8,
+        "signals": 21
       },
       "refine_s4_ma200_rising": {
-        "closed": 5,
-        "entryDates": 3,
-        "signals": 13
+        "closed": 8,
+        "entryDates": 4,
+        "signals": 16
       }
     },
     "s6_ma50_above200": {
