@@ -1,8 +1,8 @@
 {
   "version": "facts-v1",
-  "capturedAt": "2026-11-25T21:38:43.070033Z",
-  "sourceArtifacts": 1138,
-  "membershipCaptures": 594,
+  "capturedAt": "2026-11-25T22:35:21.483981Z",
+  "sourceArtifacts": 1140,
+  "membershipCaptures": 595,
   "marketRows": 304,
   "missingSources": [],
   "status": "recording_inputs",
